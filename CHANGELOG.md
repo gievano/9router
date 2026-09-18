@@ -1,3 +1,9 @@
+# v0.5.100-Custom (2026-09-19)
+
+## Fork Restorations
+- **Restore Automatic Backup**: reinstated the scheduled automatic backup feature (Telegram/GitHub channels, interval config, live countdown, Send Test Backup) that was decommissioned upstream in v0.5.99. Kept alongside the newer Selective Backup Download, so both the scheduled Telegram/GitHub backup and the manual section-picker backup work.
+- `autoBackup` KV scope round-trips through DB export/import again, and now travels with the Settings section so partial backups stay consistent.
+
 # v0.5.99-Custom (2026-09-18)
 
 ## Custom Features & Enhancements

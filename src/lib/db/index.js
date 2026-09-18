@@ -89,6 +89,10 @@ export async function exportDb(options = null) {
 
   if (isIncluded("settings")) {
     out.settings = await exportSettings();
+    // Auto-backup config/status lives in its own KV scope so tokens never travel
+    // through the settings blob. Travels with the settings section.
+    out.autoBackup = {};
+    for (const r of db.all(`SELECT key, value FROM kv WHERE scope = 'autoBackup'`)) out.autoBackup[r.key] = parseJson(r.value);
   }
   if (isIncluded("providers")) {
     out.providerConnections = db.all(`SELECT * FROM providerConnections`).map((r) => ({ ...parseJson(r.data, {}), id: r.id, provider: r.provider, authType: r.authType, name: r.name, email: r.email, priority: r.priority, isActive: r.isActive === 1, createdAt: r.createdAt, updatedAt: r.updatedAt }));
@@ -356,6 +360,15 @@ export async function importDb(payload) {
       db.run(`DELETE FROM kv WHERE scope = 'disabledModels'`);
       for (const [provider, ids] of Object.entries(payload.disabledModels || {})) {
         db.run(`INSERT INTO kv(scope, key, value) VALUES('disabledModels', ?, ?) ON CONFLICT(scope, key) DO UPDATE SET value = excluded.value`, [provider, stringifyJson(ids || [])]);
+      }
+    }
+
+    // Auto-backup config/status. Optional: backups produced before this key
+    // existed import as a no-op instead of failing.
+    if (payload.autoBackup !== undefined) {
+      db.run(`DELETE FROM kv WHERE scope = 'autoBackup'`);
+      for (const [key, value] of Object.entries(payload.autoBackup || {})) {
+        db.run(`INSERT OR REPLACE INTO kv(scope, key, value) VALUES('autoBackup', ?, ?)`, [key, stringifyJson(value)]);
       }
     }
   });
