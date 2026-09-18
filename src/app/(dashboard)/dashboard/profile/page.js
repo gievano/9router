@@ -1843,7 +1843,7 @@ export default function ProfilePage() {
         label="Repository (owner/repo)"
         value={tgForm.ghRepo}
         onChange={(e) => updateTgForm({ ghRepo: e.target.value })}
-        placeholder="e.g. serenhope/9router-backups"
+        placeholder="e.g. gievano/9router-backups"
         />
         </div>
         )}

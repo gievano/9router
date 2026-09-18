@@ -8,7 +8,8 @@ import { marked } from "marked";
 marked.setOptions({ gfm: true, breaks: true });
 
 const DECOLUA_URL = "https://raw.githubusercontent.com/decolua/9router/refs/heads/master/CHANGELOG.md";
-const SERENHOPE_URL = "https://raw.githubusercontent.com/serenhope/9router/refs/heads/master/CHANGELOG.md";
+// Fallback for the fork's own changelog when /api/changelog has nothing local.
+const FORK_CHANGELOG_URL = "https://raw.githubusercontent.com/gievano/9router/refs/heads/master/CHANGELOG.md";
 const CHANGELOG_API_URL = "/api/changelog";
 
 function asMarkdown(value) {
@@ -43,10 +44,10 @@ async function loadChangelogs() {
   let serenhopeMd = asMarkdown(local?.custom);
 
   if (!decoluaMd && !serenhopeMd) {
-    return Promise.all([fetchText(DECOLUA_URL), fetchText(SERENHOPE_URL)]);
+    return Promise.all([fetchText(DECOLUA_URL), fetchText(FORK_CHANGELOG_URL)]);
   }
   if (!decoluaMd) decoluaMd = await fetchText(DECOLUA_URL);
-  if (!serenhopeMd) serenhopeMd = await fetchText(SERENHOPE_URL);
+  if (!serenhopeMd) serenhopeMd = await fetchText(FORK_CHANGELOG_URL);
   return [decoluaMd, serenhopeMd];
 }
 
