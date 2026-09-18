@@ -924,12 +924,10 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full sm:w-auto">
-                {tgForm.enabled && (
-                  <div className="flex flex-col gap-0.5">
-                    <BackupCountdown target={tgNextRunAt} onExpire={loadAutoBackup} />
-                  </div>
-                )}
+              {tgForm.enabled && (
+                <BackupCountdown target={tgNextRunAt} onExpire={loadAutoBackup} />
+              )}
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
                 <Button
                   variant="secondary"
                   icon="cloud_sync"
@@ -938,39 +936,37 @@ export default function ProfilePage() {
                 >
                   Automatic Backup
                 </Button>
+                <Button
+                  variant="secondary"
+                  icon="download"
+                  onClick={() => setShowDownloadBackupModal(true)}
+                  loading={dbLoading}
+                  className="w-full sm:w-auto"
+                >
+                  Download Backup
+                </Button>
+                <Button
+                  variant="outline"
+                  icon="upload"
+                  onClick={() => importFileRef.current?.click()}
+                  disabled={dbLoading}
+                  className="w-full sm:w-auto"
+                >
+                  Import Backup
+                </Button>
+                <input
+                  ref={importFileRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={handleImportDatabase}
+                />
               </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button
-                    variant="secondary"
-                    icon="download"
-                    onClick={() => setShowDownloadBackupModal(true)}
-                    loading={dbLoading}
-                    className="w-full sm:w-auto"
-                  >
-                    Download Backup
-                  </Button>
-                  <Button
-                    variant="outline"
-                    icon="upload"
-                    onClick={() => importFileRef.current?.click()}
-                    disabled={dbLoading}
-                    className="w-full sm:w-auto"
-                  >
-                    Import Backup
-                  </Button>
-                  <input
-                    ref={importFileRef}
-                    type="file"
-                    accept="application/json,.json"
-                    className="hidden"
-                    onChange={handleImportDatabase}
-                  />
-                </div>
-                {dbStatus.message && (
-                  <p className={`text-sm ${dbStatus.type === "error" ? "text-red-500" : "text-green-600 dark:text-green-400"}`}>
-                    {dbStatus.message}
-                  </p>
-                )}
+              {dbStatus.message && (
+                <p className={`text-sm ${dbStatus.type === "error" ? "text-red-500" : "text-green-600 dark:text-green-400"}`}>
+                  {dbStatus.message}
+                </p>
+              )}
             </div>
             </div>
         </Card>
