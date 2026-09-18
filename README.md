@@ -55,7 +55,7 @@ The dashboard automatically compares the running local checkout against upstream
 - **Gateway robustness**: upstream bodies that ignore `stream`, mislabel JSON as an event stream, arrive as NDJSON, or speak Claude/Responses events are all decoded instead of hanging or 502-ing; those transport shapes no longer trip a credential's cooldown, and an HTTP `400` from a provider is treated as the caller's mistake rather than grounding the account.
 - **Removed from this fork**: the Model Masking page, Live Feed, Budget Groups, the PRD Document Writer, the Provider Health board, the theme switcher, the language switcher, and the dashboard's "change the default password" nag (`GET /api/health` is still the anonymous `{"ok":true}` probe that tunnel and uptime checks rely on).
 - **UI**: dark mode only, English only, no theme or language controls, a GitHub button in the header, and icons that finally honour their declared size (the vendor icon stylesheet used to force every icon to 24px).
-- **Dashboard login default password** is `seren123`.
+- **Dashboard login default password** is `jstc69`.
 
 ## Quick start
 
@@ -81,7 +81,7 @@ docker build -t 9router-fork .
 docker run -d -p 20128:20128 -v 9router-data:/app/data 9router-fork
 ```
 
-- Dashboard: `http://localhost:20127/dashboard` — first login uses `seren123` (or `INITIAL_PASSWORD`); change it before allowing remote access.
+- Dashboard: `http://localhost:20127/dashboard` — first login uses `jstc69` (or `INITIAL_PASSWORD`); change it before allowing remote access.
 - OpenAI-compatible endpoint: `http://localhost:20127/v1`
 - Claude-compatible endpoint: `http://localhost:20127/v1/messages`
 - Gemini-native endpoint: `http://localhost:20127/v1beta/models/{model}:generateContent`
@@ -104,7 +104,7 @@ Then: **Providers → Add provider** (or the OAuth flows upstream supports), cop
 | --- | --- | --- |
 | `PORT` / `HOSTNAME` | `20127` / framework default | bind port and host (`20128` in the Docker image) |
 | `DATA_DIR` | `~/.9router` | SQLite database, backups, jwt secret, machine id |
-| `INITIAL_PASSWORD` | `seren123` | first dashboard login when no password is stored |
+| `INITIAL_PASSWORD` | `jstc69` | first dashboard login when no password is stored |
 | `JWT_SECRET` | auto (`$DATA_DIR/jwt-secret`) | dashboard session signing key |
 | `BASE_URL` | local | externally reachable base URL; OAuth callbacks and tunnels derive from it |
 | `API_KEY_SECRET` | built-in | HMAC secret behind generated `sk-` keys |

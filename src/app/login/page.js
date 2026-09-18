@@ -257,7 +257,7 @@ export default function LoginPage() {
                 </Button>
 
                 <p className="text-xs text-center text-text-muted mt-2">
-                  Default password is <code className="bg-sidebar px-1 rounded">seren123</code>
+                  Default password is <code className="bg-sidebar px-1 rounded">jstc69</code>
                 </p>
               </form>
             ) : (
