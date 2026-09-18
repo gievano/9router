@@ -5,6 +5,7 @@
 // went out.
 import "open-sse/index.js";
 
+import zlib from "node:zlib";
 import { proxyAwareFetch } from "open-sse/utils/proxyFetch.js";
 import { exportDb } from "@/lib/db/index.js";
 import { getAutoBackupConfig, getAutoBackupStatus, setAutoBackupStatus } from "@/lib/db/repos/autoBackupRepo.js";
@@ -56,22 +57,43 @@ async function recordStatus(patch) {
   }
 }
 
+// Tells the owner their scheduled backup stopped working. Uses the same channel
+// the backup itself uses; best-effort — a failure to notify must not mask the
+// original error.
+async function notifyBackupFailure(config, message) {
+  const text = `⚠️ *9Router auto-backup GAGAL*\n\n${message}\n\nCek: dashboard → Profile → Automatic Backup.`;
+  if (config.channel === "github") return; // no chat to post into on the GitHub channel
+  if (!config.tgBotToken || !config.tgChatId) return;
+  const res = await proxyAwareFetch(`https://api.telegram.org/bot${config.tgBotToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: config.tgChatId, text, parse_mode: "Markdown" }),
+    signal: AbortSignal.timeout(20000),
+  }, null);
+  if (!res.ok) throw new Error(`Telegram API ${res.status}`);
+}
+
 async function buildBackupBuffer() {
   const payload = await exportDb();
-  const buf = Buffer.from(JSON.stringify(payload, null, 2));
-  if (buf.length > C.maxBytes) {
-    throw new Error(`Backup too large (${formatMb(buf.length)} MB > ${formatMb(C.maxBytes)} MB). use Download Backup instead`);
+  const json = Buffer.from(JSON.stringify(payload, null, 2));
+  // gzip keeps the file small on the wire (Telegram/GitHub). The payload is
+  // highly repetitive JSON, so this typically shrinks it ~5-8x. The compressed
+  // buffer is what gets delivered; import sniffs the gzip magic and inflates.
+  const gz = zlib.gzipSync(json, { level: 9 });
+  if (gz.length > C.maxBytes) {
+    throw new Error(`Backup too large (${formatMb(gz.length)} MB > ${formatMb(C.maxBytes)} MB). use Download Backup instead`);
   }
-  return buf;
+  return gz;
 }
 
 // --- channels ---------------------------------------------------------------
 
-async function sendViaTelegram({ tgBotToken, tgChatId }, buf, stamp) {
+async function sendViaTelegram({ tgBotToken, tgChatId }, buf, stamp, meta = {}) {
   const form = new FormData();
   form.append("chat_id", tgChatId);
-  form.append("document", new Blob([buf], { type: "application/json" }), `9router-backup-${stamp}.json`);
-  form.append("caption", `9Router auto backup v${getAppVersion()}. ${formatMb(buf.length)} MB`);
+  form.append("document", new Blob([buf], { type: "application/gzip" }), `9router-backup-${stamp}.json.gz`);
+  const rawMb = meta.rawBytes ? formatMb(meta.rawBytes) : formatMb(buf.length);
+  form.append("caption", `9Router auto backup v${getAppVersion()} — ${formatMb(buf.length)} MB (dari ${rawMb} MB)`);
 
   // Respects the outbound-proxy env applied by applyOutboundProxyEnv().
   const res = await proxyAwareFetch(`https://api.telegram.org/bot${tgBotToken}/sendDocument`, {
@@ -82,6 +104,32 @@ async function sendViaTelegram({ tgBotToken, tgChatId }, buf, stamp) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.ok === false) {
     throw new Error(data.description || `Telegram API ${res.status}`);
+  }
+}
+
+// Retention for the GitHub channel: keeps the newest N backup files under
+// 9router-backups/ and drops older ones. Returns the names to delete so the
+// caller can remove them in the same commit.
+//
+// NOTE: Telegram has no API to list or delete chat messages (a bot can only
+// delete its own messages within 48h), so retention is GitHub-only. On
+// Telegram the files simply accumulate — the compressed size (~2 MB) makes
+// that cheap.
+async function listGitHubBackupsToPrune({ ghToken, ghRepo }, keep) {
+  try {
+    const repo = (ghRepo || "").trim();
+    const info = await ghApi(ghToken, `/repos/${repo}`);
+    const branch = info?.default_branch || "main";
+    const listing = await ghApi(ghToken, `/repos/${repo}/contents/${BACKUP_FOLDER}?ref=${branch}`);
+    if (!Array.isArray(listing)) return { branch, stale: [] };
+    const backups = listing
+      .filter((f) => f.type === "file" && /^9router-backup-.*\.json(\.gz)?$/.test(f.name))
+      .map((f) => f.name)
+      .sort() // timestamps sort lexically -> oldest first
+      .reverse(); // newest first
+    return { branch, stale: backups.slice(Math.max(0, keep)) };
+  } catch {
+    return { branch: null, stale: [] };
   }
 }
 
@@ -106,8 +154,9 @@ async function ghApi(token, path, init = {}) {
 
 // Commits the backup to owner/repo under 9router-backups/, also updating
 // latest.json so restores always know the newest file. Auto-creates the repo's
-// default branch ref when the repository is still empty.
-async function sendViaGitHub({ ghToken, ghRepo }, buf, stamp) {
+// default branch ref when the repository is still empty. `pruneNames` are old
+// backup files removed in the same commit (retention).
+async function sendViaGitHub({ ghToken, ghRepo }, buf, stamp, meta = {}) {
   const repo = (ghRepo || "").trim();
   if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error("GitHub repo must be in owner/repo format");
 
@@ -125,14 +174,21 @@ async function sendViaGitHub({ ghToken, ghRepo }, buf, stamp) {
     body: JSON.stringify({ content: buf.toString("base64") }),
   });
   const tree = [
-    { path: `${BACKUP_FOLDER}/9router-backup-${stamp}.json`, mode: "100644", type: "blob", sha: blob.sha },
-    { path: `${BACKUP_FOLDER}/latest.json`, mode: "100644", type: "blob", sha: blob.sha },
+    { path: `${BACKUP_FOLDER}/9router-backup-${stamp}.json.gz`, mode: "100644", type: "blob", sha: blob.sha },
+    { path: `${BACKUP_FOLDER}/latest.json.gz`, mode: "100644", type: "blob", sha: blob.sha },
   ];
+  // Retention: drop stale files (sha: null removes the path from the tree).
+  for (const name of meta.pruneNames || []) {
+    if (name === "latest.json" || name === "latest.json.gz") continue;
+    tree.push({ path: `${BACKUP_FOLDER}/${name}`, mode: "100644", type: "blob", sha: null });
+  }
   const newTree = await ghApi(ghToken, `/repos/${repo}/git/trees`, {
     method: "POST",
     body: JSON.stringify({ base_tree: baseSha || undefined, tree }),
   });
-  const commitMsg = `chore(backup): 9router auto backup ${stamp} (${formatMb(buf.length)} MB)`;
+  const pruned = (meta.pruneNames || []).length;
+  const commitMsg = `chore(backup): 9router auto backup ${stamp} (${formatMb(buf.length)} MB)` +
+    (pruned ? ` — pruned ${pruned} old` : "");
   const commit = await ghApi(ghToken, `/repos/${repo}/git/commits`, {
     method: "POST",
     body: JSON.stringify({ message: commitMsg, tree: newTree.sha, parents: baseSha ? [baseSha] : [] }),
@@ -174,20 +230,37 @@ export async function sendTelegramBackupNow() {
   g.running = true;
   try {
     const stamp = formatStamp(new Date());
-    const buf = await buildBackupBuffer();
+    const rawBuf = await buildBackupBuffer();
+    const buf = rawBuf;
     const sizeBytes = buf.length;
+    // Retention only applies to the GitHub channel (see listGitHubBackupsToPrune).
+    let pruneNames = [];
+    if (config.channel === "github" && config.retentionCount > 0) {
+      try {
+        pruneNames = (await listGitHubBackupsToPrune(config, config.retentionCount)).stale;
+      } catch {
+        pruneNames = []; // never let retention break the backup
+      }
+    }
     try {
-      if (config.channel === "github") await sendViaGitHub(config, buf, stamp);
+      if (config.channel === "github") await sendViaGitHub(config, buf, stamp, { pruneNames });
       else await sendViaTelegram(config, buf, stamp);
     } finally {
       buf.fill(0); // release the copy of the secret-bearing payload ASAP
     }
     await recordStatus({ lastSentAt: new Date().toISOString(), lastStatus: "ok", lastError: null, lastChannel: config.channel, lastSizeBytes: sizeBytes });
     if (config.enabled) schedule(intervalMsOf(config));
-    console.log(`[AutoBackup] sent via ${config.channel} (${formatMb(sizeBytes)} MB)`);
-    return { ok: true, sizeBytes, channel: config.channel };
+    console.log(`[AutoBackup] sent via ${config.channel} (${formatMb(sizeBytes)} MB${pruneNames.length ? `, pruned ${pruneNames.length}` : ""})`);
+    return { ok: true, sizeBytes, channel: config.channel, pruned: pruneNames.length };
   } catch (e) {
     await recordStatus({ lastStatus: "error", lastError: e.message, lastChannel: config.channel });
+    // Failure notice: only once per failure streak, so a persistent outage does
+    // not spam the chat every retry.
+    const prev = await getAutoBackupStatus().catch(() => null);
+    if (prev?.lastNotifiedError !== e.message) {
+      await notifyBackupFailure(config, e.message).catch(() => {});
+      await recordStatus({ lastNotifiedError: e.message }).catch(() => {});
+    }
     throw e;
   } finally {
     g.running = false;

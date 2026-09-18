@@ -9,6 +9,20 @@ import { APP_CONFIG } from "@/shared/constants/config";
 import { LOCALE_COOKIE, normalizeLocale } from "@/i18n/config";
 import { LOCALE_FLAGS } from "@/shared/constants/locales";
 
+// Reads a backup file as text, transparently inflating gzip (.json.gz) produced
+// by the auto-backup scheduler. Plain .json backups (manual download, older
+// auto-backups) are returned as-is.
+async function readBackupText(file) {
+  const isGzip = /\.gz$/i.test(file.name) || file.type === "application/gzip";
+  if (!isGzip) return await file.text();
+
+  if (typeof DecompressionStream === "undefined") {
+    throw new Error("This browser cannot read .json.gz backups — unzip the file first");
+  }
+  const stream = file.stream().pipeThrough(new DecompressionStream("gzip"));
+  return await new Response(stream).text();
+}
+
 function getLocaleFromCookie() {
   if (typeof document === "undefined") return "en";
   const cookie = document.cookie
@@ -854,7 +868,7 @@ export default function ProfilePage() {
     if (!file) return;
     setDbLoading(true);
     try {
-      const raw = await file.text();
+      const raw = await readBackupText(file);
       const payload = JSON.parse(raw);
 
       const res = await fetch("/api/settings/database", {
@@ -957,7 +971,7 @@ export default function ProfilePage() {
                 <input
                   ref={importFileRef}
                   type="file"
-                  accept="application/json,.json"
+                  accept="application/json,application/gzip,.json,.gz"
                   className="hidden"
                   onChange={handleImportDatabase}
                 />

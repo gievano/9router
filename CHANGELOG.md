@@ -1,3 +1,11 @@
+# v0.5.101-Custom (2026-09-19)
+
+## Backup Enhancements
+- **Compressed auto-backup**: scheduled backups are gzipped before delivery (`9router-backup-*.json.gz`). The payload is highly repetitive JSON, so a 13.2 MB backup ships as ~1.2 MB — about 91% smaller. Import transparently inflates both `.json` and `.json.gz`, so older backups keep working.
+- **Failure notifications**: if a scheduled backup fails, the owner now gets a Telegram message with the error instead of the failure being silent. Sent once per distinct error, so a persistent outage does not spam the chat.
+- **GitHub retention**: the GitHub channel keeps the newest N backups (default 10, `retentionCount` in config) and prunes older files in the same commit. Telegram is unaffected — its Bot API cannot list or delete chat history.
+- **Update checks now track this fork** (`gievano/9router`) instead of upstream, so the sidebar badge and GitHub link point at the fork's own commits.
+
 # v0.5.100-Custom (2026-09-19)
 
 ## Fork Restorations

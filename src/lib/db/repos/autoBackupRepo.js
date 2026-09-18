@@ -52,6 +52,7 @@ const DEFAULT_CONFIG = {
   tgChatId: "",
   ghToken: "",
   ghRepo: "", // owner/repo
+  retentionCount: 10, // GitHub channel: keep this many newest backups (0 = keep all)
 };
 
 export async function getAutoBackupConfig() {
