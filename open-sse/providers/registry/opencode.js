@@ -28,9 +28,8 @@ export default {
   },
   models: [
     // Endpoint formats differ per model, so declare non-chat models explicitly.
-    // Union Alpha is served by /zen/v1/messages (Claude format); Muse Spark by /zen/v1/responses.
-    { id: "union-alpha", name: "Union Alpha Free", targetFormat: "claude" },
-    { id: "union-alpha-free", name: "Union Alpha Free", targetFormat: "claude", upstreamModelId: "union-alpha" },
+    // Muse Spark is served by /zen/v1/responses. (union-alpha removed 2026-09-20:
+    // upstream zen dropped it — every request 401 "Model not supported".)
     { id: "muse-spark-1.2-contributor-free", name: "Muse Spark 1.2 Contributor Free", targetFormat: "openai-responses" },
     { id: "muse-spark-1.3-contributor-free", name: "Muse Spark 1.3 Contributor Free", targetFormat: "openai-responses" },
   ],
