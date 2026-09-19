@@ -1,3 +1,8 @@
+# v0.5.107-Custom (2026-09-19)
+
+## Custom Features & Enhancements
+- **Auto Update restored**: the sidebar "Update now" button calls the real updater endpoint again. The detached updater installs the new version, restarts 9Router and reopens the dashboard on its own, with live progress (phase and installer log tail) shown in the overlay while the server is down. If the updater is unavailable, for example in a dev build, the flow falls back to the existing copy-command panel so there is always a working path. Failed installs surface the installer log with a reload button instead of a silent hang.
+
 # v0.5.106-Custom (2026-09-19)
 
 ## Custom Features & Enhancements
