@@ -165,7 +165,7 @@ export default function ChangelogModal({ isOpen, onClose }) {
         const serenBlock = serenCards
           ? `<div style="display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:17px;font-weight:600;color:#60a5fa;">
   <span class="material-symbols-outlined" style="font-size:20px;">star</span>
-  Contributed by Serenhope
+  Fork Updates (gievano)
 </div>
 ${serenCards}`
           : "";
