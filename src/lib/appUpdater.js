@@ -181,6 +181,7 @@ export function spawnUpdaterAndExit(packageName = UPDATER_CONFIG.npmPackageName)
     env: {
       ...process.env,
       UPDATER_PKG_NAME: packageName,
+      ...(UPDATER_CONFIG.forkUpdateScript ? { UPDATER_INSTALL_SCRIPT: UPDATER_CONFIG.forkUpdateScript } : {}),
       UPDATER_PORT: String(UPDATER_CONFIG.statusPort),
       UPDATER_TAIL_LINES: String(UPDATER_CONFIG.statusLogTailLines),
       UPDATER_RETRIES: String(UPDATER_CONFIG.installRetries),
@@ -190,10 +191,13 @@ export function spawnUpdaterAndExit(packageName = UPDATER_CONFIG.npmPackageName)
       UPDATER_WAIT_MAX_MS: String(UPDATER_CONFIG.waitForExitMaxMs),
       UPDATER_WAIT_CHECK_MS: String(UPDATER_CONFIG.waitForExitCheckMs),
       UPDATER_APP_PORT: String(UPDATER_CONFIG.appPort),
-      UPDATER_RELAUNCH: "1",
-      UPDATER_RELAUNCH_CMD: relaunch.cmd,
-      UPDATER_RELAUNCH_ARGS: JSON.stringify(relaunchArgs),
-    },
+      // Fork mode: relaunch via the machine's own tray autostart (VBS) — it
+      // points at the fork checkout. The default `npx 9router` would run the
+      // upstream npm package instead.
+      ...(UPDATER_CONFIG.forkUpdateScript
+        ? { UPDATER_RELAUNCH: "1", UPDATER_RELAUNCH_CMD: "wscript.exe", UPDATER_RELAUNCH_ARGS: JSON.stringify([UPDATER_CONFIG.forkAutostartVbs]) }
+        : { UPDATER_RELAUNCH: "1", UPDATER_RELAUNCH_CMD: relaunch.cmd, UPDATER_RELAUNCH_ARGS: JSON.stringify(relaunchArgs) }),
+     },
   }).unref();
 
   setTimeout(() => process.exit(0), UPDATER_CONFIG.exitDelayMs);

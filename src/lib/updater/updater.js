@@ -131,17 +131,23 @@ function sleep(ms) {
 function runInstall() {
   state.attempt += 1;
   setPhase("installing");
-  pushLog(`[updater] attempt ${state.attempt}/${maxRetries} — npm i -g ${packageName} --prefer-online`);
+  const forkScript = process.env.UPDATER_INSTALL_SCRIPT || "";
+  if (forkScript) pushLog(`[updater] attempt ${state.attempt}/${maxRetries} — node ${forkScript}`);
 
   const isWin = process.platform === "win32";
   const cmd = isWin ? "npm.cmd" : "npm";
   const args = ["i", "-g", packageName, "--prefer-online"];
 
-  const child = spawn(cmd, args, {
-    stdio: ["ignore", "pipe", "pipe"],
-    windowsHide: true,
-    shell: isWin,
-  });
+  const child = forkScript
+    ? spawn(process.execPath, [forkScript], {
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+      })
+    : spawn(cmd, args, {
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+        shell: isWin,
+      });
 
   child.stdout.on("data", (buf) => {
     buf.toString().split(/\r?\n/).forEach(pushLog);
@@ -195,6 +201,9 @@ async function waitForAppAndOpenBrowser() {
   pushLog(`[updater] app not responding within 30s, skip browser open`);
 }
 
+// Fork mode: the update script builds BEFORE swapping, so a failed update
+// leaves the old build intact on disk. If the relaunch never comes up, put
+// the previous build back and try the tray autostart entry.
 function relaunchApp() {
   if (process.env.UPDATER_RELAUNCH !== "1") return;
   const cmd = process.env.UPDATER_RELAUNCH_CMD;

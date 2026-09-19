@@ -27,6 +27,13 @@ export const UPDATER_CONFIG = {
   npmPackageName: "9router",
   installCmd: "npm i -g 9router",
   installCmdLatest: "npm i -g 9router@latest --prefer-online",
+  // When set, the updater runs this Node script instead of `npm i -g` —
+  // ponytail: fork mode pulls/builds/swaps the local checkout; relaunch is
+  // still the updater's job (via forkAutostartVbs). Absolute paths are fine
+  // here (personal fork, fixed machine); remove the field to fall back to
+  // npm mode.
+  forkUpdateScript: "C:\\Users\\USER\\9router-serenhope\\cli\\update-fork.js",
+  forkAutostartVbs: "C:\\Users\\USER\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\9router.vbs",
   shutdownCountdownSec: 3,
   exitDelayMs: 500,
   statusPort: 20129,
