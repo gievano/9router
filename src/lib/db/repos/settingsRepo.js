@@ -27,6 +27,7 @@ const DEFAULT_SETTINGS = {
     imageVision: { enabled: false, models: [] },
     thinkDeeper: { enabled: false, models: [] },
     unrestrictedMode: { enabled: false, models: [] },
+    speedMode: { enabled: false, models: [] },
   },
   requireLogin: true,
   requireApiKey: true,

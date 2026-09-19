@@ -46,4 +46,5 @@ export const CAPACITY_META = {
   reasoning: { icon: "neurology", label: "Reasoning", desc: "Supports reasoning / thinking", color: "text-amber-500" },
   thinkDeeper: { icon: "psychology", label: "Think Deeper", desc: "Think Deeper Plugin: multi-step deep reasoning", color: "text-purple-400" },
   unrestrictedMode: { icon: "key_off", label: "Uncensored", desc: "Uncensored Output: bypasses standard AI refusals", color: "text-red-400" },
+  speedMode: { icon: "bolt", label: "Speed", desc: "Speed Mode: skips thinking for faster responses", color: "text-cyan-400" },
 };

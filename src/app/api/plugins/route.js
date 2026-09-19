@@ -11,6 +11,7 @@ export async function GET() {
       imageVision: { enabled: false, models: [] },
       thinkDeeper: { enabled: false, models: [] },
       unrestrictedMode: { enabled: false, models: [] },
+      speedMode: { enabled: false, models: [] },
     };
     return NextResponse.json({ customPlugins }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
@@ -39,6 +40,10 @@ export async function PUT(request) {
       unrestrictedMode: {
         enabled: Boolean(customPlugins.unrestrictedMode?.enabled),
         models: Array.isArray(customPlugins.unrestrictedMode?.models) ? customPlugins.unrestrictedMode.models.filter(Boolean) : [],
+      },
+      speedMode: {
+        enabled: Boolean(customPlugins.speedMode?.enabled),
+        models: Array.isArray(customPlugins.speedMode?.models) ? customPlugins.speedMode.models.filter(Boolean) : [],
       },
     };
 

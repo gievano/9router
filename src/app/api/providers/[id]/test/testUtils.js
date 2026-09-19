@@ -754,6 +754,16 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         }
         return { valid: true, error: null };
       }
+      case "opencode": {
+        // Connectivity-only probe: GET /models never exercises the Responses
+        // tool path, so a green dashboard test does NOT rule out 403
+        // FreeTierError on POST /zen/v1/responses with tools (requires
+        // bash+read decoys + tool_choice auto — see OpenCodeExecutor).
+        const res = await fetchWithConnectionProxy("https://opencode.ai/zen/v1/models", {
+          headers: { Authorization: "Bearer public", "User-Agent": "opencode/1.18.31" },
+        }, effectiveProxy);
+        return { valid: res.ok, error: res.ok ? null : "OpenCode free tier unavailable" };
+      }
       case "opencode-go": {
         const res = await fetchWithConnectionProxy("https://opencode.ai/zen/go/v1/chat/completions", {
           method: "POST",

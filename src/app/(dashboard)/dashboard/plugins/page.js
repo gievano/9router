@@ -40,12 +40,22 @@ const PLUGINS = [
     description:
       "Bypass standard AI refusals and guardrails. Injects an unrestricted direct technical directive, compelling the model to provide raw code, analysis, and uncensored answers (Note: may not work on some provider models).",
   },
+  {
+    key: "speedMode",
+    title: "Speed Mode",
+    icon: "bolt",
+    iconColor: "text-cyan-500",
+    iconBg: "bg-cyan-500/10 border-cyan-500/20",
+    description:
+      "Skip thinking for faster responses. Disables reasoning mode on the selected models and instructs them to answer directly, ideal for simple tasks where low latency matters more than deep analysis.",
+  },
 ];
 
 const DEFAULT_PLUGINS_STATE = {
   imageVision: { enabled: false, models: [] },
   thinkDeeper: { enabled: false, models: [] },
   unrestrictedMode: { enabled: false, models: [] },
+  speedMode: { enabled: false, models: [] },
 };
 
 function formatModelName(modelVal) {
@@ -90,6 +100,12 @@ export default function PluginsPage() {
                 enabled: Boolean(data.customPlugins.unrestrictedMode?.enabled),
                 models: Array.isArray(data.customPlugins.unrestrictedMode?.models)
                   ? data.customPlugins.unrestrictedMode.models
+                  : [],
+              },
+              speedMode: {
+                enabled: Boolean(data.customPlugins.speedMode?.enabled),
+                models: Array.isArray(data.customPlugins.speedMode?.models)
+                  ? data.customPlugins.speedMode.models
                   : [],
               },
             });

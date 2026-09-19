@@ -1,6 +1,14 @@
 import { BaseExecutor } from "./base.js";
 import { PROVIDERS } from "../config/providers.js";
 import { findDeepSeekPowNonce } from "../lib/deepseek-pow-hash.js";
+import {
+  hasTools,
+  buildToolSystemPrompt,
+  renderSpecialMessages,
+  parseToolCallReply,
+  emitToolCallChunks,
+  buildToolCallResponse,
+} from "./deepseekWebToolBridge.js";
 
 const DEEPSEEK_WEB_BASE = "https://chat.deepseek.com";
 const DEEPSEEK_API_BASE = `${DEEPSEEK_WEB_BASE}/api`;
@@ -690,7 +698,23 @@ export class DeepSeekWebExecutor extends BaseExecutor {
 
     try {
       const accessToken = await acquireAccessToken(userToken, signal, log);
-      const prompt = messagesToPrompt(messages, historyWindow);
+      const toolMode = hasTools(bodyObj);
+      const toolPrompt = toolMode ? buildToolSystemPrompt(bodyObj.tools) : "";
+
+      // Special turns (assistant tool_calls, tool results) become transcript
+      // lines; the model reasons over them like a normal conversation.
+      const specialTurns = toolMode ? renderSpecialMessages(messages) : [];
+
+      const prompt = messagesToPrompt(
+        toolMode
+          ? [
+              ...(toolPrompt ? [{ role: "system", content: toolPrompt }] : []),
+              ...messages.filter((m) => m.role !== "tool" && !(m.role === "assistant" && Array.isArray(m.tool_calls))),
+              ...specialTurns.map((t) => ({ role: t.role, content: t.text })),
+            ]
+          : messages,
+        historyWindow
+      );
       const refFileIds = Array.isArray(bodyObj.ref_file_ids) ? bodyObj.ref_file_ids : [];
 
       const performCompletion = async (sid) => {
@@ -813,6 +837,56 @@ export class DeepSeekWebExecutor extends BaseExecutor {
       const clientModel = typeof model === "string" && model.trim() ? model.trim() : "deepseek-web";
 
       if (stream !== false) {
+        if (toolMode) {
+          // Buffer the model's full answer, then translate a detected tool
+          // call into OpenAI tool_calls deltas (RAG web backend only speaks
+          // text, so calls can only be classified once the answer completes).
+          const { content, reasoningContent } = await collectSSEContent(resp.body, clientModel);
+          const parsed = parseToolCallReply(content);
+          await cleanupFn();
+
+          const encoder = new TextEncoder();
+          const id = `chatcmpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          const created = Math.floor(Date.now() / 1000);
+          let roleEmitted = false;
+          const outStream = new ReadableStream({
+            start(controller) {
+              const emit = (obj) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+              const chunk = (delta, finish) => emit({ id, object: "chat.completion.chunk", created, model: clientModel, choices: [{ index: 0, delta, finish_reason: finish ?? null }] });
+              const ensureRole = () => { if (!roleEmitted) { roleEmitted = true; chunk({ role: "assistant", content: "" }); } };
+
+              if (parsed.calls.length > 0) {
+                if (parsed.content) {
+                  ensureRole();
+                  chunk({ content: parsed.content });
+                }
+                if (reasoningContent) chunk({ reasoning_content: reasoningContent });
+                if (emitToolCallChunks(chunk, ensureRole, parsed.calls)) {
+                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                  controller.close();
+                  return;
+                }
+              }
+
+              ensureRole();
+              if (parsed.content) chunk({ content: parsed.content });
+              if (reasoningContent) chunk({ reasoning_content: reasoningContent });
+              chunk({}, "stop");
+              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              controller.close();
+            },
+          });
+          return {
+            response: new Response(outStream, {
+              status: 200,
+              headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+            }),
+            url: COMPLETION_URL,
+            headers: reqHeaders,
+            transformedBody: requestPayload,
+          };
+        }
+
         const openaiStream = transformSSE(resp.body, clientModel);
         const wrappedStream = wrapStreamWithCleanup(openaiStream, cleanupFn);
         return {
@@ -828,6 +902,27 @@ export class DeepSeekWebExecutor extends BaseExecutor {
 
       const { content, reasoningContent } = await collectSSEContent(resp.body, clientModel);
       await cleanupFn();
+
+      if (toolMode) {
+        const parsed = parseToolCallReply(content);
+        if (parsed.calls.length > 0) {
+          return {
+            response: new Response(JSON.stringify(buildToolCallResponse({
+              model: clientModel,
+              messageText: parsed.content || null,
+              calls: parsed.calls,
+              reasoningContent,
+            })), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+            url: COMPLETION_URL,
+            headers: reqHeaders,
+            transformedBody: requestPayload,
+          };
+        }
+      }
+
       const message = { role: "assistant", content };
       if (reasoningContent) message.reasoning_content = reasoningContent;
       const openaiResponse = {

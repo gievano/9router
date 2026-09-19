@@ -115,29 +115,8 @@ export default function DownloadBackupModal({ isOpen, onClose, onDownload, loadi
         />
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs font-semibold text-text-muted uppercase tracking-wider">
-            <span>Select Data to Include</span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  setSelected(Object.fromEntries(DEFAULT_SECTIONS.map((s) => [s.key, true])))
-                }
-                className="hover:underline text-primary cursor-pointer"
-              >
-                Select All
-              </button>
-              <span>|</span>
-              <button
-                type="button"
-                onClick={() =>
-                  setSelected(Object.fromEntries(DEFAULT_SECTIONS.map((s) => [s.key, !s.isHeavy])))
-                }
-                className="hover:underline text-primary cursor-pointer"
-              >
-                Lightweight Only
-              </button>
-            </div>
+          <div className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+            Select Data to Include
           </div>
 
           <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
@@ -177,7 +156,7 @@ export default function DownloadBackupModal({ isOpen, onClose, onDownload, loadi
 
                   <div className="flex items-center gap-2 shrink-0">
                     {sec.isHeavy && (
-                      <Badge variant="warning" size="xs">
+                      <Badge variant="warning" size="sm">
                         Heavy
                       </Badge>
                     )}

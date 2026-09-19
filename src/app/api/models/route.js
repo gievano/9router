@@ -19,6 +19,8 @@ export async function GET() {
     const tdModels = new Set(customPlugins.thinkDeeper?.models || []);
     const umEnabled = Boolean(customPlugins.unrestrictedMode?.enabled);
     const umModels = new Set(customPlugins.unrestrictedMode?.models || []);
+    const smEnabled = Boolean(customPlugins.speedMode?.enabled);
+    const smModels = new Set(customPlugins.speedMode?.models || []);
 
     const models = AI_MODELS
       .filter((m) => {
@@ -47,6 +49,9 @@ export async function GET() {
         }
         if (umEnabled && (umModels.has(fullModel) || umModels.has(routedModel) || umModels.has(m.model))) {
           caps.unrestrictedMode = true;
+        }
+        if (smEnabled && (smModels.has(fullModel) || smModels.has(routedModel) || smModels.has(m.model))) {
+          caps.speedMode = true;
         }
         return {
           ...m,
@@ -83,6 +88,9 @@ export async function GET() {
       }
       if (umEnabled && (umModels.has(fullModel) || umModels.has(m.id))) {
         caps.unrestrictedMode = true;
+      }
+      if (smEnabled && (smModels.has(fullModel) || smModels.has(m.id))) {
+        caps.speedMode = true;
       }
       models.push({
         provider: m.providerAlias,

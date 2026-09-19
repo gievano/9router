@@ -1,6 +1,14 @@
-// Runtime interceptor for Custom Plugins (Image Vision & Think Deeper)
+// Runtime interceptor for Custom Plugins (Image Vision, Think Deeper, Speed Mode & Uncensored Output)
 import { getSettings } from "@/lib/localDb";
 import { FORMATS } from "open-sse/translator/formats.js";
+
+// Default plugin state for fresh installs / missing settings
+const DEFAULT_PLUGINS = {
+  imageVision: { enabled: false, models: [] },
+  thinkDeeper: { enabled: false, models: [] },
+  unrestrictedMode: { enabled: false, models: [] },
+  speedMode: { enabled: false, models: [] },
+};
 
 // Cached plugin settings to avoid DB hits on every stream chunk
 let cachedPlugins = null;
@@ -14,16 +22,10 @@ async function getPluginConfig() {
   }
   try {
     const settings = await getSettings();
-    cachedPlugins = settings?.customPlugins || {
-      imageVision: { enabled: false, models: [] },
-      thinkDeeper: { enabled: false, models: [] },
-    };
+    cachedPlugins = settings?.customPlugins || DEFAULT_PLUGINS;
     lastFetch = now;
   } catch {
-    cachedPlugins = {
-      imageVision: { enabled: false, models: [] },
-      thinkDeeper: { enabled: false, models: [] },
-    };
+    cachedPlugins = DEFAULT_PLUGINS;
   }
   return cachedPlugins;
 }
@@ -155,6 +157,55 @@ export function processThinkDeeper(body, sourceFormat) {
 }
 
 /**
+ * Apply Speed Mode plugin: disables thinking/reasoning and instructs direct answers.
+ * Uses reasoning_effort "none" so the unified thinking pipeline translates the
+ * intent into each provider's native disable format (thinking disabled, budget 0, etc).
+ */
+export function processSpeedMode(body, sourceFormat) {
+  if (!body) return;
+
+  const SPEED_PROMPT = "You have Speed Mode enabled. Answer directly and concisely with no visible reasoning process, no step-by-step thinking, and no preamble. Give the final answer immediately.";
+
+  if (Array.isArray(body.messages)) {
+    const sysIndex = body.messages.findIndex((m) => m.role === "system");
+    if (sysIndex >= 0) {
+      const current = body.messages[sysIndex].content;
+      if (typeof current === "string") {
+        if (!current.includes("Speed Mode")) {
+          body.messages[sysIndex].content = `${SPEED_PROMPT}\n\n${current}`;
+        }
+      } else if (Array.isArray(current) && current.length > 0 && current[0].type === "text") {
+        if (!current[0].text.includes("Speed Mode")) {
+          current[0].text = `${SPEED_PROMPT}\n\n${current[0].text}`;
+        }
+      }
+    } else {
+      body.messages.unshift({ role: "system", content: SPEED_PROMPT });
+    }
+  } else if (typeof body.system === "string") {
+    if (!body.system.includes("Speed Mode")) {
+      body.system = `${SPEED_PROMPT}\n\n${body.system}`;
+    }
+  }
+
+  // Explicit "none" intent — applyThinking (thinkingUnified.js) picks it up
+  // post-translation and converts it to the target provider's disable shape.
+  // Claude-native bodies must use the thinking object instead: Anthropic rejects
+  // unknown top-level fields, so reasoning_effort would break native passthrough.
+  if (sourceFormat === FORMATS.CLAUDE) {
+    body.thinking = { type: "disabled" };
+    delete body.reasoning_effort;
+  } else {
+    body.reasoning_effort = "none";
+    if (body.thinking && typeof body.thinking === "object") {
+      delete body.thinking.budget_tokens;
+    }
+  }
+  delete body.enable_thinking;
+  delete body.thinking_budget;
+}
+
+/**
  * Apply Uncensored Output plugin: injects anti-refusal system prompt & framing.
  */
 export function processUnrestrictedMode(body, sourceFormat) {
@@ -211,6 +262,7 @@ export async function applyCustomPlugins(body, provider, model, sourceFormat, re
   let isVisionActive = false;
   let isThinkDeeperActive = false;
   let isUnrestrictedActive = false;
+  let isSpeedModeActive = false;
 
   if (config.imageVision?.enabled && checkMatch(config.imageVision.models)) {
     isVisionActive = true;
@@ -227,5 +279,10 @@ export async function applyCustomPlugins(body, provider, model, sourceFormat, re
     processUnrestrictedMode(body, sourceFormat);
   }
 
-  return { isVisionActive, isThinkDeeperActive, isUnrestrictedActive };
+  if (config.speedMode?.enabled && checkMatch(config.speedMode.models)) {
+    isSpeedModeActive = true;
+    processSpeedMode(body, sourceFormat);
+  }
+
+  return { isVisionActive, isThinkDeeperActive, isUnrestrictedActive, isSpeedModeActive };
 }

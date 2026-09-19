@@ -1,3 +1,41 @@
+# v0.5.106-Custom (2026-09-19)
+
+## Custom Features & Enhancements
+- **New plugin: Speed Mode**: a fourth Custom Plugin that makes selected models answer instantly instead of reasoning. It injects a direct-answer system instruction and forces a thinking "none" intent, which the unified thinking pipeline converts into each provider's native disable format (OpenAI `reasoning_effort`, Claude `thinking: disabled`, Gemini budget 0, Qwen `enable_thinking: false`, and so on). Claude-native requests set the disable flag in the Anthropic shape so native passthrough never sends an unknown field. Selected models get a cyan bolt badge in the model lists and the plugin picker, managed exactly like the existing plugins on the Custom Plugins page.
+
+# v0.5.105-Custom (2026-09-19)
+
+## Fixes
+- **GitHub link label visible on mobile**: the header "Visit On GitHub" text was hidden behind a responsive `hidden sm:inline` class and showed only the logo on small screens; the label now always renders next to the icon.
+
+# v0.5.104-Custom (2026-09-19)
+
+## Custom Features & Enhancements
+- **Simplify backup section picker**: removed the "Select All" and "Lightweight Only" quick actions from the Download Backup dialog; sections are now picked with the individual checkboxes only.
+
+# v0.5.103-Custom (2026-09-19)
+
+## Fixes
+- **OpenCode free tier: stop 403 FreeTierError on tool-carrying agent requests**: the free tier fingerprints the official agentic client inside the request body. The `/zen/v1/responses` gate now requires the `bash` + `read` tool decoys plus `tool_choice: "auto"` on every request (previously they were only injected when the payload had no tools at all, so any real agent call carrying 1..N tools went out naked and received 403), and the `/zen/v1/chat/completions` gate requires the full `bash`, `glob`, `grep`, `read` quartet, which is now appended whenever any of the four is missing. External client tools are preserved verbatim and only missing fingerprint names are added as no-op declarations. `muse-spark-1.2-contributor-free` is added to the force-auto tool choice quirk alongside 1.3 since both free models reject non-auto choices with 400.
+
+# v0.5.102-Custom (2026-09-19)
+
+## Custom Features & Enhancements
+- **DeepSeek Web tool calling support**: the cookie-based DeepSeek Web provider now supports OpenAI tool calling. Because the web backend is a text-only RAG endpoint, the executor encodes the requested tools as a protocol inside the prompt, converts previous assistant tool_calls and tool result messages into readable transcript turns, and parses the model's reply back into standard OpenAI `tool_calls` deltas with `finish_reason: "tool_calls"` for both streaming and non-streaming requests. Requests without tools follow the original flow unchanged.
+
+## Fixes
+- **Usage visible after backup import**: the Usage Overview Today and 24h views now merge the daily aggregates that shipped inside the backup (for days before today) with live request history, so restored usage is no longer hidden behind an empty default period. Verified with a real export-import roundtrip: restored rows show up in today, 24h and 7d views, while live-only data is never double counted.
+
+# v0.5.101-Custom (2026-09-19)
+
+## Custom Features & Enhancements
+- **Remove 9Remote & 9English menus**: dropped the 9Remote promo entry, the 9English external link, and their unused modal components from the sidebar to keep navigation focused on router tools.
+
+# v0.5.100-Custom (2026-09-19)
+
+## Fixes
+- **Modal header polish**: the "Welcome to 9Router!" title no longer hugs the left edge of the dialog and now sits vertically centered on the same line as the close button. Applied to all dialogs, including the Download Backup header.
+- **Smaller "Heavy" badge**: the Heavy tag in the Download Backup section list now renders in the compact badge size instead of falling back to the large default.
 # v0.5.101-Custom (2026-09-19)
 
 ## Backup Enhancements
@@ -141,7 +179,7 @@
 - **A Model Studio name now answers as the model it is**: every outbound payload — non-streaming completions, streamed chunks, Claude `message_start`, Responses events and semantic-cache hits — reports the name the caller spoke, so `claude-opus-5` never answers `qwen3.8-flash` while the console, the request detail and the usage `resolvedModel` still record the real target for debugging.
 - **Failure text keeps the route private too**: the "all accounts unavailable" and "no credentials" replies name the model that was called instead of printing the provider connection id and the model behind it.
 
-# v0.5.81-Custom (2026-09-13)
+# v0.5.82-Custom (2026-09-13)
 
 ## Custom Features & Enhancements
 - **Every API key has an on/off switch**: the toggle sits on the left of each key row, is stored through the existing key update endpoint, and a switched-off key is refused with `403 API key is disabled` on chat, embeddings, images, video, speech, transcription, search and web fetch — including while the gateway runs without required keys.
@@ -274,6 +312,26 @@
 - **Interactive Model Selector**: Integrated `ModelSelectModal` directly into Create & Edit API Key forms, allowing users to pick allowed models visually (same UI as Combo creation) without manual typing.
 - **Key Editing & Management**: key names, token limits, reset intervals, and allowed models stay editable anytime, with a manual `restart_alt` button to zero the used tokens.
 - **UI & Theme Sync**: the app is locked to dark mode with theme and language switchers removed, and custom select dropdowns now follow the app theme.
+
+# v0.5.100 (2026-09-18)
+
+## Features
+- **Xiaomi MiMo**: merge MiMo Desktop support into `xiaomi-mimo` with dual auth (API key + Desktop/OAuth session), Preview models support, and encrypted-callback OAuth flow
+- **Claude Code**: add 1M-context toggle (`[1m]` marker) and drive `CLAUDE_CODE_AUTO_COMPACT_WINDOW` directly from the dashboard
+- **Models**: add DeepSeek-V4.1-Flash to DeepSeek provider, CodeBuddy-Intl, and Ollama (`deepseek-v4.1-flash:cloud`); enable `low`..`max` reasoning effort levels and vision capability for DeepSeek-V4.*
+- **i18n**: integrate Persian (fa) translation
+
+## Fixes
+- **OpenCode / OpenCode Go**: resolve 403 `FreeTierError` and 429 rate limits with canonical session format, valid User-Agent, and stable upstream session reuse; force stream and declare `forceStream` for free-tier SSE aggregation; cloak decoy tools, normalize Muse Free tool choice, and strip prior reasoning items on Responses models; route Union Alpha via Messages API
+- **Kiro**: preserve underscores in tool names (`mcp__server__tool`) and restore client tool names in responses; use neutral placeholder for tool-result-only turns; forward tool-result images
+- **Stream**: report aborts after HTTP 200 in-band (per-format error frames) instead of closing silently
+- **Command Code**: preserve images and `reasoning_effort` on `/alpha/generate`; retry transient stream errors and avoid fake stop chunks; add Quota Tracker support
+- **Zed**: harden OAuth lifecycle (preserve `systemId`, renew proxy timeout), support live model resolution, and lower display priority in OAuth list
+- **Antigravity**: scope cached thought signatures to model family; strip Claude Code billing headers from system prompts; sanitize Hermes system identity
+- **Codex**: route bare `codex-auto-review` requests to the Codex provider (#4135)
+- **Auth**: do not cool down an account for request-scoped 4xx errors
+- **Usage**: improve DeepSeek credit balance display as currency credit instead of 0/total quota bar
+- **Model Catalog**: scope synced catalog to gateways and declare vision capabilities for DeepSeek V4.1-Flash IDs
 
 # v0.5.75 (2026-09-10)
 
