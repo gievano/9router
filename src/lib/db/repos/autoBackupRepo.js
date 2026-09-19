@@ -4,7 +4,9 @@
 // settings blob; it also round-trips inside DB backups (see exportDb/importDb)
 // so a restored instance keeps its schedule.
 import crypto from "node:crypto";
-import { machineIdSync } from "node-machine-id";
+import fs from "node:fs";
+import path from "node:path";
+import { DATA_DIR } from "@/lib/dataDir";
 import { makeKv } from "../helpers/kvStore.js";
 
 const kv = makeKv("autoBackup");
@@ -12,12 +14,13 @@ const kv = makeKv("autoBackup");
 const ENCRYPT_ALGO = "aes-256-gcm";
 const ENCRYPT_SALT = "9router-backup-token-salt";
 
+// Key is derived from jwt-secret (lives in DATA_DIR and travels with backups)
+// so a restored instance can decrypt its own auto-backup tokens on any host.
+// hardware-bound machineIdSync() would silently blank them after a move.
 function deriveKey() {
-  try {
-    return crypto.createHash("sha256").update(machineIdSync() + ENCRYPT_SALT).digest();
-  } catch {
-    return crypto.createHash("sha256").update(ENCRYPT_SALT).digest();
-  }
+  const secret = process.env.JWT_SECRET
+    || (() => { try { return fs.readFileSync(path.join(DATA_DIR, "jwt-secret"), "utf8").trim(); } catch { return ""; } })();
+  return crypto.createHash("sha256").update(secret + ENCRYPT_SALT).digest();
 }
 
 export function encryptSecret(plaintext) {

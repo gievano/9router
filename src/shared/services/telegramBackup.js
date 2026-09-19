@@ -67,7 +67,7 @@ async function notifyBackupFailure(config, message) {
   const res = await proxyAwareFetch(`https://api.telegram.org/bot${config.tgBotToken}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: config.tgChatId, text, parse_mode: "Markdown" }),
+    body: JSON.stringify({ chat_id: config.tgChatId, text }),
     signal: AbortSignal.timeout(20000),
   }, null);
   if (!res.ok) throw new Error(`Telegram API ${res.status}`);

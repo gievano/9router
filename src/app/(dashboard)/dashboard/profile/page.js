@@ -761,7 +761,7 @@ export default function ProfilePage() {
   const payload = {
   enabled: tgForm.enabled,
   channel: tgForm.channel,
-  intervalHours: Number(tgForm.interval === "custom" ? tgForm.customHours : tgForm.interval),
+  intervalHours: Number(tgForm.interval === "custom" ? (tgForm.customHours || 24) : tgForm.interval),
   tgChatId: tgForm.tgChatId.trim(),
   ghRepo: tgForm.ghRepo.trim(),
   };
