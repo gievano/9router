@@ -39,6 +39,8 @@ const nextConfig = {
     serverComponentsHmrCache: true,
     // Tree-shake heavy barrel imports to cut compile + bundle size
     optimizePackageImports: ["@xyflow/react", "@dnd-kit/core", "@dnd-kit/sortable", "material-symbols", "marked"],
+    // Cap page-data collection workers (host 24 core, cgroup cuma 2GB → OOM kill pas collect).
+    cpus: 1,
   },
   webpack: (config, { isServer }) => {
     // Ignore fs/path modules in browser bundle
