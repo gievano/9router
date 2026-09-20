@@ -103,6 +103,93 @@ export async function GET() {
       });
     }
 
+    // Studio (Custom Models) entries: the callable name is the key clients use,
+    // so the plugin badge lookup must answer for the bare callName as well.
+    const { getStudioModels } = await import("@/lib/db/repos/modelEditorRepo.js");
+    let studioModels = [];
+    try {
+      studioModels = await getStudioModels();
+    } catch {
+      studioModels = [];
+    }
+    for (const s of studioModels) {
+      const c = getCapabilitiesForModel(s.provider, s.model);
+      const targetFull = `${s.provider}/${s.model}`;
+      const caps = {
+        vision: c.vision,
+        search: c.search,
+        reasoning: c.reasoning,
+        contextWindow: c.contextWindow,
+        maxOutput: c.maxOutput,
+      };
+      // A plugin applies when it names the studio name OR the model it calls.
+      const names = [s.callName, targetFull, s.model];
+      if (ivEnabled && names.some((n) => ivModels.has(n))) {
+        caps.vision = true;
+      }
+      if (tdEnabled && names.some((n) => tdModels.has(n))) {
+        caps.reasoning = true;
+        caps.thinkDeeper = true;
+      }
+      if (umEnabled && names.some((n) => umModels.has(n))) {
+        caps.unrestrictedMode = true;
+      }
+      if (smEnabled && names.some((n) => smModels.has(n))) {
+        caps.speedMode = true;
+      }
+      models.push({
+        provider: s.provider,
+        model: s.callName,
+        name: s.displayName || s.callName,
+        fullModel: `${s.provider}/${s.callName}`,
+        routedModel: s.callName,
+        alias: s.callName,
+        caps,
+        isStudio: true,
+      });
+    }
+
+    // Combos: aggregate the caps of their member models (worst-case window,
+    // OR-ed boolean capabilities) so a combo chip answers for its badge too.
+    const { getCombos } = await import("@/lib/localDb");
+    let combos = [];
+    try {
+      combos = await getCombos();
+    } catch {
+      combos = [];
+    }
+    const capsByAnyKey = models.reduce((acc, m) => {
+      if (m.fullModel) acc[m.fullModel] = m.caps;
+      if (m.routedModel) acc[m.routedModel] = m.caps;
+      if (m.model) acc[m.model] = m.caps;
+      return acc;
+    }, {});
+    for (const combo of combos) {
+      const members = Array.isArray(combo.models) ? combo.models : [];
+      const memberCaps = members.map((name) => capsByAnyKey[name]).filter(Boolean);
+      if (memberCaps.length === 0) continue;
+      const caps = {
+        vision: memberCaps.some((c) => c.vision),
+        search: memberCaps.some((c) => c.search),
+        reasoning: memberCaps.some((c) => c.reasoning),
+        thinkDeeper: memberCaps.some((c) => c.thinkDeeper),
+        unrestrictedMode: memberCaps.some((c) => c.unrestrictedMode),
+        speedMode: memberCaps.some((c) => c.speedMode),
+        contextWindow: memberCaps.reduce((min, c) => (c.contextWindow ? Math.min(min || Infinity, c.contextWindow) : min), null),
+        maxOutput: memberCaps.reduce((min, c) => (c.maxOutput ? Math.min(min || Infinity, c.maxOutput) : min), null),
+      };
+      models.push({
+        provider: "combo",
+        model: combo.name,
+        name: combo.name,
+        fullModel: combo.name,
+        routedModel: combo.name,
+        alias: combo.name,
+        caps,
+        isCombo: true,
+      });
+    }
+
     return NextResponse.json({ models });
   } catch (error) {
     console.log("Error fetching models:", error);

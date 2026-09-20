@@ -610,6 +610,7 @@ export default function ModelSelectModal({
                       <span className="material-symbols-outlined leading-none" style={{ fontSize: "10px" }}>check</span>
                     )}
                     {combo.name}
+                    <CapacityBadges caps={getCaps(combo.name)} />
                   </button>
                 );
               })}
@@ -648,6 +649,7 @@ export default function ModelSelectModal({
                     )}
                     {studio.callName}
                     <span className="text-[9px] opacity-60 font-normal">custom</span>
+                    <CapacityBadges caps={getCaps(studio.callName)} />
                   </button>
                 );
               })}
