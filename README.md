@@ -57,7 +57,7 @@ Everything below lives alongside upstream's features and is documented in the [c
 ## Getting started
 
 ```bash
-git clone https://github.com/serenhope/9router.git
+git clone https://github.com/gievano/9router.git
 cd 9router
 npm install
 npm run dev          # dashboard on http://localhost:20127
@@ -114,7 +114,7 @@ The app reads a few environment variables with sensible defaults; see [.env.exam
 
 If this fork helped you, a star is appreciated.
 
-[![Stars](https://img.shields.io/github/stars/serenhope/9router?style=social)](https://github.com/serenhope/9router/stargazers)
+[![Stars](https://img.shields.io/github/stars/gievano/9router?style=social)](https://github.com/gievano/9router/stargazers)
 
 </div>
 

@@ -1,6 +1,6 @@
 // Update detection for the running install. The app is usually a git checkout,
 // so the real question is "how many commits is this checkout behind
-// serenhope/9router master". Both GitHub lookups are cached in process for an
+// gievano/9router master". Both GitHub lookups are cached in process for an
 // hour, and every failure path resolves to null so a blocked network never
 // breaks the dashboard. When no local revision can be determined (image built
 // without git history), set APP_REVISION=<sha> at build time.

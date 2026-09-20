@@ -285,8 +285,8 @@
 ## Custom Features & Enhancements
 - **No password nagging**: the tunnel/endpoint page no longer warns about the default dashboard password or blocks activation over it — the tunnel turns on as-is.
 - **Models are picked, never typed**: the allowed-models field in the API key dialogs is read-only; models come from the picker only (chips + Select Models), so a typo can no longer lock a key out of a model.
-- **Changelog works offline**: a local `/api/changelog` route serves this fork's changelog from disk, falling back to raw GitHub only for what it cannot resolve; the custom section is labelled **Contributed by Serenhope**.
-- **CLI default password**: the terminal settings menu now reports `seren123` as the default dashboard password instead of the old upstream value.
+- **Changelog works offline**: a local `/api/changelog` route serves this fork's changelog from disk, falling back to raw GitHub only for what it cannot resolve; the custom section is labelled **Contributed by gievano**.
+- **CLI default password**: the terminal settings menu now reports `jstc69` as the default dashboard password instead of the old upstream value.
 - **UI polish**: long sidebar labels, provider/model ids, tool titles, badges and the header search now ellipsize instead of pushing buttons out of place, with the full text available on hover.
 - **Sidebar group renamed**: `Model Lab` is now **Custom Suite** — it holds every feature added by this fork, not only the model tools, so future additions have an obvious home.
 
@@ -305,7 +305,7 @@
 - **Model Editor**: Edit per-model overrides (rename, target model, context window, system prompt) and manage custom provider prefixes from a dedicated Model Editor page under Feature+.
 - **MoonshotAI Provider**: Added MoonshotAI (Kimi) compatible provider option alongside OpenAI/Anthropic compatible providers.
 - **Extra Combo Strategies**: New combo routing strategies beyond Fallback / Round Robin / Fusion.
-- **Changelog View**: Combined changelog modal — custom contributions shown in a highlighted "Contributed by Seren" section above the official Decolua release notes.
+- **Changelog View**: Combined changelog modal — custom contributions shown in a highlighted "Contributed by gievano" section above the official Decolua release notes.
 - **UI Cleanup**: Refined dashboard layout, tidied console log view, and removed the Live Feed page and related controls for a cleaner sidebar.
 - **Backup Fix**: Fixed API key settings and usage statistics being reset on backup import (column/placeholder mismatch).
 

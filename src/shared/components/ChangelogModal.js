@@ -41,14 +41,14 @@ async function fetchText(url) {
 async function loadChangelogs() {
   const local = await fetchJson(CHANGELOG_API_URL);
   let decoluaMd = asMarkdown(local?.official);
-  let serenhopeMd = asMarkdown(local?.custom);
+  let gievanoMd = asMarkdown(local?.custom);
 
-  if (!decoluaMd && !serenhopeMd) {
+  if (!decoluaMd && !gievanoMd) {
     return Promise.all([fetchText(DECOLUA_URL), fetchText(FORK_CHANGELOG_URL)]);
   }
   if (!decoluaMd) decoluaMd = await fetchText(DECOLUA_URL);
-  if (!serenhopeMd) serenhopeMd = await fetchText(FORK_CHANGELOG_URL);
-  return [decoluaMd, serenhopeMd];
+  if (!gievanoMd) gievanoMd = await fetchText(FORK_CHANGELOG_URL);
+  return [decoluaMd, gievanoMd];
 }
 
 function escapeHtml(s) {
@@ -130,7 +130,7 @@ function renderVersionCards(md, accent) {
  .join("");
 }
 
-const SEREN_ACCENT = {
+const GIEVANO_ACCENT = {
   color: "#60a5fa",
   border: "rgba(96,165,250,0.35)",
   bg: "rgba(96,165,250,0.06)",
@@ -156,21 +156,21 @@ export default function ChangelogModal({ isOpen, onClose }) {
     setError("");
 
     loadChangelogs()
-      .then(([decoluaMd, serenhopeMd]) => {
+      .then(([decoluaMd, gievanoMd]) => {
         if (cancelled) return;
 
-        const serenCards = serenhopeMd ? renderVersionCards(serenhopeMd, SEREN_ACCENT) : "";
+        const gievanoCards = gievanoMd ? renderVersionCards(gievanoMd, GIEVANO_ACCENT) : "";
         const officialCards = decoluaMd ? renderVersionCards(decoluaMd, OFFICIAL_ACCENT) : "";
 
-        const serenBlock = serenCards
+        const serenBlock = gievanoCards
           ? `<div style="display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:17px;font-weight:600;color:#60a5fa;">
   <span class="material-symbols-outlined" style="font-size:20px;">star</span>
   Fork Updates (gievano)
 </div>
-${serenCards}`
+${gievanoCards}`
           : "";
 
-        const divider = serenCards && officialCards
+        const divider = gievanoCards && officialCards
           ? `<div style="margin:32px 0 20px 0;padding-top:24px;border-top:1px solid rgba(128,128,128,0.15);display:flex;align-items:center;gap:8px;font-size:17px;font-weight:600;color:rgba(148,163,184,0.85);">
   <span class="material-symbols-outlined" style="font-size:20px;">history_edu</span>
   Official Releases (Decolua)
