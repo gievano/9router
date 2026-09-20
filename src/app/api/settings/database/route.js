@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { exportDb, getSettings, importDb, getDbSummary } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
 import { verifyDashboardPassword } from "@/lib/auth/dashboardSession";
+import { configureTelegramBackup } from "@/shared/services/telegramBackup";
 
 const CLI_TOKEN_HEADER = "x-9r-cli-token";
 const PASSWORD_HEADER = "x-9r-password";
@@ -49,6 +50,15 @@ export async function POST(request) {
       applyOutboundProxyEnv(settings);
     } catch (err) {
       console.warn("[Settings][DatabaseImport] Failed to re-apply outbound proxy env:", err);
+    }
+
+    // The import may have replaced the auto-backup config/status (full backups
+    // carry the autoBackup KV scope). Re-arm the scheduler against whatever is
+    // now stored so the schedule survives imports; fails open when disabled.
+    try {
+      await configureTelegramBackup();
+    } catch (err) {
+      console.warn("[Settings][DatabaseImport] Failed to reschedule auto backup:", err.message);
     }
 
     return NextResponse.json({ success: true });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,36 +10,6 @@ import { MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import Button from "./Button";
 import { ConfirmModal } from "./Modal";
-
-// Poll the detached updater's status endpoint while the server is down.
-// Fails quietly after maxAttempts (updater unreachable: manual flow, https page,
-// or the process already left) — resolve(null) means "no live status available".
-function pollUpdaterStatus(signal, onStatus, maxAttempts = 600) {
-  return new Promise((resolve) => {
-    const url = `http://127.0.0.1:${UPDATER_CONFIG.statusPort}/update/status`;
-    let attempts = 0;
-    const tick = () => {
-      if (signal.aborted) return resolve(null);
-      attempts += 1;
-      fetch(url)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((status) => {
-          if (signal.aborted) return resolve(null);
-          if (status) {
-            onStatus(status);
-            if (status.done) return resolve(status);
-          }
-          if (attempts >= maxAttempts) return resolve(null);
-          setTimeout(tick, UPDATER_CONFIG.statusPollIntervalMs);
-        })
-        .catch(() => {
-          if (signal.aborted || attempts >= maxAttempts) return resolve(null);
-          setTimeout(tick, UPDATER_CONFIG.statusPollIntervalMs);
-        });
-    };
-    tick();
-  });
-}
 
 // const VISIBLE_MEDIA_KINDS = ["embedding", "image", "imageToText", "tts", "stt", "webSearch", "webFetch", "video", "music"];
 const VISIBLE_MEDIA_KINDS = ["embedding", "image", "video", "tts", "stt"];
@@ -113,8 +83,6 @@ export default function Sidebar({ onClose }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [shutdownCountdown, setShutdownCountdown] = useState(0);
   const [enableTranslator, setEnableTranslator] = useState(false);
-  const [autoUpdating, setAutoUpdating] = useState(false);
-  const [updaterStatus, setUpdaterStatus] = useState(null);
   const { copied, copy } = useCopyToClipboard(2000);
 
   const INSTALL_CMD = updateInfo?.installCmd || UPDATER_CONFIG.installCmdLatest;
@@ -141,43 +109,10 @@ export default function Sidebar({ onClose }) {
     return pathname.startsWith(href);
   };
 
-  // Auto update: hand off to the detached updater (production CLI install).
-  // Falls back to the manual copy-command panel when the endpoint refuses
-  // (dev build) or errors, so the user always has a working path.
-  const updateAbort = useRef(null);
-  useEffect(() => () => updateAbort.current?.abort(), []);
-
-  const handleUpdate = async () => {
+  // Open manual update panel (no countdown yet — user must click Copy to trigger shutdown)
+  const handleUpdate = () => {
     setShowUpdateModal(false);
     setIsUpdating(true);
-    setAutoUpdating(true);
-    try {
-      const res = await fetch("/api/version/update", { method: "POST" });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        console.warn("Auto update unavailable:", data.message || res.status);
-        setAutoUpdating(false);
-        return; // stay on the manual panel
-      }
-      // Server will exit shortly; watch the detached updater until it finishes
-      setIsDisconnected(true);
-      setIsUpdating(false);
-      updateAbort.current = new AbortController();
-      const status = await pollUpdaterStatus(updateAbort.current.signal, setUpdaterStatus);
-      if (status?.success) {
-        globalThis.location.reload();
-      } else if (status) {
-        setUpdaterStatus(status);
-      } else {
-        // Updater never became reachable: let the plain disconnected overlay stand
-        setAutoUpdating(false);
-      }
-    } catch {
-      // Expected once the server exits mid-request; updater takes over
-      setIsDisconnected(true);
-      setIsUpdating(false);
-      setAutoUpdating(false);
-    }
   };
 
   // Triggered by Copy button inside ManualUpdatePanel: copy + countdown + shutdown
@@ -201,6 +136,9 @@ export default function Sidebar({ onClose }) {
     setIsUpdating(false);
     setShutdownCountdown(0);
   };
+
+  // Note: legacy updater poll removed. New flow: copy install cmd + shutdown server,
+  // user runs the command manually in another terminal.
 
 
   return (
@@ -372,8 +310,8 @@ export default function Sidebar({ onClose }) {
         onClose={() => setShowUpdateModal(false)}
         onConfirm={handleUpdate}
         title="Update 9Router"
-        message={`Auto update to v${updateInfo?.latestVersion || ""}? The updater installs the new version and restarts 9Router automatically.`}
-        confirmText="Update Now"
+        message={`Show install command for v${updateInfo?.latestVersion || ""}? You can copy it and shutdown to install manually.`}
+        confirmText="Show Command"
         cancelText="Cancel"
         variant="primary"
       />
@@ -393,50 +331,14 @@ export default function Sidebar({ onClose }) {
             />
           ) : (
             <div className="text-center p-8">
-              {autoUpdating && !updaterStatus?.done ? (
-                <>
-                  <div className="flex items-center justify-center size-16 rounded-full bg-primary/20 text-primary mx-auto mb-4 animate-pulse">
-                    <span className="material-symbols-outlined text-[32px]">system_update_alt</span>
-                  </div>
-                  <h2 className="text-xl font-semibold text-white mb-2">Updating 9Router{updateInfo?.latestVersion ? ` to v${updateInfo.latestVersion}` : ""}</h2>
-                  <p className="text-text-muted mb-2">
-                    {updaterStatus?.phase === "installing"
-                      ? "Installing the new version..."
-                      : updaterStatus?.phase === "waitingForExit"
-                        ? "Waiting for the server to stop..."
-                        : "Preparing the update..."}
-                  </p>
-                  {(updaterStatus?.logTail || []).length > 0 && (
-                    <pre className="max-w-lg max-h-32 overflow-auto text-left text-xs font-mono text-white/50 bg-white/5 rounded-lg p-3 mx-auto whitespace-pre-wrap">{updaterStatus.logTail.slice(-4).join("\n")}</pre>
-                  )}
-                </>
-              ) : updaterStatus?.done && !updaterStatus?.success ? (
-                <>
-                  <div className="flex items-center justify-center size-16 rounded-full bg-red-500/20 text-red-500 mx-auto mb-4">
-                    <span className="material-symbols-outlined text-[32px]">error</span>
-                  </div>
-                  <h2 className="text-xl font-semibold text-white mb-2">Auto Update Failed</h2>
-                  <pre className="max-w-lg max-h-40 overflow-auto text-left text-xs font-mono text-red-300 bg-white/5 rounded-lg p-3 mb-4 mx-auto whitespace-pre-wrap">
-                    {Array.isArray(updaterStatus.logTail) && updaterStatus.logTail.length > 0
-                      ? updaterStatus.logTail.slice(-8).join("\n")
-                      : updaterStatus.error || "Installer error"}
-                  </pre>
-                  <Button variant="secondary" onClick={() => globalThis.location.reload()}>
-                    Reload Page
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center justify-center size-16 rounded-full bg-red-500/20 text-red-500 mx-auto mb-4">
-                    <span className="material-symbols-outlined text-[32px]">power_off</span>
-                  </div>
-                  <h2 className="text-xl font-semibold text-white mb-2">Server Disconnected</h2>
-                  <p className="text-text-muted mb-6">The proxy server has been stopped.</p>
-                  <Button variant="secondary" onClick={() => globalThis.location.reload()}>
-                    Reload Page
-                  </Button>
-                </>
-              )}
+              <div className="flex items-center justify-center size-16 rounded-full bg-red-500/20 text-red-500 mx-auto mb-4">
+                <span className="material-symbols-outlined text-[32px]">power_off</span>
+              </div>
+              <h2 className="text-xl font-semibold text-white mb-2">Server Disconnected</h2>
+              <p className="text-text-muted mb-6">The proxy server has been stopped.</p>
+              <Button variant="secondary" onClick={() => globalThis.location.reload()}>
+                Reload Page
+              </Button>
             </div>
           )}
         </div>

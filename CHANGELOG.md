@@ -1,7 +1,14 @@
-# v0.5.107-Custom (2026-09-19)
+# v0.5.108-Custom (2026-09-20)
+
+## Fixes
+- **Automatic Backup actually fires**: the scheduler previously only armed through the deferred app bootstrap, so on a restarted server the timer could stay dead until the settings page was opened; the HTTP server wrapper now arms it at boot and the config endpoint wakes it on demand as a second safety net, so a pending schedule can never silently disappear.
+- **Import Backup no longer resets the schedule**: restoring a backup without an autoBackup section (old or partial exports) kept wiping the stored config and status, which disabled backups on its own. The autoBackup scope is now only touched when the imported file actually carries it, and the import handler re-arms the scheduler against the freshly stored config afterwards.
+- **Honest next-run countdown**: with the scheduler idle the endpoint clamped the due time to "now", which rendered a stuck 00:00 countdown. It now reports the real scheduled time even when the run is overdue, and the woken scheduler takes over the countdown from there.
+
+# v0.5.107-Custom (2026-09-20)
 
 ## Custom Features & Enhancements
-- **Auto Update restored**: the sidebar "Update now" button calls the real updater endpoint again. The detached updater installs the new version, restarts 9Router and reopens the dashboard on its own, with live progress (phase and installer log tail) shown in the overlay while the server is down. If the updater is unavailable, for example in a dev build, the flow falls back to the existing copy-command panel so there is always a working path. Failed installs surface the installer log with a reload button instead of a silent hang.
+- **Automatic Backup restored**: brought back the scheduled backup feature with its full settings dialog on the 9Router Settings page. Configure a Telegram bot (bot token plus numeric owner chat id) or a GitHub token and repository, pick an interval (24 hours, 7 days, 30 days, or custom), then save. The scheduler sends the backup file automatically on the chosen interval, a live countdown shows when the next backup fires, and Send Test Backup runs a one-off backup through the password dialog. The export/import plumbing was re-integrated on top of the current selective backup system: Automatic Backup now exports all sections, and old partial or full backups remain fully import-compatible.
 
 # v0.5.106-Custom (2026-09-19)
 

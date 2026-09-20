@@ -35,18 +35,27 @@ function computeNextRunAt(config, status, scheduler) {
   if (scheduler.schedulerActive && Number.isFinite(scheduler.nextRunAt)) return scheduler.nextRunAt;
   const lastSentMs = status?.lastSentAt ? new Date(status.lastSentAt).getTime() : 0;
   const dueAt = lastSentMs ? lastSentMs + clampIntervalHours(config.intervalHours) * HOUR_MS : Date.now();
-  return Math.max(Date.now(), dueAt);
+  // Idle scheduler: report the honest due time (even if in the past) instead of
+  // pinning to now, so the countdown does not appear stuck at 00:00.
+  return dueAt;
 }
 
 export async function GET() {
   try {
     const config = await getAutoBackupConfig();
     const status = await getAutoBackupStatus();
+    // Self-healing: the timer lives in process memory and dies on restart. If the
+    // persisted config still wants scheduled backups but no tick is pending, wake
+    // the scheduler here so the dashboard never shows a dead countdown.
     const scheduler = getTelegramBackupState();
+    if (config.enabled && !scheduler.schedulerActive) {
+      await configureTelegramBackup();
+    }
+    const liveScheduler = getTelegramBackupState();
     return NextResponse.json({
       config: publicConfig(config),
       status,
-      nextRunAt: computeNextRunAt(config, status, scheduler),
+      nextRunAt: computeNextRunAt(config, status, liveScheduler),
     });
   } catch (error) {
     console.log("Error loading auto-backup config:", error);
