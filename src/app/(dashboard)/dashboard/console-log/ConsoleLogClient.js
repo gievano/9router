@@ -29,6 +29,13 @@ function colorLine(line, index) {
   );
 }
 
+// Some reverse proxies / tunnels (e.g. Cloudflare Quick Tunnel) buffer a
+// long-lived chunked SSE response and never flush it, so EventSource "opens"
+// (HTTP 200) but no frame is ever delivered. Fall back to polling the plain
+// JSON endpoint, which streams fine through any proxy.
+const SSE_STALL_TIMEOUT_MS = 4000;
+const POLL_INTERVAL_MS = CONSOLE_LOG_CONFIG.pollIntervalMs || 2000;
+
 export default function ConsoleLogClient() {
   const [logs, setLogs] = useState([]);
   const [connected, setConnected] = useState(false);
@@ -37,39 +44,107 @@ export default function ConsoleLogClient() {
   const handleClear = async () => {
     try {
       await fetch("/api/translator/console-logs", { method: "DELETE" });
-      // UI cleared via SSE "clear" event
+      // UI cleared via SSE "clear" event / next poll
     } catch (err) {
       console.error("Failed to clear console logs:", err);
     }
   };
 
   useEffect(() => {
-    const es = new EventSource("/api/translator/console-logs/stream");
+    let closed = false;
+    let es = null;
+    let stallTimer = null;
+    let pollTimer = null;
+    let pollSeen = "";
 
-    es.onopen = () => setConnected(true);
-
-    es.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-      if (msg.type === "init") {
-        setLogs(msg.logs.slice(-CONSOLE_LOG_CONFIG.maxLines));
-      } else if (msg.type === "line") {
-        setLogs((prev) => {
-          const next = [...prev, msg.line];
-          return next.length > CONSOLE_LOG_CONFIG.maxLines ? next.slice(-CONSOLE_LOG_CONFIG.maxLines) : next;
-        });
-      } else if (msg.type === "lines") {
-        setLogs((prev) => {
-          const next = [...prev, ...msg.lines];
-          return next.length > CONSOLE_LOG_CONFIG.maxLines ? next.slice(-CONSOLE_LOG_CONFIG.maxLines) : next;
-        });
-      } else if (msg.type === "clear") {
-        setLogs([]);
+    const stopPolling = () => {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
       }
     };
 
-    es.onerror = () => setConnected(false);
+    const pollOnce = async () => {
+      try {
+        const r = await fetch("/api/translator/console-logs", { cache: "no-store" });
+        if (!r.ok) {
+          if (!closed) setConnected(false);
+          return;
+        }
+        const d = await r.json();
+        if (closed || !d.success) return;
+        setConnected(true);
+        if (Array.isArray(d.logs)) {
+          // Compare a signature, not just length: the buffer is a fixed-size
+          // ring, so once full the length stops changing while content rotates.
+          const sig = d.logs.length + "|" + (d.logs[d.logs.length - 1] || "");
+          if (sig !== pollSeen) {
+            pollSeen = sig;
+            setLogs(d.logs.slice(-CONSOLE_LOG_CONFIG.maxLines));
+          }
+        }
+      } catch {
+        if (!closed) setConnected(false);
+      }
+    };
 
-    return () => es.close();
+    const startPolling = () => {
+      if (closed || pollTimer) return;
+      if (es) {
+        es.close();
+        es = null;
+      }
+      pollOnce();
+      pollTimer = setInterval(pollOnce, POLL_INTERVAL_MS);
+    };
+
+    // Safety net: if SSE never delivers a frame, switch to polling.
+    stallTimer = setTimeout(() => startPolling(), SSE_STALL_TIMEOUT_MS);
+
+    try {
+      es = new EventSource("/api/translator/console-logs/stream");
+
+      es.onopen = () => setConnected(true);
+
+      es.onmessage = (e) => {
+        // A frame arrived — SSE is actually streaming, cancel the fallback.
+        if (stallTimer) {
+          clearTimeout(stallTimer);
+          stallTimer = null;
+        }
+        stopPolling();
+        const msg = JSON.parse(e.data);
+        if (msg.type === "init") {
+          setLogs(msg.logs.slice(-CONSOLE_LOG_CONFIG.maxLines));
+        } else if (msg.type === "line") {
+          setLogs((prev) => {
+            const next = [...prev, msg.line];
+            return next.length > CONSOLE_LOG_CONFIG.maxLines ? next.slice(-CONSOLE_LOG_CONFIG.maxLines) : next;
+          });
+        } else if (msg.type === "lines") {
+          setLogs((prev) => {
+            const next = [...prev, ...msg.lines];
+            return next.length > CONSOLE_LOG_CONFIG.maxLines ? next.slice(-CONSOLE_LOG_CONFIG.maxLines) : next;
+          });
+        } else if (msg.type === "clear") {
+          setLogs([]);
+        }
+      };
+
+      es.onerror = () => {
+        // On error, prefer polling over a dead/half-open stream.
+        startPolling();
+      };
+    } catch {
+      startPolling();
+    }
+
+    return () => {
+      closed = true;
+      if (stallTimer) clearTimeout(stallTimer);
+      stopPolling();
+      if (es) es.close();
+    };
   }, []);
 
   // Auto-scroll to bottom on new logs
