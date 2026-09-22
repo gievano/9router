@@ -115,3 +115,8 @@ cli-secret
 .start-dev.ps1
 start-dev-silent.cjs
 debug.log
+build.log
+build2.log
+server.log
+check-keys.mjs
+*.bak
