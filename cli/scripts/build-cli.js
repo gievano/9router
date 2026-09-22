@@ -170,20 +170,32 @@ function buildCliPackage() {
 
   // Step 1: Build app with Next.js (workspace tracing root → traced node_modules in standalone).
   console.log("1️⃣  Building Next.js app...");
+  const buildEnv = {
+    ...process.env,
+    HOME: buildHomeDir,
+    USERPROFILE: buildHomeDir,
+    APPDATA: path.join(buildHomeDir, "AppData", "Roaming"),
+    LOCALAPPDATA: path.join(buildHomeDir, "AppData", "Local"),
+    NEXT_DIST_DIR: buildDistDirName,
+    NEXT_TRACING_ROOT_MODE: "workspace",
+  };
+  // Split build mode: on a memory-constrained host (e.g. a 2 GB cgroup) a single
+  // `next build` OOM-kills during bundling. Running the two experimental phases
+  // in separate processes keeps each peak well under the limit. Enable with
+  // NINEROUTER_SPLIT_BUILD=1; default stays the normal one-shot build.
+  const splitBuild = process.env.NINEROUTER_SPLIT_BUILD === "1";
+  const nextBin = path.join(appDir, "node_modules", "next", "dist", "bin", "next");
+  const buildSteps = splitBuild
+    ? [
+        `node ${JSON.stringify(nextBin)} build --webpack --experimental-build-mode compile`,
+        `node ${JSON.stringify(nextBin)} build --webpack --experimental-build-mode generate`,
+      ]
+    : ["npm run build"];
   try {
-    execSync("npm run build", {
-      stdio: "inherit",
-      cwd: appDir,
-      env: {
-        ...process.env,
-        HOME: buildHomeDir,
-        USERPROFILE: buildHomeDir,
-        APPDATA: path.join(buildHomeDir, "AppData", "Roaming"),
-        LOCALAPPDATA: path.join(buildHomeDir, "AppData", "Local"),
-        NEXT_DIST_DIR: buildDistDirName,
-        NEXT_TRACING_ROOT_MODE: "workspace",
-      }
-    });
+    for (const step of buildSteps) {
+      console.log(`   $ ${step}`);
+      execSync(step, { stdio: "inherit", cwd: appDir, env: buildEnv });
+    }
     console.log("✅ Next.js build completed\n");
   } catch (error) {
     console.error("❌ Next.js build failed");

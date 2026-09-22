@@ -120,3 +120,11 @@ build2.log
 server.log
 check-keys.mjs
 *.bak
+
+# update/swap scratch
+cli/app-new/
+cli/app.old/
+cli/app.broken/
+cli/*.log
+cli/.restore/
+cli/.build-home/
