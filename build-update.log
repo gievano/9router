@@ -1,0 +1,517 @@
+
+> 9router@0.5.85 build
+> node scripts/build-cli.js
+
+📦 Building 9Router CLI package with Next.js...
+
+0️⃣  Syncing version to app/package.json...
+✅ Version already synced: 0.5.85
+
+1️⃣  Building Next.js app...
+   $ node "/opt/data/9router/node_modules/next/dist/bin/next" build --webpack --experimental-build-mode compile
+▲ Next.js 16.3.5 (webpack)
+✓ Running next.config.mjs took 40ms
+- Experiments (use with caution):
+  · cpus: 1
+  · optimizePackageImports
+  · proxyClientMaxBodySize: "128mb"
+  ✓ webpackMemoryOptimizations
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 78s
+  Collecting page data using 1 worker ...
+  Finalizing page optimization ...
+  Collecting build traces ...
+  Build ran with "compile" mode, to finalize the build run either "generate" or "generate-env" mode as well
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/oidc/callback
+├ ƒ /api/auth/oidc/start
+├ ƒ /api/auth/oidc/test
+├ ƒ /api/auth/reset-password
+├ ƒ /api/auth/saml/acs
+├ ƒ /api/auth/saml/metadata
+├ ƒ /api/auth/saml/start
+├ ƒ /api/auth/saml/test
+├ ƒ /api/auth/status
+├ ƒ /api/changelog
+├ ƒ /api/cli-tools/all-statuses
+├ ƒ /api/cli-tools/antigravity-mitm
+├ ƒ /api/cli-tools/antigravity-mitm/alias
+├ ƒ /api/cli-tools/claude-settings
+├ ƒ /api/cli-tools/cline-settings
+├ ƒ /api/cli-tools/codewhale-settings
+├ ƒ /api/cli-tools/codex-settings
+├ ƒ /api/cli-tools/copilot-settings
+├ ƒ /api/cli-tools/cowork-mcp-registry
+├ ƒ /api/cli-tools/cowork-mcp-tools
+├ ƒ /api/cli-tools/cowork-settings
+├ ƒ /api/cli-tools/crush-settings
+├ ƒ /api/cli-tools/deepseek-tui-settings
+├ ƒ /api/cli-tools/devin-settings
+├ ƒ /api/cli-tools/droid-settings
+├ ƒ /api/cli-tools/forge-settings
+├ ƒ /api/cli-tools/grok-build-settings
+├ ƒ /api/cli-tools/hermes-settings
+├ ƒ /api/cli-tools/jcode-settings
+├ ƒ /api/cli-tools/kilo-settings
+├ ƒ /api/cli-tools/omp-settings
+├ ƒ /api/cli-tools/openclaw-settings
+├ ƒ /api/cli-tools/opencode-settings
+├ ƒ /api/cli-tools/pi-settings
+├ ƒ /api/cli-tools/smelt-settings
+├ ƒ /api/combos
+├ ƒ /api/combos/[id]
+├ ƒ /api/combos/presets
+├ ƒ /api/headroom/extras
+├ ƒ /api/headroom/proxy/[...path]
+├ ƒ /api/headroom/restart
+├ ƒ /api/headroom/start
+├ ƒ /api/headroom/status
+├ ƒ /api/headroom/stop
+├ ƒ /api/health
+├ ƒ /api/init
+├ ƒ /api/keys
+├ ƒ /api/keys/[id]
+├ ƒ /api/locale
+├ ƒ /api/mcp/[plugin]/message
+├ ƒ /api/mcp/[plugin]/sse
+├ ƒ /api/media-providers/tts/deepgram/voices
+├ ƒ /api/media-providers/tts/elevenlabs/voices
+├ ƒ /api/media-providers/tts/inworld/voices
+├ ƒ /api/media-providers/tts/minimax/voices
+├ ƒ /api/media-providers/tts/voices
+├ ƒ /api/model-editor
+├ ƒ /api/models
+├ ƒ /api/models/alias
+├ ƒ /api/models/availability
+├ ƒ /api/models/catalog-sync
+├ ƒ /api/models/custom
+├ ƒ /api/models/disabled
+├ ƒ /api/models/test
+├ ƒ /api/oauth/[provider]/[action]
+├ ƒ /api/oauth/codex/bulk-import
+├ ƒ /api/oauth/codex/import-token
+├ ƒ /api/oauth/cursor/auto-import
+├ ƒ /api/oauth/cursor/import
+├ ƒ /api/oauth/gitlab/pat
+├ ƒ /api/oauth/grok-cli/bulk-import
+├ ƒ /api/oauth/iflow/cookie
+├ ƒ /api/oauth/kiro/api-key
+├ ƒ /api/oauth/kiro/auto-import
+├ ƒ /api/oauth/kiro/import
+├ ƒ /api/oauth/kiro/import-cli-proxy
+├ ƒ /api/oauth/kiro/social-authorize
+├ ƒ /api/oauth/kiro/social-exchange
+├ ƒ /api/oauth/xiaomi-mimo/api-key
+├ ƒ /api/oauth/xiaomi-mimo/auto-import
+├ ƒ /api/plugins
+├ ƒ /api/pricing
+├ ƒ /api/provider-nodes
+├ ƒ /api/provider-nodes/[id]
+├ ƒ /api/provider-nodes/validate
+├ ƒ /api/providers
+├ ƒ /api/providers/[id]
+├ ƒ /api/providers/[id]/models
+├ ƒ /api/providers/[id]/test
+├ ƒ /api/providers/[id]/test-models
+├ ƒ /api/providers/client
+├ ƒ /api/providers/kilo/free-models
+├ ƒ /api/providers/suggested-models
+├ ƒ /api/providers/test-batch
+├ ƒ /api/providers/validate
+├ ƒ /api/proxy-pools
+├ ƒ /api/proxy-pools/[id]
+├ ƒ /api/proxy-pools/[id]/test
+├ ƒ /api/proxy-pools/cloudflare-deploy
+├ ƒ /api/proxy-pools/deno-deploy
+├ ƒ /api/proxy-pools/vercel-deploy
+├ ƒ /api/pxpipe/health
+├ ƒ /api/pxpipe/install
+├ ƒ /api/pxpipe/logs
+├ ƒ /api/pxpipe/restart
+├ ƒ /api/pxpipe/start
+├ ƒ /api/pxpipe/stats
+├ ƒ /api/pxpipe/status
+├ ƒ /api/pxpipe/stop
+├ ƒ /api/settings
+├ ƒ /api/settings/auto-backup
+├ ƒ /api/settings/database
+├ ƒ /api/settings/proxy-test
+├ ƒ /api/settings/require-login
+├ ƒ /api/shutdown
+├ ƒ /api/tags
+├ ƒ /api/translator/console-logs
+├ ƒ /api/translator/console-logs/stream
+├ ƒ /api/translator/load
+├ ƒ /api/translator/save
+├ ƒ /api/translator/send
+├ ƒ /api/translator/translate
+├ ƒ /api/tunnel/disable
+├ ƒ /api/tunnel/enable
+├ ƒ /api/tunnel/status
+├ ƒ /api/tunnel/tailscale-check
+├ ƒ /api/tunnel/tailscale-disable
+├ ƒ /api/tunnel/tailscale-enable
+├ ƒ /api/tunnel/tailscale-install
+├ ƒ /api/usage/[connectionId]
+├ ƒ /api/usage/[connectionId]/codex-reset-credits
+├ ƒ /api/usage/api-keys
+├ ƒ /api/usage/chart
+├ ƒ /api/usage/errors
+├ ƒ /api/usage/history
+├ ƒ /api/usage/leaderboard
+├ ƒ /api/usage/logs
+├ ƒ /api/usage/providers
+├ ƒ /api/usage/request-details
+├ ƒ /api/usage/request-logs
+├ ƒ /api/usage/stats
+├ ƒ /api/usage/stream
+├ ƒ /api/v1
+├ ƒ /api/v1/api/chat
+├ ƒ /api/v1/audio/speech
+├ ƒ /api/v1/audio/transcriptions
+├ ƒ /api/v1/audio/voices
+├ ƒ /api/v1/chat/completions
+├ ƒ /api/v1/embeddings
+├ ƒ /api/v1/images/generations
+├ ƒ /api/v1/messages
+├ ƒ /api/v1/messages/count_tokens
+├ ƒ /api/v1/models
+├ ƒ /api/v1/models/[...model]
+├ ƒ /api/v1/models/info
+├ ƒ /api/v1/responses
+├ ƒ /api/v1/responses/compact
+├ ƒ /api/v1/search
+├ ƒ /api/v1/systemone
+├ ƒ /api/v1/videos/[id]
+├ ƒ /api/v1/videos/edits
+├ ƒ /api/v1/videos/extensions
+├ ƒ /api/v1/videos/generations
+├ ƒ /api/v1/web/fetch
+├ ƒ /api/v1beta/models
+├ ƒ /api/v1beta/models/[...path]
+├ ƒ /api/version
+├ ƒ /api/version/shutdown
+├ ƒ /api/version/update
+├ ƒ /callback
+├ ƒ /dashboard
+├ ƒ /dashboard/api-key-usage
+├ ƒ /dashboard/arena
+├ ƒ /dashboard/basic-chat
+├ ƒ /dashboard/cli-tools
+├ ƒ /dashboard/cli-tools/[toolId]
+├ ƒ /dashboard/combos
+├ ƒ /dashboard/console-log
+├ ƒ /dashboard/console-log-poll
+├ ƒ /dashboard/endpoint
+├ ƒ /dashboard/media-providers/[kind]
+├ ƒ /dashboard/media-providers/[kind]/[id]
+├ ƒ /dashboard/media-providers/combo/[id]
+├ ƒ /dashboard/media-providers/web
+├ ƒ /dashboard/mitm
+├ ƒ /dashboard/model-editor
+├ ƒ /dashboard/plugins
+├ ƒ /dashboard/profile
+├ ƒ /dashboard/providers
+├ ƒ /dashboard/providers/[id]
+├ ƒ /dashboard/providers/new
+├ ƒ /dashboard/proxy-pools
+├ ƒ /dashboard/pxpipe
+├ ƒ /dashboard/quota
+├ ƒ /dashboard/settings/pricing
+├ ƒ /dashboard/skills
+├ ƒ /dashboard/token-saver
+├ ƒ /dashboard/translator
+├ ƒ /dashboard/usage
+├ ƒ /landing
+├ ƒ /login
+└ ƒ /manifest.webmanifest
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+   $ node "/opt/data/9router/node_modules/next/dist/bin/next" build --webpack --experimental-build-mode generate
+▲ Next.js 16.3.5 (webpack)
+✓ Running next.config.mjs took 38ms
+- Experiments (use with caution):
+  · cpus: 1
+  · optimizePackageImports
+  · proxyClientMaxBodySize: "128mb"
+  ✓ webpackMemoryOptimizations
+
+  Creating an optimized production build ...
+  Collecting page data using 1 worker ...
+[DB] Driver: node:sqlite | file: /opt/data/9router/cli/.build-home/.9router/db/data.sqlite
+  Inlining static env ...
+  Generating static pages using 1 worker (0/148) ...
+  Generating static pages using 1 worker (37/148) 
+  Generating static pages using 1 worker (74/148) 
+  Generating static pages using 1 worker (111/148) 
+✓ Generating static pages using 1 worker (148/148) in 1365ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/oidc/callback
+├ ƒ /api/auth/oidc/start
+├ ƒ /api/auth/oidc/test
+├ ƒ /api/auth/reset-password
+├ ƒ /api/auth/saml/acs
+├ ƒ /api/auth/saml/metadata
+├ ƒ /api/auth/saml/start
+├ ƒ /api/auth/saml/test
+├ ƒ /api/auth/status
+├ ƒ /api/changelog
+├ ƒ /api/cli-tools/all-statuses
+├ ƒ /api/cli-tools/antigravity-mitm
+├ ƒ /api/cli-tools/antigravity-mitm/alias
+├ ƒ /api/cli-tools/claude-settings
+├ ƒ /api/cli-tools/cline-settings
+├ ƒ /api/cli-tools/codewhale-settings
+├ ƒ /api/cli-tools/codex-settings
+├ ƒ /api/cli-tools/copilot-settings
+├ ƒ /api/cli-tools/cowork-mcp-registry
+├ ƒ /api/cli-tools/cowork-mcp-tools
+├ ƒ /api/cli-tools/cowork-settings
+├ ƒ /api/cli-tools/crush-settings
+├ ƒ /api/cli-tools/deepseek-tui-settings
+├ ƒ /api/cli-tools/devin-settings
+├ ƒ /api/cli-tools/droid-settings
+├ ƒ /api/cli-tools/forge-settings
+├ ƒ /api/cli-tools/grok-build-settings
+├ ƒ /api/cli-tools/hermes-settings
+├ ƒ /api/cli-tools/jcode-settings
+├ ƒ /api/cli-tools/kilo-settings
+├ ƒ /api/cli-tools/omp-settings
+├ ƒ /api/cli-tools/openclaw-settings
+├ ƒ /api/cli-tools/opencode-settings
+├ ƒ /api/cli-tools/pi-settings
+├ ƒ /api/cli-tools/smelt-settings
+├ ƒ /api/combos
+├ ƒ /api/combos/[id]
+├ ƒ /api/combos/presets
+├ ƒ /api/headroom/extras
+├ ƒ /api/headroom/proxy/[...path]
+├ ƒ /api/headroom/restart
+├ ƒ /api/headroom/start
+├ ƒ /api/headroom/status
+├ ƒ /api/headroom/stop
+├ ƒ /api/health
+├ ƒ /api/init
+├ ƒ /api/keys
+├ ƒ /api/keys/[id]
+├ ƒ /api/locale
+├ ƒ /api/mcp/[plugin]/message
+├ ƒ /api/mcp/[plugin]/sse
+├ ƒ /api/media-providers/tts/deepgram/voices
+├ ƒ /api/media-providers/tts/elevenlabs/voices
+├ ƒ /api/media-providers/tts/inworld/voices
+├ ƒ /api/media-providers/tts/minimax/voices
+├ ƒ /api/media-providers/tts/voices
+├ ƒ /api/model-editor
+├ ƒ /api/models
+├ ƒ /api/models/alias
+├ ƒ /api/models/availability
+├ ƒ /api/models/catalog-sync
+├ ƒ /api/models/custom
+├ ƒ /api/models/disabled
+├ ƒ /api/models/test
+├ ƒ /api/oauth/[provider]/[action]
+├ ƒ /api/oauth/codex/bulk-import
+├ ƒ /api/oauth/codex/import-token
+├ ƒ /api/oauth/cursor/auto-import
+├ ƒ /api/oauth/cursor/import
+├ ƒ /api/oauth/gitlab/pat
+├ ƒ /api/oauth/grok-cli/bulk-import
+├ ƒ /api/oauth/iflow/cookie
+├ ƒ /api/oauth/kiro/api-key
+├ ƒ /api/oauth/kiro/auto-import
+├ ƒ /api/oauth/kiro/import
+├ ƒ /api/oauth/kiro/import-cli-proxy
+├ ƒ /api/oauth/kiro/social-authorize
+├ ƒ /api/oauth/kiro/social-exchange
+├ ƒ /api/oauth/xiaomi-mimo/api-key
+├ ƒ /api/oauth/xiaomi-mimo/auto-import
+├ ƒ /api/plugins
+├ ƒ /api/pricing
+├ ƒ /api/provider-nodes
+├ ƒ /api/provider-nodes/[id]
+├ ƒ /api/provider-nodes/validate
+├ ƒ /api/providers
+├ ƒ /api/providers/[id]
+├ ƒ /api/providers/[id]/models
+├ ƒ /api/providers/[id]/test
+├ ƒ /api/providers/[id]/test-models
+├ ƒ /api/providers/client
+├ ƒ /api/providers/kilo/free-models
+├ ƒ /api/providers/suggested-models
+├ ƒ /api/providers/test-batch
+├ ƒ /api/providers/validate
+├ ƒ /api/proxy-pools
+├ ƒ /api/proxy-pools/[id]
+├ ƒ /api/proxy-pools/[id]/test
+├ ƒ /api/proxy-pools/cloudflare-deploy
+├ ƒ /api/proxy-pools/deno-deploy
+├ ƒ /api/proxy-pools/vercel-deploy
+├ ƒ /api/pxpipe/health
+├ ƒ /api/pxpipe/install
+├ ƒ /api/pxpipe/logs
+├ ƒ /api/pxpipe/restart
+├ ƒ /api/pxpipe/start
+├ ƒ /api/pxpipe/stats
+├ ƒ /api/pxpipe/status
+├ ƒ /api/pxpipe/stop
+├ ƒ /api/settings
+├ ƒ /api/settings/auto-backup
+├ ƒ /api/settings/database
+├ ƒ /api/settings/proxy-test
+├ ƒ /api/settings/require-login
+├ ƒ /api/shutdown
+├ ƒ /api/tags
+├ ƒ /api/translator/console-logs
+├ ƒ /api/translator/console-logs/stream
+├ ƒ /api/translator/load
+├ ƒ /api/translator/save
+├ ƒ /api/translator/send
+├ ƒ /api/translator/translate
+├ ƒ /api/tunnel/disable
+├ ƒ /api/tunnel/enable
+├ ƒ /api/tunnel/status
+├ ƒ /api/tunnel/tailscale-check
+├ ƒ /api/tunnel/tailscale-disable
+├ ƒ /api/tunnel/tailscale-enable
+├ ƒ /api/tunnel/tailscale-install
+├ ƒ /api/usage/[connectionId]
+├ ƒ /api/usage/[connectionId]/codex-reset-credits
+├ ƒ /api/usage/api-keys
+├ ƒ /api/usage/chart
+├ ƒ /api/usage/errors
+├ ƒ /api/usage/history
+├ ƒ /api/usage/leaderboard
+├ ƒ /api/usage/logs
+├ ƒ /api/usage/providers
+├ ƒ /api/usage/request-details
+├ ƒ /api/usage/request-logs
+├ ƒ /api/usage/stats
+├ ƒ /api/usage/stream
+├ ƒ /api/v1
+├ ƒ /api/v1/api/chat
+├ ƒ /api/v1/audio/speech
+├ ƒ /api/v1/audio/transcriptions
+├ ƒ /api/v1/audio/voices
+├ ƒ /api/v1/chat/completions
+├ ƒ /api/v1/embeddings
+├ ƒ /api/v1/images/generations
+├ ƒ /api/v1/messages
+├ ƒ /api/v1/messages/count_tokens
+├ ƒ /api/v1/models
+├ ƒ /api/v1/models/[...model]
+├ ƒ /api/v1/models/info
+├ ƒ /api/v1/responses
+├ ƒ /api/v1/responses/compact
+├ ƒ /api/v1/search
+├ ƒ /api/v1/systemone
+├ ƒ /api/v1/videos/[id]
+├ ƒ /api/v1/videos/edits
+├ ƒ /api/v1/videos/extensions
+├ ƒ /api/v1/videos/generations
+├ ƒ /api/v1/web/fetch
+├ ƒ /api/v1beta/models
+├ ƒ /api/v1beta/models/[...path]
+├ ƒ /api/version
+├ ƒ /api/version/shutdown
+├ ƒ /api/version/update
+├ ○ /callback
+├ ○ /dashboard
+├ ○ /dashboard/api-key-usage
+├ ○ /dashboard/arena
+├ ○ /dashboard/basic-chat
+├ ○ /dashboard/cli-tools
+├ ƒ /dashboard/cli-tools/[toolId]
+├ ○ /dashboard/combos
+├ ƒ /dashboard/console-log
+├ ƒ /dashboard/console-log-poll
+├ ○ /dashboard/endpoint
+├ ƒ /dashboard/media-providers/[kind]
+├ ƒ /dashboard/media-providers/[kind]/[id]
+├ ƒ /dashboard/media-providers/combo/[id]
+├ ○ /dashboard/media-providers/web
+├ ○ /dashboard/mitm
+├ ○ /dashboard/model-editor
+├ ○ /dashboard/plugins
+├ ○ /dashboard/profile
+├ ○ /dashboard/providers
+├ ƒ /dashboard/providers/[id]
+├ ○ /dashboard/providers/new
+├ ○ /dashboard/proxy-pools
+├ ○ /dashboard/pxpipe
+├ ○ /dashboard/quota
+├ ○ /dashboard/settings/pricing
+├ ○ /dashboard/skills
+├ ○ /dashboard/token-saver
+├ ○ /dashboard/translator
+├ ○ /dashboard/usage
+├ ○ /landing
+├ ○ /login
+└ ○ /manifest.webmanifest
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+✅ Next.js build completed
+
+2️⃣  Cleaning old app/cli/app...
+✅ Cleaned
+
+3️⃣  Copying Next.js standalone build to app/cli/app...
+ℹ️  Detected nested standalone output: 9router/
+✅ Copied standalone build
+
+✅ Copied custom-server.js
+
+3️⃣ b Configuring SQLite drivers...
+✅ sql.js already bundled
+✅ open already bundled
+✅ Stripped better-sqlite3 (lives in ~/.9router/runtime)
+
+4️⃣  Copying static files...
+✅ Copied static files
+
+5️⃣  Copying public folder...
+✅ Copied public folder
+
+6️⃣  Copying vendor-chunks...
+⏭️  No vendor-chunks found
+
+6️⃣ b Copying complete server artifacts...
+✅ Copied complete server artifacts
+
+7️⃣  Copying MITM server files...
+✅ Copied MITM files
+
+7️⃣ b Copying updater files...
+✅ Copied updater files
+
+8️⃣  Building MITM server...
+⚙️  Config: bundle, minify, cleanPlainFiles
+✅ bundled + minified → /opt/data/9router/cli/app-new/src/mitm/server.js
+✅ Removed plain MITM files from CLI bundle
+✅ MITM server build completed
+
+✨ CLI package build completed!
+📁 Output: /opt/data/9router/cli/app-new
+📊 Package size: 86M
+EXIT:0

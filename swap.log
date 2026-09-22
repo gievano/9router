@@ -1,0 +1,9 @@
+[20:38:02] === apply-update mulai ===
+[20:38:02] port busy sebelum swap: yes
+[20:38:02] build baru ada. BUILD_ID=RhSn3wd52BTevCfm9ruvV
+[20:38:02] cli/app -> app.old OK
+[20:38:02] build baru dipasang
+[20:38:02] restart dikirim, tunggu sehat (maks 90s)...
+[20:38:02] SUKSES: dashboard sehat di http://127.0.0.1:20128/api/health
+[20:38:02] versi sekarang:   "version": "0.5.85",
+[20:38:02] === apply-update selesai (OK) ===
