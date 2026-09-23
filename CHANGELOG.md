@@ -1,3 +1,16 @@
+# v0.5.113-Custom (2026-09-23)
+
+## Custom Features & Enhancements
+- **Gemini Web (Cookie) provider**: added `gemini-web` under Web Cookie Providers, next to the existing DeepSeek entry. Paste `__Secure-1PSID` (plus `__Secure-1PSIDTS`) from gemini.google.com cookies; the cookie is verified against the live session page before saving. Requests run over plain HTTP to the internal StreamGenerate endpoint, no browser needed, with multi-turn history folded into one prompt.
+- **Kimi Web (Cookie) provider**: added `kimi-web` under Web Cookie Providers. Paste `access_token` from www.kimi.ai localStorage; validation probes the account endpoint before saving. Requests speak the Connect-RPC chat protocol with automatic refresh_token exchange on 401, reasoning deltas surfaced as `reasoning_content`, and models Kimi K3 plus Kimi K2.6.
+- **Web RAG backends stay honest about tools**: both new cookie providers reject OpenAI function tools with a clear 400 instead of answering empty, since the web backends are text-only endpoints with no native tool channel.
+
+# v0.5.112-Custom (2026-09-23)
+
+## Sync with upstream v0.5.86
+- **Merged upstream through v0.5.86 (2026-09-23)**: Xiaomi MiMo server-assisted desktop login with five account clusters and v2.6 models, Claude Opus 5.5 support, and proxy pool header forwarding fix.
+- **Kept fork behaviour**: Union Alpha routing over Messages API, one-click auto backup scheduler, Speed Mode plugin, per-key usage page, plugin badges on Custom Models and combos, 9Router Settings label, and the fork README. The OpenCode free-tier fix is carried by upstream's `opencodeFingerprint` helper, with `union-alpha-free` kept alongside it.
+
 # v0.5.111-Custom (2026-09-22)
 
 ## Sync with upstream v0.5.85
@@ -342,6 +355,17 @@
 - **UI & Theme Sync**: the app is locked to dark mode with theme and language switchers removed, and custom select dropdowns now follow the app theme.
 
 # v0.5.100 (2026-09-18)
+# v0.5.86 (2026-09-23)
+
+## Features
+- **Xiaomi MiMo**: server-assisted desktop login for headless/Docker deployments, five account clusters (cn/sgp/ams/ru/in), and v2.6 pro/flash/pro-ultraspeed models with dual-route (account service vs. cloud API)
+- **Claude**: add Claude Opus 5.5 support
+- **i18n**: translate React text rewrites via characterData mutation observer
+
+## Fixes
+- **Proxy Pools**: keep request headers intact through Vercel/Cloudflare/Deno relays (spreading a `Headers` instance yielded `{}`, dropping auth and content-type)
+- **Xiaomi MiMo login**: keep the session in the httpOnly cookie only, require dashboard auth on the proxy branch, and stop forwarding authorization headers upstream
+
 # v0.5.85 (2026-09-22)
 
 ## Features

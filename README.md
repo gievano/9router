@@ -31,7 +31,7 @@ The gateway accepts a request in OpenAI, Claude or Gemini shape, translates it t
 | OAuth | Claude, OpenAI Codex, Gemini CLI, Antigravity, Kiro, Kimi (Moonshot), Grok CLI, xAI, Cursor, GitHub Copilot, GitLab, Windsurf, Trae, Zed, iFlow, Qoder, Cline, KiloCode, CodeBuddy, Xiaomi MIMO |
 | API key | OpenAI, Anthropic, DeepSeek, GLM (Z.ai / Zhipu), MiniMax, Mistral, Perplexity, Groq, Together, Fireworks, Cerebras, SambaNova, SiliconFlow, Nebius, Hugging Face, Venice, Voyage and dozens more |
 | Free tier | OpenRouter, OpenCode, Kiro, Gemini, Cloudflare AI, NVIDIA, Morph, Poolside, Kimchi, LLM7, api-airforce |
-| Web cookie | DeepSeek Web |
+| Web cookie | DeepSeek Web, Gemini Web, Kimi Web |
 | Local | Ollama, LM Studio style self-hosted nodes, self-hosted TTS/STT/embeddings |
 
 It is not only chat. The same gateway also serves text to image, image to text, video generation, text to speech, speech to text, embeddings, web search and web fetch, each with its own `/v1`-style endpoint.

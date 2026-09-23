@@ -251,6 +251,18 @@ export const PROVIDER_CAPABILITIES = {
   "ollama": {
     "deepseek-v4.1-flash:cloud": { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
   },
+  // Web-cookie providers: text-only RAG backends, no native function tools.
+  // Kimi Web exposes reasoning deltas as reasoning_content; Gemini Web
+  // surfaces no reasoning channel.
+  "gemini-web": {
+    "gemini-3.1-pro": { tools: false, contextWindow: 1048576, maxOutput: 65536 },
+    "gemini-3.7-flash": { tools: false, contextWindow: 1048576, maxOutput: 65536 },
+    "gemini-3.1-flash-lite": { tools: false, contextWindow: 1048576, maxOutput: 65536 },
+  },
+  "kimi-web": {
+    "k3": { tools: false, reasoning: true, contextWindow: 262144, maxOutput: 65536 },
+    "k2d6": { tools: false, reasoning: true, contextWindow: 262144, maxOutput: 65536 },
+  },
 };
 
 // Qoder CN serves the identical model catalog from the CN gateway, so it shares
