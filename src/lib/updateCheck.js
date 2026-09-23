@@ -66,7 +66,7 @@ function readGitRevision() {
       resolve(isGit ? revision : null);
     };
     if (!existsSync(repoDir)) return finish(false, null);
-    execFile("git", ["rev-parse", "HEAD"], { cwd: process.cwd(), timeout: 4000 }, (error, stdout) => {
+    execFile("git", ["rev-parse", "HEAD"], { cwd: process.cwd(), timeout: 4000, windowsHide: true }, (error, stdout) => {
       const sha = String(stdout || "").trim();
       finish(!error && /^[0-9a-f]{40}$/.test(sha), error ? null : sha);
     });
