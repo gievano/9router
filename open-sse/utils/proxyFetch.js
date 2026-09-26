@@ -232,6 +232,87 @@ async function getDispatcher(proxyUrl) {
   return proxyDispatchers.get(normalized);
 }
 
+// ─── socks proxies ────────────────────────────────────────────────────
+// undici's ProxyAgent only speaks http/https ("URL must start with http: or
+// https:"), so socks4/socks5 have to ride node:http/https with an agent from
+// socks-proxy-agent — same approach as mimoLoginSession's socksFetch.
+const SOCKS_URL_RE = /^socks[45]h?:/i;
+function isSocksUrl(url) {
+  return SOCKS_URL_RE.test(normalizeString(url));
+}
+
+let _SocksAgentClass; // undefined = not tried yet, null = unavailable
+async function getSocksAgentClass() {
+  if (_SocksAgentClass === undefined) {
+    const m = await import("socks-proxy-agent").catch(() => null);
+    _SocksAgentClass = (m && (m.SocksProxyAgent || m.default)) || null;
+  }
+  return _SocksAgentClass;
+}
+
+// Body -> Buffer, accepting every fetch BodyInit plus node streams.
+async function toPayload(body) {
+  if (body == null) return null;
+  if (typeof body === "string") return Buffer.from(body);
+  if (Buffer.isBuffer(body)) return body;
+  if (ArrayBuffer.isView(body) || body instanceof ArrayBuffer) return Buffer.from(body);
+  try {
+    return Buffer.from(await new Response(body).arrayBuffer());
+  } catch {
+    const { buffer } = await import("node:stream/consumers");
+    return await buffer(body);
+  }
+}
+
+async function socksFetch(targetUrl, options, proxyUrl) {
+  const SocksAgent = await getSocksAgentClass();
+  if (!SocksAgent) throw new Error("socks-proxy-agent unavailable");
+
+  const parsed = new URL(targetUrl);
+  // Literal specifiers on both branches — webpack forbids fully dynamic import().
+  const mod = parsed.protocol === "http:" ? await import("node:http") : await import("node:https");
+  const lib = mod.default ?? mod;
+  const { Readable } = await import("node:stream");
+
+  const headers = {};
+  const raw = options.headers;
+  if (raw instanceof Headers) { for (const [k, v] of raw) headers[k] = v; }
+  else if (raw) Object.assign(headers, raw);
+
+  const payload = await toPayload(options.body);
+  if (payload && headers["content-length"] == null && headers["Content-Length"] == null) {
+    headers["content-length"] = String(payload.byteLength);
+  }
+
+  return new Promise((resolve, reject) => {
+    const req = lib.request(
+      parsed,
+      { method: options.method || "GET", headers, agent: new SocksAgent(proxyUrl) },
+      (res) => {
+        const out = new Headers();
+        for (const [k, v] of Object.entries(res.headers || {})) {
+          if (Array.isArray(v)) v.forEach(x => out.append(k, String(x)));
+          else if (v != null) out.append(k, String(v));
+        }
+        resolve(new Response(Readable.toWeb(res), {
+          status: res.statusCode || 502,
+          statusText: res.statusMessage,
+          headers: out,
+        }));
+      }
+    );
+    const signal = options.signal;
+    if (signal) {
+      if (signal.aborted) req.destroy(new Error("aborted"));
+      else signal.addEventListener("abort", () => req.destroy(new Error("aborted")), { once: true });
+    }
+    req.setTimeout(30000, () => req.destroy(new Error("socks proxy timeout")));
+    req.on("error", reject);
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
+
 /**
  * Create HTTPS request with manual socket connection (bypass DNS)
  */
@@ -312,6 +393,19 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
   const connectionProxyUrl = resolveConnectionProxyUrl(targetUrl, proxyOptions);
   const envProxyUrl = connectionProxyUrl ? null : normalizeProxyUrl(getEnvProxyUrl(targetUrl));
   const proxyUrl = connectionProxyUrl || envProxyUrl;
+
+  // socks: undici has no socks dispatcher, so it never reaches getDispatcher().
+  if (proxyUrl && isSocksUrl(proxyUrl)) {
+    try {
+      return await socksFetch(targetUrl, options, proxyUrl);
+    } catch (proxyError) {
+      if (proxyOptions?.strictProxy === true) {
+        throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
+      }
+      console.warn(`[ProxyFetch] Socks proxy failed, falling back to direct: ${proxyError.message}`);
+      return originalFetch(url, options);
+    }
+  }
 
   // MITM DNS bypass: for known MITM-intercepted hosts, resolve real IP to avoid DNS spoof
   if (shouldBypassMitmDns(targetUrl)) {

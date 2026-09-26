@@ -1,4 +1,4 @@
-import { ProxyAgent, fetch as undiciFetch } from "undici";
+import { proxyAwareFetch } from "open-sse/utils/proxyFetch.js";
 
 const DEFAULT_TEST_URL = "https://google.com/";
 const DEFAULT_TIMEOUT_MS = 8000;
@@ -12,11 +12,9 @@ function getErrorMessage(err) {
   if (causeMessage && causeMessage !== base) {
     return causeCode ? `${base}: ${causeMessage} (${causeCode})` : `${base}: ${causeMessage}`;
   }
-
   if (causeCode && !base.includes(causeCode)) {
     return `${base} (${causeCode})`;
   }
-
   return base;
 }
 
@@ -25,6 +23,14 @@ function normalizeString(value) {
   return String(value).trim();
 }
 
+/**
+ * Test a proxy URL.
+ *
+ * Rides proxyAwareFetch instead of building an undici ProxyAgent directly:
+ * ProxyAgent rejects socks4/socks5 URIs outright, so the pool's socks entries
+ * could never be tested (or used). strictProxy=true guarantees a failure means
+ * "this proxy is dead" — the test must never be retried on a direct connection.
+ */
 export async function testProxyUrl({ proxyUrl, testUrl, timeoutMs } = {}) {
   const normalizedProxyUrl = normalizeString(proxyUrl);
   if (!normalizedProxyUrl) {
@@ -38,54 +44,34 @@ export async function testProxyUrl({ proxyUrl, testUrl, timeoutMs } = {}) {
       ? Math.min(timeoutMsRaw, 30000)
       : DEFAULT_TIMEOUT_MS;
 
-  let dispatcher;
-
+  const startedAt = Date.now();
   try {
-    try {
-      dispatcher = new ProxyAgent({ uri: normalizedProxyUrl });
-    } catch (err) {
-      return {
-        ok: false,
-        status: 400,
-        error: `Invalid proxy URL: ${err?.message || String(err)}`,
-      };
-    }
-
-    const controller = new AbortController();
-    const startedAt = Date.now();
-    const timer = setTimeout(() => controller.abort(), normalizedTimeoutMs);
-
-    try {
-      const res = await undiciFetch(normalizedTestUrl, {
+    const res = await proxyAwareFetch(
+      normalizedTestUrl,
+      {
         method: "HEAD",
-        dispatcher,
-        signal: controller.signal,
-        headers: {
-          "User-Agent": "9Router",
-        },
-      });
-
-      return {
-        ok: res.ok,
-        status: res.status,
-        statusText: res.statusText,
-        url: normalizedTestUrl,
-        elapsedMs: Date.now() - startedAt,
-      };
-    } catch (err) {
-      const message =
-        err?.name === "AbortError"
-          ? "Proxy test timed out"
-          : getErrorMessage(err);
-      return { ok: false, status: 500, error: message };
-    } finally {
-      clearTimeout(timer);
-    }
-  } finally {
-    try {
-      await dispatcher?.close?.();
-    } catch {
-      // ignore
-    }
+        signal: AbortSignal.timeout(normalizedTimeoutMs),
+        headers: { "User-Agent": "9Router" },
+      },
+      { enabled: true, url: normalizedProxyUrl, strictProxy: true }
+    );
+    return {
+      ok: res.ok,
+      status: res.status,
+      statusText: res.statusText,
+      url: normalizedTestUrl,
+      elapsedMs: Date.now() - startedAt,
+    };
+  } catch (err) {
+    const message =
+      err?.name === "AbortError" || err?.name === "TimeoutError"
+        ? "Proxy test timed out"
+        : getErrorMessage(err);
+    return {
+      ok: false,
+      status: /invalid proxy url/i.test(message) ? 400 : 500,
+      error: message,
+      elapsedMs: Date.now() - startedAt,
+    };
   }
 }
