@@ -12,7 +12,11 @@ export async function GET() {
     return Response.json({
       currentVersion: info.currentVersion,
       currentRevision: info.currentRevision || null,
+      currentRelease: info.currentRelease || null,
       latestVersion: info.latestVersion || info.currentVersion,
+      source: info.source || null,
+      releaseNotes: Array.isArray(info.releaseNotes) ? info.releaseNotes : [],
+      releaseKnown: info.releaseKnown !== false,
       commitMessage: info.commitMessage || "",
       publishedAt: info.publishedAt || "",
       behindBy: Number.isFinite(info.behindBy) ? info.behindBy : null,

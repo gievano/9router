@@ -17,8 +17,6 @@ export async function GET() {
     const ivModels = new Set(customPlugins.imageVision?.models || []);
     const tdEnabled = Boolean(customPlugins.thinkDeeper?.enabled);
     const tdModels = new Set(customPlugins.thinkDeeper?.models || []);
-    const umEnabled = Boolean(customPlugins.unrestrictedMode?.enabled);
-    const umModels = new Set(customPlugins.unrestrictedMode?.models || []);
     const smEnabled = Boolean(customPlugins.speedMode?.enabled);
     const smModels = new Set(customPlugins.speedMode?.models || []);
 
@@ -46,9 +44,6 @@ export async function GET() {
         if (tdEnabled && (tdModels.has(fullModel) || tdModels.has(routedModel) || tdModels.has(m.model))) {
           caps.reasoning = true;
           caps.thinkDeeper = true;
-        }
-        if (umEnabled && (umModels.has(fullModel) || umModels.has(routedModel) || umModels.has(m.model))) {
-          caps.unrestrictedMode = true;
         }
         if (smEnabled && (smModels.has(fullModel) || smModels.has(routedModel) || smModels.has(m.model))) {
           caps.speedMode = true;
@@ -85,9 +80,6 @@ export async function GET() {
       if (tdEnabled && (tdModels.has(fullModel) || tdModels.has(m.id))) {
         caps.reasoning = true;
         caps.thinkDeeper = true;
-      }
-      if (umEnabled && (umModels.has(fullModel) || umModels.has(m.id))) {
-        caps.unrestrictedMode = true;
       }
       if (smEnabled && (smModels.has(fullModel) || smModels.has(m.id))) {
         caps.speedMode = true;
@@ -130,9 +122,6 @@ export async function GET() {
       if (tdEnabled && names.some((n) => tdModels.has(n))) {
         caps.reasoning = true;
         caps.thinkDeeper = true;
-      }
-      if (umEnabled && names.some((n) => umModels.has(n))) {
-        caps.unrestrictedMode = true;
       }
       if (smEnabled && names.some((n) => smModels.has(n))) {
         caps.speedMode = true;

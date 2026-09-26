@@ -4,12 +4,10 @@ import { useState, useEffect } from "react";
 import Modal from "./Modal";
 import Button from "./Button";
 import { GITHUB_CONFIG } from "@/shared/constants/config";
-import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
+// Update notices live in their own banner, so this dialog stays about the repo.
 export default function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
-  const [updateInfo, setUpdateInfo] = useState(null);
-  const { copied, copy } = useCopyToClipboard(2000);
 
   useEffect(() => {
     const neverShow = localStorage.getItem("9router:welcomeNeverShow") === "true";
@@ -21,15 +19,6 @@ export default function WelcomeModal() {
       sessionStorage.removeItem("9router:justLoggedIn");
       setIsOpen(true);
     }
-
-    fetch("/api/version")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.hasUpdate) {
-          setUpdateInfo(data);
-        }
-      })
-      .catch(() => {});
   }, []);
 
   const handleDontShowAgain = () => {
@@ -42,8 +31,6 @@ export default function WelcomeModal() {
   };
 
   if (!isOpen) return null;
-
-  const installCmd = updateInfo?.installCmd || "npm i -g 9router@latest --prefer-online";
 
   return (
     <Modal
@@ -76,36 +63,6 @@ export default function WelcomeModal() {
             </Button>
           </a>
         </div>
-
-        {updateInfo && (
-          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-3">
-            <h3 className="font-semibold text-amber-500 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-              Update Available!
-            </h3>
-            <p className="text-text-muted text-xs">
-              Your version is {updateInfo.behindBy} commit{updateInfo.behindBy > 1 ? "s" : ""} behind master.
-            </p>
-            {updateInfo.commitMessage && (
-              <p className="text-xs text-text-main font-mono bg-bg/50 px-3 py-2 rounded-lg border border-border-subtle truncate">
-                {updateInfo.commitMessage}
-              </p>
-            )}
-            <div className="flex items-center gap-2 pt-1">
-              <code className="flex-1 text-xs font-mono bg-bg px-3 py-2 rounded-lg border border-border-subtle overflow-x-auto select-all">
-                {installCmd}
-              </code>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => copy(installCmd)}
-                icon={copied ? "check" : "content_copy"}
-              >
-                {copied ? "Copied" : "Copy"}
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </Modal>
   );

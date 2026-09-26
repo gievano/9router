@@ -1,3 +1,14 @@
+# v0.5.119-Custom (2026-09-26)
+
+## Changes
+- **Removed the Uncensored Output plugin**: the plugin, its runtime prompt injection, its API keys, its default settings entry, its capability badge and its card on the Custom Plugins page are gone. A configuration that still carries the old entry is simply ignored, and no model loses a badge it no longer has. The remaining plugins are Image Vision, Think Deeper and Speed Mode.
+
+## Fixes & Enhancements
+- **Update banner that actually fires on a deployed instance**: the old check only asked git how far behind the checkout was, and a deploy that ships without git history (a container or a platform build) has no revision to ask about, so it reported "no update" forever. The build now stamps its own revision and release into the bundle, and the check runs a second signal that compares the newest changelog entry on the repository with the release this build came from, so an image without git still learns that a newer release exists.
+- **A dismissible banner across the dashboard**: a banner appears under the header when an update exists, naming the release, saying how far behind the install is, previewing the first notes of the new release, and offering the update command to copy plus a link to the repository. It rechecks every ten minutes, and closing it hides that release only, so the next one shows up again.
+- **The changelog URL pointed at the wrong repository**: it read the upstream changelog while everything else in the app points at this fork, so a release note shown to the user could describe changes that were never shipped here.
+- **Post-login dialog no longer repeats the update notice**: it used to print a commit count that could be unknown, and the update has a home of its own now.
+
 # v0.5.118-Custom (2026-09-26)
 
 ## Changes

@@ -32,15 +32,6 @@ const PLUGINS = [
       "Enhance reasoning with multi-step chain-of-thought analysis. Forces the model to break problems into steps before answering, producing more thorough and accurate responses.",
   },
   {
-    key: "unrestrictedMode",
-    title: "Uncensored Output",
-    icon: "key_off",
-    iconColor: "text-red-500",
-    iconBg: "bg-red-500/10 border-red-500/20",
-    description:
-      "Bypass standard AI refusals and guardrails. Injects an unrestricted direct technical directive, compelling the model to provide raw code, analysis, and uncensored answers (Note: may not work on some provider models).",
-  },
-  {
     key: "speedMode",
     title: "Speed Mode",
     icon: "bolt",
@@ -54,7 +45,6 @@ const PLUGINS = [
 const DEFAULT_PLUGINS_STATE = {
   imageVision: { enabled: false, models: [] },
   thinkDeeper: { enabled: false, models: [] },
-  unrestrictedMode: { enabled: false, models: [] },
   speedMode: { enabled: false, models: [] },
 };
 
@@ -94,12 +84,6 @@ export default function PluginsPage() {
                 enabled: Boolean(data.customPlugins.thinkDeeper?.enabled),
                 models: Array.isArray(data.customPlugins.thinkDeeper?.models)
                   ? data.customPlugins.thinkDeeper.models
-                  : [],
-              },
-              unrestrictedMode: {
-                enabled: Boolean(data.customPlugins.unrestrictedMode?.enabled),
-                models: Array.isArray(data.customPlugins.unrestrictedMode?.models)
-                  ? data.customPlugins.unrestrictedMode.models
                   : [],
               },
               speedMode: {
