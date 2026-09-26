@@ -84,24 +84,63 @@ export default function Sidebar({ onClose }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [shutdownCountdown, setShutdownCountdown] = useState(0);
   const [enableTranslator, setEnableTranslator] = useState(false);
+  const [authStatus, setAuthStatus] = useState(null);
   const { copied, copy } = useCopyToClipboard(2000);
 
   const INSTALL_CMD = updateInfo?.installCmd || UPDATER_CONFIG.installCmdLatest;
 
   useEffect(() => {
+    fetch("/api/auth/status")
+      .then(res => res.json())
+      .then(data => setAuthStatus(data))
+      .catch(() => {});
+  }, []);
+
+  const isApiKeyUser = authStatus?.role === "apikey";
+  const permissions = authStatus?.permissions || {
+    manageApiKeys: true,
+    manageModels: true,
+    manageProviders: true,
+    viewUsage: true,
+  };
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (!isApiKeyUser) return true;
+    if (item.href === "/dashboard/endpoint") return permissions.manageApiKeys;
+    if (item.href === "/dashboard/providers") return permissions.manageProviders;
+    if (item.href === "/dashboard/combos") return permissions.manageModels;
+    if (item.href === "/dashboard/usage") return permissions.viewUsage;
+    if (item.href === "/dashboard/api-key-usage") return permissions.viewUsage || permissions.manageApiKeys;
+    if (item.href === "/dashboard/quota") return permissions.manageProviders;
+    return false;
+  });
+
+  const filteredWorkshopItems = workshopItems.filter((item) => {
+    if (!isApiKeyUser) return true;
+    if (item.href === "/dashboard/model-editor" || item.href === "/dashboard/arena") {
+      return permissions.manageModels;
+    }
+    return false;
+  });
+
+  // Settings and the update check are administrator surfaces, so a key-signed
+  // session skips them instead of firing requests it may not read.
+  useEffect(() => {
+    if (isApiKeyUser) return;
     fetch("/api/settings")
       .then(res => res.json())
       .then(data => { if (data.enableTranslator) setEnableTranslator(true); })
       .catch(() => {});
-  }, []);
+  }, [isApiKeyUser]);
 
   // Lazy check for new npm version on mount
   useEffect(() => {
+    if (isApiKeyUser) return;
     fetch("/api/version")
       .then(res => res.json())
       .then(data => { if (data.hasUpdate) setUpdateInfo(data); })
       .catch(() => {});
-  }, []);
+  }, [isApiKeyUser]);
 
   const isActive = (href) => {
     if (href === "/dashboard/endpoint") {
@@ -159,7 +198,13 @@ export default function Sidebar({ onClose }) {
               <span className="text-xs text-text-muted">v{APP_CONFIG.version}</span>
             </div>
           </Link>
-          {updateInfo && (
+          {isApiKeyUser && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-xs text-primary font-medium">
+              <span className="material-symbols-outlined text-[15px]">key</span>
+              <span className="truncate">{authStatus?.displayName || "API Key User"}</span>
+            </div>
+          )}
+          {updateInfo && !isApiKeyUser && (
             <div className="flex flex-col gap-1.5 rounded p-1 -m-1">
               <span className="text-xs font-semibold text-green-600 dark:text-amber-500">
                 ↑ {updateInfo.behindBy ? `Update available: ${updateInfo.behindBy} commit${updateInfo.behindBy > 1 ? 's' : ''} behind` : `New version: ${updateInfo.latestVersion}`}
@@ -187,7 +232,7 @@ export default function Sidebar({ onClose }) {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-2 space-y-0.5 overflow-y-auto custom-scrollbar">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <NavLink
               key={item.href}
               href={item.href}
@@ -198,92 +243,13 @@ export default function Sidebar({ onClose }) {
             />
           ))}
 
-  
-        {/* FEATURE+ section — custom tools added by this fork */}
-          <div className="pt-3 mt-2 space-y-0.5">
-            <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
-              FEATURE+
-            </p>
-            {workshopItems.map((item) => (
-              <NavLink
-                key={item.href}
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                active={isActive(item.href)}
-                onClick={onClose}
-              />
-            ))}
-          </div>
-
-          {/* System section */}
-          <div className="pt-3 mt-2 space-y-0.5">
-            <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
-              System
-            </p>
-
-            {/* Media Providers accordion */}
-            <button
-              onClick={() => setMediaOpen((v) => !v)}
-              className={cn(
-                "relative w-full flex items-center gap-3 px-3 py-[7px] rounded-[10px] transition-all group",
-                pathname.startsWith("/dashboard/media-providers")
-                  ? "bg-primary/10 text-primary"
-                  : "text-text-muted hover:bg-surface-2 hover:text-text-main"
-              )}
-            >
-              {pathname.startsWith("/dashboard/media-providers") && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary" />
-              )}
-              <span className="material-symbols-outlined size-[18px] text-[18px] leading-none shrink-0">perm_media</span>
-              <span className="text-[13px] font-medium leading-none flex-1 text-left min-w-0 truncate" title="Media Providers">Media Providers</span>
-              {MEDIA_PROVIDER_KINDS.some((k) => VISIBLE_MEDIA_KINDS.includes(k.id) && k.isNew) && (
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-[3px] bg-green-500/15 text-green-400">NEW</span>
-              )}
-              <span className="material-symbols-outlined text-[14px] transition-transform" style={{ transform: mediaOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
-                expand_more
-              </span>
-            </button>
-            {mediaOpen && (
-              <div className="pl-4">
-                {MEDIA_PROVIDER_KINDS.filter((k) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind) => (
-                  <NavLink
-                    key={kind.id}
-                    href={`/dashboard/media-providers/${kind.id}`}
-                    icon={kind.icon}
-                    label={kind.label}
-                    active={pathname.startsWith(`/dashboard/media-providers/${kind.id}`)}
-                    onClick={onClose}
-                    sub
-                  />
-                ))}
-                <NavLink
-                  key={COMBINED_WEB_ITEM.id}
-                  href={COMBINED_WEB_ITEM.href}
-                  icon={COMBINED_WEB_ITEM.icon}
-                  label={COMBINED_WEB_ITEM.label}
-                  active={pathname.startsWith(COMBINED_WEB_ITEM.href)}
-                  onClick={onClose}
-                  sub
-                />
-              </div>
-            )}
-
-            {systemItems.map((item) => (
-              <NavLink
-                key={item.href}
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                active={isActive(item.href)}
-                onClick={onClose}
-              />
-            ))}
-
-            {/* Debug items (inside System section, before Settings) */}
-            {debugItems.map((item) => {
-              const show = item.href !== '/dashboard/translator' || enableTranslator;
-              return show ? (
+          {/* FEATURE+ section — custom tools added by this fork */}
+          {filteredWorkshopItems.length > 0 && (
+            <div className="pt-3 mt-2 space-y-0.5">
+              <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
+                FEATURE+
+              </p>
+              {filteredWorkshopItems.map((item) => (
                 <NavLink
                   key={item.href}
                   href={item.href}
@@ -292,18 +258,100 @@ export default function Sidebar({ onClose }) {
                   active={isActive(item.href)}
                   onClick={onClose}
                 />
-              ) : null;
-            })}
+              ))}
+            </div>
+          )}
 
-            {/* Settings */}
-            <NavLink
-              href='/dashboard/profile'
-              icon='settings'
-              label='9Router Settings'
-              active={isActive('/dashboard/profile')}
-              onClick={onClose}
-            />
-          </div>
+          {/* System section */}
+          {!isApiKeyUser && (
+            <div className="pt-3 mt-2 space-y-0.5">
+              <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
+                System
+              </p>
+
+              {/* Media Providers accordion */}
+              <button
+                onClick={() => setMediaOpen((v) => !v)}
+                className={cn(
+                  "relative w-full flex items-center gap-3 px-3 py-[7px] rounded-[10px] transition-all group",
+                  pathname.startsWith("/dashboard/media-providers")
+                    ? "bg-primary/10 text-primary"
+                    : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                )}
+              >
+                {pathname.startsWith("/dashboard/media-providers") && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary" />
+                )}
+                <span className="material-symbols-outlined size-[18px] text-[18px] leading-none shrink-0">perm_media</span>
+                <span className="text-[13px] font-medium leading-none flex-1 text-left min-w-0 truncate" title="Media Providers">Media Providers</span>
+                {MEDIA_PROVIDER_KINDS.some((k) => VISIBLE_MEDIA_KINDS.includes(k.id) && k.isNew) && (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-[3px] bg-green-500/15 text-green-400">NEW</span>
+                )}
+                <span className="material-symbols-outlined text-[14px] transition-transform" style={{ transform: mediaOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                  expand_more
+                </span>
+              </button>
+              {mediaOpen && (
+                <div className="pl-4">
+                  {MEDIA_PROVIDER_KINDS.filter((k) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind) => (
+                    <NavLink
+                      key={kind.id}
+                      href={`/dashboard/media-providers/${kind.id}`}
+                      icon={kind.icon}
+                      label={kind.label}
+                      active={pathname.startsWith(`/dashboard/media-providers/${kind.id}`)}
+                      onClick={onClose}
+                      sub
+                    />
+                  ))}
+                  <NavLink
+                    key={COMBINED_WEB_ITEM.id}
+                    href={COMBINED_WEB_ITEM.href}
+                    icon={COMBINED_WEB_ITEM.icon}
+                    label={COMBINED_WEB_ITEM.label}
+                    active={pathname.startsWith(COMBINED_WEB_ITEM.href)}
+                    onClick={onClose}
+                    sub
+                  />
+                </div>
+              )}
+
+              {systemItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.label}
+                  active={isActive(item.href)}
+                  onClick={onClose}
+                />
+              ))}
+
+              {/* Debug items (inside System section, before Settings) */}
+              {debugItems.map((item) => {
+                const show = item.href !== '/dashboard/translator' || enableTranslator;
+                return show ? (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    icon={item.icon}
+                    label={item.label}
+                    active={isActive(item.href)}
+                    onClick={onClose}
+                  />
+                ) : null;
+              })}
+
+              {/* Settings */}
+              <NavLink
+                href='/dashboard/profile'
+                icon='settings'
+                label='9Router Settings'
+                active={isActive('/dashboard/profile')}
+                onClick={onClose}
+              />
+            </div>
+          )}
         </nav>
 
       </aside>
