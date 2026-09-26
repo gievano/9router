@@ -1,6 +1,7 @@
 # v0.5.115-Custom (2026-09-26)
 
 ## Custom Features & Enhancements
+- **Custom Domain Endpoint Support**: Added Custom Domain option on the API Endpoint card alongside Local, Cloudflare Tunnel, and Tailscale. Users can configure their own reverse proxy or custom domain URL (e.g. `https://api.my-domain.com`), easily copy the `/v1` endpoint, edit the domain, and enable/disable it with persistent settings stored in the database.
 - **304+ Providers Integration**: Merged the massive provider library from ExtremeRouter. Added over 200+ API-key providers, 25 OAuth providers, and 39 Web-cookie providers (including Qwen Web, Claude Web, ChatGPT Web, Grok Web, Notion AI, HyperAgent, Conol, DouBao, Adapta, and more) into 9Router.
 - **Provider Capabilities & Prices**: Fully synchronized model metadata, token limits, capabilities, tool-calling flags, and token cost pricing with ExtremeRouter's definitions.
 - **Frontend Modals & UI**: Updated Add API Key modal to automatically suggest specific cookie capturing instructions for new Web-cookie providers. Added `FeloCaptureButton` and `CookieCaptureButton` helper components. 

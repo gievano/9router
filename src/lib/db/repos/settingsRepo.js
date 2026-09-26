@@ -11,6 +11,8 @@ const DEFAULT_SETTINGS = {
   tunnelProvider: "cloudflare",
   tailscaleEnabled: false,
   tailscaleUrl: "",
+  customDomainEnabled: false,
+  customDomainUrl: "",
   stickyRoundRobinLimit: 3,
   providerStrategies: {},
   quotaVisibility: {},

@@ -113,6 +113,15 @@ export default function APIPageClient({ machineId }) {
   const [showDisableTsModal, setShowDisableTsModal] = useState(false);
   const tsLogRef = useRef(null);
 
+  // Custom Domain state
+  const [customDomainEnabled, setCustomDomainEnabled] = useState(false);
+  const [customDomainUrl, setCustomDomainUrl] = useState("");
+  const [customDomainInput, setCustomDomainInput] = useState("");
+  const [showCustomDomainModal, setShowCustomDomainModal] = useState(false);
+  const [showDisableCustomDomainModal, setShowDisableCustomDomainModal] = useState(false);
+  const [customDomainSaving, setCustomDomainSaving] = useState(false);
+  const [customDomainError, setCustomDomainError] = useState("");
+
   // Debounce reachable=false: server may briefly return false during background refresh.
   // Only flip UI to "reconnecting" after N consecutive misses to avoid spinner flicker.
   const tunnelMissRef = useRef(0);
@@ -248,6 +257,8 @@ export default function APIPageClient({ machineId }) {
         const data = await settingsRes.json();
         setRequireApiKey(data.requireApiKey || false);
         setTunnelDashboardAccess(data.tunnelDashboardAccess || false);
+        setCustomDomainEnabled(data.customDomainEnabled || false);
+        setCustomDomainUrl(data.customDomainUrl || "");
       }
       if (statusRes.ok) {
         const data = await statusRes.json();
@@ -294,6 +305,62 @@ export default function APIPageClient({ machineId }) {
       if (res.ok) setRequireApiKey(value);
     } catch (error) {
       console.log("Error updating requireApiKey:", error);
+    }
+  };
+
+  const handleSaveCustomDomain = async (urlToSave) => {
+    let formatted = (urlToSave || "").trim();
+    if (!formatted) {
+      setCustomDomainError("Domain URL cannot be empty");
+      return;
+    }
+    if (!formatted.startsWith("http://") && !formatted.startsWith("https://")) {
+      formatted = "https://" + formatted;
+    }
+    formatted = formatted.replace(/\/+$/, "").replace(/\/v1$/, "");
+
+    setCustomDomainSaving(true);
+    setCustomDomainError("");
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customDomainEnabled: true,
+          customDomainUrl: formatted,
+        }),
+      });
+      if (res.ok) {
+        setCustomDomainEnabled(true);
+        setCustomDomainUrl(formatted);
+        setShowCustomDomainModal(false);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setCustomDomainError(errData.error || "Failed to save custom domain");
+      }
+    } catch (err) {
+      setCustomDomainError(err.message || "Failed to save custom domain");
+    } finally {
+      setCustomDomainSaving(false);
+    }
+  };
+
+  const handleDisableCustomDomain = async () => {
+    setCustomDomainSaving(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customDomainEnabled: false }),
+      });
+      if (res.ok) {
+        setCustomDomainEnabled(false);
+        setShowDisableCustomDomainModal(false);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCustomDomainSaving(false);
     }
   };
 
@@ -1095,6 +1162,54 @@ export default function APIPageClient({ machineId }) {
               </Button>
             )}
           </div>
+          {/* Custom Domain */}
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <span className={`text-xs font-mono px-1.5 py-0.5 rounded shrink-0 min-w-[88px] max-w-[140px] truncate text-center ${
+              customDomainEnabled ? "bg-primary/10 text-primary" : "bg-surface-2 text-text-muted"
+            }`}>Custom Domain</span>
+            {customDomainEnabled ? (
+              <>
+                <Input value={`${customDomainUrl}/v1`} readOnly className="flex-1 min-w-0 font-mono text-sm" inputClassName="truncate" />
+                <button
+                  onClick={() => copy(`${customDomainUrl}/v1`, "custom_domain_url")}
+                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
+                  title="Copy URL"
+                >
+                  <span className="material-symbols-outlined text-[18px]">{copied === "custom_domain_url" ? "check" : "content_copy"}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setCustomDomainInput(customDomainUrl);
+                    setCustomDomainError("");
+                    setShowCustomDomainModal(true);
+                  }}
+                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
+                  title="Edit Custom Domain"
+                >
+                  <span className="material-symbols-outlined text-[18px]">edit</span>
+                </button>
+                <button
+                  onClick={() => setShowDisableCustomDomainModal(true)}
+                  className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
+                  title="Disable Custom Domain"
+                >
+                  <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
+                </button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                icon="language"
+                onClick={() => {
+                  setCustomDomainInput(customDomainUrl || "");
+                  setCustomDomainError("");
+                  setShowCustomDomainModal(true);
+                }}
+              >
+                Enable
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Security warnings when tunnel or tailscale is active */}
@@ -1784,6 +1899,67 @@ export default function APIPageClient({ machineId }) {
           </div>
         </div>
       </Modal>
+
+      {/* Custom Domain Modal */}
+      <Modal
+        isOpen={showCustomDomainModal}
+        title={customDomainEnabled ? "Edit Custom Domain" : "Enable Custom Domain"}
+        onClose={() => setShowCustomDomainModal(false)}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="bg-surface-2 border border-border-subtle rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="material-symbols-outlined text-primary">language</span>
+              <div>
+                <p className="text-sm text-text-main font-medium mb-1">
+                  Custom Domain Endpoint
+                </p>
+                <p className="text-sm text-text-muted">
+                  Use your own domain or reverse proxy URL (e.g. <code>https://api.my-domain.com</code>) to access your 9Router gateway.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-text-muted uppercase mb-1">
+              Custom Domain URL
+            </label>
+            <Input
+              value={customDomainInput}
+              onChange={(e) => setCustomDomainInput(e.target.value)}
+              placeholder="https://api.my-domain.com"
+              autoFocus
+            />
+            {customDomainError && (
+              <p className="text-xs text-red-500 mt-1">{customDomainError}</p>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="neutral" onClick={() => setShowCustomDomainModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => handleSaveCustomDomain(customDomainInput)}
+              loading={customDomainSaving}
+            >
+              Save Configuration
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Disable Custom Domain Modal */}
+      <ConfirmModal
+        isOpen={showDisableCustomDomainModal}
+        title="Disable Custom Domain"
+        message="Are you sure you want to disable the custom domain endpoint?"
+        confirmLabel="Disable"
+        confirmVariant="danger"
+        onConfirm={handleDisableCustomDomain}
+        onCancel={() => setShowDisableCustomDomainModal(false)}
+      />
 
       {/* Snippet Modal */}
 <Modal

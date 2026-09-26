@@ -13,7 +13,7 @@ const ensureV1 = (url) => {
   return /\/v1$/.test(trimmed) ? trimmed : `${trimmed}/v1`;
 };
 
-const buildOptions = ({ requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tailscaleEnabled, tailscaleUrl, cloudEnabled, cloudUrl, savedPresets, withV1 }) => {
+const buildOptions = ({ requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tailscaleEnabled, tailscaleUrl, customDomainEnabled, customDomainUrl, cloudEnabled, cloudUrl, savedPresets, withV1 }) => {
   const opts = [];
   const wrap = (url) => (withV1 ? ensureV1(url) : (url || "").replace(/\/+$/, ""));
   if (!requiresExternalUrl) {
@@ -27,6 +27,10 @@ const buildOptions = ({ requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tai
   if (tailscaleEnabled && tailscaleUrl) {
     const u = wrap(tailscaleUrl);
     opts.push({ value: "tailscale", label: u, url: u });
+  }
+  if (customDomainEnabled && customDomainUrl) {
+    const u = wrap(customDomainUrl);
+    opts.push({ value: "customDomain", label: u, url: u });
   }
   if (cloudEnabled && cloudUrl) {
     const u = wrap(cloudUrl);
@@ -47,6 +51,8 @@ export default function BaseUrlSelect({
   tunnelPublicUrl = "",
   tailscaleEnabled = false,
   tailscaleUrl = "",
+  customDomainEnabled = false,
+  customDomainUrl = "",
   cloudEnabled = false,
   cloudUrl = "",
   withV1 = true,
@@ -81,8 +87,8 @@ export default function BaseUrlSelect({
   }, []);
 
   const options = useMemo(
-    () => buildOptions({ requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tailscaleEnabled, tailscaleUrl, cloudEnabled, cloudUrl, savedPresets, withV1 }),
-    [requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tailscaleEnabled, tailscaleUrl, cloudEnabled, cloudUrl, savedPresets, withV1]
+    () => buildOptions({ requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tailscaleEnabled, tailscaleUrl, customDomainEnabled, customDomainUrl, cloudEnabled, cloudUrl, savedPresets, withV1 }),
+    [requiresExternalUrl, tunnelEnabled, tunnelPublicUrl, tailscaleEnabled, tailscaleUrl, customDomainEnabled, customDomainUrl, cloudEnabled, cloudUrl, savedPresets, withV1]
   );
 
   // Prefer a saved preset matching the currently configured URL, else first option
