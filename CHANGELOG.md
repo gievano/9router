@@ -1,3 +1,8 @@
+# v0.5.118-Custom (2026-09-26)
+
+## Changes
+- **Dropped Union Alpha from OpenCode Free**: `oc/union-alpha` and `oc/union-alpha-free` are removed from the OpenCode Free registry, so they no longer appear in the model picker, the suggested list or `/v1/models`. They were the only free models served over the Anthropic Messages endpoint, so that routing branch, its model set and the `anthropic-version` header it added are gone as well; every remaining free model goes to chat/completions or to the Responses API. OpenCode Zen keeps its own `union-alpha` model, which is a separate provider and still works.
+
 # v0.5.117-Custom (2026-09-26)
 
 ## Fixes & Enhancements
