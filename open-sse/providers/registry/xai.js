@@ -35,6 +35,12 @@ export default {
     { id: "grok-3", name: "Grok 3" },
     { id: "grok-2-image-1212", name: "Grok 2 Image", params: ["n","response_format"], kind: "image" },
     { id: "grok-imagine-video", name: "Grok Imagine Video", params: ["duration","aspect_ratio","resolution"], kind: "video" },
+  
+    { id: "grok-4.20-multi-agent", name: "Grok 4.20 Multi-Agent" },
+    { id: "grok-4.20-reasoning", name: "Grok 4.20 Reasoning" },
+    { id: "grok-imagine-image-quality", name: "Grok Imagine (Image Quality)", params: ["n","response_format"], kind: "image" },
+    { id: "grok-imagine-image-2.0", name: "Grok Imagine Image 2.0", params: ["n","response_format"], kind: "image" },
+    { id: "grok-imagine-video-1.5", name: "Grok Imagine Video 1.5", params: ["duration","aspect_ratio","resolution"], kind: "video" },
   ],
   serviceKinds: ["llm","imageToText","webSearch","image","video"],
   imageConfig: { baseUrl: "https://api.x.ai/v1/images/generations", bodyFields: ["model","prompt","n","response_format"] },

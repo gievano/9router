@@ -37,6 +37,13 @@ export default {
     { id: "perplexity/glm-5.2", name: "GLM 5.2" },
     { id: "perplexity/kimi-k2.7-code", name: "Kimi K2.7 Code" },
     { id: "nvidia/nemotron-3-super-120b-a12b", name: "Nemotron 3 Super 120B" },
+  
+    { id: "openai/gpt-5-mini", name: "GPT-5 Mini" },
+    { id: "openai/gpt-5", name: "GPT-5" },
+    { id: "anthropic/claude-opus-4-7", name: "Claude Opus 4.7" },
+    { id: "anthropic/claude-haiku-4-5", name: "Claude Haiku 4.5" },
+    { id: "google/gemini-3.5-flash", name: "Gemini 3.5 Flash" },
+    { id: "xai/grok-4.20-multi-agent", name: "Grok 4.20 Multi-Agent" },
   ],
   serviceKinds: ["llm", "webSearch"],
   searchViaChat: {

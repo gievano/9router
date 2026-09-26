@@ -10,7 +10,6 @@ export async function GET() {
     const customPlugins = settings.customPlugins || {
       imageVision: { enabled: false, models: [] },
       thinkDeeper: { enabled: false, models: [] },
-      unrestrictedMode: { enabled: false, models: [] },
       speedMode: { enabled: false, models: [] },
     };
     return NextResponse.json({ customPlugins }, { headers: { "Cache-Control": "no-store" } });
@@ -36,10 +35,6 @@ export async function PUT(request) {
       thinkDeeper: {
         enabled: Boolean(customPlugins.thinkDeeper?.enabled),
         models: Array.isArray(customPlugins.thinkDeeper?.models) ? customPlugins.thinkDeeper.models.filter(Boolean) : [],
-      },
-      unrestrictedMode: {
-        enabled: Boolean(customPlugins.unrestrictedMode?.enabled),
-        models: Array.isArray(customPlugins.unrestrictedMode?.models) ? customPlugins.unrestrictedMode.models.filter(Boolean) : [],
       },
       speedMode: {
         enabled: Boolean(customPlugins.speedMode?.enabled),

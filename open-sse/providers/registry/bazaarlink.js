@@ -43,5 +43,15 @@ export default {
     { id: "minimax-m2.5", name: "MiniMax M2.5", contextLength: 204800 },
     { id: "qwen3.6-plus", name: "Qwen 3.6 Plus", contextLength: 1000000 },
     { id: "nemotron-3-super-120b-a12b", name: "Nemotron 3 Super", contextLength: 1000000 },
+  
+    { id: "gemma-4-31b-it", name: "Gemma 4 31B" },
+    { id: "gemma-4-26b-a4b-it", name: "Gemma 4 26B A4B" },
+    { id: "deepseek-v3.2", name: "DeepSeek V3.2" },
+    { id: "llama-4-maverick", name: "Llama 4 Maverick" },
+    { id: "llama-4-scout", name: "Llama 4 Scout" },
+    { id: "llama-3.3-70b-instruct", name: "Llama 3.3 70B" },
+    { id: "mistral-large-2512", name: "Mistral Large 3" },
+    { id: "mistral-medium-3.1", name: "Mistral Medium 3.1" },
+    { id: "mistral-small-2603", name: "Mistral Small 4" },
   ],
 };

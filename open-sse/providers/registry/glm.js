@@ -53,6 +53,9 @@ export default {
     { id: "glm-5", name: "GLM 5" },
     { id: "glm-4.7", name: "GLM 4.7" },
     { id: "glm-4.6v", name: "GLM 4.6V (Vision)" },
+  
+    { id: "glm-5.3-high", name: "GLM 5.3 High", upstreamModelId: "glm-5.3" },
+    { id: "glm-5.3-low", name: "GLM 5.3 Low", upstreamModelId: "glm-5.3" },
   ],
   serviceKinds: ["llm", "webSearch"],
   // Coding plan bundles web search on the same API key as chat.

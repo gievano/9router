@@ -117,6 +117,12 @@ export default {
     // System One (Jev) decision models on the native /systemone endpoint
     { id: "jev-1.13", name: "Jev 1.13", kind: "systemone" },
     { id: "jev-1.13-free", name: "Jev 1.13 Free", kind: "systemone" },
+  
+    { id: "gemini-3-pro", name: "Gemini 3 Pro" },
+    { id: "glm-4.6", name: "GLM-4.6" },
+    { id: "ling-3.0-flash-free", name: "Ling-3.0-flash Free" },
+    { id: "laguna-s-2.1-free", name: "Laguna S 2.1 Free" },
+    { id: "x-preview-f-free", name: "x Preview F Free" },
   ],
   serviceKinds: ["llm", "systemone"],
   systemoneConfig: {

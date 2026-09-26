@@ -1,6 +1,7 @@
 import { PROVIDER_MODELS, PROVIDER_ID_TO_ALIAS, getModelKind } from "@/shared/constants/models";
 import {
   AI_PROVIDERS,
+  FREE_PROVIDERS,
   getProviderAlias,
   isAnthropicCompatibleProvider,
   isOpenAICompatibleProvider,
@@ -249,6 +250,12 @@ function providerMatchesKinds(providerId, kindFilter) {
   return kindFilter.some((k) => kinds.includes(k));
 }
 
+// Providers that need no credential are callable the moment 9Router runs, so they
+// never own a connection row. Without this pass they only appeared while the whole
+// provider table was empty, and any client that reads /v1/models (Hermes, Cline,
+// SDK model pickers) could not see a single one of their models.
+const NO_AUTH_PROVIDER_IDS = Object.keys(FREE_PROVIDERS).filter((id) => FREE_PROVIDERS[id].noAuth);
+
 // Combo matches kindFilter when its `kind` field is in the list.
 // Combos with no kind are treated as LLM.
 function comboMatchesKinds(combo, kindFilter) {
@@ -348,8 +355,14 @@ export async function buildModelsList(kindFilter, options = {}) {
     if (combo.kind === "webSearch" || combo.kind === "webFetch") {
       entry.kind = combo.kind;
     } else {
-      const comboCaps = aggregateComboCapabilities(combo.models, comboByName);
-      if (comboCaps) entry.capabilities = comboCaps;
+      const comboCaps = aggregateComboCapabilities(combo.models, comboByName, 0, Number(combo.contextWindow) || 0);
+      if (comboCaps) {
+        entry.capabilities = comboCaps;
+        // Same reason single models publish it: a client that only reads
+        // context_length must not fall back to guessing the window from the name.
+        if (Number.isFinite(comboCaps.contextWindow)) entry.context_length = comboCaps.contextWindow;
+        if (Number.isFinite(comboCaps.maxOutput)) entry.max_completion_tokens = comboCaps.maxOutput;
+      }
     }
     models.push(entry);
   }
@@ -599,6 +612,30 @@ export async function buildModelsList(kindFilter, options = {}) {
           owned_by: outputAlias,
         });
       }
+    }
+  }
+
+  // Credential-free providers have no connection row to iterate, so list them here.
+  // A provider that does have a live connection was already published above.
+  for (const providerId of NO_AUTH_PROVIDER_IDS) {
+    if (activeConnectionByProvider.has(providerId)) continue;
+    if (!providerMatchesKinds(providerId, kindFilter)) continue;
+    const alias = getProviderAlias(providerId);
+    const providerModels = PROVIDER_MODELS[PROVIDER_ID_TO_ALIAS[providerId] || providerId] || [];
+    for (const model of providerModels) {
+      if (!kindFilter.includes(modelKind(model))) continue;
+      if (isDisabled(alias, model.id)) continue;
+      if (studioTargets.isStudioTarget([providerId, alias], model.id)) continue;
+      const caps = getCapabilitiesForModel(providerId, model.id);
+      const entry = {
+        id: `${alias}/${model.id}`,
+        object: "model",
+        owned_by: alias,
+      };
+      if (caps) entry.capabilities = caps;
+      if (Number.isFinite(caps?.contextWindow)) entry.context_length = caps.contextWindow;
+      if (Number.isFinite(caps?.maxOutput)) entry.max_completion_tokens = caps.maxOutput;
+      models.push(entry);
     }
   }
 

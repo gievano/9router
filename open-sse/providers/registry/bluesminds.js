@@ -34,5 +34,14 @@ export default {
     { id: "minimax-m2.5", name: "MiniMax M2.5", contextLength: 204800 },
     { id: "claude-opus-4-5", name: "Claude Opus 4.5 (VIP)", contextLength: 200000 },
     { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro (VIP)", contextLength: 1048576 },
+  
+    { id: "gpt-4o", name: "GPT-4o" },
+    { id: "gpt-4o-mini", name: "GPT-4o Mini" },
+    { id: "deepseek-reasoner", name: "DeepSeek Reasoner" },
+    { id: "deepseek-chat", name: "DeepSeek Chat" },
+    { id: "qwen-plus", name: "Qwen Plus" },
+    { id: "glm-4-flash", name: "GLM 4 Flash" },
+    { id: "grok-3", name: "Grok-3 (VIP)" },
+    { id: "qwen-max", name: "Qwen Max (VIP)" },
   ],
 };

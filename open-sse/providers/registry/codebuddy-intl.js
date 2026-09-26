@@ -62,6 +62,13 @@ export default {
     // catalog as CN; the old endpoint still answers 200 but the list is the contract).
     { id: "deepseek-v4.1-flash", name: "DeepSeek-V4.1-Flash" },
     { id: "deepseek-v3-2-volc", name: "DeepSeek-V3.2" },
+  
+    { id: "glm-5.3", name: "GLM-5.3" },
+    { id: "glm-5.3-flash", name: "GLM-5.3-Flash" },
+    { id: "kimi-k3-1", name: "Kimi-K3.1" },
+    { id: "hy4-preview", name: "Hy4 Preview" },
+    { id: "hy4-preview-x", name: "Hy4 Preview X" },
+    { id: "deepseek-v4-flash", name: "DeepSeek-V4-Flash" },
   ],
   oauth: {
     baseUrl: "https://www.codebuddy.ai",

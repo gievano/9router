@@ -33,6 +33,9 @@ export default {
     { id: "muse-spark-1.2-contributor-free", name: "Muse Spark 1.2 Contributor Free", targetFormat: "openai-responses" },
     { id: "muse-spark-1.3-contributor-free", name: "Muse Spark 1.3 Contributor Free", targetFormat: "openai-responses" },
     { id: "jev-1.13-free", name: "Jev 1.13 Free", kind: "systemone" },
+  
+    { id: "x-preview-f-free", name: "x Preview F Free" },
+    { id: "laguna-s-2.1-free", name: "Laguna S 2.1 Free" },
   ],
   serviceKinds: ["llm", "systemone"],
   systemoneConfig: {

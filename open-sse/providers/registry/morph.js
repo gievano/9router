@@ -25,5 +25,8 @@ export default {
     { id: "morph-minimax27-230b", name: "MiniMax M2.7 (Morph)", contextLength: 200704 },
     { id: "morph-qwen36-27b", name: "Qwen 3.6 27B (Morph)", contextLength: 262144 },
     { id: "morph-dsv4flash", name: "DeepSeek V4 Flash (Morph)", contextLength: 1048576 },
+  
+    { id: "morph-glm52-744b", name: "GLM-5.2 744B" },
+    { id: "morph-minimax3-428b", name: "MiniMax M3" },
   ],
 };

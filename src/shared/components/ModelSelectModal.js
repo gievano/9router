@@ -9,6 +9,38 @@ import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, AI_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, getProviderAlias } from "@/shared/constants/providers";
 import { buildStudioTargetIndex } from "@/shared/utils/studioModelVisibility";
+import { formatContextWindow } from "@/shared/utils/contextWindow";
+
+// Same matching rules the server applies to allowedModels: exact name, `prefix*`
+// and `*suffix`, case-insensitive. Mirrored here so a scoped session only ever sees
+// the models it may hand out.
+function matchesModelScope(patterns, value, id) {
+  if (!patterns || patterns.length === 0) return true;
+  const candidates = [value, id]
+    .filter(Boolean)
+    .map((v) => String(v).trim().toLowerCase());
+  if (candidates.length === 0) return false;
+  return candidates.some((req) =>
+    patterns.some((allowed) => {
+      if (allowed === "*" || allowed === req) return true;
+      if (allowed.endsWith("*")) return req.startsWith(allowed.slice(0, -1));
+      if (allowed.startsWith("*")) return req.endsWith(allowed.slice(1));
+      return false;
+    })
+  );
+}
+
+// The window every client needs before it starts compacting, shown next to the
+// model name so a 1M model is never picked as if it were a 256k one.
+function ContextTag({ caps }) {
+  const ctx = caps?.contextWindow;
+  if (!Number.isFinite(ctx) || ctx <= 0) return null;
+  return (
+    <span className="text-[9px] opacity-60 font-normal" title={`${Number(ctx).toLocaleString()} tokens`}>
+      {formatContextWindow(ctx)}
+    </span>
+  );
+}
 
 // Provider order: OAuth first, then Free Tier, then API Key (matches dashboard/providers)
 const PROVIDER_ORDER = [
@@ -83,6 +115,7 @@ export default function ModelSelectModal({
   addedModelValues = [],
   closeOnSelect = true,
   showStudioTargets = false,
+  allowedModelPatterns = null,
 }) {
   // Filter activeProviders by serviceKinds when kindFilter set (e.g. "webSearch", "webFetch")
   const filteredActiveProviders = useMemo(() => {
@@ -475,22 +508,26 @@ export default function ModelSelectModal({
   // Filter combos by search query (and hide combos when kindFilter is set — combos are LLM-only by design)
   const filteredCombos = useMemo(() => {
     if (kindFilter || capFilter) return [];
-    if (!searchQuery.trim()) return combos;
+    let list = combos;
+    if (allowedModelPatterns) list = list.filter((c) => matchesModelScope(allowedModelPatterns, c.id || c.name, c.name));
+    if (!searchQuery.trim()) return list;
     const query = searchQuery.toLowerCase();
-    return combos.filter(c => c.name.toLowerCase().includes(query));
-  }, [combos, searchQuery, kindFilter]);
+    return list.filter(c => c.name.toLowerCase().includes(query));
+  }, [combos, searchQuery, kindFilter, capFilter, allowedModelPatterns]);
 
   // Studio models are LLM-only user-defined names, so they hide for typed kinds.
   const filteredStudioModels = useMemo(() => {
     if (kindFilter || capFilter) return [];
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return studioModels;
-    return studioModels.filter((m) =>
+    let list = studioModels;
+    if (allowedModelPatterns) list = list.filter((m) => matchesModelScope(allowedModelPatterns, m.callName, m.callName));
+    if (!query) return list;
+    return list.filter((m) =>
       m.callName.toLowerCase().includes(query) ||
       (m.displayName || "").toLowerCase().includes(query) ||
       m.targetModel.toLowerCase().includes(query)
     );
-  }, [studioModels, searchQuery, kindFilter, capFilter]);
+  }, [studioModels, searchQuery, kindFilter, capFilter, allowedModelPatterns]);
 
   // Sort models alphabetically, with added models floated to top
   const sortModels = (models) => {
@@ -506,6 +543,10 @@ export default function ModelSelectModal({
     const filtered = {};
     Object.entries(groupedModels).forEach(([providerId, group]) => {
       let models = group.models;
+      if (allowedModelPatterns) {
+        models = models.filter((m) => matchesModelScope(allowedModelPatterns, m.value, m.id));
+        if (models.length === 0) return;
+      }
       // Filter by input-modality capability (vision/pdf/audioInput/videoInput).
       if (capFilter) {
         models = models.filter((m) => getCaps(m.value)?.[capFilter] === true);
@@ -527,7 +568,7 @@ export default function ModelSelectModal({
     });
 
     return filtered;
-  }, [groupedModels, searchQuery, addedModelValues]);
+  }, [groupedModels, searchQuery, addedModelValues, allowedModelPatterns, capFilter, getCaps]);
 
   const handleSelect = (model) => {
     const value = model?.value || model?.name || model;
@@ -610,6 +651,7 @@ export default function ModelSelectModal({
                       <span className="material-symbols-outlined leading-none" style={{ fontSize: "10px" }}>check</span>
                     )}
                     {combo.name}
+                    <ContextTag caps={getCaps(combo.name)} />
                     <CapacityBadges caps={getCaps(combo.name)} />
                   </button>
                 );
@@ -649,6 +691,7 @@ export default function ModelSelectModal({
                     )}
                     {studio.callName}
                     <span className="text-[9px] opacity-60 font-normal">custom</span>
+                    <ContextTag caps={getCaps(studio.callName)} />
                     <CapacityBadges caps={getCaps(studio.callName)} />
                   </button>
                 );
@@ -711,11 +754,13 @@ export default function ModelSelectModal({
                         <>
                           {model.name}
                           <span className="text-[9px] opacity-60 font-normal">custom</span>
+                          <ContextTag caps={getCaps(model.value)} />
                           <CapacityBadges caps={getCaps(model.value)} />
                         </>
                       ) : (
                         <>
                           {model.name}
+                          <ContextTag caps={getCaps(model.value)} />
                           <CapacityBadges caps={getCaps(model.value)} />
                         </>
                       )}
@@ -757,4 +802,5 @@ ModelSelectModal.propTypes = {
   addedModelValues: PropTypes.arrayOf(PropTypes.string),
   closeOnSelect: PropTypes.bool,
   showStudioTargets: PropTypes.bool,
+  allowedModelPatterns: PropTypes.arrayOf(PropTypes.string),
 };

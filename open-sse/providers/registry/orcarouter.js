@@ -1,0 +1,55 @@
+// OrcaRouter — OpenAI-compatible multi-provider gateway.
+// Live models from https://api.orcarouter.ai/v1/models and model cards at https://www.orcarouter.ai/models/
+// Supports OpenAI Chat Completions (/v1/chat/completions) and OpenAI Responses API (/v1/responses).
+export default {
+  id: "orcarouter",
+  priority: 50,
+  alias: "orcarouter",
+  display: {
+    name: "OrcaRouter",
+    icon: "router",
+    color: "#0891B2",
+    textIcon: "ORC",
+    website: "https://www.orcarouter.ai",
+  },
+  category: "apikey",
+  authType: "apikey",
+  transport: {
+    baseUrl: "https://api.orcarouter.ai/v1/chat/completions",
+    validateUrl: "https://api.orcarouter.ai/v1/models",
+    // Orca supports both openai and anthropic formats; thinking via openai reasoning_effort
+    thinkingFormat: "openai",
+  },
+  // Seed catalog — offline fallback; live /v1/models (passthroughModels) supersedes at runtime.
+  models: [
+    { id: "orcarouter/auto", name: "Auto (smart routing)" },
+    { id: "orcarouter/free", name: "Free (auto route)" },
+    { id: "orcarouter/fusion", name: "Fusion (frontier)" },
+    { id: "orcarouter/fusion-flash", name: "Fusion Flash" },
+    { id: "orcarouter/fusion-mini", name: "Fusion Mini" },
+    { id: "openai/gpt-5.5", name: "GPT-5.5" },
+    { id: "google/gemini-3.5-flash", name: "Gemini 3.5 Flash" },
+    { id: "google/gemini-3-flash-preview", name: "Gemini 3 Flash Preview" },
+    { id: "google/gemini-3.6-flash", name: "Gemini 3.6 Flash" },
+    { id: "anthropic/claude-opus-4.8", name: "Claude Opus 4.8" },
+    { id: "anthropic/claude-opus-5", name: "Claude Opus 5" },
+    { id: "anthropic/claude-sonnet-5", name: "Claude Sonnet 5" },
+    { id: "grok/grok-4.3", name: "Grok 4.3" },
+    { id: "deepseek/deepseek-v4-pro", name: "DeepSeek V4 Pro" },
+    { id: "deepseek/deepseek-v4-pro-free", name: "DeepSeek V4 Pro (free)" },
+    { id: "deepseek/deepseek-v4-flash-free", name: "DeepSeek V4 Flash (free)" },
+    { id: "deepseek/deepseek-reasoner", name: "DeepSeek Reasoner" },
+    { id: "minimax/minimax-m2.7", name: "MiniMax M2.7" },
+    { id: "qwen/qwen3.8-27b-free", name: "Qwen3.8 27B (free)" },
+    { id: "qwen/qwen3.7-max", name: "Qwen3.7 Max" },
+    { id: "qwen/qwen3.7-plus", name: "Qwen3.7 Plus" },
+    { id: "qwen/qwen3.7-flash", name: "Qwen3.7 Flash" },
+    { id: "qwen/qwen3.6-flash", name: "Qwen3.6 Flash" },
+    { id: "qwen/qwen3.6-plus", name: "Qwen3.6 Plus" },
+    { id: "qwen/qwen3.5-flash", name: "Qwen3.5 Flash" },
+    { id: "qwen/qwen3.5-plus", name: "Qwen3.5 Plus" },
+    { id: "qwen/qwen3.5-27b", name: "Qwen3.5 27B" },
+    { id: "tencent/hy3-free", name: "Hunyuan 3 (free)" },
+  ],
+  passthroughModels: true,
+};

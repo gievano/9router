@@ -50,6 +50,8 @@ export default {
     { id: "playgroundai/playground-v2.5-1024px-aesthetic", name: "Playground v2.5", params: [], kind: "image" },
     { id: "openai/whisper-large-v3", name: "Whisper Large v3 (HF)", params: [], kind: "stt" },
     { id: "openai/whisper-large-v3-turbo", name: "Whisper Large v3 Turbo (HF)", params: [], kind: "stt" },
+  
+    { id: "openai/whisper-small", name: "Whisper Small (HF)", params: ["language"], kind: "stt" },
   ],
   serviceKinds: ["image", "stt"],
   // Inference Providers router. The router is addressed as

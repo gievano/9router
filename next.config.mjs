@@ -1,7 +1,29 @@
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));
+// Stamp the build with the revision and the release it was made from. A deploy
+// that ships without .git history still knows what it is, so the update banner can
+// compare it against the repository instead of staying silent forever.
+function stampBuild() {
+  const stamp = {};
+  try {
+    stamp.APP_REVISION = process.env.APP_REVISION
+      || execFileSync("git", ["rev-parse", "HEAD"], { cwd: projectRoot, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  } catch {
+    // Built outside a checkout: the release heading is the only anchor left.
+  }
+  try {
+    const changelog = readFileSync(join(projectRoot, "CHANGELOG.md"), "utf8");
+    const heading = changelog.match(/^#\s+(v[0-9][^\s(]*)/m);
+    if (heading) stamp.APP_RELEASE = process.env.APP_RELEASE || heading[1].trim();
+  } catch {
+    // No changelog in the build context: the release signal stays unknown.
+  }
+  return stamp;
+}
 // CLI bundling needs workspace root so tracing includes hoisted node_modules (slim ~50MB).
 // Docker / default uses projectRoot so server.js lands at /app/server.js (not nested).
 const tracingRoot = process.env.NEXT_TRACING_ROOT_MODE === "workspace"
@@ -31,7 +53,7 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  env: {},
+  env: stampBuild(),
   experimental: {
     // #1529/#1572: LLM clients can send long context or base64 image payloads through /v1 rewrites.
     proxyClientMaxBodySize,

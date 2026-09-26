@@ -9,6 +9,22 @@ const MEDIA_ENTRY_KEYS = [
   "modelsFetcher", "mediaPriority", "hiddenKinds",
 ];
 
+// Default capability sets — must mirror open-sse/services/providerCapabilities.js.
+// Web cookie providers lack tool use + file access (browser chat endpoints).
+const FULL_CAPS = { toolUse: true, fileAccess: true, streaming: true, multiTurn: true };
+const WEB_COOKIE_CAPS = { toolUse: false, fileAccess: false, streaming: true, multiTurn: true };
+const DEFAULT_CAPS_BY_CATEGORY = { webCookie: WEB_COOKIE_CAPS };
+
+/**
+ * Resolve capabilities for a registry entry: explicit override > category default > full.
+ * Mirrors open-sse/services/providerCapabilities.js getProviderCaps() for UI-side use.
+ */
+function resolveCaps(r) {
+  if (r.capabilities && typeof r.capabilities === "object") return { ...FULL_CAPS, ...r.capabilities };
+  const byCat = DEFAULT_CAPS_BY_CATEGORY[r.category];
+  return byCat ? { ...byCat } : { ...FULL_CAPS };
+}
+
 // Build provider UI object from registry entry
 function buildProviderEntry(r) {
   const mediaFields = {};
@@ -21,7 +37,10 @@ function buildProviderEntry(r) {
   return {
     ...display,
     id: r.id,
-    alias: r.uiAlias || r.alias,
+    // Routing alias only: uiAlias is display-only and the gateway cannot
+    // resolve it server-side (e.g. tokenrouter badge "tr" belongs to trae).
+    alias: r.alias || r.id,
+    ...(r.uiAlias ? { uiAlias: r.uiAlias } : {}),
     ...(r.hidden ? { hidden: true } : {}),
     ...mediaFields,
     ...(r.priority !== undefined ? { priority: r.priority } : {}),
@@ -31,10 +50,18 @@ function buildProviderEntry(r) {
     ...(r.hasProviderSpecificData ? { hasProviderSpecificData: true } : {}),
     ...(r.noAuth ? { noAuth: true } : {}),
     ...(r.passthroughModels ? { passthroughModels: true } : {}),
-    ...(r.hasOAuth ? { hasOAuth: true } : {}),
-    ...(r.authModes ? { authModes: r.authModes } : {}),
+    // Explicit false must survive — the provider page gates isOAuth on
+    // `hasOAuth !== false` so API-key-only free/oauth-category providers
+    // (bynara, trae, cody, windsurf) never open the OAuth modal.
+    ...(r.hasOAuth === false ? { hasOAuth: false } : r.hasOAuth ? { hasOAuth: true } : {}),
+    ...(r.authModes
+      ? { authModes: r.authModes }
+      : (r.category === "freeTier" || r.category === "apikey") ? { authModes: ["apikey"] }
+      : {}),
     ...(r.authType ? { authType: r.authType } : {}),
     ...(r.authHint ? { authHint: r.authHint } : {}),
+    ...(r.comingSoon ? { comingSoon: true } : {}),
+    capabilities: resolveCaps(r),
   };
 }
 
@@ -85,6 +112,8 @@ export const MEDIA_PROVIDER_KINDS = [
 export const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";
 export const ANTHROPIC_COMPATIBLE_PREFIX = "anthropic-compatible-";
 export const CUSTOM_EMBEDDING_PREFIX = "custom-embedding-";
+export const CUSTOM_STT_PREFIX = "custom-stt-";
+export const CUSTOM_TTS_PREFIX = "custom-tts-";
 
 export function isOpenAICompatibleProvider(providerId) {
   return typeof providerId === "string" && providerId.startsWith(OPENAI_COMPATIBLE_PREFIX);
@@ -96,6 +125,14 @@ export function isAnthropicCompatibleProvider(providerId) {
 
 export function isCustomEmbeddingProvider(providerId) {
   return typeof providerId === "string" && providerId.startsWith(CUSTOM_EMBEDDING_PREFIX);
+}
+
+export function isCustomSttProvider(providerId) {
+  return typeof providerId === "string" && providerId.startsWith(CUSTOM_STT_PREFIX);
+}
+
+export function isCustomTtsProvider(providerId) {
+  return typeof providerId === "string" && providerId.startsWith(CUSTOM_TTS_PREFIX);
 }
 
 // All providers (combined)

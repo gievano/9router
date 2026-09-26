@@ -28,6 +28,10 @@ export default {
   models: [
     { id: "k3", name: "Kimi K3" },
     { id: "k2d6", name: "Kimi K2.6" },
+  
+    { id: "kimi-default", name: "Kimi Default" },
+    { id: "kimi-k2.6", name: "Kimi K2.6 (Thinking)", supportsReasoning: true },
+    { id: "kimi-128k", name: "Kimi 128K (Long Context)" },
   ],
   passthroughModels: true,
 };

@@ -4,7 +4,7 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 
-const OFFICIAL_URL = "https://raw.githubusercontent.com/decolua/9router/refs/heads/master/CHANGELOG.md";
+const OFFICIAL_URL = "https://raw.githubusercontent.com/gievano/9router/refs/heads/master/CHANGELOG.md";
 
 // This repo's own CHANGELOG.md is the fork's (gievano) changelog; the official one lives upstream.
 function readLocalChangelog() {

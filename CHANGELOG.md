@@ -1,3 +1,53 @@
+# v0.5.119-Custom (2026-09-26)
+
+## Changes
+- **Removed the Uncensored Output plugin**: the plugin, its runtime prompt injection, its API keys, its default settings entry, its capability badge and its card on the Custom Plugins page are gone. A configuration that still carries the old entry is simply ignored, and no model loses a badge it no longer has. The remaining plugins are Image Vision, Think Deeper and Speed Mode.
+
+## Fixes & Enhancements
+- **Update banner that actually fires on a deployed instance**: the old check only asked git how far behind the checkout was, and a deploy that ships without git history (a container or a platform build) has no revision to ask about, so it reported "no update" forever. The build now stamps its own revision and release into the bundle, and the check runs a second signal that compares the newest changelog entry on the repository with the release this build came from, so an image without git still learns that a newer release exists.
+- **A dismissible banner across the dashboard**: a banner appears under the header when an update exists, naming the release, saying how far behind the install is, previewing the first notes of the new release, and offering the update command to copy plus a link to the repository. It rechecks every ten minutes, and closing it hides that release only, so the next one shows up again.
+- **The changelog URL pointed at the wrong repository**: it read the upstream changelog while everything else in the app points at this fork, so a release note shown to the user could describe changes that were never shipped here.
+- **Post-login dialog no longer repeats the update notice**: it used to print a commit count that could be unknown, and the update has a home of its own now.
+
+# v0.5.118-Custom (2026-09-26)
+
+## Changes
+- **Dropped Union Alpha from OpenCode Free**: `oc/union-alpha` and `oc/union-alpha-free` are removed from the OpenCode Free registry, so they no longer appear in the model picker, the suggested list or `/v1/models`. They were the only free models served over the Anthropic Messages endpoint, so that routing branch, its model set and the `anthropic-version` header it added are gone as well; every remaining free model goes to chat/completions or to the Responses API. OpenCode Zen keeps its own `union-alpha` model, which is a separate provider and still works.
+
+# v0.5.117-Custom (2026-09-26)
+
+## Fixes & Enhancements
+- **Combo context window follows the largest member**: a combo of a 1M model and a 256k model used to publish 256k, so clients compacted a conversation far earlier than any member needed. A combo fails over between models instead of splitting one conversation, so the window it advertises now follows the largest member, same as max output already did. The two places that aggregated combos disagreed with each other (one took the smallest window and the smallest output, the other the smallest window and the largest output), so both now share one aggregator and a combo reports the same window in every place.
+- **Custom context per combo**: create and edit combo have a Context Window switch with Auto and Custom. Auto follows the largest member and says what that is right now, Custom takes a token count that wins over the automatic value. Stored in a new `contextWindow` column, where 0 means auto, and marked with a custom badge on the combo card.
+- **Every model shows its real window**: each row in the combo form and each chip in the model picker now carry the model's context (1.0M, 256k), so a 1M model is never picked as if it were a small one. The combo card shows the window and output of each of its members next to the badges.
+- **Combos report context_length**: `/v1/models` published a combo's window only inside a nested block, so a client reading the usual `context_length` field found nothing and guessed from the name. Combos now also publish `context_length` and `max_completion_tokens` at the top level, like single models.
+- **OpenCode and other credential-free providers are listed again**: `/v1/models` built its list from provider connections only, and a provider that needs no key never owns a connection, so its models were listed only while the whole provider table was empty. As soon as one provider was connected, every model of OpenCode Free and the other no-key providers disappeared from the listing, even though requests to them worked. They are now always listed, and a client that reads `/v1/models` to build its model picker sees them.
+
+# v0.5.116-Custom (2026-09-26)
+
+## Custom Features & Enhancements
+- **Per API key permissions**: the Create and Edit API key forms now carry a Permissions box with four separate rights: create, edit and delete API keys, create, edit and delete models, create, edit and delete providers, and view usage. Each key stores its own set, and the sidebar, the pages and the endpoints all follow it. A password sign-in is still a full administrator.
+- **Sign in with an API key**: the login page has an API Key Login tab next to Password Login. The key is verified like any LLM request, so a disabled, expired, quota-exceeded or IP-blocked key is refused with its own message. The session that results shows only the menus the key is allowed to open, and the Endpoint page hides the tunnel, Tailscale, custom domain and require-API-key controls so no button can fail.
+- **Usage scoped to the signed in key**: stats, chart, leaderboard, error list, history, the CSV export and the live stream all filter on the key that authenticated, so a key user reads its own numbers and never another key's. The per-key usage page shows the same single card.
+- **Nested keys stay inside the parent's scope**: a key that only has view usage cannot hand out model, provider or key rights to a new key, the permissions it does not hold are hidden and disabled in the form, its token limit caps the limit of every key it creates, and its allowed-model list is the only list the model picker offers, with the same exact, prefix-star and suffix-star matching the server applies to LLM requests.
+- **Enforced on the server, not only in the menu**: a key-signed session is refused with 403 on any endpoint its permissions do not cover, including settings, tunnel, OAuth, cloud, translator, CLI tools and MCP routes, and on any dashboard page outside its rights. Reading the model catalog stays open to a provider manager because the providers page needs it to render a connection, while every model write stays on the model right. A key with no right at all lands on a short notice with a sign out button instead of a redirect loop.
+
+# v0.5.115-Custom (2026-09-26)
+
+## Custom Features & Enhancements
+- **Custom Domain Endpoint Support**: Added Custom Domain option on the API Endpoint card alongside Local, Cloudflare Tunnel, and Tailscale. Users can configure their own reverse proxy or custom domain URL (e.g. `https://api.my-domain.com`), easily copy the `/v1` endpoint, edit the domain, and enable/disable it with persistent settings stored in the database.
+- **304+ Providers Integration**: Merged the massive provider library from ExtremeRouter. Added over 200+ API-key providers, 25 OAuth providers, and 39 Web-cookie providers (including Qwen Web, Claude Web, ChatGPT Web, Grok Web, Notion AI, HyperAgent, Conol, DouBao, Adapta, and more) into 9Router.
+- **Provider Capabilities & Prices**: Fully synchronized model metadata, token limits, capabilities, tool-calling flags, and token cost pricing with ExtremeRouter's definitions.
+- **Frontend Modals & UI**: Updated Add API Key modal to automatically suggest specific cookie capturing instructions for new Web-cookie providers. Added `FeloCaptureButton` and `CookieCaptureButton` helper components. 
+- **Preserved 9Router-specific Providers**: Kept exclusive 9Router providers and aliases intact (like OpenCode Zen, CodeBuddy Intl, Qoder CN, Devin CLI, Grok CLI, DeepSeek Web Tool Bridge).
+
+# v0.5.114-Custom (2026-09-25)
+
+## Fixes & Enhancements
+- **Usage calculation accuracy for Today and 24h periods**: fixed an issue where selecting Today or 24h incorrectly overlaid up to 60 days of historical daily aggregates onto the current stats, causing token counts to jump from 1M to over 1B. Historical daily data before the cutoff date is no longer added into Today and 24h metrics.
+- **Model Leaderboard period filter**: fixed Leaderboard route ignoring Today and All Time filters and defaulting to 7 days.
+- **Real-time Usage sync**: SSE `/api/usage/stream` now accepts the active period parameter and streams complete stats updates when requests finish. The frontend Usage overview cards, charts, and breakdown tables now automatically update in real-time without requiring a page reload.
+
 # v0.5.113-Custom (2026-09-23)
 
 ## Custom Features & Enhancements

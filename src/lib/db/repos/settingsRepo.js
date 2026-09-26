@@ -11,6 +11,8 @@ const DEFAULT_SETTINGS = {
   tunnelProvider: "cloudflare",
   tailscaleEnabled: false,
   tailscaleUrl: "",
+  customDomainEnabled: false,
+  customDomainUrl: "",
   stickyRoundRobinLimit: 3,
   providerStrategies: {},
   quotaVisibility: {},
@@ -26,7 +28,6 @@ const DEFAULT_SETTINGS = {
   customPlugins: {
     imageVision: { enabled: false, models: [] },
     thinkDeeper: { enabled: false, models: [] },
-    unrestrictedMode: { enabled: false, models: [] },
     speedMode: { enabled: false, models: [] },
   },
   requireLogin: true,

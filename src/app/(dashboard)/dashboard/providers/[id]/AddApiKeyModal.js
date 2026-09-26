@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { Button, Badge, Input, Modal, Select } from "@/shared/components";
+import { Button, Badge, Input, Modal, Select, FeloCaptureButton, CookieCaptureButton } from "@/shared/components";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
+import { COOKIE_CAPTURE } from "@/shared/constants/cookieCapture";
 import { planBulkAdd } from "@/shared/utils/bulkAdd";
 
 const BULK_PLACEHOLDER = `name1|sk-key1\nname2|sk-key2\nsk-key-only-auto-named`;
@@ -13,9 +14,20 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
   const isOllamaLocal = provider === "ollama-local";
   const isCookie = authType === "cookie";
   const isXaiApiKey = provider === "xai" && !isCookie;
+  const isTokenRouter = provider === "tokenrouter";
   const credentialLabel = isCookie ? "Cookie Value" : provider === "qoder" || provider === "qoder-cn" ? "Personal Access Token (PAT)" : "API Key";
   const credentialPlaceholder = isCookie
-    ? (provider === "deepseek-web" ? "userToken value" : provider === "gemini-web" ? "__Secure-1PSID value" : provider === "kimi-web" ? "access_token value" : "eyJhbGciOi...")
+    ? (provider === "grok-web"
+        ? "sso=xxxxx... or just the raw value"
+        : provider === "zai-web"
+          ? 'Paste the "token" value from chat.z.ai Local Storage (DevTools → Application → Local Storage → chat.z.ai)'
+          : provider === "deepseek-web"
+            ? "userToken value"
+            : provider === "gemini-web"
+              ? "__Secure-1PSID value"
+              : provider === "kimi-web"
+                ? "access_token value"
+                : "eyJhbGciOi...")
     : (isXaiApiKey ? "xai-..." : provider === "qoder" || provider === "qoder-cn" ? "pt-..." : "");
 
   const isAzure = provider === "azure";
@@ -31,6 +43,9 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
     proxyPoolId: NONE_PROXY_POOL_VALUE,
     ollamaHostUrl: "",
   });
+  // Management key — separate from chat API key, used by Quota Tracker
+  // (TokenRouter wallet + xAI Management API forward-compat).
+  const [mgmtKey, setMgmtKey] = useState("");
   const [azureData, setAzureData] = useState({
     azureEndpoint: "",
     apiVersion: "2024-10-01-preview",
@@ -66,6 +81,9 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
     }
     if (isCloudflareAi) {
       return { accountId: cloudflareData.accountId };
+    }
+    if ((isTokenRouter || isXaiApiKey) && mgmtKey.trim()) {
+      return { mgmtKey: mgmtKey.trim() };
     }
     if (providerRegions && region) {
       return { region };
@@ -251,14 +269,31 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
         )}
         {!isOllamaLocal && (
           <div className="flex gap-2">
-            <Input
-              label={credentialLabel}
-              type={isCookie ? "text" : "password"}
-              value={formData.apiKey}
-              onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-              placeholder={credentialPlaceholder}
-              className="flex-1"
-            />
+            {isCookie ? (
+              <div className="flex-1 flex flex-col gap-1">
+                <label className="text-xs font-medium text-text-muted">{credentialLabel}</label>
+                <textarea
+                  value={formData.apiKey}
+                  onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+                  placeholder={credentialPlaceholder}
+                  rows={5}
+                  spellCheck={false}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-text-main placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary font-mono resize-y"
+                />
+              </div>
+            ) : (
+              <Input
+                label={credentialLabel}
+                type="password"
+                value={formData.apiKey}
+                onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+                placeholder={credentialPlaceholder}
+                className="flex-1"
+              />
+            )}
             <div className="pt-6">
               <Button onClick={handleValidate} disabled={!formData.apiKey || validating || saving} variant="secondary">
                 {validating ? "Checking..." : "Check"}
@@ -268,9 +303,18 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
         )}
         {isXaiApiKey && (
           <p className="text-xs text-text-muted">
-            Use a direct xAI API key from console.x.ai instead of Grok Build OAuth.
+            Use a direct xAI API key from console.x.ai. This is separate from Grok Build OAuth.
           </p>
         )}
+        {provider === "felo-web" ? (
+          <FeloCaptureButton onCaptured={(credential) => setFormData((f) => ({ ...f, apiKey: credential }))} />
+        ) : COOKIE_CAPTURE[provider] ? (
+          <CookieCaptureButton
+            provider={provider}
+            label={COOKIE_CAPTURE[provider].label}
+            onCaptured={(credential) => setFormData((f) => ({ ...f, apiKey: credential }))}
+          />
+        ) : null}
         {isCookie && authHint && (
           <p className="text-xs text-text-muted">
             {authHint}
@@ -315,8 +359,42 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
         )}
         {isCompatible && (
           <p className="text-xs text-text-muted">
-            Enter the model ID exactly as your endpoint expects it and it becomes the connection default.
+            Enter the model ID exactly as your compatible endpoint expects it. This model will be saved as the connection default.
           </p>
+        )}
+        {isTokenRouter && (
+          <div className="bg-sidebar/50 p-4 rounded-lg border border-accent/20">
+            <h3 className="font-semibold mb-3 text-sm">TokenRouter Management Key (optional)</h3>
+            <Input
+              label="Management Key"
+              type="password"
+              value={mgmtKey}
+              onChange={(e) => setMgmtKey(e.target.value)}
+              placeholder="your_management_key..."
+            />
+            <p className="text-xs text-text-muted mt-2">
+              The management key is separate from the chat API key (sk-...) and is required for
+              Quota Tracker to read your wallet balance. Without it, chat still works but quota
+              tracking is disabled. Get it from the TokenRouter dashboard.
+            </p>
+          </div>
+        )}
+        {isXaiApiKey && (
+          <div className="bg-sidebar/50 p-4 rounded-lg border border-accent/20">
+            <h3 className="font-semibold mb-3 text-sm">xAI Management Key (optional)</h3>
+            <Input
+              label="Management Key"
+              type="password"
+              value={mgmtKey}
+              onChange={(e) => setMgmtKey(e.target.value)}
+              placeholder="xai-mgmt-..."
+            />
+            <p className="text-xs text-text-muted mt-2">
+              Optional. Separate from the chat API key (xai-...). Used by Quota Tracker to probe
+              the xAI Management API when available. Without it, Quota Tracker still shows local
+              gateway spend for this connection. Create one at console.x.ai → Settings → Management Keys.
+            </p>
+          </div>
         )}
         {isCloudflareAi && (
           <div className="bg-sidebar/50 p-4 rounded-lg border border-accent/20">

@@ -285,16 +285,24 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       });
   }, [period]);
 
-  // SSE connection - real-time updates for activeRequests + recentRequests only
+  // SSE connection - real-time updates synced to selected period
+  const esRef = useRef(null);
+  const [chartUpdateKey, setChartUpdateKey] = useState(0);
+
   useEffect(() => {
-    const es = new EventSource("/api/usage/stream");
+    if (esRef.current) esRef.current.close();
+
+    const es = new EventSource(`/api/usage/stream?period=${period}`);
+    esRef.current = es;
 
     es.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
-        // Always merge only real-time fields, never overwrite full stats from REST
         setStats((prev) => {
-          if (!prev) return prev;
+          if (!prev) return data;
+          if (data._type === "full") {
+            return { ...data };
+          }
           return {
             ...prev,
             activeRequests: data.activeRequests,
@@ -303,6 +311,9 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
             pending: data.pending,
           };
         });
+        if (data._type === "full") {
+          setChartUpdateKey((k) => k + 1);
+        }
         if (hasLoadedStats.current) setLoading(false);
       } catch (err) {
         console.error("[SSE CLIENT] parse error:", err);
@@ -312,7 +323,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
     es.onerror = () => setLoading(false);
 
     return () => es.close();
-  }, []);
+  }, [period]);
 
   const toggleSort = useCallback((tableType, field) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -502,7 +513,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       )}
 
       {/* Token / Cost chart - sync period */}
-      {loading ? spinner : <UsageChart period={period} />}
+      {loading ? spinner : <UsageChart period={period} updateKey={chartUpdateKey} />}
 
       {/* Provider and model breakdown charts */}
       {!loading && (stats.byProvider || stats.byModel) && (

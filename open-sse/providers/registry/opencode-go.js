@@ -65,6 +65,16 @@ export default {
     { id: "gpt-5.6-luna", name: "GPT 5.6 Luna", targetFormat: "openai-responses", supportedFormats: ["openai-responses"] },
     { id: "muse-spark-1.2-contributor", name: "Muse Spark 1.2 Contributor", targetFormat: "openai-responses", supportedFormats: ["openai-responses"] },
     { id: "muse-spark-1.3-contributor", name: "Muse Spark 1.3 Contributor", targetFormat: "openai-responses", supportedFormats: ["openai-responses"] },
+  
+    { id: "glm-5.2-high", name: "GLM 5.2 (High Effort)" },
+    { id: "glm-5.2-max", name: "GLM 5.2 (Max Effort)" },
+    { id: "deepseek-v4.1-flash", name: "DeepSeek V4.1 Flash" },
+    { id: "deepseek-v4-pro-low", name: "DeepSeek V4 Pro (Low Effort)" },
+    { id: "deepseek-v4-pro-medium", name: "DeepSeek V4 Pro (Medium Effort)" },
+    { id: "deepseek-v4-pro-high", name: "DeepSeek V4 Pro (High Effort)" },
+    { id: "deepseek-v4-pro-max", name: "DeepSeek V4 Pro (Max Effort)" },
+    { id: "mimo-v2.5-high", name: "MiMo V2.5 (High Effort)" },
+    { id: "mimo-v2.5-max", name: "MiMo V2.5 (Max Effort)" },
   ],
   features: {
     usage: true,

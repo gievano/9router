@@ -30,5 +30,15 @@ export default {
     { id: "moonshotai/Kimi-K2.7-Code", name: "Kimi K2.7 Code" },
     { id: "moonshotai/Kimi-K2.6", name: "Kimi K2.6" },
     { id: "moonshotai/Kimi-K2.5", name: "Kimi K2.5" },
+  
+    { id: "meta-llama/Meta-Llama-3.1-8B-Instruct", name: "Llama 3.1 8B" },
+    { id: "meta-llama/Meta-Llama-3.1-70B-Instruct", name: "Llama 3.1 70B" },
+    { id: "Qwen/Qwen2.5-7B-Instruct", name: "Qwen 2.5 7B" },
+    { id: "Qwen/Qwen2.5-72B-Instruct", name: "Qwen 2.5 72B" },
+    { id: "google/gemma-2-9b-it", name: "Gemma 2 9B" },
+    { id: "mistralai/Mistral-7B-Instruct-v0.3", name: "Mistral 7B v0.3" },
+    { id: "mistralai/Mixtral-8x7B-Instruct-v0.1", name: "Mixtral 8x7B" },
+    { id: "deepseek-ai/deepseek-llm-7b-chat", name: "DeepSeek LLM 7B Chat" },
+    { id: "microsoft/Phi-3.5-mini-instruct", name: "Phi 3.5 Mini" },
   ],
 };

@@ -23,6 +23,10 @@ export default {
     { id: "accounts/fireworks/models/llama-v3p3-70b-instruct", name: "Llama 3.3 70B" },
     { id: "accounts/fireworks/models/qwen3-235b-a22b", name: "Qwen3 235B" },
     { id: "nomic-ai/nomic-embed-text-v1.5", name: "Nomic Embed Text v1.5", kind: "embedding" },
+  
+    { id: "accounts/fireworks/models/glm-5p2", name: "GLM-5.2" },
+    { id: "accounts/fireworks/models/kimi-k2p6", name: "Kimi K2.6" },
+    { id: "accounts/fireworks/models/kimi-k2-instruct-0905", name: "Kimi K2 Instruct 0905" },
   ],
   serviceKinds: ["llm", "embedding"],
   embeddingConfig: { baseUrl: "https://api.fireworks.ai/inference/v1/embeddings" },

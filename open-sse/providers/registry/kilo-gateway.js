@@ -30,5 +30,8 @@ export default {
     { id: "kwaipilot/kat-coder-pro-v2.5:free", name: "Kat Coder Pro v2.5 (Free)", contextLength: 256000 },
     { id: "kilo-auto/frontier", name: "Kilo Auto Frontier", contextLength: 1000000 },
     { id: "kilo-auto/balanced", name: "Kilo Auto Balanced", contextLength: 1000000 },
+  
+    { id: "minimax/minimax-m2.5:free", name: "MiniMax M2.5 (Free)" },
+    { id: "arcee-ai/trinity-large-preview:free", name: "Trinity Large Preview (Free)" },
   ],
 };

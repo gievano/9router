@@ -31,6 +31,9 @@ export default {
     { id: "glm-4.6v", name: "GLM 4.6V (Vision)" },
     { id: "glm-4.6", name: "GLM-4.6" },
     { id: "glm-4.5-air", name: "GLM-4.5-Air" },
+  
+    { id: "glm-5.3-high", name: "GLM 5.3 High", upstreamModelId: "glm-5.3" },
+    { id: "glm-5.3-low", name: "GLM 5.3 Low", upstreamModelId: "glm-5.3" },
   ],
   features: {
     usage: true,

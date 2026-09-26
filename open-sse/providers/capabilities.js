@@ -204,11 +204,13 @@ export const PROVIDER_CAPABILITIES = {
     "glm-5.2":            { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 48000 },
     "glm-5.1":            { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
     "glm-5.0":            { reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 48000 },
+    "glm-5.0-turbo":      { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
     // maxOutput 64000 per both the plugin-baked fallback and the live server
     // table (the old 38000 had no source and truncated output).
     "glm-5v-turbo":       { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 64000 },
     "glm-4.7":            { reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 48000 },
     "minimax-m3":         { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 512000, maxOutput: 128000 },
+    "minimax-m2.7":       { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
     "kimi-k2.7":          { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 256000, maxOutput: 32000 },
     "kimi-k2.6":          { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 256000, maxOutput: 32000 },
     "kimi-k2.5":          { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 164000, maxOutput: 32000 },
@@ -262,6 +264,317 @@ export const PROVIDER_CAPABILITIES = {
   "kimi-web": {
     "k3": { tools: false, reasoning: true, contextWindow: 262144, maxOutput: 65536 },
     "k2d6": { tools: false, reasoning: true, contextWindow: 262144, maxOutput: 65536 },
+  },
+  // Fireworks AI — OpenAI-compatible host. transport.thinkingFormat:"openai" makes
+  // reasoning models speak OpenAI reasoning_effort. These per-model pins correct
+  // generic family patterns that mis-flag Fireworks models:
+  //   *kimi*k2*     → vision + kimi thinking format (k2-instruct-0905 is text-only)
+  //   *glm-5*       → zai thinking format + 200k ctx (glm-5p2 is 1M ctx)
+  //   *deepseek*    → reasoning (deepseek-v3p1 is a plain chat model)
+  //   *qwen*235b*   → qwen thinking format (OpenAI-style effort here)
+  fireworks: {
+    "accounts/fireworks/models/glm-5p2":            { reasoning: true, thinkingFormat: "openai", contextWindow: 1048575, maxOutput: 131072 },
+    "accounts/fireworks/models/kimi-k2p6":          { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 262000, maxOutput: 262000 },
+    "accounts/fireworks/models/kimi-k2-instruct-0905": { vision: false, reasoning: false, contextWindow: 262144, maxOutput: 262144 },
+    "accounts/fireworks/models/deepseek-v3p1":      { vision: false, reasoning: false, contextWindow: 128000, maxOutput: 16384 },
+    "accounts/fireworks/models/qwen3-235b-a22b":    { reasoning: true, thinkingFormat: "openai", contextWindow: 128000, maxOutput: 32768 },
+  },
+  // Bynara (router.bynara.id) — deterministic runtime mirror of the gateway's
+  // /v1/models metadata (context_window, vision, reasoning). Live-verified
+  // against a real-key /v1/models capture (2026-09-10): ids must match the
+  // gateway exactly or the override is dead (falls through to
+  // DEFAULT_CAPABILITIES). The live values are also absorbed automatically by
+  // the bynara modelsFetcher parser (suggested-models/filters.js) for the
+  // providers page; this static block keeps getCapabilitiesForModel correct
+  // for picker/combo/playground even before/without that fetch. Reasoning
+  // models speak OpenAI reasoning_effort (the gateway's primary chat format).
+  bynara: {
+    "agnes-2.0-flash":        { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 512000 },
+    "agnes-2.5-flash":        { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 512000 },
+    // 1M context per live catalog. The old 128000 starved resolveOutputBudget
+    // (availableContext<=0 → max_tokens:0 on the wire → provider rejection)
+    // for large Swarm-panel prompts on this model.
+    "glm-5.3-flash-free":     { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000 },
+    "glm-5.3-free":           { reasoning: true, thinkingFormat: "openai", contextWindow: 128000 },
+    "grok-4.5-free":          { vision: true, contextWindow: 212000 },
+    "laguna-s-2.1":           { reasoning: true, thinkingFormat: "openai", contextWindow: 262000 },
+    // Live id is ling-3.0-flash-fin-free ("fin" = fine-tune); no vision/reasoning
+    // field in the live catalog (docs list no reasoning support) — reasoning
+    // stays at the default false. The old "ling-3.0-flash-free" key never matched.
+    "ling-3.0-flash-fin-free": { contextWindow: 262000 },
+    "minimax-m3-free":        { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000 },
+    "mistral-large":          { contextWindow: 252000 },
+    "mistral-medium-3-5":     { vision: true, contextWindow: 256000 },
+    // Live id is nemotron-3.5-lightning-free (context_window 261996 → rounded to
+    // the 262000 convention used by the other mid-tier bynara entries). The old
+    // "nemotron-3-ultra" key was dead AND 1M (never true for this model).
+    "nemotron-3.5-lightning-free": { contextWindow: 262000 },
+    "qwen-3.8-max-free":      { contextWindow: 262144 },
+    "qwen3.8-27b":            { reasoning: true, thinkingFormat: "openai", contextWindow: 1000000 },
+    "qwen3.8-flash-free":     { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000 },
+    "stepfun-3.7-flash":      { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 262000 },
+    "tencent-hy3-free":       { contextWindow: 262000 },
+    // DeepSeek V4 free/paid on Bynara speak OpenAI reasoning_effort only
+    // (gateway rejects native DeepSeek thinking:{type} blocks → HTTP 400).
+    "deepseek-v4-pro":        { vision: false, reasoning: true, thinkingFormat: "openai", thinkingMaxEffort: true, contextWindow: 1000000, maxOutput: 384000 },
+    "deepseek-v4-pro-free":   { vision: false, reasoning: true, thinkingFormat: "openai", thinkingMaxEffort: true, contextWindow: 1000000, maxOutput: 384000 },
+    "deepseek-v4-flash":      { vision: false, reasoning: true, thinkingFormat: "openai", thinkingMaxEffort: true, contextWindow: 1000000, maxOutput: 384000 },
+    "deepseek-v4-flash-free": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingMaxEffort: true, contextWindow: 1000000, maxOutput: 384000 },
+  },
+  // OrcaRouter (api.orcarouter.ai) — multi-provider OpenAI gateway. Live model
+  // cards: https://www.orcarouter.ai/api/public/models/<id>. thinkingFormat is
+  // also pinned on transport (openai reasoning_effort is the unified wire
+  // shape per docs.orcarouter.ai/advanced/reasoning); provider-scoped caps fix
+  // context/vision so generic *qwen3.7*/*deepseek-v4* patterns don't inflate
+  // free-tier text models to 1M multimodal.
+  orcarouter: {
+    "orcarouter/free":                 { contextWindow: 1000000, maxOutput: 64000 },
+    "orcarouter/fusion":               { reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 64000 },
+    "orcarouter/fusion-flash":         { reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 64000 },
+    "orcarouter/fusion-mini":          { reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 64000 },
+    "qwen/qwen3.8-27b-free":           { vision: false, reasoning: true, thinkingFormat: "openai", contextWindow: 65536, maxOutput: 65536 },
+    "qwen/qwen3.8-27b":                { vision: false, reasoning: true, thinkingFormat: "openai", contextWindow: 65536, maxOutput: 65536 },
+    "qwen/qwen3.7-max":                { vision: false, reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 64000 },
+    // Live card reports a 32k window. The 65536 output value this entry
+    // originally carried was copied from the qwen3.8-27b sibling (65536/65536)
+    // and exceeded the window, handing Token Budget an unreachable ceiling.
+    // Clamped to the window pending a model-specific output figure.
+    "qwen/qwen3.5-27b":                { vision: true, videoInput: true, reasoning: true, thinkingFormat: "openai", contextWindow: 32768, maxOutput: 32768 },
+    "deepseek/deepseek-v4-pro":        { vision: false, reasoning: true, thinkingFormat: "openai", thinkingMaxEffort: true, contextWindow: 1048576, maxOutput: 384000 },
+    "deepseek/deepseek-v4-pro-free":   { vision: false, reasoning: true, thinkingFormat: "openai", thinkingMaxEffort: true, contextWindow: 1048576, maxOutput: 384000 },
+    "deepseek/deepseek-v4-flash":      { vision: false, reasoning: true, thinkingFormat: "openai", thinkingMaxEffort: true, contextWindow: 1048576, maxOutput: 384000 },
+    "deepseek/deepseek-v4-flash-free": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingMaxEffort: true, contextWindow: 1048576, maxOutput: 384000 },
+    "deepseek/deepseek-reasoner":      { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 384000 },
+    "minimax/minimax-m2.7":            { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 204800, maxOutput: 131072 },
+    "openai/gpt-5.5":                  { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 400000, maxOutput: 128000 },
+    "tencent/hy3-free":                { vision: false, contextWindow: 262000 },
+  },
+  // tokenharbor — AI gateway; pin the Claude 5 flagships to claude-adaptive 1M
+  // so the generic *claude*opus*/*claude*fable* pattern (claude-budget 200k)
+  // can't win for these models.
+  tokenharbor: {
+    "claude-opus-5":  { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000 },
+    "claude-fable-5": { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000 },
+  },
+  // meta-ai — Muse Spark family. Reasoning always on (native reasoning_effort
+  // tiers minimal/low/medium/high/xhigh; "none" unsupported → HTTP 400, so
+  // thinkingCanDisable false clamps disable requests to minimal). Provider-
+  // scoped so the generic *muse-spark* pattern can't leak native effort levels
+  // onto muse-spark-web (web bridge doesn't speak OpenAI-compatible effort).
+  "meta-ai": {
+    // Muse Spark 1.x is fully multimodal (models.dev: image+video+pdf+audio input).
+    "muse-spark-1.2":            { vision: true, pdf: true, audioInput: true, videoInput: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["minimal", "low", "medium", "high", "xhigh"], contextWindow: 1048576, maxOutput: 131072 },
+    "muse-spark-1.2-contributor": { vision: true, pdf: true, audioInput: true, videoInput: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["minimal", "low", "medium", "high", "xhigh"], contextWindow: 1048576, maxOutput: 131072 },
+    "muse-spark-1.1":            { vision: true, pdf: true, audioInput: true, videoInput: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["minimal", "low", "medium", "high", "xhigh"], contextWindow: 1048576, maxOutput: 131072 },
+  },
+  // opencode — free lane serves muse-spark-1.2-contributor-free via the
+  // Responses API (model targetFormat: openai-responses). Same Muse Spark 1.2
+  // family as meta-ai's entries: multimodal input, reasoning always on with
+  // native effort tiers ("none" unsupported), 1M context / 131072 output
+  // (models.dev: opencode/muse-spark-1.2-contributor-free, verified live —
+  // /zen/v1/responses accepted the request; /chat/completions 500s).
+  opencode: {
+    "muse-spark-1.2-contributor-free": { vision: true, pdf: true, audioInput: true, videoInput: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["minimal", "low", "medium", "high", "xhigh"], contextWindow: 1048576, maxOutput: 131072 },
+    "muse-spark-1.3-contributor-free": { vision: true, pdf: true, audioInput: true, videoInput: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["minimal", "low", "medium", "high", "xhigh"], contextWindow: 1048576, maxOutput: 131072 },
+  },
+  // codebuddy-intl + workbuddy — same CodeBuddy gateway on their own hosts
+  // (codebuddy.ai / workbuddy.ai). WorkBuddy's flagship model is "hy3" (the
+  // registry model id); it reasons via OpenAI-style reasoning_effort like every
+  // other model on this gateway.
+  "codebuddy-intl": {
+    "glm-5.3":           { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 48000 },
+    "glm-5.3-flash":     { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
+    "glm-5.2":            { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 48000 },
+    "glm-5.1":            { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
+    "glm-5.0-turbo":      { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
+    "glm-5v-turbo":       { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 38000 },
+    "minimax-m3":         { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 512000, maxOutput: 48000 },
+    "minimax-m2.7":       { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
+    "kimi-k3-1":          { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 1048576 },
+    "kimi-k2.7":          { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 256000, maxOutput: 32000 },
+    "kimi-k2.6":          { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 256000, maxOutput: 32000 },
+    "kimi-k2.5":          { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 164000, maxOutput: 32000 },
+    "hy4-preview":        { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 64000 },
+    "hy4-preview-x":      { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 64000 },
+    "hy3-preview":        { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 192000, maxOutput: 64000 },
+    "deepseek-v4-pro":    { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 50000 },
+    "deepseek-v4-flash":  { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 50000 },
+    "deepseek-v3-2-volc": { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 96000, maxOutput: 32000 },
+  },
+  workbuddy: {
+    "hy3":               { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 64000 },
+    "hy4-preview":       { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 64000 },
+    "hy4-preview-x":     { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 64000 },
+    "glm-5.3":           { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 48000 },
+    "glm-5.3-flash":     { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
+    "glm-5.2":           { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 48000 },
+    "glm-5.1":           { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
+    "glm-5.0-turbo":     { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
+    "glm-5v-turbo":      { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 38000 },
+    "minimax-m3":        { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 512000, maxOutput: 48000 },
+    "minimax-m2.7":      { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 200000, maxOutput: 48000 },
+    "kimi-k3-1":         { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 1048576 },
+    "kimi-k2.7":         { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 256000, maxOutput: 32000 },
+    "kimi-k2.6":         { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 256000, maxOutput: 32000 },
+    "kimi-k2.5":         { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 164000, maxOutput: 32000 },
+    "hy3-preview":       { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 192000, maxOutput: 64000 },
+    "deepseek-v4-pro":   { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 50000 },
+    "deepseek-v4-flash": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 50000 },
+    "deepseek-v3-2-volc": { reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 96000, maxOutput: 32000 },
+  },
+  // Qoder — upstream exposes opaque internal ids (dfmodel, kmodel, …); the
+  // registry `name` is display-only and capability lookup matches on the raw
+  // id, so every qoder model would fall through to DEFAULT_CAPABILITIES
+  // (200K) without this map. contextWindow follows the real model family's
+  // spec: the /algo/api/v2/model/list max_input_tokens under-reports some
+  // windows (GLM-5.3 / Kimi-K3 / Qwen3.8-Max claim 180K but accept more).
+  // max_output_tokens arrives as 0 for every model, so outputs are
+  // best-guess from the real model family. Vision tags follow the
+  // upstream is_vl flag; the executor now passes image_url blocks through
+  // (http(s) URLs and inline data: URIs are accepted directly). reasoning:true
+  // on all of them — every model can reason; the upstream is_reasoning flag
+  // only drives model_config selection. thinkingFormat keeps the true-model
+  // family for documentation/UI, but thinkingCanDisable:false everywhere: the
+  // executor only forwards messages/tools/max_tokens, and thinking is fixed
+  // upstream via modelConfig.is_reasoning — client thinking intent is dropped,
+  // so "none" must never be offered as an option.
+  "qoder": {
+    "ultimate":       { vision: true, reasoning: true, thinkingFormat: "claude-adaptive", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 }, // Claude Opus 5
+    "performance":    { vision: true, reasoning: true, thinkingFormat: "claude-adaptive", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 }, // Claude Sonnet 5
+    "dmodel":         { reasoning: true, thinkingFormat: "deepseek", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // DeepSeek-V4-Pro
+    "dfmodel":        { reasoning: true, thinkingFormat: "deepseek", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // DeepSeek-V4-Flash
+    "gmodel":         { reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 },      // GLM-5.3
+    "gfmodel":        { vision: true, reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 }, // GLM-5.3-Flash
+    "kmodel_latest":  { vision: true, reasoning: true, thinkingFormat: "kimi", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },      // Kimi-K3
+    "kmodel":         { vision: true, reasoning: true, thinkingFormat: "kimi", thinkingCanDisable: false, contextWindow: 256000, maxOutput: 65536 },  // Kimi-K2.7-Code
+    "mmodel":         { reasoning: true, thinkingFormat: "minimax", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 512000 }, // MiniMax-M3
+    "qmodel_latest":  { vision: true, reasoning: true, thinkingFormat: "qwen", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // Qwen3.7-Max
+    "qmodel":         { vision: true, reasoning: true, thinkingFormat: "qwen", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // Qwen3.7-Plus
+    "qfmodel":        { vision: true, reasoning: true, thinkingFormat: "qwen", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },  // Qwen3.8-Flash
+    "qmodel_38max":   { vision: true, reasoning: true, thinkingFormat: "qwen", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 65536 },      // Qwen3.8-Max
+  },
+  // xKiro — generated from the LIVE /v1/models snapshot (2026-09-06, all 112
+  // chat models). Models WITHOUT a reasoning_efforts object ignore reasoning
+  // parameters entirely (xKiro docs) → reasoning:false hides the thinking
+  // picker instead of advertising controls that do nothing.
+  // Two-position switch shapes are remapped to our enum faithfully:
+  //   off/on           → [none, low]      (none = off; positive = switch on)
+  //   adaptive/disabled → [none, medium]  (none = off; positive = model decides)
+  // For graded sets without an off position a none-intent clamps to the
+  // cheapest advertised step, matching xKiro's below-lowest semantics.
+  "xkiro": {
+    "anthropic/claude-fable-5": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "anthropic/claude-fable-5-1": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "anthropic/claude-haiku-4.5": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high"], contextWindow: 200000, maxOutput: 65536 },
+    "anthropic/claude-opus-4.6": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "anthropic/claude-opus-4.7": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "anthropic/claude-opus-4.8": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "anthropic/claude-opus-5": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "anthropic/claude-sonnet-4.6": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "anthropic/claude-sonnet-5": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "deepseek/deepseek-chat-v3.1": { vision: false, reasoning: false, contextWindow: 163840, maxOutput: 65536 },
+    "deepseek/deepseek-v3.2": { vision: false, reasoning: false, contextWindow: 131072, maxOutput: 65536 },
+    "deepseek/deepseek-v4-flash": { vision: false, reasoning: false, contextWindow: 1048576, maxOutput: 65536 },
+    "deepseek/deepseek-v4-flash-0731": { vision: false, reasoning: false, contextWindow: 1048576, maxOutput: 65536 },
+    "deepseek/deepseek-v4-flash-vision-exp": { vision: true, reasoning: false, contextWindow: 1048576, maxOutput: 65536 },
+    "deepseek/deepseek-v4-pro": { vision: false, reasoning: false, contextWindow: 1048576, maxOutput: 65536 },
+    "deepseek/deepseek-v4-pro-0813": { vision: false, reasoning: false, contextWindow: 1048576, maxOutput: 65536 },
+    "google/gemini-2.5-flash": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "google/gemini-2.5-pro": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "google/gemini-3-flash": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "google/gemini-3.1-pro": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "google/gemini-3.5-flash": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "google/gemini-3.6-flash": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["minimal", "low", "medium", "high"], contextWindow: 1000000, maxOutput: 65536 },
+    "google/gemini-3.7-flash": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high"], contextWindow: 1000000, maxOutput: 65536 },
+    "google/gemini-3.8-flash": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high"], contextWindow: 1000000, maxOutput: 65536 },
+    "meta/muse-spark-1.2-contributor": { vision: true, reasoning: false, contextWindow: 1048576, maxOutput: 65536 },
+    "minimax/minimax-m2.1-highspeed:free": { vision: false, reasoning: false, contextWindow: 204800, maxOutput: 65536 },
+    "minimax/minimax-m2.1:free": { vision: false, reasoning: false, contextWindow: 204800, maxOutput: 65536 },
+    "minimax/minimax-m2.5": { vision: false, reasoning: false, contextWindow: 204800, maxOutput: 65536 },
+    "minimax/minimax-m2.5-highspeed:free": { vision: false, reasoning: false, contextWindow: 204800, maxOutput: 65536 },
+    "minimax/minimax-m2.5:free": { vision: false, reasoning: false, contextWindow: 204800, maxOutput: 65536 },
+    "minimax/minimax-m2.7": { vision: false, reasoning: false, contextWindow: 204800, maxOutput: 131100 },
+    "minimax/minimax-m2.7-highspeed:free": { vision: false, reasoning: false, contextWindow: 204800, maxOutput: 65536 },
+    "minimax/minimax-m2.7:free": { vision: false, reasoning: false, contextWindow: 204800, maxOutput: 65536 },
+    "minimax/minimax-m2:free": { vision: false, reasoning: false, contextWindow: 204800, maxOutput: 65536 },
+    "minimax/minimax-m3": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "minimax/minimax-m3:free": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "medium"], contextWindow: 1000000, maxOutput: 65536 },
+    "mistralai/codestral-2508": { vision: false, reasoning: false, contextWindow: 256000, maxOutput: 16384 },
+    "mistralai/devstral-medium": { vision: false, reasoning: false, contextWindow: 256000, maxOutput: 16384 },
+    "mistralai/ministral-14b": { vision: true, reasoning: false, contextWindow: 256000, maxOutput: 8192 },
+    "mistralai/ministral-3b": { vision: true, reasoning: false, contextWindow: 128000, maxOutput: 8192 },
+    "mistralai/ministral-8b": { vision: true, reasoning: false, contextWindow: 256000, maxOutput: 8192 },
+    "mistralai/mistral-large-2512": { vision: true, reasoning: false, contextWindow: 256000, maxOutput: 16384 },
+    "mistralai/mistral-medium-3.5": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "high"], contextWindow: 256000, maxOutput: 65536 },
+    "mistralai/mistral-small-2603": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "high"], contextWindow: 256000, maxOutput: 65536 },
+    "moonshotai/kimi-k2.5": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "moonshotai/kimi-k2.6": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "moonshotai/kimi-k2.7-code": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "moonshotai/kimi-k3": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "high", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "nvidia/llama-3.3-nemotron-super-49b": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 131072, maxOutput: 65536 },
+    "nvidia/nemotron-3-nano": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 1000000, maxOutput: 65536 },
+    "nvidia/nemotron-3-nano-omni": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 256000, maxOutput: 65536 },
+    "nvidia/nemotron-3-super": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 1000000, maxOutput: 65536 },
+    "nvidia/nemotron-3-ultra": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 1000000, maxOutput: 65536 },
+    "openai/gpt-5.3-codex-spark": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh"], contextWindow: 128000, maxOutput: 65536 },
+    "openai/gpt-5.4": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh"], contextWindow: 1000000, maxOutput: 65536 },
+    "openai/gpt-5.4-mini": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh"], contextWindow: 400000, maxOutput: 65536 },
+    "openai/gpt-5.5": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh"], contextWindow: 1000000, maxOutput: 65536 },
+    "openai/gpt-5.6-luna": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "openai/gpt-5.6-sol": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "openai/gpt-5.6-terra": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "openai/gpt-6-astra": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh", "max"], contextWindow: 1050000, maxOutput: 65536 },
+    "qwen/qwen-plus-2025-07-28:free": { vision: true, reasoning: false, contextWindow: 131072, maxOutput: 65536 },
+    "qwen/qwen3-coder-plus:free": { vision: true, reasoning: false, contextWindow: 1048576, maxOutput: 65536 },
+    "qwen/qwen3-max:free": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "qwen/qwen3-omni-flash:free": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "qwen/qwen3-vl-plus:free": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "qwen/qwen3.5-397b-a17b:free": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "qwen/qwen3.5-flash:free": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "qwen/qwen3.5-omni-flash:free": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "qwen/qwen3.5-omni-plus:free": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "qwen/qwen3.5-plus": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "qwen/qwen3.5-plus:free": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "qwen/qwen3.6-27b:free": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "qwen/qwen3.6-35b-a3b:free": { vision: true, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "qwen/qwen3.6-max-preview:free": { vision: false, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "qwen/qwen3.6-plus": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "qwen/qwen3.6-plus:free": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "qwen/qwen3.7-max": { vision: false, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "qwen/qwen3.7-max:free": { vision: false, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "qwen/qwen3.7-plus": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "qwen/qwen3.7-plus:free": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "qwen/qwen3.8-max": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "qwen/qwen3.8-max:free": { vision: true, reasoning: false, contextWindow: 1000000, maxOutput: 65536 },
+    "sensenova/sensenova-6.7-flash-lite": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low", "medium", "high"], contextWindow: 262144, maxOutput: 65536 },
+    "sensenova/sensenova-6.8-flash-lite": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low", "medium", "high"], contextWindow: 262144, maxOutput: 65536 },
+    "tencent/hy3": { vision: false, reasoning: false, contextWindow: 262144, maxOutput: 65536 },
+    "tencent/hy4-preview": { vision: false, reasoning: false, contextWindow: 1048576, maxOutput: 65536 },
+    "x-ai/grok-4.5": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high"], contextWindow: 500000, maxOutput: 65536 },
+    "x-ai/grok-4.6": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "medium", "high", "xhigh"], contextWindow: 500000, maxOutput: 65536 },
+    "x-ai/grok-build-0.1": { vision: true, reasoning: false, contextWindow: 256000, maxOutput: 16384 },
+    "xiaomi/mimo-v2.5": { vision: true, reasoning: false, contextWindow: 1050000, maxOutput: 65536 },
+    "xiaomi/mimo-v2.5-pro": { vision: false, reasoning: false, contextWindow: 1050000, maxOutput: 65536 },
+    "z-ai/glm-4.5": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 131072, maxOutput: 65536 },
+    "z-ai/glm-4.5-air": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 131072, maxOutput: 65536 },
+    "z-ai/glm-4.5-airx": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 131072, maxOutput: 65536 },
+    "z-ai/glm-4.5-flash": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 131072, maxOutput: 65536 },
+    "z-ai/glm-4.5-x": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 131072, maxOutput: 65536 },
+    "z-ai/glm-4.5v": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 65536, maxOutput: 65536 },
+    "z-ai/glm-4.6": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 200000, maxOutput: 65536 },
+    "z-ai/glm-4.6v": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 128000, maxOutput: 65536 },
+    "z-ai/glm-4.6v-flash": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 128000, maxOutput: 65536 },
+    "z-ai/glm-4.6v-flashx": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 128000, maxOutput: 65536 },
+    "z-ai/glm-4.7": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 200000, maxOutput: 65536 },
+    "z-ai/glm-4.7-flash": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 200000, maxOutput: 65536 },
+    "z-ai/glm-4.7-flashx": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 200000, maxOutput: 65536 },
+    "z-ai/glm-5": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 200000, maxOutput: 65536 },
+    "z-ai/glm-5-turbo": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 200000, maxOutput: 65536 },
+    "z-ai/glm-5.1": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 200000, maxOutput: 65536 },
+    "z-ai/glm-5.2": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "minimal", "low", "medium", "high", "xhigh", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "z-ai/glm-5.3": { vision: false, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "high", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "z-ai/glm-5.3-flash": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "high", "max"], contextWindow: 1000000, maxOutput: 65536 },
+    "z-ai/glm-5v-turbo": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, thinkingLevels: ["none", "low"], contextWindow: 200000, maxOutput: 65536 },
   },
 };
 
@@ -422,6 +735,73 @@ export const PATTERN_CAPABILITIES = [
   { pattern: "*step-*",         caps: { reasoning: true, thinkingFormat: "step", contextWindow: 128000 } },
   { pattern: "*nemotron*",      caps: { reasoning: true, contextWindow: 128000 } },
   { pattern: "*ling-*",         caps: { reasoning: true, contextWindow: 128000 } },
+  // M5 FIX: Tightened from bare *claude* to require a dash separator, avoiding
+  // false-positives on custom models that happen to contain "claude" (e.g.
+  // "my-claude-finetune"). Real Claude model IDs always contain "claude-".
+  { pattern: "*claude-*",       caps: { vision: true, reasoning: true, search: true, thinkingFormat: "claude-budget" } },
+  { pattern: "*gpt-5.6-sol*",  caps: { reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000, thinkingMaxEffort: true } },
+  { pattern: "*gpt-5.6-terra*", caps: { reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 } },
+  { pattern: "*gpt-5.6-luna*", caps: { reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 } },
+  // ── Moonshot / Kimi K3 (reasoning, supports max effort) ──────────
+  // K3 reasoning + Preserved Thinking always on (can't disable), native tiers
+  // low/high/max only (default max). See moonshot.js registry note.
+  { pattern: "*kimi-k3*",      caps: { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["low", "high", "max"], thinkingMaxEffort: true, contextWindow: 1048576, maxOutput: 1048576 } },
+  // MAI-Code-1-Flash (Microsoft via GitHub Copilot) — code-generation model.
+  { pattern: "*mai-code*",      caps: { reasoning: true, thinkingFormat: "openai", contextWindow: 256000, maxOutput: 128000 } },
+  { pattern: "*o1-*",           caps: { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 100000 } },
+  { pattern: "*o1_*",           caps: { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 100000 } },
+  { pattern: "*o3-*",           caps: { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 100000 } },
+  { pattern: "*o3_*",           caps: { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 100000 } },
+  { pattern: "*o4-*",           caps: { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 100000 } },
+  { pattern: "*o4_*",           caps: { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 100000 } },
+  // Bare o1/o3/o4 ids (openai/o1, openai/o3, chatgpt-web/o3, copilot-web/o3, …)
+  // contain no dash/underscore, so the *o1-* / *o3_* patterns never match them
+  // and they silently lost reasoning+vision. models.dev: reasoning, image/pdf
+  // input, 200k ctx / 100k output. Specific variants (o1-mini, o3-mini, o4-mini)
+  // are still caught by the earlier patterns.
+  { pattern: "o1*",            caps: { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 100000 } },
+  { pattern: "o3*",            caps: { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 100000 } },
+  { pattern: "o4*",            caps: { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 100000 } },
+  // ── Grok (vision + Live Search) ──────────────────────────────────
+  { pattern: "*grok-imagine-video*", caps: { videoOutput: true } },
+  // ── Qwen (3.5+ = native vision/video; coder & max = text-only; QwQ = thinking-only) ─
+  // TokenRouter qwen family (provider-qualified, must precede the generic
+  // patterns below): the backing endpoint only accepts reasoning_effort
+  // low|medium — high/max/none/auto are rejected by the validator and xhigh
+  // 422s upstream. Thinking is always on by default, so "none"/"auto" must not
+  // reach it as an invalid enum: clamp every request to low|medium and
+  // disable-requests to low (minimal).
+  { provider: "tokenrouter", pattern: "*qwen*", caps: { vision: true, reasoning: true, thinkingFormat: "openai", thinkingLevels: ["low", "medium"], thinkingCanDisable: false, thinkingMaxEffort: false, contextWindow: 262144, maxOutput: 65536 } },
+  // opencode — generic Muse Spark pattern (covers passthrough discoveries the free
+  // lane returns, e.g. muse-spark-1.x-contributor-free). Provider-scoped so it can't
+  // leak onto muse-spark-web (which doesn't speak OpenAI-compatible effort). Matches
+  // isMuseSparkModel() routing: any Muse Spark on opencode is Responses-API + multimodal.
+  { provider: "opencode", pattern: "*muse*spark*", caps: { vision: true, pdf: true, audioInput: true, videoInput: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["minimal", "low", "medium", "high", "xhigh"], contextWindow: 1048576, maxOutput: 131072 } },
+  // opencode-go — same Muse Spark family on the Go lane (/zen/go/v1/responses
+  // only, see OpenCodeGoExecutor). Provider-scoped for the same muse-spark-web guard.
+  { provider: "opencode-go", pattern: "*muse*spark*", caps: { vision: true, pdf: true, audioInput: true, videoInput: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, thinkingLevels: ["minimal", "low", "medium", "high", "xhigh"], contextWindow: 1048576, maxOutput: 131072 } },
+  // Qwen3.8 dense (OrcaRouter self-host + Alibaba) — reasoning + tools; vision
+  // not guaranteed on every host (Orca free card is text-only 64k). Keep
+  // family-level reasoning; provider-scoped orcarouter pin overrides ctx/vision.
+  { pattern: "*qwen3.8*",       caps: { reasoning: true, thinkingFormat: "qwen", contextWindow: 262144, maxOutput: 65536 } },
+  // kimi-latest (Moonshot chat) accepts image input (models.dev).
+  { pattern: "*kimi-latest*",   caps: { vision: true, reasoning: true, thinkingFormat: "kimi", contextWindow: 262144 } },
+  { pattern: "*mimo*auto*",     caps: { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 262144, maxOutput: 131072 } },
+  // ── Cohere (Command A Vision = vision; others text) ──────────────
+  // Cohere Command A Reasoning — explicit reasoning model (models.dev: 256k ctx).
+  { pattern: "*command-a-reasoning*", caps: { reasoning: true, thinkingFormat: "openai", contextWindow: 256000, maxOutput: 32000 } },
+  // 0x-Alpha family (covers bare, slashed, stealth prefix, and -free forms).
+  // Must be before *x-preview* so stealth/ox-alpha doesn't fall through.
+  { pattern: "*ox-alpha*",     caps: { reasoning: true, thinkingFormat: "openai", thinkingLevels: ["low", "medium", "high", "xhigh"], contextWindow: 1048576, maxOutput: 131072 } },
+  { pattern: "*0x*alpha*",     caps: { reasoning: true, thinkingFormat: "openai", thinkingLevels: ["low", "medium", "high", "xhigh"], contextWindow: 1048576, maxOutput: 131072 } },
+  { pattern: "*x-preview*",    caps: { reasoning: true, thinkingFormat: "openai", thinkingLevels: ["low", "medium", "high", "xhigh"], contextWindow: 1048576, maxOutput: 131072 } },
+  { pattern: "*step-3.7*",      caps: { reasoning: true, thinkingFormat: "step", thinkingLevels: ["low", "medium", "high"], contextWindow: 256000, maxOutput: 256000 } },
+  // Hy4 preview (Tencent Hunyuan, OpenCode Go / CodeBuddy / WorkBuddy).
+  // Vendor reports vision + always-on reasoning; large context/output.
+  { pattern: "hy4*",            caps: { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 64000 } },
+  // LongCat-2.0 (Meituan) — OpenCode Go cheap coding lane. Large context
+  // (Go usage table: ~89K cached tokens/request); reasoning format unknown.
+  { pattern: "*longcat*",       caps: { contextWindow: 131072, maxOutput: 32768 } },
 ];
 
 /**
@@ -431,19 +811,24 @@ export const PATTERN_CAPABILITIES = [
  * Union:        vision, pdf, audioInput, videoInput, imageOutput, audioOutput, search
  * Intersection: tools
  * Primary:      reasoning fields from the first (primary) model
- * Conservative: contextWindow = min; maxOutput = max
+ * Window:       contextWindow and maxOutput both follow the largest member, because a
+ *               combo fails over instead of splitting one conversation across models.
+ *               Reporting the smallest window would make a client compact a 1M model
+ *               down to 256k for no reason. A combo may set its own window, which then
+ *               wins over the auto-detected one.
  *
  * @param {string[]} comboModels
  * @param {Object|null} [comboLookup] optional map of combo name → models array for nested resolution
  * @param {number} [_depth] internal recursion depth guard
+ * @param {number} [contextOverride] explicit contextWindow set on the combo
  * @returns {object|null} full capabilities object, or null for empty input
  */
-export function aggregateComboCapabilities(comboModels, comboLookup = null, _depth = 0) {
+export function aggregateComboCapabilities(comboModels, comboLookup = null, _depth = 0, contextOverride = 0) {
   if (!comboModels?.length || _depth > 6) return null;
   const allCaps = comboModels.map((fullId) => {
     // Nested combo: bare name (no slash) that exists in the lookup — recurse
     if (!fullId.includes("/") && comboLookup?.[fullId]) {
-      return aggregateComboCapabilities(comboLookup[fullId], comboLookup, _depth + 1)
+      return aggregateComboCapabilities(comboLookup[fullId], comboLookup, _depth + 1, contextOverride)
           ?? getCapabilitiesForModel(null, fullId);
     }
     const slash = fullId.indexOf("/");
@@ -452,6 +837,9 @@ export function aggregateComboCapabilities(comboModels, comboLookup = null, _dep
     return getCapabilitiesForModel(provider, model);
   });
   const first = allCaps[0];
+  const windows = allCaps.map((c) => c.contextWindow).filter(Number.isFinite);
+  const outputs = allCaps.map((c) => c.maxOutput).filter(Number.isFinite);
+  const override = Number(contextOverride);
   return {
     vision:      allCaps.some((c) => c.vision),
     pdf:         allCaps.some((c) => c.pdf),
@@ -465,8 +853,10 @@ export function aggregateComboCapabilities(comboModels, comboLookup = null, _dep
     thinkingFormat:     first.thinkingFormat,
     thinkingCanDisable: first.thinkingCanDisable,
     thinkingRange:      first.thinkingRange,
-    contextWindow: Math.min(...allCaps.map((c) => c.contextWindow)),
-    maxOutput:     Math.max(...allCaps.map((c) => c.maxOutput)),
+    contextWindow: Number.isFinite(override) && override > 0
+      ? override
+      : (windows.length ? Math.max(...windows) : DEFAULT_CAPABILITIES.contextWindow),
+    maxOutput: outputs.length ? Math.max(...outputs) : DEFAULT_CAPABILITIES.maxOutput,
   };
 }
 
@@ -604,7 +994,8 @@ export function getCapabilitiesForModel(provider, model) {
   if (MODEL_CAPABILITIES[model]) return { ...DEFAULT_CAPABILITIES, ...MODEL_CAPABILITIES[model] };
 
   // 3. Pattern match (first match wins), refined by catalog + name heuristic
-  for (const { pattern, caps } of PATTERN_CAPABILITIES) {
+  for (const { pattern, caps, provider: patternProvider } of PATTERN_CAPABILITIES) {
+    if (patternProvider && patternProvider !== provider) continue;
     if (matchPattern(pattern, baseModel) || matchPattern(pattern, model)) {
       return refine(caps, provider, model);
     }

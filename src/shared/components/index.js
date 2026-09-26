@@ -38,7 +38,10 @@ export { default as Tooltip } from "./Tooltip";
 export { default as ProviderInfoCard } from "./ProviderInfoCard";
 export { default as CapacityBadges } from "./CapacityBadges";
 export { default as WelcomeModal } from "./WelcomeModal";
+export { default as UpdateBanner } from "./UpdateBanner";
 export { default as DownloadBackupModal } from "./DownloadBackupModal";
+export { default as FeloCaptureButton } from "./FeloCaptureButton";
+export { default as CookieCaptureButton } from "./CookieCaptureButton";
 
 // Layouts
 export * from "./layouts";

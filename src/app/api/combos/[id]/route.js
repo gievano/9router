@@ -5,6 +5,15 @@ import { resetComboRotation } from "open-sse/services/combo.js";
 // Validate combo name: only a-z, A-Z, 0-9, -, _
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.\-]+$/;
 
+// A combo may declare its own context window; 0 keeps it on auto (largest member).
+const MAX_CUSTOM_CONTEXT = 100_000_000;
+
+function readContextWindow(value) {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(n, MAX_CUSTOM_CONTEXT);
+}
+
 // GET /api/combos/[id] - Get combo by ID
 export async function GET(request, { params }) {
   try {
@@ -43,7 +52,10 @@ export async function PUT(request, { params }) {
     
     // Capture previous name to invalidate rotation state on rename
     const prev = await getComboById(id);
-    const combo = await updateCombo(id, body);
+    const combo = await updateCombo(id, {
+      ...body,
+      ...(body.contextWindow !== undefined ? { contextWindow: readContextWindow(body.contextWindow) } : {}),
+    });
     
     if (!combo) {
       return NextResponse.json({ error: "Combo not found" }, { status: 404 });
