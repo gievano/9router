@@ -149,35 +149,26 @@ export async function GET() {
       });
     }
 
-    // Combos: aggregate the caps of their member models (worst-case window,
-    // OR-ed boolean capabilities) so a combo chip answers for its badge too.
+    // Combos: aggregate the caps of their member models so a combo chip answers for
+    // its badge and its window too. The same aggregator the public models list uses,
+    // so a combo never reports a different window in two places.
     const { getCombos } = await import("@/lib/localDb");
+    const { aggregateComboCapabilities } = await import("open-sse/providers/capabilities.js");
     let combos = [];
     try {
       combos = await getCombos();
     } catch {
       combos = [];
     }
-    const capsByAnyKey = models.reduce((acc, m) => {
-      if (m.fullModel) acc[m.fullModel] = m.caps;
-      if (m.routedModel) acc[m.routedModel] = m.caps;
-      if (m.model) acc[m.model] = m.caps;
-      return acc;
-    }, {});
+    const comboByName = {};
+    for (const combo of combos) {
+      if (Array.isArray(combo.models) && combo.models.length) comboByName[combo.name] = combo.models;
+    }
     for (const combo of combos) {
       const members = Array.isArray(combo.models) ? combo.models : [];
-      const memberCaps = members.map((name) => capsByAnyKey[name]).filter(Boolean);
-      if (memberCaps.length === 0) continue;
-      const caps = {
-        vision: memberCaps.some((c) => c.vision),
-        search: memberCaps.some((c) => c.search),
-        reasoning: memberCaps.some((c) => c.reasoning),
-        thinkDeeper: memberCaps.some((c) => c.thinkDeeper),
-        unrestrictedMode: memberCaps.some((c) => c.unrestrictedMode),
-        speedMode: memberCaps.some((c) => c.speedMode),
-        contextWindow: memberCaps.reduce((min, c) => (c.contextWindow ? Math.min(min || Infinity, c.contextWindow) : min), null),
-        maxOutput: memberCaps.reduce((min, c) => (c.maxOutput ? Math.min(min || Infinity, c.maxOutput) : min), null),
-      };
+      if (members.length === 0) continue;
+      const aggregated = aggregateComboCapabilities(members, comboByName, 0, Number(combo.contextWindow) || 0);
+      if (!aggregated) continue;
       models.push({
         provider: "combo",
         model: combo.name,
@@ -185,7 +176,7 @@ export async function GET() {
         fullModel: combo.name,
         routedModel: combo.name,
         alias: combo.name,
-        caps,
+        caps: aggregated,
         isCombo: true,
       });
     }

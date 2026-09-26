@@ -1,3 +1,12 @@
+# v0.5.117-Custom (2026-09-26)
+
+## Fixes & Enhancements
+- **Combo context window follows the largest member**: a combo of a 1M model and a 256k model used to publish 256k, so clients compacted a conversation far earlier than any member needed. A combo fails over between models instead of splitting one conversation, so the window it advertises now follows the largest member, same as max output already did. The two places that aggregated combos disagreed with each other (one took the smallest window and the smallest output, the other the smallest window and the largest output), so both now share one aggregator and a combo reports the same window in every place.
+- **Custom context per combo**: create and edit combo have a Context Window switch with Auto and Custom. Auto follows the largest member and says what that is right now, Custom takes a token count that wins over the automatic value. Stored in a new `contextWindow` column, where 0 means auto, and marked with a custom badge on the combo card.
+- **Every model shows its real window**: each row in the combo form and each chip in the model picker now carry the model's context (1.0M, 256k), so a 1M model is never picked as if it were a small one. The combo card shows the window and output of each of its members next to the badges.
+- **Combos report context_length**: `/v1/models` published a combo's window only inside a nested block, so a client reading the usual `context_length` field found nothing and guessed from the name. Combos now also publish `context_length` and `max_completion_tokens` at the top level, like single models.
+- **OpenCode and other credential-free providers are listed again**: `/v1/models` built its list from provider connections only, and a provider that needs no key never owns a connection, so its models were listed only while the whole provider table was empty. As soon as one provider was connected, every model of OpenCode Free and the other no-key providers disappeared from the listing, even though requests to them worked. They are now always listed, and a client that reads `/v1/models` to build its model picker sees them.
+
 # v0.5.116-Custom (2026-09-26)
 
 ## Custom Features & Enhancements

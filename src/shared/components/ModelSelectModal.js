@@ -9,6 +9,7 @@ import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, AI_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, getProviderAlias } from "@/shared/constants/providers";
 import { buildStudioTargetIndex } from "@/shared/utils/studioModelVisibility";
+import { formatContextWindow } from "@/shared/utils/contextWindow";
 
 // Same matching rules the server applies to allowedModels: exact name, `prefix*`
 // and `*suffix`, case-insensitive. Mirrored here so a scoped session only ever sees
@@ -26,6 +27,18 @@ function matchesModelScope(patterns, value, id) {
       if (allowed.startsWith("*")) return req.endsWith(allowed.slice(1));
       return false;
     })
+  );
+}
+
+// The window every client needs before it starts compacting, shown next to the
+// model name so a 1M model is never picked as if it were a 256k one.
+function ContextTag({ caps }) {
+  const ctx = caps?.contextWindow;
+  if (!Number.isFinite(ctx) || ctx <= 0) return null;
+  return (
+    <span className="text-[9px] opacity-60 font-normal" title={`${Number(ctx).toLocaleString()} tokens`}>
+      {formatContextWindow(ctx)}
+    </span>
   );
 }
 
@@ -638,6 +651,7 @@ export default function ModelSelectModal({
                       <span className="material-symbols-outlined leading-none" style={{ fontSize: "10px" }}>check</span>
                     )}
                     {combo.name}
+                    <ContextTag caps={getCaps(combo.name)} />
                     <CapacityBadges caps={getCaps(combo.name)} />
                   </button>
                 );
@@ -677,6 +691,7 @@ export default function ModelSelectModal({
                     )}
                     {studio.callName}
                     <span className="text-[9px] opacity-60 font-normal">custom</span>
+                    <ContextTag caps={getCaps(studio.callName)} />
                     <CapacityBadges caps={getCaps(studio.callName)} />
                   </button>
                 );
@@ -739,11 +754,13 @@ export default function ModelSelectModal({
                         <>
                           {model.name}
                           <span className="text-[9px] opacity-60 font-normal">custom</span>
+                          <ContextTag caps={getCaps(model.value)} />
                           <CapacityBadges caps={getCaps(model.value)} />
                         </>
                       ) : (
                         <>
                           {model.name}
+                          <ContextTag caps={getCaps(model.value)} />
                           <CapacityBadges caps={getCaps(model.value)} />
                         </>
                       )}

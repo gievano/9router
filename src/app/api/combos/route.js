@@ -6,6 +6,15 @@ export const dynamic = "force-dynamic";
 // Validate combo name: only a-z, A-Z, 0-9, -, _
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.\-]+$/;
 
+// A combo may declare its own context window; 0 keeps it on auto (largest member).
+const MAX_CUSTOM_CONTEXT = 100_000_000;
+
+function readContextWindow(value) {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(n, MAX_CUSTOM_CONTEXT);
+}
+
 // GET /api/combos - Get all combos
 export async function GET() {
   try {
@@ -38,7 +47,12 @@ export async function POST(request) {
       return NextResponse.json({ error: "Combo name already exists" }, { status: 400 });
     }
 
-    const combo = await createCombo({ name, models: models || [], kind: kind || null });
+    const combo = await createCombo({
+      name,
+      models: models || [],
+      kind: kind || null,
+      contextWindow: readContextWindow(body.contextWindow),
+    });
 
     return NextResponse.json(combo, { status: 201 });
   } catch (error) {
