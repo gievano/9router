@@ -89,6 +89,9 @@ export async function PUT(request, { params }) {
           if (requestedList[0] !== "*") {
             const filtered = requestedList.filter(m => matchesAllowedModels(creatorPatterns, m));
             allowed = filtered.length ? filtered.join(",") : creatorPatterns.join(",");
+          } else {
+            // Wildcard or empty request is clamped to the creator's own scope.
+            allowed = creatorPatterns.join(",");
           }
         }
       }

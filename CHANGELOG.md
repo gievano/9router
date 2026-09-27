@@ -1,3 +1,17 @@
+# v0.5.121-Custom (2026-09-26)
+
+## Changes
+- **The large provider batch is withdrawn**: the set that added 304+ providers on top of this fork is gone again. Around 240 registry entries, 48 executors and the supporting services and utilities that only existed for them were removed, and the two that stayed in the tree are now unreferenced. The providers this fork had before that batch are untouched, so OpenCode Zen, CodeBuddy Intl, Qoder CN, Devin CLI, Grok CLI, DeepSeek Web, Gemini Web and Kimi Web all still work exactly as before.
+- **Alias resolution stays**: the indirection that maps a registry id, an alias and every secondary alias onto one provider key is kept, because the model lookup helpers read through it and the entries that remain use it.
+- **The capture buttons stay**: the API key form, the cookie capture button and the Felo capture button are untouched, so adding a key for any remaining provider behaves as it did.
+
+# v0.5.120-Custom (2026-09-26)
+
+## Fixes & Enhancements
+- **The image builds on Railway again**: the dependency install used a cache mount, and Railway's builder wants the id to carry a key it generates per service. The documented form of that key is rejected too, so the mount only ever broke the build, and the first version of the fix, which named the cache, was refused for the same reason. The mount is gone now and the build relies on the layer cache, which already covers the common case because package.json is copied on its own, so an unchanged manifest never reinstalls anything. The syntax line went with it, so the build no longer needs to pull a Dockerfile frontend before it can start.
+- **The build no longer stops on missing modules**: bringing in the large provider set left a few files behind. The capture metadata and the debug-browser warning were imported by the provider key form and by the two capture buttons, and the canonical-attempt trio was imported by the request semantics, the forced and non-streaming adapters and the request-detail status map, so none of those could be compiled. All five are here now, which means the cookie capture buttons, the Felo capture button and the request-detail status column behave as they were written to.
+- **Z.ai no longer needs a browser driver to load**: its browser transport imported playwright at module level, so an install without it failed to compile even for the signed API path that never touches a browser. The driver is now resolved the first time the browser is actually launched, the same way the TLS impersonation client already handles its optional native dependency, and the package is an optional dependency so a host that cannot install it is not blocked. When it is missing, the error says what to install instead of surfacing as a module resolution failure.
+
 # v0.5.119-Custom (2026-09-26)
 
 ## Changes
@@ -41,6 +55,8 @@
 - **Frontend Modals & UI**: Updated Add API Key modal to automatically suggest specific cookie capturing instructions for new Web-cookie providers. Added `FeloCaptureButton` and `CookieCaptureButton` helper components. 
 - **Preserved 9Router-specific Providers**: Kept exclusive 9Router providers and aliases intact (like OpenCode Zen, CodeBuddy Intl, Qoder CN, Devin CLI, Grok CLI, DeepSeek Web Tool Bridge).
 
+=======
+>>>>>>> parent of a782471f (feat: add 304+ providers (API-key, OAuth, web-cookie, free-tier, and free community providers))
 # v0.5.114-Custom (2026-09-25)
 
 ## Fixes & Enhancements

@@ -371,8 +371,6 @@ export default function CombosPage() {
           <ul className="text-sm text-text-muted mt-2 flex flex-col gap-1">
             <li><span className="font-medium text-text-main">Fallback</span> — tries models in order (next on failure)</li>
             <li><span className="font-medium text-text-main">Round Robin</span> — rotates models across requests to spread load</li>
-            <li><span className="font-medium text-text-main">Fastest</span> — picks the model with the lowest recent latency</li>
-            <li><span className="font-medium text-text-main">Cheapest</span> — picks the model with the lowest cost per token</li>
             <li><span className="font-medium text-text-main">Fusion</span> — queries all models in parallel and merges their answers into one, giving the best quality at the highest cost because every request bills all panel models plus the judge (N+1 calls)</li>
           </ul>
           <p className="hidden text-xs text-text-muted mt-3 max-w-2xl">

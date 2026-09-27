@@ -72,6 +72,9 @@ export async function POST(request) {
         if (requestedList[0] !== "*") {
           const filtered = requestedList.filter(m => matchesAllowedModels(creatorPatterns, m));
           allowedModels = filtered.length ? filtered.join(",") : creatorPatterns.join(",");
+        } else {
+          // Wildcard or empty request is clamped to the creator's own scope.
+          allowedModels = creatorPatterns.join(",");
         }
         // If creator is wildcard ("*"), sub-key can use "*"
       }

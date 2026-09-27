@@ -47,8 +47,6 @@ export default {
     { id: "cline-pass/minimax-m3", name: "MiniMax M3 (ClinePass)" },
     { id: "cline-pass/qwen3.7-max", name: "Qwen3.7 Max (ClinePass)" },
     { id: "cline-pass/qwen3.7-plus", name: "Qwen3.7 Plus (ClinePass)" },
-  
-    { id: "stealth/ox-alpha", name: "0x-Alpha (ClinePass)", upstreamModelId: "stealth/ox-alpha" },
   ],
   oauth: {
     appBaseUrl: "https://app.cline.bot",
