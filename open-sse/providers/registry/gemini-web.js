@@ -8,7 +8,7 @@ export default {
   ],
   uiAlias: "gweb",
   display: {
-    name: "Gemini Web (Cookie)",
+    name: "Gemini Web",
     icon: "bolt",
     color: "#1C7DFF",
     textIcon: "GW",

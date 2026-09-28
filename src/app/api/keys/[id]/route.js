@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteApiKey, getApiKeyById, getApiKeys, updateApiKey } from "@/lib/localDb";
-import { getSessionContext, clampPermissions } from "@/lib/auth/dashboardPermissions";
+import { getSessionContext, DEFAULT_PERMISSIONS } from "@/lib/auth/dashboardPermissions";
 import { parseAllowedModels, matchesAllowedModels } from "@/lib/db/repos/apiKeysRepo";
 
 // GET /api/keys/[id] - Get single key
@@ -42,8 +42,13 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Key not found" }, { status: 404 });
     }
 
+    // API key users cannot manage their own key
+    if (ctx.session?.role === "apikey" && existing.key === ctx.session.apiKey) {
+      return NextResponse.json({ error: "Cannot manage your own API key" }, { status: 403 });
+    }
+
     // API key user can only edit their own key
-    if (ctx.session?.role === "apikey" && existing.key !== ctx.session.apiKey) {
+    if (ctx.session?.role === "apikey" && existing.createdBy !== ctx.session.apiKey) {
       return NextResponse.json({ error: "Permission denied: cannot edit other keys" }, { status: 403 });
     }
 
@@ -99,7 +104,10 @@ export async function PUT(request, { params }) {
     }
     if (body.permissions !== undefined) {
       if (ctx.session?.role === "apikey") {
-        updateData.permissions = clampPermissions(ctx.permissions, body.permissions);
+        // Same rule as creation: a key-authenticated session never edits permissions,
+        // it can only land the sub-key on the default. Sending the field at all is
+        // not an error, it just cannot move the value.
+        updateData.permissions = DEFAULT_PERMISSIONS;
       } else {
         updateData.permissions = body.permissions;
       }
@@ -133,8 +141,13 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: "Key not found" }, { status: 404 });
     }
 
+    // API key users cannot manage their own key
+    if (ctx.session?.role === "apikey" && existing.key === ctx.session.apiKey) {
+      return NextResponse.json({ error: "Cannot manage your own API key" }, { status: 403 });
+    }
+
     // API key user can only delete their own key
-    if (ctx.session?.role === "apikey" && existing.key !== ctx.session.apiKey) {
+    if (ctx.session?.role === "apikey" && existing.createdBy !== ctx.session.apiKey) {
       return NextResponse.json({ error: "Permission denied: cannot delete other keys" }, { status: 403 });
     }
 

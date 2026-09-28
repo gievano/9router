@@ -8,6 +8,7 @@ import { cn } from "@/shared/utils/cn";
 import { APP_CONFIG, UPDATER_CONFIG } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+import useSettingsStore from "@/store/settingsStore";
 import Button from "./Button";
 import { ConfirmModal } from "./Modal";
 
@@ -22,7 +23,6 @@ const navItems = [
   // { href: "/dashboard/basic-chat", label: "Basic Chat", icon: "chat" }, // Hidden
   { href: "/dashboard/combos", label: "Combo & Vision Adapter", icon: "layers" },
   { href: "/dashboard/usage", label: "Usage", icon: "bar_chart" },
-  { href: "/dashboard/api-key-usage", label: "API Key Usage", icon: "vpn_key" },
   { href: "/dashboard/quota", label: "Quota Tracker", icon: "data_usage" },
   { href: "/dashboard/token-saver", label: "Token Saver", icon: "savings" },
   // { href: "/dashboard/pxpipe", label: "PXPIPE", icon: "image" },
@@ -127,19 +127,21 @@ export default function Sidebar({ onClose }) {
   // session skips them instead of firing requests it may not read.
   useEffect(() => {
     if (isApiKeyUser) return;
-    fetch("/api/settings")
-      .then(res => res.json())
-      .then(data => { if (data.enableTranslator) setEnableTranslator(true); })
-      .catch(() => {});
+    useSettingsStore.getState().fetchSettings().then((data) => {
+      if (data?.enableTranslator) setEnableTranslator(true);
+    });
   }, [isApiKeyUser]);
 
-  // Lazy check for new npm version on mount
+  // Lazy check for new npm version in background after initial render
   useEffect(() => {
     if (isApiKeyUser) return;
-    fetch("/api/version")
-      .then(res => res.json())
-      .then(data => { if (data.hasUpdate) setUpdateInfo(data); })
-      .catch(() => {});
+    const timer = setTimeout(() => {
+      fetch("/api/version")
+        .then(res => res.json())
+        .then(data => { if (data.hasUpdate) setUpdateInfo(data); })
+        .catch(() => {});
+    }, 2500);
+    return () => clearTimeout(timer);
   }, [isApiKeyUser]);
 
   const isActive = (href) => {

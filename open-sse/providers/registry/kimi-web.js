@@ -8,7 +8,7 @@ export default {
   ],
   uiAlias: "kweb",
   display: {
-    name: "Kimi Web (Cookie)",
+    name: "Kimi Web",
     icon: "bolt",
     color: "#1AB69D",
     textIcon: "KW",

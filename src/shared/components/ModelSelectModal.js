@@ -50,8 +50,12 @@ const PROVIDER_ORDER = [
   ...Object.keys(APIKEY_PROVIDERS),
 ];
 
-// Providers that need no auth — always show in model selector
-const NO_AUTH_PROVIDER_IDS = Object.keys(FREE_PROVIDERS).filter(id => FREE_PROVIDERS[id].noAuth);
+// Providers that need no auth — always show in model selector.
+// Hidden entries stay out: their upstream channel is gone, but they keep
+// `noAuth` so the request path still resolves if an old model id is replayed.
+const NO_AUTH_PROVIDER_IDS = Object.keys(FREE_PROVIDERS).filter(
+  id => FREE_PROVIDERS[id].noAuth && !FREE_PROVIDERS[id].hidden
+);
 
 // Providers with per-account live catalogs via /api/providers/[id]/models.
 // Static registry stays as fallback when live fetch fails or is empty.
@@ -302,7 +306,7 @@ export default function ModelSelectModal({
             value: fullModel,
           }));
         const customRegisteredModels = customModels
-          .filter((m) => m.providerAlias === alias)
+          .filter((m) => m.providerAlias === alias || m.providerAlias?.toLowerCase() === alias?.toLowerCase())
           .map((m) => ({
             id: m.id,
             name: m.name || m.id,
@@ -372,7 +376,7 @@ export default function ModelSelectModal({
         // Merge custom models registered via /api/models/custom for this provider
         // providerAlias in DB uses the raw providerId, not the display prefix
         const registeredCustom = customModels
-          .filter((m) => m.providerAlias === providerId)
+          .filter((m) => m.providerAlias === providerId || m.providerAlias?.toLowerCase() === providerId?.toLowerCase())
           .map((m) => ({
             id: m.id,
             name: m.name || m.id,
@@ -423,7 +427,7 @@ export default function ModelSelectModal({
         // Custom models registered via /api/models/custom (provider "Add Model" button)
         const customAliasIds = new Set(customAliasModels.map((m) => m.id));
         const customRegisteredModels = customModels
-          .filter((m) => m.providerAlias === alias && !hardcodedIds.has(m.id) && !customAliasIds.has(m.id))
+          .filter((m) => (m.providerAlias === alias || m.providerAlias?.toLowerCase() === alias?.toLowerCase()) && !hardcodedIds.has(m.id) && !customAliasIds.has(m.id))
           .map((m) => ({ id: m.id, name: m.name || m.id, value: `${alias}/${m.id}`, isCustom: true }));
 
         const merged = [
@@ -458,6 +462,56 @@ export default function ModelSelectModal({
         }
       }
     });
+
+    // Fallback: custom models that did not land in any provider group yet.
+    // This happens when the provider alias stored in DB does not match any
+    // active provider shown above (e.g. scoped API key sessions). Attach them
+    // to the first provider with passthroughModels, otherwise create a
+    // "Custom Models" group so they stay visible in the picker. The
+    // allowedModelPatterns filter below still applies.
+    const groupedModelIds = new Set(
+      Object.values(groups).flatMap((g) => (g.models || []).map((m) => m.id))
+    );
+    const ungroupedCustom = customModels.filter((m) => {
+      if (groupedModelIds.has(m.id)) return false;
+      // Only surface models that pass the scope filter when it is active.
+      if (allowedModelPatterns) {
+        return matchesModelScope(allowedModelPatterns, `${m.providerAlias}/${m.id}`, m.id)
+          || matchesModelScope(allowedModelPatterns, m.name, m.id);
+      }
+      return true;
+    });
+    if (ungroupedCustom.length > 0) {
+      const passthroughId = sortedProviderIds.find((id) => (allProviders[id] || {}).passthroughModels);
+      if (passthroughId && groups[passthroughId]) {
+        const alias = getProviderAlias(passthroughId);
+        for (const m of ungroupedCustom) {
+          const value = `${alias}/${m.id}`;
+          if (groupedModelIds.has(m.id)) continue;
+          groups[passthroughId].models.push({
+            id: m.id,
+            name: m.name || m.id,
+            value,
+            kind: getModelKind(m),
+            isCustom: true,
+          });
+          groupedModelIds.add(m.id);
+        }
+      } else {
+        groups.__custom = {
+          name: "Custom Models",
+          alias: "custom",
+          color: "#8b5cf6",
+          models: filterByKind(ungroupedCustom.map((m) => ({
+            id: m.id,
+            name: m.name || m.id,
+            value: `${m.providerAlias}/${m.id}`,
+            kind: getModelKind(m),
+            isCustom: true,
+          }))),
+        };
+      }
+    }
 
     // Filter out disabled models per provider (disabled keyed by storage alias OR providerId)
     Object.entries(groups).forEach(([providerId, group]) => {
@@ -503,7 +557,7 @@ export default function ModelSelectModal({
       });
     }
     return groups;
-  }, [filteredActiveProviders, modelAliases, allProviders, providerNodes, customModels, disabledModels, kindFilter, activeProviders, cursorModels, clineModels, clinepassModels, studioModels, showStudioTargets]);
+  }, [filteredActiveProviders, modelAliases, allProviders, providerNodes, customModels, disabledModels, kindFilter, activeProviders, cursorModels, clineModels, clinepassModels, studioModels, showStudioTargets, allowedModelPatterns]);
 
   // Filter combos by search query (and hide combos when kindFilter is set — combos are LLM-only by design)
   const filteredCombos = useMemo(() => {
@@ -567,8 +621,23 @@ export default function ModelSelectModal({
       };
     });
 
+    // A studio callName already rendered under "Custom Models" must not
+    // also appear inside a provider group. Dedupe against the raw studio
+    // list so the check holds even while search or other filters narrow it.
+    const studioIds = new Set(studioModels.map((s) => (s.callName || "").toLowerCase()));
+    if (studioIds.size > 0) {
+      Object.entries(filtered).forEach(([id, group]) => {
+        const models = group.models.filter((m) => !studioIds.has((m.id || "").toLowerCase()));
+        if (models.length === 0) {
+          delete filtered[id];
+        } else {
+          filtered[id] = { ...group, models };
+        }
+      });
+    }
+
     return filtered;
-  }, [groupedModels, searchQuery, addedModelValues, allowedModelPatterns, capFilter, getCaps]);
+  }, [groupedModels, searchQuery, addedModelValues, allowedModelPatterns, capFilter, getCaps, studioModels]);
 
   const handleSelect = (model) => {
     const value = model?.value || model?.name || model;

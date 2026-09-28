@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdapter } from "@/lib/db/driver.js";
 import { getSessionContext } from "@/lib/auth/dashboardPermissions";
+import { parseAllowedModels, matchesAllowedModels } from "@/lib/db/repos/allowedModels.js";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export async function GET(request) {
 
     const ctx = await getSessionContext();
     const keyFilter = ctx.apiKeyFilter;
+    const patterns = parseAllowedModels(ctx.allowedModels || "*");
 
     const conds = [];
     const params = [];
@@ -47,7 +49,7 @@ export async function GET(request) {
     );
 
     const leaderboard = rows
-      .filter(r => r.model)
+      .filter(r => r.model && matchesAllowedModels(patterns, r.model))
       .map((r) => ({
         model: r.model,
         provider: r.provider || "",

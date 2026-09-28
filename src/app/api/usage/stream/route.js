@@ -10,6 +10,7 @@ export async function GET(request) {
 
   const ctx = await getSessionContext();
   const apiKeyFilter = ctx.apiKeyFilter;
+  const allowedModels = ctx.allowedModels || "*";
 
   const state = { closed: false, keepalive: null, send: null, sendPending: null, cachedStats: null };
 
@@ -19,11 +20,14 @@ export async function GET(request) {
         if (state.closed) return;
         try {
           if (state.cachedStats) {
-            const { activeRequests, recentRequests, errorProvider } = await getActiveRequests();
+            const { activeRequests, recentRequests, errorProvider } = await getActiveRequests(apiKeyFilter, allowedModels);
             const quickStats = { ...state.cachedStats, activeRequests, recentRequests, errorProvider, _type: "pending" };
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(quickStats)}\n\n`));
           }
-          const stats = await getUsageStats(period, apiKeyFilter);
+          // allowedModels is not optional here: this stream is the second source the
+          // Usage page merges in, and omitting it silently widens the scope to every
+          // model, which is what let unrelated providers show up under an API-key login.
+          const stats = await getUsageStats(period, apiKeyFilter, allowedModels);
           state.cachedStats = stats;
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ ...stats, _type: "full" })}\n\n`));
         } catch {
@@ -37,7 +41,7 @@ export async function GET(request) {
       state.sendPending = async () => {
         if (state.closed || !state.cachedStats) return;
         try {
-          const { activeRequests, recentRequests, errorProvider } = await getActiveRequests();
+          const { activeRequests, recentRequests, errorProvider } = await getActiveRequests(apiKeyFilter, allowedModels);
           const stats = { ...state.cachedStats, activeRequests, recentRequests, errorProvider, _type: "pending" };
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(stats)}\n\n`));
         } catch {

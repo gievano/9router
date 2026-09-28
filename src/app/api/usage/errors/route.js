@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdapter } from "@/lib/db/driver.js";
 import { getSessionContext } from "@/lib/auth/dashboardPermissions";
+import { parseAllowedModels, matchesAllowedModels } from "@/lib/db/repos/allowedModels.js";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export async function GET(request) {
 
     const ctx = await getSessionContext();
     const keyFilter = ctx.apiKeyFilter;
+    const patterns = parseAllowedModels(ctx.allowedModels || "*");
 
     const db = await getAdapter();
     const conds = [];
@@ -49,6 +51,7 @@ export async function GET(request) {
     let errors = 0;
 
     for (const row of rows) {
+      if (!matchesAllowedModels(patterns, row.model)) continue;
       const status = String(row.status || "ok").trim();
       const count = Number(row.count) || 0;
       const tokens = Number(row.totalTokens) || 0;

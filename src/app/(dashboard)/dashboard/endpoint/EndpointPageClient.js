@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
 import { Card, Button, Input, Select, Modal, CardSkeleton, Toggle, ConfirmModal, ModelSelectModal, SegmentedControl } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+import { nextResetAt, formatDuration } from "@/shared/utils/interval";
+import { useNow } from "@/shared/hooks/useNow";
 import {
   TUNNEL_BENEFITS,
   TUNNEL_PING_INTERVAL_MS,
@@ -14,6 +16,7 @@ import {
 } from "./endpointConstants";
 import { clientPingUrl, clientPingAny } from "./endpointPing";
 import { cn } from "@/shared/utils/cn";
+import useSettingsStore from "@/store/settingsStore";
 import EndpointRow from "./components/EndpointRow";
 import StatusAlert from "./components/StatusAlert";
 import Tooltip from "./components/Tooltip";
@@ -45,30 +48,59 @@ const PERMISSION_OPTIONS = [
 
 const EMPTY_PERMISSIONS = { manageApiKeys: false, manageModels: false, manageProviders: false, viewUsage: true };
 
-function PermissionsEditor({ value, onChange, allowed }) {
+const PERMISSIONS_LOCKED_REASON = "Locked. Sign in with the dashboard password to change permissions.";
+
+function ResetCountdown({ resetInterval, lastResetAt }) {
+  const now = useNow(true);
+  if (!resetInterval || resetInterval === "never") return null;
+  const due = nextResetAt(resetInterval, lastResetAt);
+  if (!due) return null;
+  const remaining = new Date(due).getTime() - now;
+  return (
+    <span className="text-xs max-w-full truncate px-2 py-0.5 rounded bg-gray-500/10 text-text-muted">
+      {remaining <= 0 ? "Resetting..." : `Next reset: ${formatDuration(remaining)}`}
+    </span>
+  );
+}
+
+ResetCountdown.propTypes = {
+  resetInterval: PropTypes.string,
+  lastResetAt: PropTypes.string,
+};
+
+function PermissionsEditor({ value, onChange, allowed, locked, lockedReason }) {
+  // A locked editor ignores whatever the parent holds and renders the default,
+  // so what the form shows is what the key will actually be created with.
+  const effective = locked ? EMPTY_PERMISSIONS : value;
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-medium text-text-main">Permissions</label>
       <p className="text-xs text-text-muted">
         What this key may do once it signs in. The sidebar and the forms it opens follow these.
       </p>
+      {locked && (
+        <p className="mt-1 rounded-lg border border-border-subtle bg-surface-2 px-3 py-2 text-xs text-text-muted">
+          {lockedReason}
+        </p>
+      )}
       <div className="flex flex-col gap-1.5 mt-1">
         {PERMISSION_OPTIONS.map((opt) => {
-          const locked = !allowed[opt.key];
-          const checked = locked ? false : Boolean(value?.[opt.key]);
+          const unavailable = locked || !allowed[opt.key];
+          const checked = Boolean(effective?.[opt.key]);
+          const note = locked ? lockedReason : unavailable ? "Your key does not hold this permission" : opt.desc;
           return (
             <label
               key={opt.key}
               className={cn(
                 "flex items-start gap-2.5 rounded-lg border border-border-subtle bg-surface-2 px-3 py-2.5 transition-colors",
-                locked ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary/40"
+                unavailable ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary/40"
               )}
             >
               <input
                 type="checkbox"
                 className="mt-0.5 size-4 accent-[var(--color-primary)] shrink-0"
                 checked={checked}
-                disabled={locked}
+                disabled={unavailable}
                 onChange={(e) => onChange({ ...EMPTY_PERMISSIONS, ...value, [opt.key]: e.target.checked })}
               />
               <span className="flex min-w-0 flex-col gap-0.5">
@@ -76,9 +108,7 @@ function PermissionsEditor({ value, onChange, allowed }) {
                   <span className="material-symbols-outlined text-[16px] text-primary">{opt.icon}</span>
                   {opt.label}
                 </span>
-                <span className="text-xs text-text-muted">
-                  {locked ? "Your key does not hold this permission" : opt.desc}
-                </span>
+                <span className="text-xs text-text-muted">{note}</span>
               </span>
             </label>
           );
@@ -92,6 +122,8 @@ PermissionsEditor.propTypes = {
   value: PropTypes.object,
   onChange: PropTypes.func.isRequired,
   allowed: PropTypes.object,
+  locked: PropTypes.bool,
+  lockedReason: PropTypes.string,
 };
 
 function generateSnippet(lang, apiKey, baseUrl) {
@@ -145,7 +177,17 @@ export default function APIPageClient({ machineId }) {
  const [newKeyPermissions, setNewKeyPermissions] = useState({ manageApiKeys: false, manageModels: false, manageProviders: false, viewUsage: true });
  const [editPermissions, setEditPermissions] = useState({ manageApiKeys: false, manageModels: false, manageProviders: false, viewUsage: true });
  const isApiKeyUser = authStatus?.role === "apikey";
- const creatorPermissions = authStatus?.permissions || { manageApiKeys: true, manageModels: true, manageProviders: true, viewUsage: true };
+ const sessionApiKey = authStatus?.apiKey || null;
+ // A key that is already inside the key table cannot hand out permissions, so the
+ // whole block is inert and the value it writes is the default rather than whatever
+ // the form last held. The API enforces the same rule; the point here is that the
+ // form does not pretend to offer a choice it will not honour.
+ const permissionsLocked = isApiKeyUser;
+ const permissionsToSave = (current) => (permissionsLocked ? EMPTY_PERMISSIONS : current);
+  // A key cannot edit, switch off or delete itself, so those controls are dimmed
+  // instead of bouncing a 403 back at the user.
+  const isOwnKey = (key) => isApiKeyUser && !!key && key.key === sessionApiKey;
+  const creatorPermissions = authStatus?.permissions || { manageApiKeys: true, manageModels: true, manageProviders: true, viewUsage: true };
  const creatorTokenLimit = authStatus?.tokenLimit || 0;
  const creatorAllowedModels = authStatus?.allowedModels || "*";
 // A key that is itself limited to certain models can only hand those same models on.
@@ -220,6 +262,13 @@ const scopedModelPatterns =
   });
 
   const { copied, copy } = useCopyToClipboard();
+
+  useEffect(() => {
+    fetch("/api/auth/status")
+      .then(res => res.json())
+      .then(data => setAuthStatus(data))
+      .catch(() => {});
+  }, []);
 
   // Auto-scroll install log
   useEffect(() => {
@@ -323,16 +372,15 @@ const scopedModelPatterns =
   const loadSettings = async () => {
     setTunnelChecking(true);
     try {
-      const [settingsRes, statusRes] = await Promise.all([
-        fetch("/api/settings"),
+      const [settingsData, statusRes] = await Promise.all([
+        useSettingsStore.getState().fetchSettings(),
         fetch("/api/tunnel/status", { cache: "no-store" })
       ]);
-      if (settingsRes.ok) {
-        const data = await settingsRes.json();
-        setRequireApiKey(data.requireApiKey || false);
-        setTunnelDashboardAccess(data.tunnelDashboardAccess || false);
-        setCustomDomainEnabled(data.customDomainEnabled || false);
-        setCustomDomainUrl(data.customDomainUrl || "");
+      if (settingsData) {
+        setRequireApiKey(settingsData.requireApiKey || false);
+        setTunnelDashboardAccess(settingsData.tunnelDashboardAccess || false);
+        setCustomDomainEnabled(settingsData.customDomainEnabled || false);
+        setCustomDomainUrl(settingsData.customDomainUrl || "");
       }
       if (statusRes.ok) {
         const data = await statusRes.json();
@@ -358,12 +406,8 @@ const scopedModelPatterns =
 
   const handleTunnelDashboardAccess = async (value) => {
     try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tunnelDashboardAccess: value }),
-      });
-      if (res.ok) setTunnelDashboardAccess(value);
+      const updated = await useSettingsStore.getState().patchSettings({ tunnelDashboardAccess: value });
+      if (updated) setTunnelDashboardAccess(value);
     } catch (error) {
       console.log("Error updating tunnelDashboardAccess:", error);
     }
@@ -371,12 +415,8 @@ const scopedModelPatterns =
 
   const handleRequireApiKey = async (value) => {
     try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requireApiKey: value }),
-      });
-      if (res.ok) setRequireApiKey(value);
+      const updated = await useSettingsStore.getState().patchSettings({ requireApiKey: value });
+      if (updated) setRequireApiKey(value);
     } catch (error) {
       console.log("Error updating requireApiKey:", error);
     }
@@ -892,7 +932,7 @@ const scopedModelPatterns =
           tpmLimit: newKeyTpm ? Number(newKeyTpm) : 0,
           ipWhitelist: newKeyIpWhitelist.trim(),
           expiresAt: newKeyExpiresAt || null,
-          permissions: newKeyPermissions,
+          permissions: permissionsToSave(newKeyPermissions),
         }),
       });
       const data = await res.json();
@@ -1017,6 +1057,9 @@ const scopedModelPatterns =
               next.delete(id);
               return next;
             });
+          } else {
+            const errBody = await res.json().catch(() => null);
+            alert(errBody?.error || "Delete failed");
           }
         } catch (error) {
           console.log("Error deleting key:", error);
@@ -1416,6 +1459,9 @@ const scopedModelPatterns =
                         Reset: every {key.resetInterval}
                       </span>
                     )}
+                    {key.tokenLimit > 0 && key.resetInterval && key.resetInterval !== "never" && (
+                      <ResetCountdown resetInterval={key.resetInterval} lastResetAt={key.lastResetAt} />
+                    )}
                     <span className="text-xs max-w-full truncate px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 font-medium">
                       Models: {key.allowedModels && key.allowedModels !== "*" ? key.allowedModels : "All"}
                     </span>
@@ -1451,6 +1497,7 @@ const scopedModelPatterns =
                   <Toggle
                     size="sm"
                     checked={key.isActive !== false}
+                    disabled={isOwnKey(key)}
                     onChange={(nextActive) => handleToggleKeyActive(key, nextActive)}
                   />
                   </div>
@@ -1475,21 +1522,23 @@ const scopedModelPatterns =
                       setEditExpiresAt(key.expiresAt || "");
                       setEditPermissions(key.permissions || EMPTY_PERMISSIONS);
                     }}
-                    className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all"
+                    disabled={isOwnKey(key)}
+                    className={cn("p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all", isOwnKey(key) && "opacity-40 cursor-not-allowed")}
                     title="Edit key settings & quota"
                   >
                     <span className="material-symbols-outlined text-[18px]">edit</span>
                   </button>
  <button
  onClick={() => handleDuplicateKey(key)}
- className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all"
+ className={cn("p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all", isOwnKey(key) && "opacity-40 cursor-not-allowed")}
  title="Duplicate key (copy settings)"
  >
  <span className="material-symbols-outlined text-[18px]">library_add</span>
  </button>
                   <button
                     onClick={() => handleManualResetUsage(key)}
-                    className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all"
+                    disabled={isOwnKey(key)}
+                    className={cn("p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all", isOwnKey(key) && "opacity-40 cursor-not-allowed")}
                     title="Reset used tokens to 0"
                   >
                     <span className="material-symbols-outlined text-[18px]">restart_alt</span>
@@ -1503,7 +1552,8 @@ const scopedModelPatterns =
           </button>
                   <button
                     onClick={() => handleDeleteKey(key.id)}
-                    className="p-2 hover:bg-red-500/10 rounded text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
+                    disabled={isOwnKey(key)}
+                    className={cn("p-2 hover:bg-red-500/10 rounded text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all", isOwnKey(key) && "opacity-30 cursor-not-allowed")}
                   >
                     <span className="material-symbols-outlined text-[18px]">delete</span>
                   </button>
@@ -1634,6 +1684,8 @@ const scopedModelPatterns =
             value={newKeyPermissions}
             onChange={setNewKeyPermissions}
             allowed={creatorPermissions}
+            locked={permissionsLocked}
+            lockedReason={PERMISSIONS_LOCKED_REASON}
           />
           <div className="flex gap-2 w-full mt-2">
             <Button onClick={handleCreateKey} fullWidth disabled={!newKeyName.trim()} className="min-h-[44px]">
@@ -1769,6 +1821,8 @@ const scopedModelPatterns =
             value={editPermissions}
             onChange={setEditPermissions}
             allowed={creatorPermissions}
+            locked={permissionsLocked}
+            lockedReason={PERMISSIONS_LOCKED_REASON}
           />
           <div className="flex gap-2 w-full mt-2">
             <Button
@@ -1788,7 +1842,7 @@ const scopedModelPatterns =
                   tpmLimit: editTpm ? Number(editTpm) : 0,
                   ipWhitelist: editIpWhitelist.trim(),
                   expiresAt: editExpiresAt || null,
-                  permissions: editPermissions,
+                  permissions: permissionsToSave(editPermissions),
                 });
               }}
               fullWidth

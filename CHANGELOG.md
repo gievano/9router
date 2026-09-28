@@ -1,3 +1,86 @@
+# v0.5.131-Custom (2026-09-28)
+
+## Fixes
+- **Quota Tracker crashed on open**: the Quota row card rendered a `resetWord` that was never declared, which throws a ReferenceError the moment the list draws. `/dashboard/quota` has no error boundary, so the whole page went blank. The label now comes from the `recurring` flag the row already carries, so a one-shot pack still reads "Expires" and a refilling quota still reads "Reset", matching the wording the progress bar already used.
+
+## Internal
+- **Render smoke-check for the Quota Tracker components**: `QuotaTracker/renderSelfCheck.mjs` calls each leaf component as a plain function with real-shaped data covering every branch it draws (unlimited, credit balance, one-shot pack, missing reset time, compact mode, each sort mode, pagination, error and loading states). This catches a class of bug that parsing alone cannot: a JSX expression naming a variable nobody declared is syntactically valid, so it passes a build check and only fails when the component renders. The check was verified by reintroducing the defect and confirming it failed before restoring the fix.
+
+# v0.5.130-Custom (2026-09-27)
+
+## Changes
+- **Permissions are locked for API key sessions**: signing in to the dashboard with an API key now disables the whole permissions block instead of only hiding the "manage API keys" row. The four checkboxes are inert, the value shown is the default with only View usage on, and a note explains that changing permissions needs the dashboard password. This applies to both the create form and the edit form, and the value sent to the API is forced to the default so stale form state cannot slip through.
+- **Sub-keys created by an API key session no longer inherit permissions**: key creation and key editing now write the default permission set for an API-key session instead of clamping the request to what the caller already holds. A key that can create keys can no longer mint one that manages keys, so the escalation chain stops there. Session by dashboard password is unaffected and keeps full control.
+
+# v0.5.129-Custom (2026-09-27)
+
+## Fixes
+- **API key usage showed providers the key cannot use**: signing in to the dashboard with an API key showed every provider that had ever run on the instance. The Usage page reads two sources, and the SSE stream at `/api/usage/stream` called `getUsageStats` without the allowed-models argument, so it fell back to "every model" and overwrote the correctly scoped first response. That stream is the one that populated the By Provider chart, which is why unrelated providers such as MiMo Code Free and OpenCode appeared next to the key's own custom model.
+- **Leaderboard and Errors tabs ignored allowed models**: both filtered by API key but not by the key's model allowlist, so a scoped session saw models it would be refused at request time. The Errors tab now also excludes those models from its total and error counts, so the numbers agree with the rows.
+- **Live request list was never scoped**: `getActiveRequests()` returned the global view to every caller, including API-key sessions, exposing other keys' in-flight and recent requests. It now takes the session scope, and a scoped caller gets an empty in-flight list because pending traffic carries no key attribution.
+- **Request Details and the provider filter had no session check**: `/api/usage/request-details` and `/api/usage/providers` never consulted the dashboard session, so the provider dropdown could be used to enumerate providers outside the key's scope. Both are now narrowed to the key's allowed models. The model filter is applied in SQL rather than after the query, so pagination counts stay correct.
+
+## Notes
+- The `requestDetails` table has no `apiKey` column, so the Details tab and Live Request Inspector are scoped by allowed model but not yet by API key. Scoping them per key needs a schema change; existing rows cannot be attributed retroactively.
+
+# v0.5.128-Custom (2026-09-27)
+
+## Custom Features & Enhancements
+- **Automatic tool calling fallback**: a tool payload that a provider refuses no longer surfaces as a tool error. Before dispatch, malformed tool arguments are repaired (truncated JSON is closed back up, non-string arguments are stringified, empty ones become `{}`), tool results whose call id matches nothing are dropped, and a `tool_choice` pointing at a tool that is not in the array is removed. When an upstream still answers 400/404/422 naming the tools, the request is re-dispatched with the tool machinery relaxed one step at a time, stopping at the first level the provider accepts: drop `tool_choice` and `strict`, then strip JSON Schema keywords that many gateways reject while keeping every tool name and description, and finally drop the tool definitions entirely and inline the tool history as prose so the turn is still answered. On by default; set `toolCallFallback` to `false` in settings to restore the previous behaviour. A rejection that does not name tools, such as a context overflow or a policy refusal, is never touched.
+
+# v0.5.127-Custom (2026-09-27)
+
+## Fixes
+- **MiMo Code Free hidden properly**: the provider was flagged `hidden` in the registry but still surfaced in the model selector and in `/v1/models`, because the no-auth provider lists were built from every `noAuth` free provider without checking that flag. Both lists now skip hidden entries, so the dead Xiaomi free channel no longer shows up with a large auto-fetched model list. The entry keeps its `noAuth` flag so an old `mmf/mimo-auto` request still resolves on the request path.
+- **MiMo free model catalog no longer auto-fetched**: the registry entry pulled a model list from models.dev through `modelsFetcher` and accepted any id through `passthroughModels`. Both are gone, so the provider exposes only its single curated model and no longer grows a catalog from an external source.
+
+## Changes
+- **Web cookie provider names shortened**: DeepSeek Web (Cookie), Gemini Web (Cookie) and Kimi Web (Cookie) are now DeepSeek Web, Gemini Web and Kimi Web. The provider ids and aliases are unchanged, so saved connections keep working.
+
+# v0.5.126-Custom (2026-09-27)
+
+## Custom Features & Enhancements
+- **Live Request Inspector**: new tab in the Usage menu that streams live request metadata (model, provider, tokens, latency, status) over SSE. Shows the newest 50 requests with a rolling snapshot that self-heals on reconnect, plus a pause/resume toggle and a detail drawer. Conversation payloads are never sent to the client, matching the redaction policy of the existing request-details endpoint.
+- **Prompt Cache Indicator**: the Recent Requests rows now show a `CACHE` badge when a request served prompt tokens from cache, and the Cached Tokens overview card shows a cache hit rate percentage when caching is active.
+- **Quota Tracker redesign**: quota rows are now card-style with rounded borders, a larger progress bar, and the remaining percentage moved to the top-right of each row. Spacing, typography and hover states are aligned with the rest of the dashboard.
+- **API Key Usage menu removed**: the sidebar entry is gone. Users who sign in with an API key already see their own scoped usage on the Usage page, so the separate menu was redundant. The page route and `/api/usage/api-keys` endpoint are unchanged.
+
+## Fixes
+- **Live Request Inspector auth**: the SSE endpoint called `getSessionContext()` but discarded the result, so the auth check was a no-op. It now returns 401 when there is no session.
+
+# v0.5.125-Custom (2026-09-27)
+
+## Upstream Sync
+- **Synced with decolua upstream v0.5.91**: 37 upstream commits merged, including the Token Harbor provider, four OpenAI-compatible aggregators (dahl, atria, agnes, bai), Claude thinking text returned to OpenAI-format clients, Claude decloak fallback when toolNameMap misses, Zed OAuth auto-import, GPT-6 Sol and Luna for Codex, the completed OpenCode Go catalog, Codex CLI multi-profile support, and Hermes multi-role model config.
+- **Fixes from upstream**: usage attribution keyed by full API key to stop team-key collisions, combo limits resolved with server capabilities, capabilities catalog no longer cached per module copy, `POST /api/providers` made O(1) with silent key overwrite refused, Command Code raw byte replay, empty think markers no longer emitted, Gemini terminal turns and unresponded functionCalls guarded, Tailscale enable-flow health wait capped at 20s, Claude cli version bumped to 2.1.280 for Opus 5.5.
+- **Serenhope fixes kept**: per API key permissions and sign-in, combo context window resolution, combo body deep-copy so tool calling survives the fallback loop, usage chart and live stats scoped to the signed-in key, real custom plugin implementations, plugin badges on custom and combo models, default pricing fallback so Est. Cost is never always zero, Docker npm cache mount fix for Railway.
+- **Serenhope removals kept**: Union Alpha models, the Custom Domain endpoint option, the Uncensored Output plugin, the withdrawn 304+ provider batch, and the Fastest / Cheapest / Select All combo options stay out.
+
+# v0.5.123-Custom (2026-09-27)
+
+## Fixes & Enhancements
+- **Tool calling restored for whitelisted providers**: Fixed short-circuit in claude translator that bypassed the `!!tool?.function` fallback for providers with a tool-type whitelist.
+- **Combo tools capability reporting fixed**: Changed `aggregateComboCapabilities` to use `some` instead of `every` for the `tools` capability so a single member without tools no longer disables tools for the entire combo.
+- **API-key user model filtering fixed**: Added missing `fetch("/api/auth/status")` in EndpointPageClient so `creatorAllowedModels` and `creatorPermissions` resolve correctly instead of falling back to defaults.
+
+# v0.5.124-Custom (2026-09-27)
+
+## Fixes
+- **Combo body mutation in fallback loop**: the fallback loop passed the same `body` reference to each member in turn, and `translateRequest` plus `fixMissingToolResponses` mutated `messages` in place. A second member inherited the corrupted history, which silently broke tool calling. Each member now gets its own cloned messages array, so a failed first member no longer poisons the next attempt.
+
+## Custom Features & Enhancements
+- **Select All removed from Combos page**: the master checkbox that toggled all combo cards at once was removed, along with the `Select all (N)` label. Combos are selected one card at a time via the per-card checkbox; the bulk strategy and bulk delete controls only appear when something is selected, next to the current count.
+
+# v0.5.122-Custom (2026-09-27)
+
+## Changes
+- **Custom Domain endpoint removed**: the Custom Domain option on the API Endpoint card is gone along with its enable, edit and disable dialogs, the `customDomainEnabled` and `customDomainUrl` settings, and the branch in the base-URL picker that produced its `/v1` URL. Local, Cloudflare Tunnel and Tailscale remain, and a stored custom domain left over in an old settings blob is ignored rather than read.
+- **Cheapest combo strategy removed**: the "Cheapest" strategy that ordered combo members by a free/cheap heuristic is gone from the rotation logic and from the combos page help text. Round Robin, Fallback and Fusion remain.
+
+## Fixes & Enhancements
+- **Sub-key model scope enforced server-side**: a sub-key created with a wildcard allowed-models field used to bypass the parent key's model scope entirely, so a key restricted to a single model could create a child with access to every model. The create and edit key endpoints now clamp a wildcard or empty request to the creator's own allowed-models list, while explicit lists are still filtered by the same exact, prefix-star and suffix-star matching the LLM gate uses.
+- **Tool calling restored for all models**: the Claude translator's tool filter dropped any tool whose `type` was not `function` or in the provider whitelist, which discarded tools carrying a function payload under a newer API's `type` (e.g. Responses "custom"). The filter now keeps any tool that has a function payload, so tool definitions reach the provider and `capabilities.tools` reports true again. Combo capability auto-switch now also treats `tools` as a hard capability and floats tool-capable models to the front when a request carries tools.
+
 # v0.5.121-Custom (2026-09-26)
 
 ## Changes
@@ -55,8 +138,6 @@
 - **Frontend Modals & UI**: Updated Add API Key modal to automatically suggest specific cookie capturing instructions for new Web-cookie providers. Added `FeloCaptureButton` and `CookieCaptureButton` helper components. 
 - **Preserved 9Router-specific Providers**: Kept exclusive 9Router providers and aliases intact (like OpenCode Zen, CodeBuddy Intl, Qoder CN, Devin CLI, Grok CLI, DeepSeek Web Tool Bridge).
 
-=======
->>>>>>> parent of a782471f (feat: add 304+ providers (API-key, OAuth, web-cookie, free-tier, and free community providers))
 # v0.5.114-Custom (2026-09-25)
 
 ## Fixes & Enhancements
@@ -420,7 +501,37 @@
 - **Key Editing & Management**: key names, token limits, reset intervals, and allowed models stay editable anytime, with a manual `restart_alt` button to zero the used tokens.
 - **UI & Theme Sync**: the app is locked to dark mode with theme and language switchers removed, and custom select dropdowns now follow the app theme.
 
-# v0.5.100 (2026-09-18)
+
+# v0.5.91 (2026-09-26)
+
+## Features
+- **Providers**: add Token Harbor provider and four OpenAI-compatible aggregator providers (dahl, atria, agnes, bai)
+- **Claude**: forward `x-claude-code-session-id` on OAuth requests; merge client `anthropic-beta` flags and forward rate-limit headers; return thinking text to OpenAI-format clients
+- **Codex**: add GPT-6 Sol and Luna support
+- **CLI Tools**: support multiple model profiles for Codex CLI
+- **Hermes**: multi-role model config (delegation + auxiliary slots)
+- **OpenCode Go**: complete the Go catalog (40 models) with auto-fetch + family endpoint regex
+- **Usage**: show and redeem free limit resets for cc accounts
+- **Cline**: expose the `cline-free/*` tier and price it at zero
+- **Combos**: display vision adapter models in an ordered table view
+
+## Fixes
+- **Claude**: decloak tool names when `toolNameMap` misses (#4342); update spoofed cli version to 2.1.280 to support Opus 5.5
+- **Providers API**: make POST `/api/providers` O(1) and refuse silent key overwrite (#4350)
+- **Capabilities**: stop caching the catalog source per module copy (#4351)
+- **OAuth**: stop Zed paste-token crash and add IDE auto-import (#4359)
+- **Dashboard**: resolve combo limits with the server's capabilities (#4360); lazy-load charts and `marked`, preload in background on idle
+- **Responses**: carry the streamed output items in `response.completed` (#4307)
+- **STT**: dispatch live-API-only Gemini models over the Live WebSocket transport (#4006)
+- **Gemini**: guard terminal model turns and unresponded functionCalls in `normalizeGeminiContents`
+- **Command Code**: replay raw byte chunks to preserve all NDJSON lines
+- **Translator**: stop emitting empty `<think>` markers into OpenAI content
+- **CLI Tools**: refresh Codex settings after apply (#4347); keep existing `ANTHROPIC_AUTH_TOKEN` when applying Claude settings
+- **Tray**: native arm64 macOS menubar binary, no Rosetta required
+- **CLI**: filter model selector by active connections and noAuth providers
+- **Usage**: key live byApiKey stats by full api key to prevent team-key collision and preserve API key usage attribution
+- **Tailscale**: cap enable-flow health wait at 20s
+
 # v0.5.86 (2026-09-23)
 
 ## Features

@@ -254,7 +254,9 @@ function providerMatchesKinds(providerId, kindFilter) {
 // never own a connection row. Without this pass they only appeared while the whole
 // provider table was empty, and any client that reads /v1/models (Hermes, Cline,
 // SDK model pickers) could not see a single one of their models.
-const NO_AUTH_PROVIDER_IDS = Object.keys(FREE_PROVIDERS).filter((id) => FREE_PROVIDERS[id].noAuth);
+const NO_AUTH_PROVIDER_IDS = Object.keys(FREE_PROVIDERS).filter(
+  (id) => FREE_PROVIDERS[id].noAuth && !FREE_PROVIDERS[id].hidden
+);
 
 // Combo matches kindFilter when its `kind` field is in the list.
 // Combos with no kind are treated as LLM.

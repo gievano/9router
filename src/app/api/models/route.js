@@ -158,6 +158,17 @@ export async function GET() {
       if (members.length === 0) continue;
       const aggregated = aggregateComboCapabilities(members, comboByName, 0, Number(combo.contextWindow) || 0);
       if (!aggregated) continue;
+      const comboCaps = { ...aggregated };
+      if (ivEnabled && (ivModels.has(combo.name) || ivModels.has(`combo/${combo.name}`) || members.some((m) => ivModels.has(m)))) {
+        comboCaps.vision = true;
+      }
+      if (tdEnabled && (tdModels.has(combo.name) || tdModels.has(`combo/${combo.name}`) || members.some((m) => tdModels.has(m)))) {
+        comboCaps.reasoning = true;
+        comboCaps.thinkDeeper = true;
+      }
+      if (smEnabled && (smModels.has(combo.name) || smModels.has(`combo/${combo.name}`) || members.some((m) => smModels.has(m)))) {
+        comboCaps.speedMode = true;
+      }
       models.push({
         provider: "combo",
         model: combo.name,
@@ -165,7 +176,7 @@ export async function GET() {
         fullModel: combo.name,
         routedModel: combo.name,
         alias: combo.name,
-        caps: aggregated,
+        caps: comboCaps,
         isCombo: true,
       });
     }

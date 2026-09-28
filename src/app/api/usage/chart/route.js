@@ -16,7 +16,7 @@ export async function GET(request) {
     }
 
     const ctx = await getSessionContext();
-    const data = await getChartData(period, ctx.apiKeyFilter);
+    const data = await getChartData(period, ctx.apiKeyFilter, ctx.allowedModels);
     return NextResponse.json(data);
   } catch (error) {
     console.error("[API] Failed to get chart data:", error);

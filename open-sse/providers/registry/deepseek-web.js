@@ -8,7 +8,7 @@ export default {
   ],
   uiAlias: "dsw",
   display: {
-    name: "DeepSeek Web (Cookie)",
+    name: "DeepSeek Web",
     icon: "bolt",
     color: "#4D6BFE",
     textIcon: "DSW",

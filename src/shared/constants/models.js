@@ -47,3 +47,23 @@ export const CAPACITY_META = {
   thinkDeeper: { icon: "psychology", label: "Think Deeper", desc: "Think Deeper Plugin: multi-step deep reasoning", color: "text-purple-400" },
   speedMode: { icon: "bolt", label: "Speed", desc: "Speed Mode: skips thinking for faster responses", color: "text-cyan-400" },
 };
+
+// Realtime STT transport markers accepted on custom models — single source of
+// truth across layers: the API whitelist (src/app/api/models/custom/route.js
+// sanitizeTransport) and the dashboard transport select
+// (providers/[id]/AddCustomModelModal) both import this map, so one new row
+// here makes a realtime engine dispatch case (open-sse/handlers/sttCore.js)
+// selectable and validated end-to-end. Keys must mirror a sttCore case.
+export const STT_TRANSPORT_META = {
+  "gemini-live": {
+    label: "Gemini Live (realtime WebSocket)",
+    desc: "Streams audio over bidiGenerateContent and returns incremental transcription segments",
+  },
+};
+
+export const STT_TRANSPORTS = Object.freeze(Object.keys(STT_TRANSPORT_META));
+
+export function isSttTransport(transport) {
+  if (typeof transport !== "string") return false;
+  return Object.prototype.hasOwnProperty.call(STT_TRANSPORT_META, transport.trim());
+}

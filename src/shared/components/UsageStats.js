@@ -15,11 +15,11 @@ import Card from "./Card";
 import OverviewCards from "@/app/(dashboard)/dashboard/usage/components/OverviewCards";
 import UsageTable, { fmt, fmtTime } from "@/app/(dashboard)/dashboard/usage/components/UsageTable";
 import dynamic from "next/dynamic";
-// Lazy-load: keeps @xyflow/react out of the shared bundle until topology renders
+// Lazy-load: keeps @xyflow/react and recharts out of the initial bundle
 const ProviderTopology = dynamic(() => import("@/app/(dashboard)/dashboard/usage/components/ProviderTopology"), { ssr: false });
-import UsageChart from "@/app/(dashboard)/dashboard/usage/components/UsageChart";
-import ProviderBarChart from "@/app/(dashboard)/dashboard/usage/components/ProviderBarChart";
-import TopModelsChart from "@/app/(dashboard)/dashboard/usage/components/TopModelsChart";
+const UsageChart = dynamic(() => import("@/app/(dashboard)/dashboard/usage/components/UsageChart"), { ssr: false });
+const ProviderBarChart = dynamic(() => import("@/app/(dashboard)/dashboard/usage/components/ProviderBarChart"), { ssr: false });
+const TopModelsChart = dynamic(() => import("@/app/(dashboard)/dashboard/usage/components/TopModelsChart"), { ssr: false });
 
 function timeAgo(timestamp) {
   const diff = Math.floor((Date.now() - new Date(timestamp)) / 1000);
@@ -75,6 +75,11 @@ function RecentRequests({ requests = [] }) {
                       <span className="text-primary">{fmt(r.promptTokens)}↑</span>
                       {" "}
                       <span className="text-success">{fmt(r.completionTokens)}↓</span>
+                      {r.cachedTokens > 0 && (
+                        <div>
+                          <Badge variant="info" size="sm" icon="cached" className="mt-0.5" title={`${fmt(r.cachedTokens)} prompt tokens served from cache`}>CACHE {fmt(r.cachedTokens)}</Badge>
+                        </div>
+                      )}
                     </td>
                     <td className="py-1.5 text-right text-text-muted whitespace-nowrap"><TimeAgo timestamp={r.timestamp} /></td>
                   </tr>

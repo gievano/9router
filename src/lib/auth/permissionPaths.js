@@ -59,15 +59,16 @@ const READ_METHODS = ["GET", "HEAD"];
 const API_PERMISSION_RULES = [
   { prefix: "/api/keys", permissions: ["manageApiKeys"] },
   // The provider page needs the model catalog to render a connection, so reading it
-  // is shared with manageProviders while every write stays on manageModels.
-  { prefix: "/api/models/alias", permissions: ["manageModels", "manageProviders"], methods: READ_METHODS },
-  { prefix: "/api/models/disabled", permissions: ["manageModels", "manageProviders"], methods: READ_METHODS },
-  { prefix: "/api/models/availability", permissions: ["manageModels", "manageProviders"], methods: READ_METHODS },
-  { prefix: "/api/models/custom", permissions: ["manageModels", "manageProviders"], methods: READ_METHODS },
-  { prefix: "/api/model-editor", permissions: ["manageModels", "manageProviders"], methods: READ_METHODS },
-  { prefix: "/api/models", permissions: ["manageModels", "manageProviders"], methods: READ_METHODS },
-  { prefix: "/api/combos", permissions: ["manageModels", "manageProviders"], methods: READ_METHODS },
-  { prefix: "/api/tags", permissions: ["manageModels", "manageProviders"], methods: READ_METHODS },
+  // is shared with manageProviders while every write stays on manageModels. Reading is
+  // also shared with manageApiKeys because the key forms pick allowed models from it.
+  { prefix: "/api/models/alias", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
+  { prefix: "/api/models/disabled", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
+  { prefix: "/api/models/availability", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
+  { prefix: "/api/models/custom", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
+  { prefix: "/api/model-editor", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
+  { prefix: "/api/models", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
+  { prefix: "/api/combos", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
+  { prefix: "/api/tags", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
   { prefix: "/api/models", permissions: ["manageModels"] },
   { prefix: "/api/model-editor", permissions: ["manageModels"] },
   { prefix: "/api/combos", permissions: ["manageModels"] },
