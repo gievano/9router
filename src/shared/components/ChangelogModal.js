@@ -4,12 +4,12 @@ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { marked } from "marked";
+import { GIEVANO_SOURCE, DECOLUA_SOURCE, DEFAULT_CHANGELOG_SOURCE, availableChangelogSources, pickChangelogSource } from "./changelogSources.js";
 
 marked.setOptions({ gfm: true, breaks: true });
 
 const DECOLUA_URL = "https://raw.githubusercontent.com/decolua/9router/refs/heads/master/CHANGELOG.md";
-// Fallback for the fork's own changelog when /api/changelog has nothing local.
-const FORK_CHANGELOG_URL = "https://raw.githubusercontent.com/gievano/9router/refs/heads/master/CHANGELOG.md";
+const GIEVANO_URL = "https://raw.githubusercontent.com/gievano/9router/refs/heads/master/CHANGELOG.md";
 const CHANGELOG_API_URL = "/api/changelog";
 
 function asMarkdown(value) {
@@ -44,10 +44,10 @@ async function loadChangelogs() {
   let gievanoMd = asMarkdown(local?.custom);
 
   if (!decoluaMd && !gievanoMd) {
-    return Promise.all([fetchText(DECOLUA_URL), fetchText(FORK_CHANGELOG_URL)]);
+    return Promise.all([fetchText(DECOLUA_URL), fetchText(GIEVANO_URL)]);
   }
   if (!decoluaMd) decoluaMd = await fetchText(DECOLUA_URL);
-  if (!gievanoMd) gievanoMd = await fetchText(FORK_CHANGELOG_URL);
+  if (!gievanoMd) gievanoMd = await fetchText(GIEVANO_URL);
   return [decoluaMd, gievanoMd];
 }
 
@@ -130,27 +130,27 @@ function renderVersionCards(md, accent) {
  .join("");
 }
 
-const GIEVANO_ACCENT = {
-  color: "#60a5fa",
-  border: "rgba(96,165,250,0.35)",
-  bg: "rgba(96,165,250,0.06)",
-  icon: "star",
-};
-const OFFICIAL_ACCENT = {
-  color: "rgba(148,163,184,0.95)",
-  border: "rgba(148,163,184,0.25)",
-  bg: "rgba(148,163,184,0.05)",
-  icon: "history_edu",
-};
+function buildSection(md, source) {
+  const cards = renderVersionCards(md, source.accent);
+  if (!cards) return "";
+  const headStyle = `display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:17px;font-weight:600;color:${source.accent.color};`;
+  return `<div style="${headStyle}">
+  <span class="material-symbols-outlined" style="font-size:20px;">${source.accent.icon}</span>
+  ${escapeHtml(source.heading)}
+</div>
+${cards}`;
+}
 
 export default function ChangelogModal({ isOpen, onClose }) {
-  const [combinedHtml, setCombinedHtml] = useState("");
+  const [htmlBySource, setHtmlBySource] = useState({ gievano: "", decolua: "" });
+  const [loaded, setLoaded] = useState(false);
+  const [activeSource, setActiveSource] = useState(DEFAULT_CHANGELOG_SOURCE);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const modalRef = useRef(null);
 
   useEffect(() => {
-    if (!isOpen || combinedHtml) return;
+    if (!isOpen || loaded) return;
     let cancelled = false;
     setLoading(true);
     setError("");
@@ -158,44 +158,24 @@ export default function ChangelogModal({ isOpen, onClose }) {
     loadChangelogs()
       .then(([decoluaMd, gievanoMd]) => {
         if (cancelled) return;
-
-        const gievanoCards = gievanoMd ? renderVersionCards(gievanoMd, GIEVANO_ACCENT) : "";
-        const officialCards = decoluaMd ? renderVersionCards(decoluaMd, OFFICIAL_ACCENT) : "";
-
-        const serenBlock = gievanoCards
-          ? `<div style="display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:17px;font-weight:600;color:#60a5fa;">
-  <span class="material-symbols-outlined" style="font-size:20px;">star</span>
-  Fork Updates (gievano)
-</div>
-${gievanoCards}`
-          : "";
-
-        const divider = gievanoCards && officialCards
-          ? `<div style="margin:32px 0 20px 0;padding-top:24px;border-top:1px solid rgba(128,128,128,0.15);display:flex;align-items:center;gap:8px;font-size:17px;font-weight:600;color:rgba(148,163,184,0.85);">
-  <span class="material-symbols-outlined" style="font-size:20px;">history_edu</span>
-  Official Releases (Decolua)
-</div>`
-          : "";
-
-        const officialBlock = officialCards
-          ? (divider || `<div style="display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:17px;font-weight:600;color:rgba(148,163,184,0.85);">
-  <span class="material-symbols-outlined" style="font-size:20px;">history_edu</span>
-  Official Releases (Decolua)
-</div>`) + officialCards
-          : "";
-
-        setCombinedHtml(serenBlock + officialBlock);
+        setHtmlBySource({
+          gievano: buildSection(gievanoMd, GIEVANO_SOURCE),
+          decolua: buildSection(decoluaMd, DECOLUA_SOURCE),
+        });
       })
       .catch((err) => {
         if (cancelled) return;
         setError(err?.message || "Failed to load changelog");
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setLoaded(true);
+        }
       });
 
     return () => { cancelled = true; };
-  }, [isOpen, combinedHtml]);
+  }, [isOpen, loaded]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -211,10 +191,18 @@ ${gievanoCards}`
 
   // Reset content when modal closes
   useEffect(() => {
-    if (!isOpen) setCombinedHtml("");
+    if (isOpen) return;
+    setHtmlBySource({ gievano: "", decolua: "" });
+    setLoaded(false);
+    setActiveSource(DEFAULT_CHANGELOG_SOURCE);
   }, [isOpen]);
 
   if (!isOpen || typeof document === "undefined") return null;
+
+  // Only offer a tab for a source that actually has content, and never leave
+  // the active tab pointing at an empty one.
+  const available = availableChangelogSources(htmlBySource);
+  const shown = pickChangelogSource(htmlBySource, activeSource);
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -226,14 +214,35 @@ ${gievanoCards}`
         ref={modalRef}
         className="relative w-full bg-surface border border-black/10 dark:border-white/10 rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-w-3xl flex flex-col max-h-[85vh]"
       >
-        <div className="flex items-center justify-between p-3 border-b border-black/5 dark:border-white/5">
+        <div className="flex items-center justify-between gap-3 p-3 border-b border-black/5 dark:border-white/5">
           <h2 className="text-lg font-semibold text-text-main">Change Log</h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-text-muted hover:text-text-main hover:bg-black/5 dark:hover:bg-white/5 transition-all"
-          >
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {available.length > 1 && (
+              <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-black/5 dark:bg-white/5">
+                {available.map((source) => (
+                  <button
+                    key={source.id}
+                    type="button"
+                    onClick={() => setActiveSource(source.id)}
+                    aria-pressed={shown === source.id}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      shown === source.id
+                        ? "bg-surface text-text-main shadow-sm"
+                        : "text-text-muted hover:text-text-main"
+                    }`}
+                  >
+                    {source.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg text-text-muted hover:text-text-main hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 prose dark:prose-invert max-w-none text-sm">
@@ -243,8 +252,8 @@ ${gievanoCards}`
             </div>
           ) : error ? (
             <p className="text-red-500">{error}</p>
-          ) : combinedHtml ? (
-            <div dangerouslySetInnerHTML={{ __html: combinedHtml }} />
+          ) : htmlBySource[shown] ? (
+            <div dangerouslySetInnerHTML={{ __html: htmlBySource[shown] }} />
           ) : (
             <p className="text-text-muted">No changelog available.</p>
           )}

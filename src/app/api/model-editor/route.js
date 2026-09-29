@@ -9,6 +9,7 @@ import { getCombos } from "@/lib/db/repos/combosRepo.js";
 import { getProviderNodes } from "@/lib/db/repos/nodesRepo.js";
 import { resolveProviderAlias } from "open-sse/services/model.js";
 import { getModelAliases } from "@/lib/db/repos/aliasRepo.js";
+import { reconcileAllowedModels } from "@/lib/db/repos/apiKeysRepo.js";
 
 export const dynamic = "force-dynamic";
 
@@ -123,6 +124,9 @@ export async function PUT(request) {
 
   if (previousName !== callName) {
   await deleteStudioModel(previousName);
+  // A key listing the old name should follow it to the new one rather than
+  // silently pointing at a model that no longer exists.
+  await reconcileAllowedModels({ renamed: { [previousName.toLowerCase()]: callName } });
   }
 
   return NextResponse.json({ model });
@@ -143,8 +147,9 @@ export async function DELETE(request) {
   if (!existing) return NextResponse.json({ error: "Model not found" }, { status: 404 });
 
   await deleteStudioModel(callName);
+  const { emptied } = await reconcileAllowedModels({ removed: [callName] });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, ...(emptied.length ? { keysLeftForReview: emptied } : {}) });
   } catch (error) {
   console.error("Error deleting virtual model:", error);
   return NextResponse.json({ error: "Failed to delete model" }, { status: 500 });

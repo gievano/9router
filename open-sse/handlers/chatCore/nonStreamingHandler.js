@@ -4,6 +4,7 @@ import { fromOpenAIFinish } from "../../translator/concerns/finishReason.js";
 import { ollamaBodyToOpenAI } from "../../translator/response/ollama-to-openai.js";
 import { addBufferToUsage, filterUsageForFormat } from "../../utils/usageTracking.js";
 import { createErrorResult } from "../../utils/error.js";
+import { rescueResponse } from "../../translator/concerns/toolCallRescue.js";
 import { upstreamResponseHeaders } from "../../utils/upstreamHeaders.js";
 import { HTTP_STATUS } from "../../config/runtimeConfig.js";
 import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
@@ -351,6 +352,18 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
     const hasToolCalls = Array.isArray(msg?.tool_calls) && msg.tool_calls.length > 0;
     if (hasToolCalls && choice.finish_reason !== "tool_calls") {
       choice.finish_reason = "tool_calls";
+    }
+  }
+
+  // A call the client cannot satisfy ends the turn: `Invalid args for tool "Bash":
+  // must have required property 'command'` is the client validating against the
+  // schema this very request declared, and it throws rather than continuing. Run
+  // after the finish_reason fix so a dropped call can correct that reason back
+  // and leave a well-formed answer instead of a half-finished tool turn.
+  if (Array.isArray(translatedBody?.tools) && translatedBody.tools.length > 0) {
+    const rescued = rescueResponse(translatedResponse, translatedBody.tools);
+    if (rescued.renamed || rescued.recovered || rescued.dropped) {
+      log?.debug?.("TOOLRESCUE", `${rescued.renamed} renamed, ${rescued.recovered} recovered, ${rescued.dropped} dropped (response)`);
     }
   }
 

@@ -1,20 +1,21 @@
 import { v4 as uuidv4 } from "uuid";
 import { getAdapter } from "../driver.js";
+import { DEFAULT_PERMISSIONS } from "@/lib/auth/permissionPaths";
 // The allowed-model pattern language lives in a dependency-free module of its own:
 // the request gate, the /v1/models listing and the usage dashboards all read it, and
 // the self-check loads it without dragging in the database driver and uuid. Re-exported
 // here so the existing `from "./apiKeysRepo.js"` importers are unaffected.
-import { parseAllowedModels, matchesAllowedModels, buildAllowedModelsSql } from "./allowedModels.js";
+import { parseAllowedModels, matchesAllowedModels, buildAllowedModelsSql, applyModelChangesToAllowList } from "./allowedModels.js";
 
 export { parseAllowedModels, matchesAllowedModels, buildAllowedModelsSql };
 
 export function parsePermissions(permStr) {
-  if (!permStr) return { manageApiKeys: false, manageModels: false, manageProviders: false, viewUsage: true };
+  if (!permStr) return { ...DEFAULT_PERMISSIONS };
   if (typeof permStr === "object") return permStr;
   try {
     return JSON.parse(permStr);
   } catch {
-    return { manageApiKeys: false, manageModels: false, manageProviders: false, viewUsage: true };
+    return { ...DEFAULT_PERMISSIONS };
   }
 }
 
@@ -84,7 +85,10 @@ export async function createApiKey(name, machineId, options = {}) {
     expiresAt: options.expiresAt || null,
     systemPrompt: options.systemPrompt || "",
     permissions: typeof options.permissions === "object" ? options.permissions : parsePermissions(options.permissions),
-    createdBy: options.createdBy || ctx.session?.apiKey || "",
+    // The caller resolves who is creating the key. It is never inferred here:
+    // this module has no session, and reaching for one turned every create into
+    // a ReferenceError, which the route reported as a bare 500.
+    createdBy: options.createdBy || "",
   };
   const permStr = typeof options.permissions === "string" ? options.permissions : JSON.stringify(apiKey.permissions);
   db.run(
@@ -307,4 +311,35 @@ export async function validateApiKey(key, requestedModel = null, clientIp = null
   });
 
   return result;
+}
+
+/**
+ * Follow a model deletion or rename through every API key's allowlist.
+ *
+ * Callers name exactly what disappeared; nothing here scans the model catalog, so
+ * an unreachable provider cannot shrink anyone's list. Fail-open by construction:
+ * a throw anywhere below leaves every key as it was, and the mutation that
+ * triggered this has already been committed.
+ */
+export async function reconcileAllowedModels({ removed = [], renamed = {} } = {}) {
+  if (!removed.length && !Object.keys(renamed).length) {
+    return { updated: 0, emptied: [] };
+  }
+  try {
+    const keys = await getApiKeys();
+    let updated = 0;
+    const emptied = [];
+
+    for (const key of keys) {
+      const result = applyModelChangesToAllowList(key.allowedModels, { removed, renamed });
+      if (result.emptied) { emptied.push(key.name || key.id); continue; }
+      if (!result.changed) continue;
+      await updateApiKey(key.id, { allowedModels: result.value });
+      updated++;
+    }
+    return { updated, emptied };
+  } catch (err) {
+    console.error("[reconcileAllowedModels] failed to follow model change:", err);
+    return { updated: 0, emptied: [] };
+  }
 }

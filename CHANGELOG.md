@@ -1,18 +1,19 @@
-# v0.5.131-Custom (2026-09-28)
+# Changelog
 
-## Fixes
-- **Quota Tracker crashed on open**: the Quota row card rendered a `resetWord` that was never declared, which throws a ReferenceError the moment the list draws. `/dashboard/quota` has no error boundary, so the whole page went blank. The label now comes from the `recurring` flag the row already carries, so a one-shot pack still reads "Expires" and a refilling quota still reads "Reset", matching the wording the progress bar already used.
+## v0.5.140
 
-## Internal
-- **Render smoke-check for the Quota Tracker components**: `QuotaTracker/renderSelfCheck.mjs` calls each leaf component as a plain function with real-shaped data covering every branch it draws (unlimited, credit balance, one-shot pack, missing reset time, compact mode, each sort mode, pagination, error and loading states). This catches a class of bug that parsing alone cannot: a JSX expression naming a variable nobody declared is syntactically valid, so it passes a build check and only fails when the component renders. The check was verified by reintroducing the defect and confirming it failed before restoring the fix.
+- fix: stop the model picker heading a group with a generated node id
+- fix: disambiguate compatible provider headings with a short uuid suffix so two custom providers never share one label
+- test: add structural and distinctness cases for the new heading disambiguation in providerDisplaySelfCheck
 
-# v0.5.130-Custom (2026-09-27)
+## v0.5.139
 
-## Changes
-- **Permissions are locked for API key sessions**: signing in to the dashboard with an API key now disables the whole permissions block instead of only hiding the "manage API keys" row. The four checkboxes are inert, the value shown is the default with only View usage on, and a note explains that changing permissions needs the dashboard password. This applies to both the create form and the edit form, and the value sent to the API is forced to the default so stale form state cannot slip through.
-- **Sub-keys created by an API key session no longer inherit permissions**: key creation and key editing now write the default permission set for an API-key session instead of clamping the request to what the caller already holds. A key that can create keys can no longer mint one that manages keys, so the escalation chain stops there. Session by dashboard password is unaffected and keeps full control.
+- fix: correct a streamed tool-call name without holding the stream back
+- fix: stop the model picker heading a group with a generated node id
+- fix: rescue tool calls the client would reject with an invalid-args error
 
-# v0.5.129-Custom (2026-09-27)
+## v0.5.138
+
 
 ## Fixes
 - **API key usage showed providers the key cannot use**: signing in to the dashboard with an API key showed every provider that had ever run on the instance. The Usage page reads two sources, and the SSE stream at `/api/usage/stream` called `getUsageStats` without the allowed-models argument, so it fell back to "every model" and overwrote the correctly scoped first response. That stream is the one that populated the By Provider chart, which is why unrelated providers such as MiMo Code Free and OpenCode appeared next to the key's own custom model.
@@ -1404,3 +1405,6 @@
 
 ## Breaking Changes
 - Tunnel public URL changed — old tunnel links no longer work, please reconnect to get the new URL
+
+- fix: restore seren chat core
+

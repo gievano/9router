@@ -1,4 +1,5 @@
 import { translateResponse, initState } from "../translator/index.js";
+import { indexDeclaredTools, rescueStreamedNames } from "../translator/concerns/toolCallRescue.js";
 import { FORMATS } from "../translator/formats.js";
 import { trackPendingRequest, appendRequestLog } from "@/lib/usageDb.js";
 import { extractUsage, mergeUsage, hasValidUsage, estimateUsage, logUsage, addBufferToUsage, filterUsageForFormat, COLORS } from "./usageTracking.js";
@@ -91,6 +92,20 @@ export function createSSEStream(options = {}) {
   const trackedModel = aliasModel || model;
   let buffer = "";
   let usage = null;
+
+  // Tool names a model emits in the wrong case land on no tool at all, since
+  // clients match declared names exactly. A name arrives whole in the first
+  // delta, so it can be corrected as it streams at no latency cost. Arguments
+  // are left alone here: they arrive in fragments and only become a parseable
+  // object at the end, and buffering them would hold back every tool call.
+  // Their recovery happens on the following turn instead, via the history.
+  const toolNameIndex = indexDeclaredTools(body?.tools);
+  const toolNamesRescued = new Map();
+  const fixStreamedToolNames = (chunk) => {
+    if (toolNameIndex.size === 0) return;
+    const fixed = rescueStreamedNames(chunk, toolNameIndex, toolNamesRescued);
+    if (fixed) dbg("SSE", `rescued ${fixed} streamed tool name(s): ${[...toolNamesRescued.entries()].map(([k, v]) => `${k}->${v}`).join(", ")}`);
+  };
 
   // Per-stream decoder with stream:true to correctly handle multi-byte chars split across chunks
   const decoder = new TextDecoder("utf-8", { fatal: false });
@@ -187,6 +202,7 @@ export function createSSEStream(options = {}) {
               const idFixed = fixInvalidId(parsed);
               // A caller that spoke an alias must not be told the model that served it.
               const aliased = applyModelAlias(parsed, aliasModel);
+              fixStreamedToolNames(parsed);
 
               // Ensure OpenAI-required fields are present on streaming chunks (Letta compat)
               let fieldsInjected = false;
@@ -371,6 +387,7 @@ export function createSSEStream(options = {}) {
         // Responses same-format passthrough: re-emit with original event framing
         if (keepsOpenAIResponsesFormat && openAIResponsesEventName) {
           applyModelAlias(parsed, aliasModel);
+          fixStreamedToolNames(parsed);
           const output = formatSSE({ event: openAIResponsesEventName, data: parsed }, sourceFormat);
           reqLogger?.appendConvertedChunk?.(output);
           controller.enqueue(sharedEncoder.encode(output));
@@ -415,6 +432,7 @@ export function createSSEStream(options = {}) {
             }
 
             applyModelAlias(item, aliasModel);
+            fixStreamedToolNames(item);
             const output = formatSSE(item, sourceFormat);
             reqLogger?.appendConvertedChunk?.(output);
             controller.enqueue(sharedEncoder.encode(output));
@@ -492,6 +510,7 @@ export function createSSEStream(options = {}) {
               for (const item of translated) {
                 if (item === null || item === undefined) continue;
                 applyModelAlias(item, aliasModel);
+                fixStreamedToolNames(item);
                 const output = formatSSE(item, sourceFormat);
                 reqLogger?.appendConvertedChunk?.(output);
                 controller.enqueue(sharedEncoder.encode(output));
@@ -513,6 +532,7 @@ export function createSSEStream(options = {}) {
           for (const item of flushed) {
             if (item === null || item === undefined) continue;
             applyModelAlias(item, aliasModel);
+            fixStreamedToolNames(item);
             const output = formatSSE(item, sourceFormat);
             reqLogger?.appendConvertedChunk?.(output);
             controller.enqueue(sharedEncoder.encode(output));

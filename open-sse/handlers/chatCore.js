@@ -42,6 +42,7 @@ import { stripUnsupportedModalities } from "../translator/concerns/modality.js";
 import { prefetchRemoteImages } from "../translator/concerns/prefetch.js";
 import { defaultClaudeToolType, shouldDefaultClaudeToolType } from "../translator/concerns/toolCall.js";
 import { repair as repairToolPayload, degrade as degradeToolPayload, isToolCallRejection, TOOL_FALLBACK_MAX_LEVEL } from "../translator/concerns/toolCallFallback.js";
+import { rescueRequest } from "../translator/concerns/toolCallRescue.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
 import { applyCustomPlugins } from "@/lib/plugins/customPluginsRuntime.js";
 
@@ -312,6 +313,15 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   // member before the first one could answer. Fail-open — unchanged body on error.
   if (toolCallFallbackEnabled && Array.isArray(translatedBody.tools) && translatedBody.tools.length > 0) {
     repairToolPayload(translatedBody);
+    // A call the client already rejected stays in the history it sends back on
+    // the next turn, so repairing only the outbound body leaves the same broken
+    // call being re-validated and rejected every turn after. Renaming it back to
+    // the case the request declared and filling the arguments it lost is what
+    // lets the turn continue.
+    const rescued = rescueRequest(translatedBody);
+    if (rescued.renamed || rescued.recovered || rescued.dropped) {
+      log?.debug?.("TOOLRESCUE", `${rescued.renamed} renamed, ${rescued.recovered} recovered, ${rescued.dropped} dropped (history)`);
+    }
   }
 
   // RTK: compress tool_result content. Skipped when already done pre-translate.

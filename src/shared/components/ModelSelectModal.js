@@ -9,6 +9,7 @@ import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, AI_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, getProviderAlias } from "@/shared/constants/providers";
 import { buildStudioTargetIndex } from "@/shared/utils/studioModelVisibility";
+import { resolveProviderName, findOwningGroupId } from "@/shared/utils/providerDisplay";
 import { formatContextWindow } from "@/shared/utils/contextWindow";
 
 // Same matching rules the server applies to allowedModels: exact name, `prefix*`
@@ -345,7 +346,7 @@ export default function ModelSelectModal({
         if (combined.length > 0) {
           // Check for custom name from providerNodes (for compatible providers)
           const matchedNode = providerNodes.find(node => node.id === providerId);
-          const displayName = matchedNode?.name || providerInfo.name;
+          const displayName = resolveProviderName(providerId, { node: matchedNode, registry: providerInfo });
 
           groups[providerId] = {
             name: displayName,
@@ -360,7 +361,7 @@ export default function ModelSelectModal({
         // Find connection object to get prefix synchronously without waiting for providerNodes fetch
         const connection = activeProviders.find(p => p.provider === providerId);
         const matchedNode = providerNodes.find(node => node.id === providerId);
-        const displayName = matchedNode?.name || connection?.name || providerInfo.name;
+        const displayName = resolveProviderName(providerId, { node: matchedNode, connection, registry: providerInfo });
         const nodePrefix = connection?.providerSpecificData?.prefix || matchedNode?.prefix || providerId;
 
         // Aliases are stored using the raw providerId as key (e.g. "openai-compatible-chat-<uuid>/glm-4.7"),
@@ -465,10 +466,14 @@ export default function ModelSelectModal({
 
     // Fallback: custom models that did not land in any provider group yet.
     // This happens when the provider alias stored in DB does not match any
-    // active provider shown above (e.g. scoped API key sessions). Attach them
-    // to the first provider with passthroughModels, otherwise create a
-    // "Custom Models" group so they stay visible in the picker. The
-    // allowedModelPatterns filter below still applies.
+    // active provider shown above (e.g. scoped API key sessions). They are
+    // grouped under the alias each model actually belongs to, which is what the
+    // value has to point at anyway. The allowedModelPatterns filter still applies.
+    //
+    // They used to be pushed into the first provider with passthroughModels, which
+    // merged unrelated models under that provider's heading and rewrote their
+    // value to that provider's prefix — so picking one silently retargeted the
+    // request at a provider the model never belonged to.
     const groupedModelIds = new Set(
       Object.values(groups).flatMap((g) => (g.models || []).map((m) => m.id))
     );
@@ -482,34 +487,53 @@ export default function ModelSelectModal({
       return true;
     });
     if (ungroupedCustom.length > 0) {
-      const passthroughId = sortedProviderIds.find((id) => (allProviders[id] || {}).passthroughModels);
-      if (passthroughId && groups[passthroughId]) {
-        const alias = getProviderAlias(passthroughId);
-        for (const m of ungroupedCustom) {
-          const value = `${alias}/${m.id}`;
-          if (groupedModelIds.has(m.id)) continue;
-          groups[passthroughId].models.push({
-            id: m.id,
-            name: m.name || m.id,
-            value,
-            kind: getModelKind(m),
-            isCustom: true,
-          });
-          groupedModelIds.add(m.id);
-        }
-      } else {
-        groups.__custom = {
-          name: "Custom Models",
-          alias: "custom",
-          color: "#8b5cf6",
-          models: filterByKind(ungroupedCustom.map((m) => ({
-            id: m.id,
-            name: m.name || m.id,
-            value: `${m.providerAlias}/${m.id}`,
-            kind: getModelKind(m),
-            isCustom: true,
-          }))),
+      const CUSTOM_GROUP_COLOR = "#8b5cf6";
+      const aliasToGroupId = new Map(
+        Object.entries(groups).map(([id, g]) => [String(g.alias).toLowerCase(), id])
+      );
+      const seenAlias = new Set();
+
+      for (const m of ungroupedCustom) {
+        if (groupedModelIds.has(m.id)) continue;
+        const modelAlias = m.providerAlias || "";
+        const entry = {
+          id: m.id,
+          name: m.name || m.id,
+          value: modelAlias ? `${modelAlias}/${m.id}` : m.id,
+          kind: getModelKind(m),
+          isCustom: true,
         };
+
+        // A group already standing in for this alias keeps ownership of the model.
+        const ownerId = findOwningGroupId(groups, aliasToGroupId, modelAlias);
+        if (ownerId) {
+          groups[ownerId].models.push(entry);
+          groupedModelIds.add(m.id);
+          continue;
+        }
+
+        const groupId = modelAlias || "__custom";
+        if (!groups[groupId]) {
+          const node = providerNodes.find((n) => n.id === modelAlias);
+          groups[groupId] = {
+            name: resolveProviderName(modelAlias, { node }) || "Custom Models",
+            alias: modelAlias || "custom",
+            color: node?.color || CUSTOM_GROUP_COLOR,
+            models: [],
+            isCustom: true,
+          };
+          if (!seenAlias.has(modelAlias.toLowerCase())) {
+            aliasToGroupId.set(modelAlias.toLowerCase(), groupId);
+            seenAlias.add(modelAlias.toLowerCase());
+          }
+        }
+        groups[groupId].models.push(entry);
+        groupedModelIds.add(m.id);
+      }
+
+      // A group created purely as a bucket should not keep an empty shape around.
+      for (const [id, group] of Object.entries(groups)) {
+        if (group.isCustom && group.models.length === 0) delete groups[id];
       }
     }
 

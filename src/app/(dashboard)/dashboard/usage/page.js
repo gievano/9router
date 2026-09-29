@@ -52,7 +52,7 @@ function UsageContent() {
           options={[
             { value: "overview", label: "Overview" },
             { value: "details", label: "Details" },
- { value: "inspector", label: "Live Request Inspector" },
+ { value: "inspector", label: "Inspector" },
  { value: "errors", label: "Errors" },
  { value: "leaderboard", label: "Leaderboard" },
           ]}

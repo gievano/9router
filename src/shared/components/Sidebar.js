@@ -97,12 +97,7 @@ export default function Sidebar({ onClose }) {
   }, []);
 
   const isApiKeyUser = authStatus?.role === "apikey";
-  const permissions = authStatus?.permissions || {
-    manageApiKeys: true,
-    manageModels: true,
-    manageProviders: true,
-    viewUsage: true,
-  };
+  const permissions = authStatus?.permissions || { manageApiKeys: true, manageModels: true, manageProviders: true, manageTools: true, manageAdvanced: true, managePlugins: true, manageMediaProviders: true, viewUsage: true };
 
   const filteredNavItems = navItems.filter((item) => {
     if (!isApiKeyUser) return true;
@@ -112,6 +107,7 @@ export default function Sidebar({ onClose }) {
     if (item.href === "/dashboard/usage") return permissions.viewUsage;
     if (item.href === "/dashboard/api-key-usage") return permissions.viewUsage || permissions.manageApiKeys;
     if (item.href === "/dashboard/quota") return permissions.manageProviders;
+    if (item.href === "/dashboard/token-saver" || item.href === "/dashboard/cli-tools") return permissions.manageTools;
     return false;
   });
 
@@ -120,8 +116,21 @@ export default function Sidebar({ onClose }) {
     if (item.href === "/dashboard/model-editor" || item.href === "/dashboard/arena") {
       return permissions.manageModels;
     }
+    if (item.href === "/dashboard/plugins") return permissions.managePlugins;
     return false;
   });
+
+  const filteredDebugItems = debugItems.filter((item) => {
+    if (!isApiKeyUser) return true;
+    return permissions.manageAdvanced;
+  });
+
+  const filteredSystemItems = systemItems.filter((item) => {
+    if (!isApiKeyUser) return true;
+    return permissions.manageAdvanced;
+  });
+
+  const canOpenMedia = !isApiKeyUser || permissions.manageMediaProviders;
 
   // Settings and the update check are administrator surfaces, so a key-signed
   // session skips them instead of firing requests it may not read.
@@ -264,14 +273,15 @@ export default function Sidebar({ onClose }) {
             </div>
           )}
 
-          {/* System section */}
-          {!isApiKeyUser && (
+          {/* System section — an API key session sees only the parts it may use */}
+          {(!isApiKeyUser || canOpenMedia || filteredSystemItems.length > 0 || filteredDebugItems.length > 0) && (
             <div className="pt-3 mt-2 space-y-0.5">
               <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
                 System
               </p>
 
               {/* Media Providers accordion */}
+              {canOpenMedia && (
               <button
                 onClick={() => setMediaOpen((v) => !v)}
                 className={cn(
@@ -293,7 +303,8 @@ export default function Sidebar({ onClose }) {
                   expand_more
                 </span>
               </button>
-              {mediaOpen && (
+              )}
+              {canOpenMedia && mediaOpen && (
                 <div className="pl-4">
                   {MEDIA_PROVIDER_KINDS.filter((k) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind) => (
                     <NavLink
@@ -318,7 +329,7 @@ export default function Sidebar({ onClose }) {
                 </div>
               )}
 
-              {systemItems.map((item) => (
+              {filteredSystemItems.map((item) => (
                 <NavLink
                   key={item.href}
                   href={item.href}
@@ -330,7 +341,7 @@ export default function Sidebar({ onClose }) {
               ))}
 
               {/* Debug items (inside System section, before Settings) */}
-              {debugItems.map((item) => {
+              {filteredDebugItems.map((item) => {
                 const show = item.href !== '/dashboard/translator' || enableTranslator;
                 return show ? (
                   <NavLink
@@ -345,6 +356,7 @@ export default function Sidebar({ onClose }) {
               })}
 
               {/* Settings */}
+              {!isApiKeyUser && (
               <NavLink
                 href='/dashboard/profile'
                 icon='settings'
@@ -352,6 +364,7 @@ export default function Sidebar({ onClose }) {
                 active={isActive('/dashboard/profile')}
                 onClick={onClose}
               />
+              )}
             </div>
           )}
         </nav>

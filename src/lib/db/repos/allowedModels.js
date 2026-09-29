@@ -55,3 +55,46 @@ export function buildAllowedModelsSql(patterns, column = "model") {
   if (clauses.length === 0) return { sql: "1 = 0", params };
   return { sql: `(${clauses.join(" OR ")})`, params };
 }
+
+/**
+ * Fold a model deletion or rename into one key's allowlist.
+ *
+ * Only the ids the caller says are gone or renamed are touched. A wildcard
+ * pattern tracks future models by design, so it is never pruned, and an id this
+ * function was not told about is left alone. That is what makes it safe: a model
+ * catalog that is momentarily empty or unreachable cannot shrink anyone's list,
+ * because the caller has to name the casualties.
+ *
+ * `emptied` is reported rather than acted on. An empty allowlist parses back to
+ * null, which this codebase reads as "no restriction", so writing one would
+ * quietly turn a locked key into an unlocked one. The caller keeps the old value
+ * and surfaces it instead.
+ */
+export function applyModelChangesToAllowList(allowList, { removed = [], renamed = {} } = {}) {
+  const original = String(allowList ?? "").trim();
+  if (!original || original === "*") return { value: original, changed: false, emptied: false };
+
+  const removedSet = new Set(removed.map((id) => String(id).trim().toLowerCase()).filter(Boolean));
+  const tokens = original.split(",").map((t) => t.trim()).filter(Boolean);
+  const kept = [];
+  let touched = false;
+
+  for (const token of tokens) {
+    if (token.includes("*")) { kept.push(token); continue; }
+    const lower = token.toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(renamed, lower) || Object.prototype.hasOwnProperty.call(renamed, token)) {
+      const replacement = renamed[lower] ?? renamed[token];
+      const next = typeof replacement === "string" ? replacement.trim() : "";
+      touched = true;
+      if (next) kept.push(next);
+      continue;
+    }
+    if (removedSet.has(lower)) { touched = true; continue; }
+    kept.push(token);
+  }
+
+  if (!touched) return { value: original, changed: false, emptied: false };
+  if (kept.length === 0) return { value: original, changed: false, emptied: true };
+  const value = kept.join(",");
+  return { value, changed: value !== original, emptied: false };
+}
