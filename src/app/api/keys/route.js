@@ -91,6 +91,7 @@ export async function POST(request) {
     }
 
     const machineId = await getConsistentMachineId();
+    const createdBy = ctx.session?.role === "apikey" ? ctx.session.apiKey : "dashboard";
     const apiKey = await createApiKey(trimmedName, machineId, {
       tokenLimit: tokenLimit !== undefined ? Number(tokenLimit) : 0,
       resetInterval: resetInterval || "never",
@@ -101,7 +102,7 @@ export async function POST(request) {
       expiresAt: expiresAt || null,
       systemPrompt: systemPrompt || "",
       permissions: finalPermissions,
-      createdBy: ctx.session?.role === "apikey" ? ctx.session.apiKey : undefined,
+      createdBy,
     });
 
     return NextResponse.json({

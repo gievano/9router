@@ -82,6 +82,11 @@ export async function getModelInfo(modelStr, studioHops = 0) {
   try {
    const { getStudioModel } = await import("@/lib/db/repos/modelEditorRepo.js");
    const studio = studioHops < MAX_STUDIO_HOPS ? await getStudioModel(parsed.model) : null;
+   if (studio?.isComboTarget) {
+    // The studio name points at a combo: answer the combo name itself so the
+    // caller handles it as a combo (fallback, fusion, rotation).
+    return { provider: null, model: studio.targetModel };
+   }
    if (studio?.targetModel?.includes("/")) {
    // The target is a model string too, and it may carry a custom node prefix
    // (`kr/gpt-oss-120b`). parseModel would hand back `kr` as the provider and

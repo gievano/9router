@@ -694,7 +694,7 @@ export default function ModelSelectModal({
       {/* Info bar */}
       <div className="flex items-center gap-2 mb-3 px-2.5 py-2 bg-primary/8 border border-primary/20 rounded-lg text-xs text-text-muted">
         <span className="material-symbols-outlined text-primary shrink-0" style={{ fontSize: "14px" }}>info</span>
-        <span>Click a model to add it, click again to remove it, and the change is saved automatically.</span>
+        <span>Click a model to add it, click again to remove it, and the change is saved automatically.{showStudioTargets ? " Rows marked combo route into a fallback group; rows marked custom call another named model." : ""}</span>
       </div>
 
       {/* Search - compact */}
@@ -744,6 +744,7 @@ export default function ModelSelectModal({
                       <span className="material-symbols-outlined leading-none" style={{ fontSize: "10px" }}>check</span>
                     )}
                     {combo.name}
+                    <span className="text-[9px] opacity-60 font-normal">combo</span>
                     <ContextTag caps={getCaps(combo.name)} />
                     <CapacityBadges caps={getCaps(combo.name)} />
                   </button>
@@ -865,7 +866,7 @@ export default function ModelSelectModal({
           </div>
         ))}
 
-        {Object.keys(filteredGroups).length === 0 && filteredCombos.length === 0 && (
+        {Object.keys(filteredGroups).length === 0 && filteredCombos.length === 0 && filteredStudioModels.length === 0 && (
           <div className="text-center py-4 text-text-muted">
             <span className="material-symbols-outlined text-2xl mb-1 block">
               search_off

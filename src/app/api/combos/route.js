@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCombos, createCombo, getComboByName } from "@/lib/localDb";
+import { getStudioModels } from "@/lib/db/repos/modelEditorRepo.js";
+import { studioReachesCombo, describeComboCycle } from "@/shared/utils/studioComboGuard.js";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +47,27 @@ export async function POST(request) {
     const existing = await getComboByName(name);
     if (existing) {
       return NextResponse.json({ error: "Combo name already exists" }, { status: 400 });
+    }
+
+    // A combo member may name a studio (custom) model, but a studio that
+    // routes back into this combo would loop combo -> studio -> combo, so the
+    // combo name may not be reachable from any named studio member.
+    const memberNames = Array.isArray(models) ? models.map((m) => String(m ?? "").trim()).filter(Boolean) : [];
+    if (memberNames.length) {
+      const [combos, studios] = await Promise.all([
+        getCombos().catch(() => []),
+        getStudioModels().catch(() => []),
+      ]);
+      const targets = new Map(studios.map((s) => [s.callName, s.targetModel]));
+      const draftByName = new Map(combos.map((c) => [c.name, c.models || []]));
+      draftByName.set(name, memberNames);
+      for (const member of memberNames) {
+        if (member.includes("/") || !targets.has(member)) continue;
+        const chain = studioReachesCombo({ studioName: member, comboName: name, combosByName: draftByName, studioTargets: targets });
+        if (chain) {
+          return NextResponse.json({ error: describeComboCycle(chain) }, { status: 400 });
+        }
+      }
     }
 
     const combo = await createCombo({

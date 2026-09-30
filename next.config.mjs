@@ -46,15 +46,28 @@ const nextConfig = {
   turbopack: {
     root: tracingRoot
   },
-  outputFileTracingRoot: tracingRoot,
-  outputFileTracingExcludes: {
-    "*": ["./gitbook/**/*"]
-  },
   images: {
     unoptimized: true
   },
   env: stampBuild(),
   experimental: {
+    // Next 14 reads tracing keys here (top-level is Next 15+ and ignored with a
+    // warning). #4: also exclude Windows user-profile junctions (EPERM scandir
+    // AppData/Local/Application Data) plus roaming/config caches from NFT tracing.
+    outputFileTracingRoot: tracingRoot,
+    outputFileTracingExcludes: {
+      "*": [
+        "./gitbook/**/*",
+        "**/AppData/Local/**/*",
+        "**/AppData/Roaming/**/*",
+        "**/.config/**/*",
+        "**/.codex/**/*",
+        "**/Cookies/**/*",
+      ],
+    },
+    // Next 14 reads this key (top-level serverExternalPackages is Next 15+ and
+    // ignored with a warning). Keep both so the db adapters stay external.
+    serverComponentsExternalPackages: ["better-sqlite3", "sql.js", "node:sqlite", "bun:sqlite", "open"],
     // #1529/#1572: LLM clients can send long context or base64 image payloads through /v1 rewrites.
     proxyClientMaxBodySize,
     // Cache fetch responses across HMR refreshes for faster dev reloads.
@@ -82,6 +95,12 @@ const nextConfig = {
       aggregateTimeout: 300,
       ignored: /[\\/](node_modules|\.git|logs|\.next|\.next-cli-build|gitbook|cli|open-sse\.old|tests|docs)[\\/]/,
     };
+    // Defense in depth: bun:sqlite is never used on Node 22 runners, and the
+    // runtime import is already guarded + dynamic — keep it out of the bundle.
+    if (isServer) {
+      config.externals = config.externals || [];
+      if (!config.externals.includes("bun:sqlite")) config.externals.push("bun:sqlite");
+    }
     return config;
   },
   async rewrites() {

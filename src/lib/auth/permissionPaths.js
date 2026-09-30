@@ -96,6 +96,10 @@ const API_PERMISSION_RULES = [
   { prefix: "/api/plugins", permissions: ["managePlugins"] },
   { prefix: "/api/media-providers", permissions: ["manageMediaProviders"] },
   { prefix: "/api/usage", permissions: ["viewUsage"] },
+  // Read-only catalog for a key session that holds only viewUsage. It answers
+  // GET only; any other method falls through to the /api/usage rule above and
+  // stays read-only there too, so no write access is ever granted here.
+  { prefix: "/api/usage/available-models", permissions: ["viewUsage"], methods: READ_METHODS },
 ];
 
 // Longest prefix first, so /api/model-editor is not swallowed by a /api/models style

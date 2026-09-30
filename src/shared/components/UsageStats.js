@@ -14,6 +14,7 @@ import Badge from "./Badge";
 import Card from "./Card";
 import OverviewCards from "@/app/(dashboard)/dashboard/usage/components/OverviewCards";
 import KeyQuotaCard from "@/app/(dashboard)/dashboard/usage/components/KeyQuotaCard";
+import AvailableModelsCard from "@/app/(dashboard)/dashboard/usage/components/AvailableModelsCard";
 import UsageTable, { fmt, fmtTime } from "@/app/(dashboard)/dashboard/usage/components/UsageTable";
 import dynamic from "next/dynamic";
 // Lazy-load: keeps @xyflow/react and recharts out of the initial bundle
@@ -553,6 +554,10 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
 
       {/* The signing-in key's own allowance, for an API-key session. */}
       {!loading && isApiKeyUser && keyQuota && <KeyQuotaCard quota={keyQuota} />}
+
+      {/* Models this key may call. Key sessions only: admins keep the page
+          exactly as it was, with no card rendered for them. */}
+      {!loading && isApiKeyUser && <AvailableModelsCard visible={isApiKeyUser === true} />}
 
       {/* Overview cards */}
       {loading ? spinner : <OverviewCards stats={stats} />}
