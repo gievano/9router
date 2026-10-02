@@ -9,6 +9,7 @@ import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, AI_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, getProviderAlias } from "@/shared/constants/providers";
 import { buildStudioTargetIndex } from "@/shared/utils/studioModelVisibility";
+import { fetchSuggestedModels } from "@/shared/utils/providerModelsFetcher";
 import { resolveProviderName, findOwningGroupId, humanizeCompatId } from "@/shared/utils/providerDisplay";
 import { formatContextWindow } from "@/shared/utils/contextWindow";
 
@@ -162,6 +163,32 @@ export default function ModelSelectModal({
   const cursorConnectionIds = liveConnectionIdsByProvider.cursor;
   const clineConnectionIds = liveConnectionIdsByProvider.cline;
   const clinepassConnectionIds = liveConnectionIdsByProvider.clinepass;
+
+  // Free no-auth providers publish a moving public catalogue (OpenCode Free
+  // changes weekly). The registry table is curated, so live entries are merged
+  // in when the picker opens; a failed fetch leaves this empty and the registry
+  // rows alone keep the list usable.
+  const [freeCatalogModels, setFreeCatalogModels] = useState({});
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const targets = NO_AUTH_PROVIDER_IDS
+      .map((id) => [id, FREE_PROVIDERS[id]?.modelsFetcher])
+      .filter(([, fetcher]) => fetcher);
+    if (targets.length === 0) return undefined;
+    let cancelled = false;
+    Promise.all(
+      targets.map(async ([id, fetcher]) => {
+        const { data } = await fetchSuggestedModels(fetcher);
+        return [id, Array.isArray(data) ? data : []];
+      })
+    ).then((lists) => {
+      if (cancelled) return;
+      setFreeCatalogModels(Object.fromEntries(lists.filter(([, list]) => list.length)));
+    }).catch(() => {
+      if (!cancelled) setFreeCatalogModels({});
+    });
+    return () => { cancelled = true; };
+  }, [isOpen]);
 
   const cursorModels = useLiveProviderModels(isOpen, cursorConnectionIds, "Cursor");
   const clineModels = useLiveProviderModels(isOpen, clineConnectionIds, "Cline");
@@ -349,6 +376,11 @@ export default function ModelSelectModal({
             .filter((m) => !getModelKind(m) || getModelKind(m) === "llm")
             .map((m) => ({ id: m.id, name: m.name, value: `${alias}/${m.id}`, kind: getModelKind(m) }))
             .filter((m) => !seen.has(m.value));
+          const liveFreeRows = (freeCatalogModels[providerId] || [])
+            .filter((m) => m?.id && !getModelKind(m))
+            .map((m) => ({ id: m.id, name: m.name || m.id, value: `${alias}/${m.id}` }))
+            .filter((m) => !seen.has(m.value) && !hardcoded.some((h) => h.value === m.value));
+          hardcoded.push(...liveFreeRows);
           combined = [...registeredLlms, ...aliasModels.filter((m) => !registeredLlms.some((registered) => registered.value === m.value)), ...hardcoded];
         }
 
@@ -415,9 +447,14 @@ export default function ModelSelectModal({
         };
       } else {
         const liveModels = providerId === "cursor" ? cursorModels : providerId === "cline" ? clineModels : providerId === "clinepass" ? clinepassModels : [];
-        const hardcodedModels = liveModels.length > 0
-          ? liveModels
-          : getModelsByProviderId(providerId);
+        const baseModels = liveModels.length > 0 ? liveModels : getModelsByProviderId(providerId);
+        const liveFreeIds = new Set(baseModels.map((m) => m.id));
+        const hardcodedModels = [
+          ...baseModels,
+          ...(freeCatalogModels[providerId] || [])
+            .filter((m) => m?.id && !liveFreeIds.has(m.id))
+            .map((m) => ({ id: m.id, name: m.name || m.id })),
+        ];
         const hardcodedIds = new Set(hardcodedModels.map((m) => m.id));
 
         // Custom models: if no hardcoded models (e.g. openrouter), show all aliases for this provider

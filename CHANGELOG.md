@@ -6,12 +6,13 @@
 ## Internal
 - **Auth**: release v0.5.153 (auth guard enforced at HTTP layer)
 
-# v0.5.153 (2026-10-02) · 16 commits
+# v0.5.153 (2026-10-02) · 17 commits
 
 ## Features
 - **Plugins**: JSON Guard + Context Squeezer custom plugins
 - **Providers**: add MiMoCode Free no-auth provider (mimocode/, mimocode-free/)
 - **Providers**: merge live free-model catalogue into /v1/models and the picker
+- **UI**: show live free-model catalogue in the model picker
 - **UI**: single animated update banner on dashboard; drop sidebar copy
 
 ## Fixes
