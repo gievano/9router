@@ -4,8 +4,8 @@
   "description": "9Router web dashboard",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 20127",
-    "dev:webpack": "next dev --port 20127",
+    "dev": "cross-env NEXT_DIST_DIR=.next-dev next dev --port 20128 --hostname 127.0.0.1",
+    "dev:webpack": "cross-env NEXT_DIST_DIR=.next-dev next dev --port 20128 --hostname 127.0.0.1",
     "build": "next build",
     "postbuild": "node scripts/copy-standalone-assets.mjs",
     "postbuild:bun": "node scripts/copy-standalone-assets.mjs",
@@ -71,6 +71,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.7",
     "@types/react-syntax-highlighter": "^15.2.3",
+    "cross-env": "^10.1.0",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.35",
     "postcss": "^8.5.6",

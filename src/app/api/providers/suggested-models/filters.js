@@ -78,3 +78,51 @@ export const FILTERS = {
       .map((m) => ({ id: m.id, name: m.name || m.id, contextLength: m.context_length }))
       .sort((a, b) => String(a.id).localeCompare(String(b.id))),
 };
+
+// ---------------------------------------------------------------------------
+// Server-side live catalog
+// ---------------------------------------------------------------------------
+// The registry keeps a curated fallback, but a free tier's catalogue changes
+// weekly. Clients that read /v1/models or the model picker only see the static
+// registry table, so they would stay frozen on whatever the build captured.
+// Reusing the same filters keeps one source of truth for "what counts as a
+// free model". Results are cached per fetcher for 10 minutes so a hot endpoint
+// is not re-hit on every request.
+
+const LIVE_CACHE_TTL_MS = 10 * 60 * 1000;
+const LIVE_TIMEOUT_MS = 15000;
+const liveCache = new Map(); // `${url}\0${type}` -> { data, expiresAt }
+
+/**
+ * Fetch and filter a provider's live model list.
+ * Returns the curated fallback when upstream fails or returns nothing usable,
+ * so the catalogue never shrinks below what the registry promises.
+ * @param {{ url?: string, type?: string }} fetcher
+ * @returns {Promise<Array<{ id: string, name: string }>>}
+ */
+export async function fetchSuggestedModelsServer(fetcher) {
+  if (!fetcher?.url || !fetcher?.type) return [];
+  const filter = FILTERS[fetcher.type];
+  if (!filter) return [];
+
+  const key = `${fetcher.url}\0${fetcher.type}`;
+  const hit = liveCache.get(key);
+  if (hit && Date.now() < hit.expiresAt) return hit.data;
+
+  const fallback = FALLBACK_SUGGESTIONS[fetcher.type] ?? [];
+  let data = [];
+  try {
+    const res = await fetch(fetcher.url, { signal: AbortSignal.timeout(LIVE_TIMEOUT_MS) });
+    if (res.ok) {
+      const json = await res.json();
+      const raw = json?.data ?? json?.models ?? json;
+      data = filter(Array.isArray(raw) ? raw : []);
+    }
+  } catch {
+    // Offline, timed out, or malformed — the fallback below keeps the list useful.
+  }
+  if (data.length === 0) data = fallback;
+
+  liveCache.set(key, { data, expiresAt: Date.now() + LIVE_CACHE_TTL_MS });
+  return data;
+}

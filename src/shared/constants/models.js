@@ -46,6 +46,8 @@ export const CAPACITY_META = {
   reasoning: { icon: "neurology", label: "Reasoning", desc: "Supports reasoning / thinking", color: "text-amber-500" },
   thinkDeeper: { icon: "psychology", label: "Think Deeper", desc: "Think Deeper Plugin: multi-step deep reasoning", color: "text-purple-400" },
   speedMode: { icon: "bolt", label: "Speed", desc: "Speed Mode: skips thinking for faster responses", color: "text-cyan-400" },
+  jsonGuard: { icon: "data_object", label: "JSON", desc: "JSON Guard: repairs unparseable JSON and tool arguments", color: "text-emerald-400" },
+  contextSqueezer: { icon: "compress", label: "Squeeze", desc: "Context Squeezer: trims old turns to fit the context window", color: "text-amber-400" },
 };
 
 // Realtime STT transport markers accepted on custom models — single source of

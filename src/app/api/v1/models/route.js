@@ -21,6 +21,7 @@ import { resolveZedModels } from "open-sse/shared/zedAuth.js";
 import { updateProviderCredentials } from "@/sse/services/tokenRefresh";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { capabilitiesFromServiceKind, getCapabilitiesForModel, aggregateComboCapabilities } from "open-sse/providers/capabilities.js";
+import { fetchSuggestedModelsServer } from "@/app/api/providers/suggested-models/filters.js";
 
 // Qoder shares one live resolver across intl (qoder) and CN (qoder-cn); the
 // credentials carry the provider id so qoderModels picks the right region's
@@ -636,6 +637,37 @@ export async function buildModelsList(kindFilter, options = {}) {
       };
       if (caps) entry.capabilities = caps;
       if (Number.isFinite(caps?.contextWindow)) entry.context_length = caps.contextWindow;
+      if (Number.isFinite(caps?.maxOutput)) entry.max_completion_tokens = caps.maxOutput;
+      models.push(entry);
+    }
+  }
+
+  // Free no-auth providers publish a live catalogue (OpenCode Free changes weekly);
+  // the registry table above is curated, so merge in whatever upstream lists now.
+  // dedupedModels below drops ids already present, keeping registry order first.
+  const liveFreeProviders = Object.entries(FREE_PROVIDERS).filter(
+    ([, p]) => p.noAuth && !p.hidden && p.modelsFetcher
+  );
+  const liveFreeLists = await Promise.all(
+    liveFreeProviders.map(async ([id, p]) => {
+      const live = await fetchSuggestedModelsServer(p.modelsFetcher);
+      return [p.alias || id, live];
+    })
+  );
+  for (const [alias, liveModels] of liveFreeLists) {
+    for (const live of liveModels) {
+      if (isDisabled(alias, live.id)) continue;
+      const caps = getCapabilitiesForModel(alias, live.id);
+      const entry = {
+        id: `${alias}/${live.id}`,
+        object: "model",
+        owned_by: alias,
+      };
+      if (caps) entry.capabilities = caps;
+      if (Number.isFinite(caps?.contextWindow)) entry.context_length = caps.contextWindow;
+      if (Number.isFinite(live?.contextLength) && !Number.isFinite(entry.context_length)) {
+        entry.context_length = live.contextLength;
+      }
       if (Number.isFinite(caps?.maxOutput)) entry.max_completion_tokens = caps.maxOutput;
       models.push(entry);
     }

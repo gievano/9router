@@ -29,6 +29,8 @@ const DEFAULT_SETTINGS = {
     imageVision: { enabled: false, models: [] },
     thinkDeeper: { enabled: false, models: [] },
     speedMode: { enabled: false, models: [] },
+    jsonGuard: { enabled: false, models: [] },
+    contextSqueezer: { enabled: false, models: [] },
   },
   requireLogin: true,
   requireApiKey: true,

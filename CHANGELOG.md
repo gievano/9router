@@ -6,6 +6,32 @@
 ## Internal
 - **Auth**: release v0.5.153 (auth guard enforced at HTTP layer)
 
+# v0.5.153 (2026-10-02) · 16 commits
+
+## Features
+- **Plugins**: JSON Guard + Context Squeezer custom plugins
+- **Providers**: add MiMoCode Free no-auth provider (mimocode/, mimocode-free/)
+- **Providers**: merge live free-model catalogue into /v1/models and the picker
+- **UI**: single animated update banner on dashboard; drop sidebar copy
+
+## Fixes
+- **Auth**: enforce the dashboard guard in custom-server because Next 14 middleware is Edge-only
+- **Dev**: isolate dev build to .next-dev on localhost:20128 so dev runs stop corrupting the production .next
+- **Hook**: converge via a single settled post-commit amend loop
+- **Hook**: fold regenerated changelog into each commit via post-commit amend
+- **Hook**: keep backticks out of the hook template so install works
+- **Hook**: pass --no-verify on the amend so prepare-commit-msg stops re-dirtying the tree
+- **UI**: drop key={pathname} from UpdateBanner; sibling keys collided with Header and leaked one header per navigation
+
+## Docs
+- **Auth**: regen changelog for auth-guard fix
+- **Backup**: restore full fork changelog history (119 versions, an old commit had truncated it to 3)
+- **Changelog**: stage changelog output in the git hook so commits stop leaving CHANGELOG.md dirty
+- **Changelog**: sync changelog for the hook fix
+
+## Internal
+- **Auth**: release v0.5.153 (auth guard enforced at HTTP layer)
+
 # v0.5.152 (2026-10-01) · 20 commits
 
 ## Features
@@ -126,6 +152,146 @@
 ## Fixes
 - **Chat**: restore seren chat core
 
+# v0.5.139-Custom (2026-09-28)
+
+## Fixes
+- **A streamed tool call is no longer rejected over the case of its name.** The name and the arguments are corrected differently on purpose. A name arrives whole in the first delta of a call, so raising it back to the case the request declared costs nothing and holds nothing back. Arguments arrive in fragments and only form a parseable object at the end, so they are not touched here: buffering them would delay every tool call in the stream until its last fragment landed. A streamed call whose arguments cannot be recovered is repaired on the following turn instead, by the history rule shipped in `v0.5.137-Custom`, which is too late to save that turn but stops it repeating.
+- **The fix is applied on every path that emits a chunk.** Passthrough, the Responses same-format passthrough, the translate loop, the flush tail and the final flush all correct a name before the frame is written.
+
+## Internal
+- **Twelve cases added** for the streaming rule, covering the real delta shapes: an OpenAI first delta with an empty argument string, a later argument fragment, a Claude `content_block_start`, a Responses `output_item.added`, a text chunk that must stay untouched, a name that is not a declared tool, and an exact-case name that must not be rewritten needlessly.
+- **A circular-chunk case found a real defect.** The name walk is recursive and had no depth bound, so a cyclic chunk overflowed the stack. Chunks arrive about five levels deep, so a bound of twelve is generous and stops it. Confirmed by removing the bound, which reproduces the overflow.
+- **The check counts the emit sites in the stream source.** Every case above passed with the call site removed from the translate loop, because a pure-function check cannot see a missing hook. The source is now read to assert the index is built, the wrapper exists, and the guarded-site count has not moved; removing one hook was confirmed to redden it.
+- **The scope limit is asserted rather than left implicit.** Six frames are enqueued and five are guarded. The two that are not hand the client a raw upstream SSE line rather than a parsed object, so correcting a name there means re-parsing the line; they are passthrough, where the CLI tool and the provider are the same ecosystem and the model sees the names the client declared. The check pins the total at six so a new emit site forces that decision again instead of slipping past.
+
+## Notes
+- **Verification is static**, as it has been throughout this fork: per-file esbuild plus the self-checks. Nothing here has been exercised in a browser.
+
+# v0.5.138-Custom (2026-09-28)
+
+## Fixes
+- **The model picker no longer heads a group with a generated node id.** A compatible provider node is stored under an id like `openai-compatible-chat-b5bca155-fc33-4899-a868-2ff3d7891e3c`, and a custom model records that id as its provider. When no group owned the alias, the picker opened one and titled it with the id, so a database key was rendered as a provider name with a model count beside it. The heading now resolves in order: the node's own name, the connection's name, the static registry, and finally the family the id belongs to, so an unresolvable node reads as OpenAI Compatible rather than as a uuid. A registry entry that merely echoes the id back is not trusted as a name.
+- **A custom model no longer opens a second group for a node that already has one.** A compatible group is keyed by the node id but stores the node prefix as its display alias, and a custom model stores the id, so the alias-only lookup never matched. The id is tried as well, which is what makes the group and the model meet.
+
+## Internal
+- **`providerDisplay.js` added, with a 26-case check.** It covers the reported shapes (chat node, responses node, anthropic node, a missing node record, an empty node list during the first render) alongside the cases that must stay unchanged: a known registry alias is used as-is, an unknown plain id resolves to empty so the caller keeps its own default, and a schema-less lookup never guesses. The check was confirmed to fail by reinstating each defect separately: labelling a group with its own id reddened 10 cases, and dropping the node-id match from the owner lookup reddened 2.
+- **The check also reads the component.** A perfect helper does not help while the picker keeps reaching for the registry fallback, which is `{ name: providerId }` and therefore the id again, so two cases assert the leaking expressions are gone from the source. Restoring one of them in the component was confirmed to redden the check.
+- **One defect was found while writing the check.** The api type sits after the `compatible` segment in the id, not in the second word, so the first version read `openai-compatible` as the type and matched nothing. Six of the nine id cases failed until it was corrected.
+
+## Notes
+- **Verification is static**, as it has been throughout this fork: per-file esbuild plus the self-checks. Nothing here has been exercised in a browser.
+
+# v0.5.137-Custom (2026-09-28)
+
+## Fixes
+- **A tool call the client could not satisfy ended the turn.** `Invalid args for tool "Bash": must have required property 'command'` is the client validating the call against the schema the request itself declared, and it throws rather than continuing. The argument object was reaching the client as `{}` because the only repair in the pipeline, `toolCallFallback.repair`, reads the request history and never looks at the call the model is producing right now. Three rules now run over each response: a name spelled in a different case than the request declared is raised back to the declared one, a missing required property is filled from a value the model did supply under another name, and a call whose arguments cannot be recovered is dropped so the model tries again on the next turn instead of the turn dying.
+- **A model that wrote the command as the whole argument string is understood.** `arguments: "ls -la"` is lifted into `{"command":"ls -la"}`, but only when the tool declares exactly one required string property. With more than one, the value is ambiguous and the call is dropped rather than guessed.
+- **A rejected call no longer poisons every turn after it.** The call the client rejected stays in the history it sends back, so the same broken call was re-validated and rejected on each retry. The history is now rescued on the way out, which is what makes a turn recoverable after the first failure.
+
+## Internal
+- **`toolCallRescue.js` added, with a 31-case check** covering the reported shapes (lower-case name, empty arguments, bare string, `cmd`, `commandLine`, `oldString`) plus the shapes that must stay untouched: a well-formed call is re-encoded byte-identically, an undeclared name is left alone, a schema without `required` is not second-guessed, and a non-object argument value does not throw. The check was confirmed to fail by reinstating each defect separately: removing the case-insensitive name match reddened 11 cases, and passing an unrecoverable call through instead of dropping it reddened 7.
+- **Three defects were found while writing the check.** A Claude `tool_use` block carries `input` as an object, not a JSON string, and the first version parsed it as a string and discarded it. Separator-insensitive matching was skipping every spelling variant of the key itself, so `newString` could not fill `new_string`. And a Claude-format response is the message itself rather than a choice inside one, so the first version never reached it at all.
+
+## Notes
+- **Streaming is not covered.** Tool arguments arrive in fragments there, and buffering them to repair would hold back every tool call until the last fragment lands. The non-streaming path and the request history are repaired; a streaming call is still repaired on the following turn through the history rule above.
+- **Verification is static**, as it has been throughout this fork: per-file esbuild plus the self-checks. Nothing here has been exercised in a browser.
+
+# v0.5.136-Custom (2026-09-28)
+
+## Fixes
+- **Creating an API key failed everywhere.** `createApiKey` in the repository module read `ctx.session?.apiKey` to work out who was creating the key, but that module has no session and never had one. Every call threw a ReferenceError, the route caught it, and the dashboard got a bare 500 with no clue what went wrong. The caller already resolved the creator and passes it in, so the inference is gone. The key name check in the form was unrelated and is unchanged.
+- **The Live Request tab was not reachable.** The tab strip scrolled sideways, so its last option sat off the edge of a narrow viewport, and the label was long enough to make that likely. The tab is now called Inspector, and the strip wraps instead of scrolling, so no option can end up hidden behind a scrollbar.
+
+## Internal
+- **A leaked-identifier scan added**, `leakedIdentifiersSelfCheck.mjs` (5 cases), scanning every module under `src` and `open-sse` for names that only exist inside a route handler or auth helper. It is written after the outage above, where esbuild passed the whole time because an undeclared global is a valid program to a bundler and only throws when the line runs.
+- **The scan's first version did not catch its own bug.** Its destructuring rule accepted any braces around the name, so an object literal containing it read as a declaration and the offending line came back clean. The rule now requires the name to be a bare binding, and a case reproduces the exact shape of the line that caused the outage so the rule cannot widen back into matching it. Reintroducing the fault is what proved the difference.
+
+## Notes
+- **None of this has been exercised in a browser.** Verification is static: per-file esbuild plus the self-checks. The same applies to everything else shipped in this fork.
+
+# v0.5.135-Custom (2026-09-28)
+
+## Fixes
+- **The wrong panel was hidden for API-key sessions.** The provider map is the diagram with 9Router at its centre and every configured provider arranged around it, joined by animated edges. That is infrastructure rather than one key's usage, and it is what now gets replaced with a short muted note. The usage charts, which were hidden instead in `v0.5.129-Custom`, are back for every session. Both chart endpoints were already scoped to the session's allowed models, so what an API-key holder sees is that key's own usage.
+- **The note no longer leaves most of a row empty.** Recent Requests is pinned to a fixed height and the map used to fill the wide column beside it, so the note and the request list now drop the two-column grid for an API-key session instead of sitting in a 480px cell.
+- **A session that is still being identified no longer flashes the map.** The lookup of `/api/auth/status` and the statistics load run together, and the map area now shows the same spinner the charts used to, so an API-key holder never sees the map appear and then disappear.
+
+## Changes
+- **An API-key holder can see their own token allowance.** A card above the overview numbers shows the key's name, tokens used against its limit, what is left, the percentage, and a running countdown to the next reset. `/api/usage/api-keys` already narrowed its result to the session's key, so nothing about any other key reaches the browser: the endpoint needed no change, and neither did any permission. An unlimited key shows its usage and no bar or countdown rather than a broken empty one.
+- **An API-key session stops requesting the provider list.** The two requests behind the map were the only consumer of that state, so a session that never renders the map no longer makes them.
+
+## Internal
+- **A render check added** for the Usage page, `usageStatsRenderSelfCheck.mjs` (7 cases), covering a password session, an API-key session with and without a quota, an unlimited key, and a session still being identified. It was confirmed to fail against two reintroduced defects: the charts hidden again, and the map shown again.
+- **The two render harnesses were corrected.** The PropTypes stub returned `null` from a validator, which breaks any chained `.isRequired`, and the JSX stub recorded elements without calling them, so text inside a nested component never reached the tree and the check could not see a card that rendered nothing. Both now render what a browser would.
+- **Panel detection hangs off component identity.** The four lazily loaded panels were told apart by prop name, which is unsafe: `activeRequests` and `errorProvider` are also fields of the statistics object the overview cards receive, so they appear in the tree whether or not the map is rendered.
+
+## Notes
+- **None of this has been exercised in a browser.** Verification is static: per-file esbuild plus the render check above. The same applies to everything else shipped in this fork.
+
+# v0.5.134-Custom (2026-09-28)
+
+## Changes
+- **The Change Log modal no longer stacks both contributors into one scroll.** It opens on Serenhope with a switcher in the header to move between Serenhope and Decolua. Both changelogs were already fetched separately, so nothing new is requested; only the display changed. A tab appears only for a source that actually loaded, so an unreachable upstream no longer offers a button that leads to nothing.
+- **A selection that points at an empty changelog falls back** to one that has content, rather than leaving the body blank. This is the case where upstream goes down after the user has picked it.
+
+## Internal
+- **Two self-checks added**: `changelogSourcesSelfCheck.mjs` (9 cases) covers the source list, the default, and every empty-state fallback, and `changelogModalRenderSelfCheck.mjs` (6 cases) renders the modal with both changelogs present, with one absent, and with a stale selection. The render check feeds state through a queue, because with the component's real empty state the switcher never appears and a check that only renders that would pass against a broken one. Both were confirmed to fail against a deliberately reintroduced defect.
+- **Source selection moved into `changelogSources.js`**, free of imports, so it can be tested without the bundled dependencies. It mirrors what `pluginModelMatch.js` does for the plugins page.
+
+# v0.5.133-Custom (2026-09-28)
+
+## Changes
+- **Three more Custom Plugins, each per model and each off by default**: Structured Output Lock normalises the response format a request asked for, writes the required fields into the system prompt for providers with no native JSON mode, and strips fences, leading prose and truncation out of non-streaming answers. Tool Argument Repair compares every call against the schema the model was actually given, fills safe defaults, coerces near-miss types, and drops a call whose required arguments cannot be recovered instead of sending one the harness will reject. Context Doctor cuts a conversation that no longer fits the model's window, shortens the tool output that is left, and leaves a recap naming the files and commands that were removed. All three carry their own badge on the model, the way Image Vision and Think Deeper already do.
+- **Adaptive Pruning by Context Window** in Token Saver sizes the cut to the model rather than to a message count, so a short session is never touched and only a request that would actually overflow loses turns. Room is held back for the reply, and the existing message limit becomes the floor rather than the target.
+- **A tool call and the result answering it are now treated as one unit when cutting history.** The new pruning groups turns by the call ids actually present in the conversation, so a call is never dropped while its result survives. That split is a hard 400 upstream, and inside a combo it burns every member before one can reply.
+
+## Fixes
+- **A tool call that could not be repaired was never actually dropped.** The repair tested whether anything had changed before testing whether the call was recoverable, and a call missing only an unfillable required property had nothing left to change, so it passed straight through and the client failed on it again.
+- **The Context Doctor recap was inserted ahead of the system prompt.** It was spliced at index 0 rather than after the pinned prefix, which Claude and Gemini both reject.
+- **A truncated JSON object whose last key had no colon stayed unparseable.** The shared closing helper only handled the form with a trailing comma, so `{"city":"Lisbon","popu` reached the caller untouched instead of as `{"city":"Lisbon"}`.
+
+## Internal
+- **Seven self-checks added**: `tokenBudgetSelfCheck.mjs` (17 cases), `adaptivePruningSelfCheck.mjs` (16), `contextDoctorSelfCheck.mjs` (18), `structuredOutputSelfCheck.mjs` (21), `toolSchemaRepairSelfCheck.mjs` (24), `pluginModelMatchSelfCheck.mjs` (9) and a render smoke-check for the two changed pages (8). Each was confirmed to fail against a deliberately reintroduced defect before being accepted. The adaptive pruning check initially accepted a broken one, because its cases only ever cut a call and its result in sequence, so a case was added where the budget is met the instant the call alone is dropped.
+- **Plugin list management no longer repeats itself per plugin.** The API route and the plugins page derive their keys from one list, so a newly added plugin cannot be silently dropped from a save or from the load path.
+- **Plugin model matching moved to its own module** so it can be tested without the settings database. Two of its assumptions are now pinned by tests: a bare model name matches across provider prefixes, which is what makes a plugin work at all when the dashboard stores an aliased id, and a prefix of a real id is not a match.
+- **The render check drives boolean state on.** Every enabled branch in both pages is gated on a boolean, and a stub that returned the initial `false` would leave those branches unevaluated, so a typo inside one would never throw. A case also forces the model picker open and asserts on the resulting tree, because a picker title built from a renamed variable throws in a way a plain render does not.
+
+## Notes
+- **Streaming answers are not cleaned by Structured Output Lock.** Validating JSON means holding the text until the stream ends, which is the one thing streaming is for. That path is carried by the native response format plus the pinned schema.
+- **Streaming tool arguments are not buffered by Tool Argument Repair**, for the same reason. A partial JSON string cannot be validated, and holding the fragments would stop tool arguments streaming at all. Complete calls inside a chunk, which is how Claude and Responses emit them, are still repaired; fragmented OpenAI deltas are picked up on the next turn, where the request-side repair fixes the history.
+- **The Context Doctor summariser is a hook, not a feature yet.** The module accepts a summariser and falls back to the deterministic recap when it throws, returns nothing, or is absent, and both paths are tested. Nothing supplies one: a nested LLM call inside the request path needs its own auth and recursion handling, so wiring it is left for a change that can be tested on its own.
+- **None of this has been exercised in a browser.** Verification is static: per-file esbuild plus the self-checks above. The same applies to everything else shipped in this fork.
+
+# v0.5.132-Custom (2026-09-28)
+
+## Fixes
+- **Model picker merged unrelated models into one provider**: custom models that could not be placed in a provider group were pushed into the first provider with `passthroughModels`, which both stacked them under that provider's heading and rewrote their value to that provider's prefix. Picking one silently retargeted the request at a provider the model never belonged to, and a provider such as OpenCode Free could show hundreds of borrowed models. They are now grouped under the alias each model actually belongs to, which is the prefix the value needs anyway.
+- **A permission comment described the opposite of what the code does**: an empty `permissions: []` page rule was documented as "open to any session", but `canOpenPage` asks whether any listed permission is held, and an empty list has none, so the page is closed. The comment is corrected, and the two pages relying on it (Basic Chat, Profile) keep their existing behaviour.
+
+## Changes
+- **Four more API key permissions**: `manageTools` (CLI Tools, Token Saver), `manageAdvanced` (Console Log, Translator, Proxy Pools, PXPIPE), `managePlugins` (Custom Plugins, Skills) and `manageMediaProviders`. All default to off, so a key created before this change gains nothing: `normalizePermissions` reads a missing field as false, and no migration grants anything. A password session keeps every page. The sidebar now shows an API key session only the parts of the System section it may open, instead of hiding all of it.
+- **API key allowed models follow the models**: deleting a model drops it from every key's allowlist, and renaming one rewrites the entries that referenced it, across custom models, the model editor and model aliases. Only the ids the caller reports as gone are touched, so a provider that is momentarily unreachable cannot shrink anyone's list, and wildcard patterns are never pruned. When the last entry would be removed the old value is kept and the key is reported back, because an empty allowlist parses as "no restriction" and would silently unlock the key.
+- **Usage charts hidden for API key sessions**: the token chart and the two breakdown charts are replaced with a short muted note. The overview numbers and the recent request list are unaffected. A password session sees exactly what it saw before. If the session lookup fails the page falls back to the password view.
+
+## Internal
+- **Two self-checks added**: `permissionPathsSelfCheck.mjs` (12 cases) proves each permission opens only its own pages, that none leaks into another section, and that a page with no rule stays shut. `allowedModelsReconcileSelfCheck.mjs` (15 cases) covers pruning, renaming, wildcard and `*` preservation, idempotence, and the refuse-to-empty rule. The reconcile check caught a real defect while being written: an untouched list was being respaced and rewritten, which is fixed.
+
+# v0.5.131-Custom (2026-09-28)
+
+## Fixes
+- **Quota Tracker crashed on open**: the Quota row card rendered a `resetWord` that was never declared, which throws a ReferenceError the moment the list draws. `/dashboard/quota` has no error boundary, so the whole page went blank. The label now comes from the `recurring` flag the row already carries, so a one-shot pack still reads "Expires" and a refilling quota still reads "Reset", matching the wording the progress bar already used.
+
+## Internal
+- **Render smoke-check for the Quota Tracker components**: `QuotaTracker/renderSelfCheck.mjs` calls each leaf component as a plain function with real-shaped data covering every branch it draws (unlimited, credit balance, one-shot pack, missing reset time, compact mode, each sort mode, pagination, error and loading states). This catches a class of bug that parsing alone cannot: a JSX expression naming a variable nobody declared is syntactically valid, so it passes a build check and only fails when the component renders. The check was verified by reintroducing the defect and confirming it failed before restoring the fix.
+
+# v0.5.130-Custom (2026-09-27)
+
+## Changes
+- **Permissions are locked for API key sessions**: signing in to the dashboard with an API key now disables the whole permissions block instead of only hiding the "manage API keys" row. The four checkboxes are inert, the value shown is the default with only View usage on, and a note explains that changing permissions needs the dashboard password. This applies to both the create form and the edit form, and the value sent to the API is forced to the default so stale form state cannot slip through.
+- **Sub-keys created by an API key session no longer inherit permissions**: key creation and key editing now write the default permission set for an API-key session instead of clamping the request to what the caller already holds. A key that can create keys can no longer mint one that manages keys, so the escalation chain stops there. Session by dashboard password is unaffected and keeps full control.
+
+# v0.5.129-Custom (2026-09-27)
+
 ## Fixes
 - **API key usage showed providers the key cannot use**: signing in to the dashboard with an API key showed every provider that had ever run on the instance. The Usage page reads two sources, and the SSE stream at `/api/usage/stream` called `getUsageStats` without the allowed-models argument, so it fell back to "every model" and overwrote the correctly scoped first response. That stream is the one that populated the By Provider chart, which is why unrelated providers such as MiMo Code Free and OpenCode appeared next to the key's own custom model.
 - **Leaderboard and Errors tabs ignored allowed models**: both filtered by API key but not by the key's model allowlist, so a scoped session saw models it would be refused at request time. The Errors tab now also excludes those models from its total and error counts, so the numbers agree with the rows.
@@ -236,7 +402,7 @@
 
 ## Custom Features & Enhancements
 - **Per API key permissions**: the Create and Edit API key forms now carry a Permissions box with four separate rights: create, edit and delete API keys, create, edit and delete models, create, edit and delete providers, and view usage. Each key stores its own set, and the sidebar, the pages and the endpoints all follow it. A password sign-in is still a full administrator.
-- **Sign in with an API key**: the login page has an API Key Login tab next to Password Login. The key is verified like any LLM request, so a disabled, expired, quota-exceeded or IP-blocked key is refused with its own message. The session that results shows only the menus the key is allowed to open, and the Endpoint page hides the tunnel, Tailscale, custom domain and require-API-key controls so no button can fail.
+- **Sign in with an API key**: the login page has an API Key Login tab next to Password Login. The key is verified like any LLM request, so a disabled, expired, quota-exceeded or IP-blocked key is refused with its own message. The session that results shows only the menus the key is allowed to open, and the Endpoint page hides the tunnel, Tailscale and require-API-key controls so no button can fail.
 - **Usage scoped to the signed in key**: stats, chart, leaderboard, error list, history, the CSV export and the live stream all filter on the key that authenticated, so a key user reads its own numbers and never another key's. The per-key usage page shows the same single card.
 - **Nested keys stay inside the parent's scope**: a key that only has view usage cannot hand out model, provider or key rights to a new key, the permissions it does not hold are hidden and disabled in the form, its token limit caps the limit of every key it creates, and its allowed-model list is the only list the model picker offers, with the same exact, prefix-star and suffix-star matching the server applies to LLM requests.
 - **Enforced on the server, not only in the menu**: a key-signed session is refused with 403 on any endpoint its permissions do not cover, including settings, tunnel, OAuth, cloud, translator, CLI tools and MCP routes, and on any dashboard page outside its rights. Reading the model catalog stays open to a provider manager because the providers page needs it to render a connection, while every model write stays on the model right. A key with no right at all lands on a short notice with a sign out button instead of a redirect loop.
@@ -244,7 +410,6 @@
 # v0.5.115-Custom (2026-09-26)
 
 ## Custom Features & Enhancements
-- **Custom Domain Endpoint Support**: Added Custom Domain option on the API Endpoint card alongside Local, Cloudflare Tunnel, and Tailscale. Users can configure their own reverse proxy or custom domain URL (e.g. `https://api.my-domain.com`), easily copy the `/v1` endpoint, edit the domain, and enable/disable it with persistent settings stored in the database.
 - **304+ Providers Integration**: Merged the massive provider library from ExtremeRouter. Added over 200+ API-key providers, 25 OAuth providers, and 39 Web-cookie providers (including Qwen Web, Claude Web, ChatGPT Web, Grok Web, Notion AI, HyperAgent, Conol, DouBao, Adapta, and more) into 9Router.
 - **Provider Capabilities & Prices**: Fully synchronized model metadata, token limits, capabilities, tool-calling flags, and token cost pricing with ExtremeRouter's definitions.
 - **Frontend Modals & UI**: Updated Add API Key modal to automatically suggest specific cookie capturing instructions for new Web-cookie providers. Added `FeloCaptureButton` and `CookieCaptureButton` helper components. 
@@ -336,19 +501,6 @@
 ## Fixes
 - **Modal header polish**: the "Welcome to 9Router!" title no longer hugs the left edge of the dialog and now sits vertically centered on the same line as the close button. Applied to all dialogs, including the Download Backup header.
 - **Smaller "Heavy" badge**: the Heavy tag in the Download Backup section list now renders in the compact badge size instead of falling back to the large default.
-# v0.5.101-Custom (2026-09-19)
-
-## Backup Enhancements
-- **Compressed auto-backup**: scheduled backups are gzipped before delivery (`9router-backup-*.json.gz`). The payload is highly repetitive JSON, so a 13.2 MB backup ships as ~1.2 MB — about 91% smaller. Import transparently inflates both `.json` and `.json.gz`, so older backups keep working.
-- **Failure notifications**: if a scheduled backup fails, the owner now gets a Telegram message with the error instead of the failure being silent. Sent once per distinct error, so a persistent outage does not spam the chat.
-- **GitHub retention**: the GitHub channel keeps the newest N backups (default 10, `retentionCount` in config) and prunes older files in the same commit. Telegram is unaffected — its Bot API cannot list or delete chat history.
-- **Update checks now track this fork** (`gievano/9router`) instead of upstream, so the sidebar badge and GitHub link point at the fork's own commits.
-
-# v0.5.100-Custom (2026-09-19)
-
-## Fork Restorations
-- **Restore Automatic Backup**: reinstated the scheduled automatic backup feature (Telegram/GitHub channels, interval config, live countdown, Send Test Backup) that was decommissioned upstream in v0.5.99. Kept alongside the newer Selective Backup Download, so both the scheduled Telegram/GitHub backup and the manual section-picker backup work.
-- `autoBackup` KV scope round-trips through DB export/import again, and now travels with the Settings section so partial backups stay consistent.
 
 # v0.5.99-Custom (2026-09-18)
 
@@ -478,10 +630,6 @@
 ## Custom Features & Enhancements
 - **A Model Studio name now answers as the model it is**: every outbound payload — non-streaming completions, streamed chunks, Claude `message_start`, Responses events and semantic-cache hits — reports the name the caller spoke, so `claude-opus-5` never answers `qwen3.8-flash` while the console, the request detail and the usage `resolvedModel` still record the real target for debugging.
 - **Failure text keeps the route private too**: the "all accounts unavailable" and "no credentials" replies name the model that was called instead of printing the provider connection id and the model behind it.
-
-# v0.5.82-Custom (2026-09-13)
-
-## Custom Features & Enhancements
 - **Every API key has an on/off switch**: the toggle sits on the left of each key row, is stored through the existing key update endpoint, and a switched-off key is refused with `403 API key is disabled` on chat, embeddings, images, video, speech, transcription, search and web fetch — including while the gateway runs without required keys.
 - **FEATURE+ is the section title again** for the tools this fork adds, with Model Battle Arena and Custom Model Editor inside it.
 
@@ -573,8 +721,8 @@
 ## Custom Features & Enhancements
 - **No password nagging**: the tunnel/endpoint page no longer warns about the default dashboard password or blocks activation over it — the tunnel turns on as-is.
 - **Models are picked, never typed**: the allowed-models field in the API key dialogs is read-only; models come from the picker only (chips + Select Models), so a typo can no longer lock a key out of a model.
-- **Changelog works offline**: a local `/api/changelog` route serves this fork's changelog from disk, falling back to raw GitHub only for what it cannot resolve; the custom section is labelled **Contributed by gievano**.
-- **CLI default password**: the terminal settings menu now reports `jstc69` as the default dashboard password instead of the old upstream value.
+- **Changelog works offline**: a local `/api/changelog` route serves this fork's changelog from disk, falling back to raw GitHub only for what it cannot resolve; the custom section is labelled **Contributed by Serenhope**.
+- **CLI default password**: the terminal settings menu now reports `seren123` as the default dashboard password instead of the old upstream value.
 - **UI polish**: long sidebar labels, provider/model ids, tool titles, badges and the header search now ellipsize instead of pushing buttons out of place, with the full text available on hover.
 - **Sidebar group renamed**: `Model Lab` is now **Custom Suite** — it holds every feature added by this fork, not only the model tools, so future additions have an obvious home.
 
@@ -593,7 +741,7 @@
 - **Model Editor**: Edit per-model overrides (rename, target model, context window, system prompt) and manage custom provider prefixes from a dedicated Model Editor page under Feature+.
 - **MoonshotAI Provider**: Added MoonshotAI (Kimi) compatible provider option alongside OpenAI/Anthropic compatible providers.
 - **Extra Combo Strategies**: New combo routing strategies beyond Fallback / Round Robin / Fusion.
-- **Changelog View**: Combined changelog modal — custom contributions shown in a highlighted "Contributed by gievano" section above the official Decolua release notes.
+- **Changelog View**: Combined changelog modal — custom contributions shown in a highlighted "Contributed by Seren" section above the official Decolua release notes.
 - **UI Cleanup**: Refined dashboard layout, tidied console log view, and removed the Live Feed page and related controls for a cleaner sidebar.
 - **Backup Fix**: Fixed API key settings and usage statistics being reset on backup import (column/placeholder mismatch).
 
@@ -612,7 +760,6 @@
 - **Interactive Model Selector**: Integrated `ModelSelectModal` directly into Create & Edit API Key forms, allowing users to pick allowed models visually (same UI as Combo creation) without manual typing.
 - **Key Editing & Management**: key names, token limits, reset intervals, and allowed models stay editable anytime, with a manual `restart_alt` button to zero the used tokens.
 - **UI & Theme Sync**: the app is locked to dark mode with theme and language switchers removed, and custom select dropdowns now follow the app theme.
-
 
 # v0.5.91 (2026-09-26)
 
@@ -1105,7 +1252,6 @@
 - **Cursor**: HTTP/2 AgentService support + version bump 3.12.17
 - **Dashboard**: cut duplicate API/icon spam, lazy-load provider assets
 
-
 # v0.5.35 (2026-07-16)
 
 ## Features
@@ -1516,6 +1662,3 @@
 
 ## Breaking Changes
 - Tunnel public URL changed — old tunnel links no longer work, please reconnect to get the new URL
-
-- fix: restore seren chat core
-

@@ -5,6 +5,7 @@ import { ollamaBodyToOpenAI } from "../../translator/response/ollama-to-openai.j
 import { addBufferToUsage, filterUsageForFormat } from "../../utils/usageTracking.js";
 import { createErrorResult } from "../../utils/error.js";
 import { rescueResponse } from "../../translator/concerns/toolCallRescue.js";
+import { applyJsonGuard } from "../../translator/concerns/jsonGuard.js";
 import { upstreamResponseHeaders } from "../../utils/upstreamHeaders.js";
 import { HTTP_STATUS } from "../../config/runtimeConfig.js";
 import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
@@ -286,7 +287,7 @@ export function translateNonStreamingResponse(responseBody, targetFormat, source
 /**
  * Handle non-streaming response from provider.
  */
-export async function handleNonStreamingResponse({ providerResponse, provider, model, sourceFormat, targetFormat, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, requestedModel, clientRawRequest, onRequestSuccess, reqLogger, toolNameMap, customToolNames, trackDone, appendLog, pxpipe, reqTag, log }) {
+export async function handleNonStreamingResponse({ providerResponse, provider, model, sourceFormat, targetFormat, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, requestedModel, clientRawRequest, onRequestSuccess, reqLogger, toolNameMap, customToolNames, trackDone, appendLog, pxpipe, reqTag, log, pluginResult }) {
   trackDone();
   const contentType = providerResponse.headers.get("content-type") || "";
   let responseBody;
@@ -364,6 +365,21 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
     const rescued = rescueResponse(translatedResponse, translatedBody.tools);
     if (rescued.renamed || rescued.recovered || rescued.dropped) {
       log?.debug?.("TOOLRESCUE", `${rescued.renamed} renamed, ${rescued.recovered} recovered, ${rescued.dropped} dropped (response)`);
+    }
+  }
+
+  // JSON Guard (opt-in per model): make machine-readable output parseable again.
+  // Runs after translation and after the tool rescue, because both rewrite the
+  // tool_calls this reads. Only the non-streaming path reaches here — a streaming
+  // answer's tool arguments arrive as fragments and are forwarded as they land,
+  // so there is no complete value to repair without buffering every tool call.
+  if (pluginResult?.isJsonGuardActive && translatedResponse && typeof translatedResponse === "object") {
+    const guarded = applyJsonGuard(translatedResponse, translatedBody?.tools);
+    if (guarded.changed) {
+      const s = guarded.stats;
+      log?.debug?.("JSONGUARD", `${s.textRepaired} text repaired, ${s.argsRepaired} args repaired, ${s.argsDropped} args dropped, ${s.argsCleaned} schema-cleaned (${s.argsFilled} filled, ${s.argsMissing} still missing)`);
+    } else {
+      log?.debug?.("JSONGUARD", "checked, nothing to repair");
     }
   }
 
