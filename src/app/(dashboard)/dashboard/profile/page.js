@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card, Button, Toggle, Input, Select, DownloadBackupModal } from "@/shared/components";
+import { Card, Button, Toggle, Input, Select, DownloadBackupModal, ProgressCard } from "@/shared/components";
 import Modal, { ConfirmModal } from "@/shared/components/Modal";
 import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
 import { cn } from "@/shared/utils/cn";
@@ -79,50 +79,6 @@ function BackupCountdown({ target, onExpire, showDate = false }) {
   );
 }
 
-// Fallback busy indicator shown while the centralized overlay from agent A
-// (src/shared/components/Loading.js) is not available yet. Deliberately
-// non-blocking: pointer events pass through so the page stays usable during
-// background work.
-function BackupBusyOverlay({ info }) {
-  if (!info) return null;
-  const percent = typeof info.progress === "number" && Number.isFinite(info.progress)
-    ? Math.max(0, Math.min(100, Math.round(info.progress <= 1 ? info.progress * 100 : info.progress)))
-    : null;
-  return (
-    <div className="pointer-events-none fixed inset-0 z-[70] flex items-start justify-center p-4 pt-16" role="status" aria-live="polite">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-bg p-4 shadow-lg">
-        <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined animate-spin text-brand-500">progress_activity</span>
-          <div className="min-w-0">
-            <p className="text-sm font-medium">{info.title || "Working"}</p>
-            {info.message && <p className="truncate text-xs text-text-muted">{info.message}</p>}
-          </div>
-          {percent !== null && <span className="ml-auto shrink-0 text-xs text-text-muted">{`${percent}%`}</span>}
-        </div>
-        {info.section && <p className="mt-2 text-xs text-text-muted">{info.section}</p>}
-        {percent !== null && (
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percent}%` }} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Candidate export names for the centralized overlay built by agent A.
-// Resolved through dynamic import() so this page never crashes when that
-// component does not exist yet.
-const OVERLAY_CANDIDATES = ["CenterLoading", "LoadingOverlay", "BusyOverlay", "GlobalLoading", "ProgressOverlay", "BackupProgressOverlay"];
-
-function resolveOverlayComponent(mod) {
-  if (!mod) return null;
-  for (const name of OVERLAY_CANDIDATES) {
-    if (typeof mod[name] === "function") return mod[name];
-  }
-  return null;
-}
-
 // Background import-job endpoint built by agent B. POST starts a job from the
 // same JSON body as the direct import and answers { jobId }; GET
 // <endpoint>/<jobId> answers { status, progress, section, error }. A 404/405
@@ -191,25 +147,9 @@ export default function ProfilePage() {
   const certFileRef = useRef(null);
 
   const importFileRef = useRef(null);
-  // Centralized busy overlay (agent A). `busy` drives the lightweight local
-  // fallback UI; `OverlayComp` holds the dynamically loaded overlay component
-  // once agent A lands it, otherwise stays null and the fallback is used.
+  // Progress overlay state. `busy` holds { title, message, section, progress };
+  // ProgressCard from the shared Loading module renders it directly.
   const [busy, setBusy] = useState(null);
-  const [OverlayComp, setOverlayComp] = useState(null);
-  const overlayTriedRef = useRef(false);
-
-  const ensureOverlay = async () => {
-    if (OverlayComp || overlayTriedRef.current) return OverlayComp;
-    overlayTriedRef.current = true;
-    try {
-      const mod = await import("@/shared/components/Loading");
-      const Comp = resolveOverlayComponent(mod);
-      if (Comp) setOverlayComp(() => Comp);
-      return Comp;
-    } catch {
-      return null;
-    }
-  };
   const [proxyForm, setProxyForm] = useState({
     outboundProxyEnabled: false,
     outboundProxyUrl: "",
@@ -827,7 +767,6 @@ export default function ProfilePage() {
   setTgLoading(true);
   setTgStatus({ type: "", message: "" });
   setBusy({ title: "Saving backup configuration", message: "Saving automatic backup settings" });
-  ensureOverlay().catch(() => null);
   try {
   const payload = {
   enabled: tgForm.enabled,
@@ -870,7 +809,6 @@ export default function ProfilePage() {
   setTgLoading(true);
   setTgStatus({ type: "", message: "" });
   setBusy({ title: "Sending test backup", message: "Uploading backup to the configured channel" });
-  ensureOverlay().catch(() => null);
   try {
   const res = await fetch("/api/settings/auto-backup", {
   method: "POST",
@@ -896,7 +834,6 @@ export default function ProfilePage() {
     setDbLoading(true);
     setDbStatus({ type: "", message: "" });
     setBusy({ title: "Preparing backup", message: "Exporting database" });
-    ensureOverlay().catch(() => null);
     try {
       const sectionsQuery = selectedSections && selectedSections.length > 0
         ? `?sections=${selectedSections.join(",")}`
@@ -944,12 +881,23 @@ export default function ProfilePage() {
   // Poll a background import job started by agent B. Resolves when the job
   // reports done/failed, rejects on timeout or job failure. Non-blocking: the
   // page stays interactive while polling, progress is mirrored to the overlay.
-  const pollImportJob = async (jobId) => {
+  //
+  // Auth is the poll token issued at job creation, not the password: the import
+  // replaces the settings row that stores the password hash, so re-checking the
+  // password on every poll starts failing part-way through a restore that is
+  // actually succeeding. The password stays as a fallback for servers that
+  // predate the token.
+  const pollImportJob = async (jobId, password, pollToken) => {
     const startedAt = Date.now();
     const timeoutMs = 5 * 60 * 1000;
+    const pollHeaders = pollToken
+      ? { "x-9r-poll-token": pollToken }
+      : { "x-9r-password": password || "" };
     for (;;) {
       await new Promise((resolve) => setTimeout(resolve, 750));
-      const res = await fetch(`${IMPORT_JOB_ENDPOINT}/${encodeURIComponent(jobId)}`);
+      const res = await fetch(`${IMPORT_JOB_ENDPOINT}/${encodeURIComponent(jobId)}`, {
+        headers: pollHeaders,
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to check import status");
@@ -994,7 +942,6 @@ export default function ProfilePage() {
     setDbLoading(true);
     setDbStatus({ type: "", message: "" });
     setBusy({ title: "Importing database", message: "Reading backup file" });
-    ensureOverlay().catch(() => null);
     try {
       const raw = await readBackupText(file);
       const payload = JSON.parse(raw);
@@ -1024,7 +971,7 @@ export default function ProfilePage() {
               section: jobData.section || "",
               progress: jobData.progress,
             });
-            await pollImportJob(jobData.jobId);
+            await pollImportJob(jobData.jobId, password, jobData.pollToken);
           } else {
             await runDirectImport(body);
           }
@@ -2063,22 +2010,17 @@ export default function ProfilePage() {
         loading={dbLoading}
       />
 
-      {/* Centralized busy overlay (agent A) with local fallback. The fallback
-          is pointer-events-none so the page stays usable while a background
-          job runs; the centralized overlay controls its own blocking.
-          Agent A interface: CenterLoading/BusyOverlay take { message,
-          progress (0-100 or null), fixed }. Extra props below are tolerated
-          because the resolve step only checks typeof function. */}
-      {OverlayComp && busy ? (
-        <OverlayComp
-          message={busy.section ? `${busy.title || ""} - ${busy.section}`.replace(/^ - /, "") : (busy.message || busy.title)}
-          progress={typeof busy.progress === "number" && Number.isFinite(busy.progress)
-            ? (busy.progress <= 1 ? Math.round(busy.progress * 100) : Math.round(busy.progress))
-            : null}
+      {/* Blocking progress card for backup export/import and test runs.
+          Backdrop-blurred and centered, same card everywhere a long
+          operation runs. */}
+      {busy ? (
+        <ProgressCard
+          title={busy.title}
+          message={busy.message}
+          section={busy.section}
+          progress={busy.progress}
         />
-      ) : (
-        <BackupBusyOverlay info={busy} />
-      )}
+      ) : null}
 
       <Modal
         isOpen={dbAuth.open}

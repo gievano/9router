@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteProviderConnectionsByProvider, deleteProviderNode, getProviderConnections, getProviderNodeById, updateProviderConnection, updateProviderNode } from "@/models";
+import { deleteProviderConnectionsByProvider, deleteProviderNode, getProviderConnections, getProviderNodeById, updateProviderConnection, updateProviderNode, getCustomModels, deleteCustomModel, getModelAliases, deleteModelAlias } from "@/models";
 import { normalizeLogo } from "@/shared/utils/providerLogo";
 
 // PUT /api/provider-nodes/[id] - Update provider node
@@ -100,6 +100,28 @@ export async function DELETE(request, { params }) {
 
     await deleteProviderConnectionsByProvider(id);
     await deleteProviderNode(id);
+
+    // Custom models and aliases still pointing at the deleted node id would
+    // surface as a ghost compat group in the picker, so remove them as well.
+    // TODO: combos and studio targets referencing this node id are left alone
+    // because combo members are free-form values and studio targets may point
+    // at combos, so pruning them here risks deleting unrelated records.
+    try {
+      const customModels = await getCustomModels();
+      await Promise.all(
+        (customModels || [])
+          .filter((m) => m?.providerAlias === id)
+          .map((m) => deleteCustomModel({ providerAlias: m.providerAlias, id: m.id, type: m.type || "llm" }))
+      );
+      const aliases = await getModelAliases();
+      await Promise.all(
+        Object.entries(aliases || {})
+          .filter(([, fullModel]) => typeof fullModel === "string" && (fullModel === id || fullModel.startsWith(`${id}/`)))
+          .map(([aliasName]) => deleteModelAlias(aliasName))
+      );
+    } catch (cleanupError) {
+      console.log("Error cleaning up models for deleted provider node:", cleanupError);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

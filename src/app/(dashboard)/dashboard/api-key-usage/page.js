@@ -66,6 +66,9 @@ function KeyCard({ k, expanded, onToggle }) {
             {!k.isActive && <Badge variant="default" size="sm">off</Badge>}
           </div>
           <p className="text-[11px] text-text-muted font-mono mt-0.5">{k.keyMasked || "no key"}</p>
+          {k.createdByName && (
+            <p className="text-[11px] text-text-muted truncate min-w-0 mt-0.5">Created by {k.createdByName}</p>
+          )}
         </div>
         <button
           type="button"

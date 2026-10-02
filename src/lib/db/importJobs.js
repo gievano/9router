@@ -3,7 +3,12 @@
 // Survives Next.js dev hot-reload via globalThis (same pattern as the db
 // driver). Jobs are process-local on purpose: the dashboard polls the same
 // server process that accepted the POST.
+//
+// Each job carries a poll credential issued at creation (see importJobAuth.js):
+// the import rewrites the settings row that holds the dashboard password
+// hash, so a progress poll must not re-derive trust from the database.
 import { randomUUID } from "node:crypto";
+import { issuePollToken } from "./importJobAuth.js";
 
 const RESULT_TTL_MS = 10 * 60 * 1000;
 
@@ -69,6 +74,7 @@ async function runImportJob(jobId) {
       currentSection: "done",
     };
     current.payload = null;
+    current.pollTokenHash = null;
 
     try {
       const { getSettings } = await import("./repos/settingsRepo.js");
@@ -96,6 +102,7 @@ async function runImportJob(jobId) {
     current.error = err?.message || "Failed to import database";
     current.message = "Import failed";
     current.payload = null;
+    current.pollTokenHash = null;
     touch(current);
   } finally {
     scheduleResultCleanup(jobId);
@@ -108,6 +115,11 @@ export function createImportJob(payload) {
   }
   const jobId = randomUUID();
   const now = new Date().toISOString();
+  // The client's poll credential for this job: issued here, once, so polling
+  // never has to ask the database for a password hash the import is busy
+  // overwriting. Only the digest stays on the job; the token itself leaves
+  // with the POST response.
+  const { token, hash } = issuePollToken();
   getStore().set(jobId, {
     id: jobId,
     status: "queued",
@@ -115,12 +127,13 @@ export function createImportJob(payload) {
     message: "Import queued",
     error: null,
     payload,
+    pollTokenHash: hash,
     createdAt: now,
     updatedAt: now,
   });
   if (typeof setImmediate === "function") setImmediate(() => runImportJob(jobId));
   else setTimeout(() => runImportJob(jobId), 0);
-  return { jobId, status: "queued" };
+  return { jobId, status: "queued", pollToken: token };
 }
 
 export function getImportJob(jobId) {

@@ -27,3 +27,27 @@ export function apiKeyGateFailure(valid, requireApiKey = true) {
   if (!requireApiKey) return null;
   return KEY_GATE_FAILURES[valid] || { status: 401, message: "Invalid API key" };
 }
+
+// Log-only dedupe for repeated auth failures. A misconfigured client polling
+// every second must not fill the log, but every 401 response is still sent.
+// First attempt for a (source, ip, keyPrefix) combination always logs;
+// repeats within the window are suppressed. Old entries are swept so the
+// map cannot grow without bound.
+const AUTH_FAILURE_LOG_WINDOW_MS = 60 * 1000;
+const AUTH_FAILURE_LOG_MAX_ENTRIES = 1000;
+const authFailureLogTimes = new Map();
+
+export function shouldLogAuthFailure(source, ip, keyPrefix) {
+  const key = `${source}|${ip || "unknown"}|${keyPrefix || "missing"}`;
+  const now = Date.now();
+  const last = authFailureLogTimes.get(key);
+  if (last && now - last < AUTH_FAILURE_LOG_WINDOW_MS) return false;
+  authFailureLogTimes.set(key, now);
+  if (authFailureLogTimes.size > AUTH_FAILURE_LOG_MAX_ENTRIES) {
+    for (const [k, ts] of authFailureLogTimes) {
+      if (now - ts >= AUTH_FAILURE_LOG_WINDOW_MS) authFailureLogTimes.delete(k);
+      if (authFailureLogTimes.size <= AUTH_FAILURE_LOG_MAX_ENTRIES / 2) break;
+    }
+  }
+  return true;
+}

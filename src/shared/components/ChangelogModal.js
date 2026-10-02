@@ -86,12 +86,13 @@ function groupByReleaseDate(sections) {
  const byDate = new Map();
  for (const section of sections) {
  const date = (section.title.match(/\((\d{4}-\d{2}-\d{2})\)/) || [])[1] || section.title;
+ const commits = (section.title.match(/·\s*(\d+)\s+commit/) || [])[1];
  if (!byDate.has(date)) {
  const group = { date, items: [] };
  byDate.set(date, group);
  groups.push(group);
  }
- byDate.get(date).items.push(section);
+ byDate.get(date).items.push({ ...section, commits: commits ? Number(commits) : null });
  }
  return groups;
 }
@@ -113,7 +114,11 @@ function renderVersionCards(md, accent) {
  }
  return groupByReleaseDate(sections)
  .map((group) => {
- const head = group.items.length === 1 ? group.items[0].title : `${group.date} · ${group.items.length} releases`;
+ const totalCommits = group.items.reduce((sum, s) => sum + (s.commits || 0), 0);
+ const commitLabel = totalCommits ? ` · ${totalCommits} commit${totalCommits === 1 ? "" : "s"}` : "";
+ const head = group.items.length === 1
+ ? group.items[0].title
+ : `${group.date} · ${group.items.length} releases${commitLabel}`;
  const inner = group.items.length === 1
  ? renderBody(group.items[0].body)
  : group.items

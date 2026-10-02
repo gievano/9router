@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getApiKeys } from "@/lib/localDb";
 import { getAdapter } from "@/lib/db/driver.js";
 import { getSessionContext } from "@/lib/auth/dashboardPermissions";
+import { creatorNameFor, visibleApiKeys } from "@/lib/auth/keyCreator";
 
 export const dynamic = "force-dynamic";
 
@@ -46,9 +47,11 @@ export async function GET() {
     const ctx = await getSessionContext();
     const ownKey = ctx.apiKeyFilter;
     const allKeys = await getApiKeys();
-    // An API key session only ever sees its own row, so it cannot read other keys'
-    // names, quotas or model scopes.
-    const keys = ownKey ? allKeys.filter((k) => k.key === ownKey) : allKeys;
+    // Same visibility rule as the endpoint list: an API key session sees its own
+    // key plus the keys it created, and never another branch's names, quotas or
+    // model scopes. Keeping this per-page was the bug — a key that created a key
+    // saw the child on the endpoint page and not here.
+    const keys = visibleApiKeys(allKeys, ctx.session);
     const [db] = await Promise.all([getAdapter()]);
     const now = Date.now();
 
@@ -126,6 +129,7 @@ export async function GET() {
       return {
         id: k.id,
         name: k.name,
+        createdByName: creatorNameFor({ createdBy: k.createdBy, keys: allKeys }),
         keyMasked: maskKey(k.key),
         isActive: k.isActive,
         createdAt: k.createdAt,

@@ -75,6 +75,95 @@ function startBackgroundTokenRefreshFromCustomServer() {
     });
 }
 
+// --- Dashboard auth guard (loader hooks: scripts/auth-guard-hooks.mjs) -----
+// Upstream enforces auth in middleware.js -> proxy.js (Next.js 16, Node
+// runtime). This fork runs Next.js 14, whose middleware is Edge-only, so the
+// Node-dependent guard could never execute there: the app answered every
+// /api/* route unauthenticated and never asked for a password. Wrapping the
+// HTTP handler keeps src/dashboardGuard.js the single source of truth for which
+// paths are public, so no path list is duplicated here.
+let guardModulePromise = null;
+function getGuardModule() {
+  if (!guardModulePromise) {
+    guardModulePromise = (async () => {
+      const hooksPath = path.join(__dirname, "scripts", "auth-guard-hooks.mjs");
+      const guardPath = path.join(__dirname, "src", "dashboardGuard.js");
+      if (!fs.existsSync(hooksPath) || !fs.existsSync(guardPath)) return null;
+      require("node:module").register(pathToFileURL(hooksPath).href);
+      return await import(pathToFileURL(guardPath).href);
+    })().catch((error) => {
+      console.error("[AuthGuard] load failed:", error && error.message);
+      return null;
+    });
+  }
+  return guardModulePromise;
+}
+
+const GUARD_SKIP = /^\/(_next\/(static|image)|favicon\.ico)/;
+
+// NextRequest-shaped view of a raw IncomingMessage: the guard reads only
+// headers.get(), nextUrl.pathname/searchParams, cookies, method and url.
+function toGuardRequest(req) {
+  const url = req.url || "/";
+  const qIndex = url.indexOf("?");
+  const pathname = qIndex === -1 ? url : url.slice(0, qIndex);
+  const search = qIndex === -1 ? "" : url.slice(qIndex + 1);
+  const rawCookies = req.headers && req.headers.cookie ? req.headers.cookie : "";
+  return {
+    method: req.method || "GET",
+    url: "http://" + ((req.headers && req.headers.host) || "localhost") + url,
+    nextUrl: { pathname, searchParams: new URLSearchParams(search) },
+    headers: {
+      get(name) {
+        const v = req.headers ? req.headers[String(name).toLowerCase()] : undefined;
+        if (v === undefined) return null;
+        return Array.isArray(v) ? v[0] : v;
+      },
+    },
+    cookies: {
+      get(name) {
+        const esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const m = rawCookies.match(new RegExp("(?:^|;\\s*)" + esc + "=([^;]*)"));
+        return m ? { name, value: decodeURIComponent(m[1]) } : undefined;
+      },
+    },
+  };
+}
+
+// True when the guard answered the request itself (deny or redirect).
+async function runAuthGuard(req, res) {
+  if (GUARD_SKIP.test(req.url || "/")) return false;
+  const guard = await getGuardModule();
+  if (!guard) {
+    if (!runAuthGuard._warned) {
+      runAuthGuard._warned = true;
+      console.error("[AuthGuard] guard unavailable, requests NOT authenticated (src/ missing?)");
+    }
+    return false;
+  }
+  let response;
+  try {
+    response = await guard.proxy(toGuardRequest(req));
+  } catch (error) {
+    console.error("[AuthGuard] proxy threw:", error && error.message);
+    return false;
+  }
+  if (!response || response.headers.get("x-middleware-next") === "1") return false;
+  res.statusCode = response.status || 500;
+  response.headers.forEach((value, key) => {
+    if (key === "set-cookie") res.setHeader("set-cookie", Array.isArray(value) ? value : [value]);
+    else if (key !== "content-length") res.setHeader(key, value);
+  });
+  if (response.body) {
+    const buf = Buffer.from(await new Response(response.body).arrayBuffer());
+    res.setHeader("content-length", buf.length);
+    res.end(buf);
+  } else {
+    res.end();
+  }
+  return true;
+}
+
 // Wrap Next standalone HTTP server: derive client IP from the TCP socket
 // (unspoofable) and strip client-supplied forwarding headers so downstream
 // rate-limiting keys on the real peer address instead of attacker-controlled XFF.
@@ -99,7 +188,14 @@ http.createServer = (...args) => {
     req.headers["x-9r-real-ip"] = ip;
     req.headers["x-9r-peer-token"] = PEER_TOKEN;
     if (viaProxy) req.headers["x-9r-via-proxy"] = "1";
-    return handler(req, res);
+    // Auth gate ahead of Next; runAuthGuard resolves false when the request
+    // may pass through, true when it already answered (401 or redirect).
+    return runAuthGuard(req, res)
+      .then((handled) => { if (!handled) return handler(req, res); })
+      .catch((error) => {
+        console.error("[AuthGuard] request failed:", error && error.message);
+        return handler(req, res);
+      });
   };
   const server = origCreate(...rest, wrapped);
   server.once("listening", () => {

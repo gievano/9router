@@ -9,7 +9,7 @@ import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, AI_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, getProviderAlias } from "@/shared/constants/providers";
 import { buildStudioTargetIndex } from "@/shared/utils/studioModelVisibility";
-import { resolveProviderName, findOwningGroupId } from "@/shared/utils/providerDisplay";
+import { resolveProviderName, findOwningGroupId, humanizeCompatId } from "@/shared/utils/providerDisplay";
 import { formatContextWindow } from "@/shared/utils/contextWindow";
 
 // Same matching rules the server applies to allowedModels: exact name, `prefix*`
@@ -29,6 +29,15 @@ function matchesModelScope(patterns, value, id) {
       return false;
     })
   );
+}
+
+// A custom model whose providerAlias is a deleted compat node id must not open
+// a ghost group in the picker. isOrphanCompatAlias is true only when the alias
+// looks like a generated compat node id and no live node claims it.
+function isOrphanCompatAlias(alias, providerNodes) {
+  if (typeof alias !== "string" || !alias) return false;
+  if (humanizeCompatId(alias) === "") return false;
+  return !(providerNodes || []).some((n) => n?.id === alias);
 }
 
 // The window every client needs before it starts compacting, shown next to the
@@ -496,6 +505,10 @@ export default function ModelSelectModal({
       for (const m of ungroupedCustom) {
         if (groupedModelIds.has(m.id)) continue;
         const modelAlias = m.providerAlias || "";
+        // An orphaned compat node id would resolve to a ghost
+        // "OpenAI Compatible (xxxx)" heading via humanizeCompatId, so the
+        // model is hidden instead of opening that group.
+        if (isOrphanCompatAlias(modelAlias, providerNodes)) continue;
         const entry = {
           id: m.id,
           name: m.name || m.id,

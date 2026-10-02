@@ -6,6 +6,7 @@ import {
   clearAccountError,
   extractApiKey,
   isValidApiKey,
+  shouldLogAuthFailure,
 } from "../services/auth.js";
 import { handleAntigravityQuotaError, clearAntigravityStrikes } from "../services/antigravityQuota.js";
 import { getSettings } from "@/lib/localDb";
@@ -78,7 +79,9 @@ export async function handleChat(request, clientRawRequest = null) {
   // Enforce API key if provided or if required by settings
   const settings = await getSettings();
   if (settings.requireApiKey && !apiKey) {
-    log.warn("AUTH", "Missing API key (requireApiKey=true)");
+    if (shouldLogAuthFailure("chat", getClientIp(request), null)) {
+      log.warn("AUTH", "Missing API key (requireApiKey=true)");
+    }
     return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Missing API key");
   }
 
@@ -114,7 +117,9 @@ export async function handleChat(request, clientRawRequest = null) {
  return errorResponse(HTTP_STATUS.FORBIDDEN, "API key has expired");
  }
     if (!valid && settings.requireApiKey) {
-      log.warn("AUTH", "Invalid API key (requireApiKey=true)");
+      if (shouldLogAuthFailure("chat", clientIp, apiKey.slice(0, 8))) {
+        log.warn("AUTH", "Invalid API key (requireApiKey=true)");
+      }
       return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Invalid API key");
     }
   }
@@ -208,13 +213,13 @@ export async function handleChat(request, clientRawRequest = null) {
     });
   }
 
-  return handleSingleModelChat(body, modelStr, clientRawRequest, request, apiKey);
+  return handleSingleModelChat(body, modelStr, clientRawRequest, request, apiKey, contextMarker ? `${modelStr.slice(modelStr.indexOf("/") + 1)}[${contextMarker}]` : null);
 }
 
 /**
  * Handle single model chat request
  */
-async function handleSingleModelChat(body, modelStr, clientRawRequest = null, request = null, apiKey = null) {
+async function handleSingleModelChat(body, modelStr, clientRawRequest = null, request = null, apiKey = null, requestedModel = null) {
   const modelInfo = await getModelInfo(modelStr);
 
   // If provider is null, this might be a combo name - check and handle.
@@ -332,7 +337,8 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
   const userAgent = request?.headers?.get("user-agent") || "";
 
   // What the caller may be told: an alias never names the model that served it.
-  const requestedModel = modelStr && modelStr !== `${provider}/${effectiveModel}` ? modelStr : null;
+  // Alias callers may omit it; derive from the alias the same way upstream does.
+  requestedModel = requestedModel || (modelStr && modelStr !== `${provider}/${effectiveModel}` ? modelStr : null);
   const calledModel = requestedModel || `${provider}/${effectiveModel}`;
 
   // Try with available accounts (fallback on errors)
@@ -342,7 +348,7 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
   let lastHeaders = null;
 
   while (true) {
-    const credentials = await getProviderCredentials(provider, excludeConnectionIds, model);
+    const credentials = await getProviderCredentials(provider, excludeConnectionIds, model, { requestedModel: requestedModel || model });
 
     // All accounts unavailable
     if (!credentials || credentials.allRateLimited) {
@@ -410,6 +416,8 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
       // never reaches the caller, and `toolCallFallback: false` restores the
       // previous pass-the-error-through behaviour.
       toolCallFallbackEnabled: chatSettings.toolCallFallback !== false,
+      // Per-provider user overrides (custom headers / connect timeout) from settings
+      providerOverrides: (chatSettings.providerOverrides || {})[provider] || null,
       // Detect source format by endpoint + body
       sourceFormatOverride: request?.url ? detectFormatByEndpoint(new URL(request.url).pathname, body) : null,
       onCredentialsRefreshed: async (newCreds) => {

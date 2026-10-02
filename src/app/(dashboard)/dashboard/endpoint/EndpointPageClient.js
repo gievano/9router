@@ -1,5 +1,10 @@
 "use client";
 
+// One auto-provision per page load: two concurrent loads (StrictMode remount)
+// both seeing "no keys" would each create one, leaving a duplicate behind.
+let defaultKeyProvisionInFlight = false;
+
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
 import { Card, Button, Input, Select, Modal, CardSkeleton, Toggle, ConfirmModal, ModelSelectModal, SegmentedControl } from "@/shared/components";
@@ -514,15 +519,17 @@ const scopedModelPatterns =
 
       let existing = await fetchKeys();
       // Auto-provision a default key for first-time users so the endpoint works out of the box.
-      if (existing.length === 0) {
+      if (existing.length === 0 && !defaultKeyProvisionInFlight) {
+        defaultKeyProvisionInFlight = true;
         try {
           const createRes = await fetch("/api/keys", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: "Default Key" }),
+            body: JSON.stringify({ name: "Default Keys" }),
           });
           if (createRes.ok) existing = await fetchKeys();
         } catch { /* fall through to empty render */ }
+        finally { defaultKeyProvisionInFlight = false; }
       }
       setKeys(existing);
     } catch (error) {
@@ -1086,6 +1093,16 @@ const scopedModelPatterns =
     });
   };
 
+  // Small "who made this key" label under the key name. The server resolves the
+  // creator to a name, so the raw creator key never has to travel to the browser;
+  // the same wording rules live in one helper so both key pages read alike.
+  const creatorLabelFor = (key) => {
+    const creator = key?.createdByName || "";
+    if (creator) return `Created by ${creator}`;
+    if (key?.createdBy === "dashboard") return "Created by dashboard";
+    return "";
+  };
+
   const [baseUrl] = useState(() => {
     if (typeof window !== "undefined") {
       return `${window.location.origin}/v1`;
@@ -1429,6 +1446,9 @@ const scopedModelPatterns =
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate min-w-0">{key.name}</p>
+                  {creatorLabelFor(key) && (
+                    <p className="text-xs text-text-muted truncate min-w-0">{creatorLabelFor(key)}</p>
+                  )}
                   <div className="flex flex-wrap items-center gap-1.5 mt-1 min-w-0">
                     <code className="text-xs text-text-muted font-mono truncate max-w-[200px] sm:max-w-xs min-w-0">
                       {visibleKeys.has(key.id) ? key.key : maskKey(key.key)}

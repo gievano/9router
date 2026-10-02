@@ -22,12 +22,14 @@ export function getQuotaCooldown(backoffLevel = 0) {
  * @param {number} backoffLevel - Current backoff level for exponential backoff
  * @returns {{ shouldFallback: boolean, cooldownMs: number, shouldLock?: boolean, newBackoffLevel?: number }}
  */
-export function checkFallbackError(status, errorText, backoffLevel = 0) {
+export function checkFallbackError(status, errorText, backoffLevel = 0, provider = null) {
   const lowerError = errorText
     ? (typeof errorText === "string" ? errorText : JSON.stringify(errorText)).toLowerCase()
     : "";
 
   for (const rule of ERROR_RULES) {
+    // Per-provider rules only apply to their own provider.
+    if (rule.provider && rule.provider !== provider) continue;
     // A rule hits on message text (substring) or on the HTTP status code.
     const textHit = rule.text && lowerError && lowerError.includes(rule.text);
     const statusHit = rule.status && rule.status === status;

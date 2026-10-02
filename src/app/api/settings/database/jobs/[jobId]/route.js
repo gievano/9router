@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { verifyDashboardPassword } from "@/lib/auth/dashboardSession";
+import { verifyPollToken, PASSWORD_HEADER } from "@/lib/db/importJobAuth.js";
 import { getImportJob } from "@/lib/db/importJobs";
 
 const CLI_TOKEN_HEADER = "x-9r-cli-token";
-const PASSWORD_HEADER = "x-9r-password";
 
 // CLI token requests are already trusted (local machine); skip password re-auth.
 function isCliRequest(request) {
@@ -12,10 +12,6 @@ function isCliRequest(request) {
 
 export async function GET(request, context) {
   try {
-    if (!isCliRequest(request) && !(await verifyDashboardPassword(request.headers.get(PASSWORD_HEADER)))) {
-      return NextResponse.json({ error: "Invalid password" }, { status: 401 });
-    }
-
     const jobId = context?.params?.jobId;
     if (!jobId) {
       return NextResponse.json({ error: "Missing job id" }, { status: 400 });
@@ -24,6 +20,19 @@ export async function GET(request, context) {
     const job = getImportJob(jobId);
     if (!job) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
+    }
+
+    // The poll credential issued when this job was created is checked first.
+    // Password auth stays as a fallback for CLI callers and for jobs created
+    // before the token existed, but it must not be the primary path: the
+    // import replaces the very settings row that stores the password hash, so
+    // comparing against it mid-import 401s an already-authenticated poll.
+    const pollToken = request.headers.get("x-9r-poll-token") || "";
+    const authorized = isCliRequest(request)
+      || verifyPollToken(job, pollToken)
+      || (await verifyDashboardPassword(request.headers.get(PASSWORD_HEADER)));
+    if (!authorized) {
+      return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
 
     const response = {

@@ -5,8 +5,10 @@ import {
   extractApiKey,
   apiKeyGateFailure,
   isValidApiKey,
+  shouldLogAuthFailure,
 } from "../services/auth.js";
 import { getSettings, getCombos } from "@/lib/localDb";
+import { getClientIp } from "@/lib/auth/loginLimiter";
 import { AI_PROVIDERS, resolveProviderId } from "@/shared/constants/providers.js";
 import { handleFetchCore } from "open-sse/handlers/fetch/index.js";
 import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
@@ -51,13 +53,17 @@ export async function handleFetch(request) {
   // Enforce API key if enabled in settings
   const settings = await getSettings();
   if (settings.requireApiKey && !apiKey) {
-    log.warn("AUTH", "Missing API key (requireApiKey=true)");
+    if (shouldLogAuthFailure("fetch", getClientIp(request), null)) {
+      log.warn("AUTH", "Missing API key (requireApiKey=true)");
+    }
     return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Missing API key");
   }
   if (apiKey) {
     const failure = apiKeyGateFailure(await isValidApiKey(apiKey), settings.requireApiKey);
     if (failure) {
-      log.warn("AUTH", `${failure.message} (requireApiKey=${settings.requireApiKey})`);
+      if (shouldLogAuthFailure("fetch", getClientIp(request), apiKey.slice(0, 8))) {
+        log.warn("AUTH", `${failure.message} (requireApiKey=${settings.requireApiKey})`);
+      }
       return errorResponse(failure.status, failure.message);
     }
   }
