@@ -32,8 +32,8 @@ import { dedupeTools } from "../utils/toolDeduper.js";
 import { takeRenamedToolNames } from "../utils/opencodeFingerprint.js";
 import { injectCaveman } from "../rtk/caveman.js";
 import { injectPonytail } from "../rtk/ponytail.js";
-import { pruneContextMessages } from "../rtk/contextPruning.js";
-import { checkSemanticCache, saveToSemanticCache } from "../rtk/semanticCache.js";
+import { pruneContextMessages, resolvePruningLimit } from "../rtk/contextPruning.js";
+import { checkSemanticCache, saveToSemanticCache, setSemanticCacheTtlMs, setSemanticCacheMaxEntries } from "../rtk/semanticCache.js";
 import { compressMessages, formatRtkLog } from "../rtk/index.js";
 import { compressWithHeadroom, formatHeadroomLog, formatHeadroomSizeLog, isHeadroomPhantomSavings } from "../rtk/headroom.js";
 import { compressWithPxpipe } from "../rtk/pxpipe.js";
@@ -73,7 +73,7 @@ export function stripContinuityFields(body) {
   return body;
 }
 
-export async function handleChatCore({ body, modelInfo, credentials, log, onCredentialsRefreshed, onRequestSuccess, onDisconnect, clientRawRequest, connectionId, userAgent, apiKey, ccFilterNaming, rtkEnabled, contextPruningEnabled, maxMessagesLimit, semanticCacheEnabled, headroomEnabled, headroomUrl, headroomCompressUserMessages, headroomTimeoutMs, cavemanEnabled, cavemanLevel, ponytailEnabled, ponytailLevel, pxpipeEnabled, pxpipeMinChars, pxpipeTimeoutMs, pxpipeTransform, onPxpipeEvent, sourceFormatOverride, providerThinking, requestedModel, toolCallFallbackEnabled = true, providerOverrides }) {
+export async function handleChatCore({ body, modelInfo, credentials, log, onCredentialsRefreshed, onRequestSuccess, onDisconnect, clientRawRequest, connectionId, userAgent, apiKey, ccFilterNaming, rtkEnabled, contextPruningEnabled, maxMessagesLimit, semanticCacheEnabled, semanticCacheTtlHours, semanticCacheMaxEntries, contextPruningLevel, headroomEnabled, headroomUrl, headroomCompressUserMessages, headroomTimeoutMs, cavemanEnabled, cavemanLevel, ponytailEnabled, ponytailLevel, pxpipeEnabled, pxpipeMinChars, pxpipeTimeoutMs, pxpipeTransform, onPxpipeEvent, sourceFormatOverride, providerThinking, requestedModel, toolCallFallbackEnabled = true, providerOverrides }) {
   const { provider, model } = modelInfo;
   const requestStartTime = Date.now();
   // Stable per-session color so all lines of one CLI conversation share a tag
@@ -95,6 +95,14 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   if (bypassResponse) return bypassResponse;
 
   // Check Semantic / Duplicate Prompt Cache (for non-streaming requests)
+  // Cache TTL and cap come from settings so the Token Saver sliders apply
+  // without a proxy restart.
+  if (semanticCacheEnabled) {
+    const hours = Number(semanticCacheTtlHours);
+    if (Number.isFinite(hours) && hours > 0) setSemanticCacheTtlMs(hours * 60 * 60 * 1000);
+    if (semanticCacheMaxEntries > 0) setSemanticCacheMaxEntries(semanticCacheMaxEntries);
+  }
+
   if (semanticCacheEnabled && !body.stream) {
     const cachedResponse = checkSemanticCache(body, `${provider}/${model}`);
     if (cachedResponse) {
@@ -348,8 +356,15 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
 
   // Context Pruning: keep system prompt and most recent messages
   if (tokenSaverEnabled && contextPruningEnabled) {
-    pruneContextMessages(translatedBody, maxMessagesLimit || 20);
-    xf.push(`PRUNING:${maxMessagesLimit || 20}msgs`);
+    // A preset only decides the default; an explicit limit still wins.
+    const presetLimit = resolvePruningLimit(contextPruningLevel, undefined);
+    const explicit = Number(maxMessagesLimit);
+    const effective =
+      presetLimit !== undefined && (!Number.isFinite(explicit) || explicit === 20)
+        ? presetLimit
+        : maxMessagesLimit || 20;
+    pruneContextMessages(translatedBody, effective);
+    xf.push(`PRUNING:${effective}msgs`);
   }
   if (rtkStats?.hits?.length) xf.push(`RTK:${rtkStats.hits.length}`);
 

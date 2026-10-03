@@ -1309,8 +1309,10 @@ export default function ProviderDetailPage() {
           </button>
         )}
 
-        {/* Suggested models from provider API — show only models not yet added */}
-        {suggestedModels.length > 0 && (() => {
+        {/* Suggested models from provider API — show only models not yet added.
+            Rendered on data OR error so a failed refresh explains itself
+            instead of vanishing. */}
+        {(suggestedModels.length > 0 || suggestedModelsError) && (() => {
           const addedFullModels = new Set([
             ...Object.values(modelAliases),
             ...customModelRows.map((model) => model.fullModel),
@@ -1319,7 +1321,10 @@ export default function ProviderDetailPage() {
           const notAdded = suggestedModels.filter(
             (m) => !addedFullModels.has(`${providerStorageAlias}/${m.id}`) && !hardcodedIds.has(m.id)
           );
-          if (notAdded.length === 0) return null;
+          // Keep the block alive when a refresh failed: an empty chip list with
+          // no explanation reads as "there are no free models", which is not
+          // what happened - the note under the heading carries the reason.
+          if (notAdded.length === 0 && !suggestedModelsError) return null;
           return (
             <div className="w-full mt-2">
               <p className="text-xs text-text-muted mb-2">Suggested free models:</p>

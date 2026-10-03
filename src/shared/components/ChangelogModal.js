@@ -103,6 +103,33 @@ function renderBody(bodyMd) {
  return marked.parse(demoted);
 }
 
+// A merged day card concatenates several patch bodies, each carrying its own
+// ## Features / ## Fixes headings. Split every body on its h2 sub-headings and
+// rejoin items under one heading each, keeping the order the headings first
+// appear in — so Fixes shows once with all fixes, not four times.
+function mergeBodiesByCategory(bodies) {
+ const order = [];
+ const byCat = new Map();
+ for (const body of bodies) {
+ let current = null;
+ for (const line of String(body || "").split("\n")) {
+ const m = line.match(/^#{2,6}\s+(.+?)\s*$/);
+ if (m) {
+ current = m[1].trim();
+ if (!byCat.has(current)) {
+ byCat.set(current, []);
+ order.push(current);
+ }
+ } else if (current) {
+ byCat.get(current).push(line);
+ }
+ }
+ }
+ return order
+ .map((cat) => `## ${cat}\n${byCat.get(cat).join("\n").replace(/\n+$/, "")}`)
+ .join("\n\n");
+}
+
 function renderVersionCards(md, accent) {
  const sections = splitVersions(md);
  const cardStyle = `margin:0 0 14px;padding:14px 16px;border:1px solid ${accent.border};border-radius:12px;background:${accent.bg};box-sizing:border-box;`;
@@ -114,16 +141,20 @@ function renderVersionCards(md, accent) {
  }
  return groupByReleaseDate(sections)
  .map((group) => {
- const totalCommits = group.items.reduce((sum, s) => sum + (s.commits || 0), 0);
- const commitLabel = totalCommits ? ` · ${totalCommits} commit${totalCommits === 1 ? "" : "s"}` : "";
+ // The newest release of the day titles the merged card, so it reads like any
+ // other release ("v0.5.151 (2026-09-30)") instead of a bare date rollup.
+ const versionOf = (s) => ((s.title.match(/v?(\d+(?:\.\d+)+)/) || [])[1] || "");
+ const sortKey = (a, b) =>
+ versionOf(a).localeCompare(versionOf(b), undefined, { numeric: true });
+ const newest = [...group.items].sort(sortKey).pop();
  const head = group.items.length === 1
  ? group.items[0].title
- : `${group.date} · ${group.items.length} releases${commitLabel}`;
+ : newest.title.includes("(")
+ ? newest.title
+ : `${newest.title} (${group.date})`;
  const inner = group.items.length === 1
  ? renderBody(group.items[0].body)
- : group.items
- .map((section) => `<h4 style="${subStyle}">${escapeHtml(section.title)}</h4>${renderBody(section.body)}`)
- .join("");
+ : renderBody(mergeBodiesByCategory(group.items.map((section) => section.body)));
  return `<div style="${cardStyle}">
  <h3 style="${titleStyle}">
  <span class="material-symbols-outlined" style="font-size:18px;">${accent.icon}</span>

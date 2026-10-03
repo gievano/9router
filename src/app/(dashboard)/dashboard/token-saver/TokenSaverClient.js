@@ -6,6 +6,7 @@ import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { getCurrentLocale, onLocaleChange } from "@/i18n/runtime";
 import {
   WENYAN_LOCALES,
+  PRUNING_PRESETS,
   CAVEMAN_LEVELS,
   PONYTAIL_LEVELS,
 } from "../endpoint/endpointConstants";
@@ -45,6 +46,10 @@ export default function TokenSaverClient() {
   const [restartingProxy, setRestartingProxy] = useState(false);
   const logPollRef = useRef(null);
   const [cavemanEnabled, setCavemanEnabled] = useState(false);
+  const [contextPruningLevel, setContextPruningLevel] = useState("full");
+  const [semanticCacheTtlHours, setSemanticCacheTtlHours] = useState(3);
+  const [semanticCacheMaxEntries, setSemanticCacheMaxEntries] = useState(1000);
+  const [cacheStats, setCacheStats] = useState(null);
   const [cavemanLevel, setCavemanLevel] = useState("full");
   const [ponytailEnabled, setPonytailEnabled] = useState(false);
   const [ponytailLevel, setPonytailLevel] = useState("full");
@@ -113,9 +118,37 @@ export default function TokenSaverClient() {
     patchSetting({ contextPruningEnabled: value });
   };
 
+  const applyPruningPreset = (preset) => {
+    setContextPruningLevel(preset.id);
+    setMaxMessagesLimit(preset.maxMessages);
+    patchSetting({ contextPruningLevel: preset.id, maxMessagesLimit: preset.maxMessages });
+  };
+
+  const handleCacheTtlChange = (value) => {
+    const val = Number(value) || 3;
+    setSemanticCacheTtlHours(val);
+    patchSetting({ semanticCacheTtlHours: val });
+  };
+
+  const handleCacheMaxEntriesChange = (value) => {
+    const val = Number(value) || 1000;
+    setSemanticCacheMaxEntries(val);
+    patchSetting({ semanticCacheMaxEntries: val });
+  };
+
+  const loadCacheStats = async () => {
+    try {
+      const res = await fetch("/api/token-saver/cache-stats", { cache: "no-store" });
+      if (res.ok) setCacheStats(await res.json());
+    } catch {
+      setCacheStats(null);
+    }
+  };
+
   const handleSemanticCacheEnabled = (value) => {
     setSemanticCacheEnabled(value);
     patchSetting({ semanticCacheEnabled: value });
+    if (value) loadCacheStats();
   };
 
   const handleCavemanEnabled = (value) => {
@@ -437,6 +470,10 @@ export default function TokenSaverClient() {
           setContextPruningEnabled(!!data.contextPruningEnabled);
           setMaxMessagesLimit(data.maxMessagesLimit || 20);
           setSemanticCacheEnabled(!!data.semanticCacheEnabled);
+          setContextPruningLevel(data.contextPruningLevel || "full");
+          setSemanticCacheTtlHours(data.semanticCacheTtlHours ?? 3);
+          if (data.semanticCacheEnabled) loadCacheStats();
+          setSemanticCacheMaxEntries(data.semanticCacheMaxEntries ?? 1000);
           setHeadroomEnabled(!!data.headroomEnabled);
           setHeadroomUrl(data.headroomUrl || "http://localhost:8787");
           if (typeof data.headroomTimeoutMs === "number") setHeadroomTimeoutMs(data.headroomTimeoutMs);
@@ -533,20 +570,52 @@ export default function TokenSaverClient() {
               Keep the system prompt and the most recent N messages, trimming older chat turns to save 30-50% input tokens in long sessions
             </p>
             {contextPruningEnabled && (
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-xs text-text-muted">Max recent messages to keep:</span>
-                <input
-                  type="number"
-                  min="4"
-                  max="100"
-                  value={maxMessagesLimit}
-                  onChange={(e) => {
-                    const val = Number(e.target.value) || 20;
-                    setMaxMessagesLimit(val);
-                    patchSetting({ maxMessagesLimit: val });
-                  }}
-                  className="w-16 px-2 py-1 text-xs rounded border border-border bg-surface text-text-main font-mono"
-                />
+              <div className="mt-2 space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  {PRUNING_PRESETS.map((lvl) => (
+                    <button
+                      key={lvl.id}
+                      onClick={() => applyPruningPreset(lvl)}
+                      className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
+                        contextPruningLevel === lvl.id
+                          ? "bg-primary text-white border-primary"
+                          : "bg-transparent border-border text-text-muted hover:bg-surface-2"
+                      }`}
+                      title={lvl.desc}
+                    >
+                      {lvl.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-primary">
+                  {PRUNING_PRESETS.find((lvl) => lvl.id === contextPruningLevel)?.desc ||
+                    `Custom budget: keep the last ${maxMessagesLimit} messages`}
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-text-muted">Max recent messages to keep:</span>
+                  <input
+                    type="number"
+                    min="4"
+                    max="100"
+                    value={maxMessagesLimit}
+                    onChange={(e) => {
+                      const val = Number(e.target.value) || 20;
+                      setMaxMessagesLimit(val);
+                      // A hand-tuned budget is no longer a preset value, so
+                      // clear the level and stop the picker from overriding it.
+                      setContextPruningLevel("custom");
+                      patchSetting({ maxMessagesLimit: val, contextPruningLevel: "custom" });
+                    }}
+                    className="w-16 px-2 py-1 text-xs rounded border border-border bg-surface text-text-main font-mono"
+                  />
+                  <span className="text-xs text-text-muted">
+                    {contextPruningLevel === "custom"
+                      ? "custom (preset off)"
+                      : PRUNING_PRESETS.find((lvl) => lvl.maxMessages === maxMessagesLimit)
+                        ? "matches preset"
+                        : "custom"}
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -566,10 +635,42 @@ export default function TokenSaverClient() {
               Keeps identical prompt completions in memory so duplicates return instantly (~10ms) at 0 upstream tokens.
             </p>
           </div>
-          <Toggle
-            checked={semanticCacheEnabled}
-            onChange={() => handleSemanticCacheEnabled(!semanticCacheEnabled)}
-          />
+          <div className="flex items-center gap-3 shrink-0">
+            {semanticCacheEnabled && (
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs text-text-muted">TTL (h)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="720"
+                    value={semanticCacheTtlHours}
+                    onChange={(e) => handleCacheTtlChange(e.target.value)}
+                    className="w-14 px-2 py-1 text-xs rounded border border-border bg-surface text-text-main font-mono"
+                  />
+                  <label className="text-xs text-text-muted">Max entries</label>
+                  <input
+                    type="number"
+                    min="10"
+                    max="10000"
+                    value={semanticCacheMaxEntries}
+                    onChange={(e) => handleCacheMaxEntriesChange(e.target.value)}
+                    className="w-20 px-2 py-1 text-xs rounded border border-border bg-surface text-text-main font-mono"
+                  />
+                </div>
+                {cacheStats && (
+                  <p className="text-xs text-primary">
+                    {cacheStats.hits} hits / {cacheStats.misses} misses ·{" "}
+                    {cacheStats.entries} cached
+                  </p>
+                )}
+              </div>
+            )}
+            <Toggle
+              checked={semanticCacheEnabled}
+              onChange={() => handleSemanticCacheEnabled(!semanticCacheEnabled)}
+            />
+          </div>
         </div>
         <div className="flex items-center justify-between py-4 gap-4 flex-wrap">
           <div className="min-w-0 flex-1">

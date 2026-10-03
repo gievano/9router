@@ -67,7 +67,7 @@ export const FILTERS = {
       .map((m) => ({ id: m.id, name: m.id })),
 
   // models.dev returns a large catalog; keep only mimo models
-  "mimo-free": (models) =>
+  mimocode: (models) =>
     (Array.isArray(models) ? models : [])
       .filter((m) => m.id?.startsWith("mimo") || m.name?.toLowerCase().includes("mimo"))
       .map((m) => ({ id: m.id, name: m.name || m.id })),

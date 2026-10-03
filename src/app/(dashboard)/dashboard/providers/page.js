@@ -783,7 +783,13 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
                     </span>
                   </Badge>
                 ) : isNoAuth ? (
-                  <Badge variant="success" size="sm" dot>Ready</Badge>
+                  <Badge
+                    variant={provider.statusBadge?.variant || "success"}
+                    size="sm"
+                    dot
+                  >
+                    {provider.statusBadge?.label || "Ready"}
+                  </Badge>
                 ) : (
                   <>
                     {getStatusDisplay(connected, error, errorCode)}

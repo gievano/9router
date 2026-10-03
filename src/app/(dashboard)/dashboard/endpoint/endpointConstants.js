@@ -1,3 +1,7 @@
+// Presets live with the pruner that consumes them; re-exported here so the
+// Token Saver picker renders exactly the levels the proxy will apply.
+export { PRUNING_PRESETS } from "open-sse/rtk/contextPruning.js";
+
 export const WENYAN_LOCALES = ["zh-CN", "zh-TW"];
 
 export const TUNNEL_BENEFITS = [

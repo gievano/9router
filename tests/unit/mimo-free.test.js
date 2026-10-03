@@ -224,27 +224,24 @@ describe("MimoFreeExecutor", () => {
   });
 });
 
-describe("MiMo Free provider registration", () => {
-  it("registers a specialized executor for mimo-free and the mmf alias", () => {
-    expect(getExecutor("mimo-free")).toBeInstanceOf(MimoFreeExecutor);
+describe("MiMo free channel registration", () => {
+  it("routes every spelling of the retired ids to the free executor", () => {
+    expect(getExecutor("mimocode")).toBeInstanceOf(MimoFreeExecutor);
+    expect(getExecutor("mimocode-free")).toBeInstanceOf(MimoFreeExecutor);
     expect(getExecutor("mmf")).toBeInstanceOf(MimoFreeExecutor);
+    expect(getExecutor("mimo-free")).toBeInstanceOf(MimoFreeExecutor);
   });
 
-  it("registers mimo-free as a no-auth provider in open-sse config", () => {
-    expect(PROVIDERS["mimo-free"]?.noAuth).toBe(true);
-    expect(PROVIDERS.mmf?.noAuth).toBe(true);
+  it("registers mimocode as a no-auth provider in open-sse config", () => {
+    expect(PROVIDERS.mimocode?.noAuth).toBe(true);
   });
 
   it("exposes only mimo-auto (the sole free-channel model)", () => {
-    expect(PROVIDER_MODELS.mmf.map((m) => m.id)).toEqual(["mimo-auto"]);
+    expect(PROVIDER_MODELS.mimocode.map((m) => m.id)).toEqual(["mimo-auto"]);
   });
 
-  it("maps the mimo-free alias to mmf", () => {
-    expect(PROVIDER_ID_TO_ALIAS["mimo-free"]).toBe("mmf");
-  });
-
-  it("lists mimo-free in the dashboard FREE_PROVIDERS catalog", () => {
-    expect(FREE_PROVIDERS["mimo-free"]?.alias).toBe("mmf");
-    expect(FREE_PROVIDERS["mimo-free"]?.noAuth).toBe(true);
+  it("lists mimocode in the dashboard FREE_PROVIDERS catalog", () => {
+    expect(FREE_PROVIDERS.mimocode?.alias).toBe("mimocode");
+    expect(FREE_PROVIDERS.mimocode?.noAuth).toBe(true);
   });
 });

@@ -8,7 +8,7 @@ export default {
   hasFree: true,
   alias: "mimocode",
   uiAlias: "mimocode",
-  aliases: ["mimocode-free", "mimo-auto"],
+  aliases: ["mimocode-free", "mimo-auto", "mmf", "mimo-free"],
   display: {
     name: "MiMoCode Free",
     icon: "smart_toy",
@@ -32,4 +32,7 @@ export default {
     },
   ],
   passthroughModels: true,
+  // Upstream answers 400 Unsupported model for every chat request: the free
+  // channel is closed on their side, so do not advertise it as usable.
+  statusBadge: { label: "Maintenance", variant: "warning" },
 };

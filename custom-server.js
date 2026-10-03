@@ -75,6 +75,47 @@ function startBackgroundTokenRefreshFromCustomServer() {
     });
 }
 
+// --- Port/agent configuration from .env ---------------------------------
+// No dotenv dependency exists here, and `npm start` bakes `--port 20127` into
+// its argv, so a PORT written in .env was ignored on every startup. Load the
+// file ourselves (shell-exported env still wins) and make argv agree, since
+// the next-bin path reads argv while the standalone server reads env.
+function applyDotEnvPort() {
+  for (const name of [".env.local", ".env"]) {
+    let text;
+    try {
+      text = fs.readFileSync(path.join(__dirname, name), "utf8");
+    } catch {
+      continue; // no such file - fine
+    }
+    for (const line of text.split(/\r?\n/)) {
+      const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+      if (!m || m[1] === "" || process.env[m[1]] !== undefined) continue;
+      process.env[m[1]] = m[2].replace(/^(["'])(.*)\1$/, "$2");
+    }
+  }
+  const port = String(process.env.PORT || "");
+  if (!/^\d+$/.test(port)) return;
+  const argv = process.argv;
+  let seen = false;
+  for (let i = 2; i < argv.length; i++) {
+    if (argv[i] === "--port" || argv[i] === "-p") {
+      if (seen) {
+        argv.splice(i, 2);
+        i--;
+        continue;
+      }
+      argv[i + 1] = port;
+      seen = true;
+    } else if (argv[i].startsWith("--port=")) {
+      argv[i] = `--port=${port}`;
+      seen = true;
+    }
+  }
+  if (!seen) argv.push("--port", port);
+}
+applyDotEnvPort();
+
 // --- Dashboard auth guard (loader hooks: scripts/auth-guard-hooks.mjs) -----
 // Upstream enforces auth in middleware.js -> proxy.js (Next.js 16, Node
 // runtime). This fork runs Next.js 14, whose middleware is Edge-only, so the
