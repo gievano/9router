@@ -3,6 +3,8 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { NextResponse } from "next/server";
 import { isTailscaleInstalled, isTailscaleLoggedIn, isSystemDaemonRunning, getTailscaleBin, TAILSCALE_SOCKET } from "@/lib/tunnel";
+
+export const dynamic = "force-dynamic";
 import { getCachedPassword, loadEncryptedPassword } from "@/mitm/manager";
 
 const execAsync = promisify(exec);

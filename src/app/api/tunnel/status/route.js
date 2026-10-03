@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getTunnelStatus, getTailscaleStatus, getDownloadStatus } from "@/lib/tunnel";
 
+export const dynamic = "force-dynamic";
+
 const STATUS_CACHE_TTL_MS = 3000; // coalesce rapid polls; underlying probes already cache 10s
 
 // Survive hot reload; one cache per process. Only tunnel/tailscale probes are cached —
