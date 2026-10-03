@@ -13,6 +13,7 @@ function isLLMProvider(id) {
 import Badge from "./Badge";
 import Card from "./Card";
 import OverviewCards from "@/app/(dashboard)/dashboard/usage/components/OverviewCards";
+import { ActivityHeatmap, bucketTimestampsByDowHour } from "@/app/(dashboard)/dashboard/usage/components/UsageChartsBits";
 import KeyQuotaCard from "@/app/(dashboard)/dashboard/usage/components/KeyQuotaCard";
 import AvailableModelsCard from "@/app/(dashboard)/dashboard/usage/components/AvailableModelsCard";
 import UsageTable, { fmt, fmtTime } from "@/app/(dashboard)/dashboard/usage/components/UsageTable";
@@ -62,7 +63,15 @@ function RecentRequests({ requests = [] }) {
       </div>
 
       {!requests.length ? (
-        <div className="flex-1 flex items-center justify-center text-text-muted text-sm">No requests yet.</div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4 text-center">
+          <span className="text-text-muted text-sm">No requests yet.</span>
+          <a
+            href="/dashboard/endpoint"
+            className="rounded-lg border border-border px-3 py-1.5 text-xs text-primary transition-colors hover:bg-bg-hover"
+          >
+            Get an API key →
+          </a>
+        </div>
       ) : (
         <div className="flex-1 overflow-y-auto">
           <table className="w-full min-w-[300px] border-collapse text-xs">
@@ -231,6 +240,9 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
   const sortOrder = searchParams.get("sortOrder") || "asc";
 
   const [stats, setStats] = useState(null);
+  // Overview sparklines + activity heatmap. Trending on its own fetch so a
+  // failure here degrades to plain cards instead of blocking the page.
+  const [sparks, setSparks] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   // null until /api/auth/status answers, then true for an API-key session. Both
@@ -260,8 +272,9 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
     return () => { cancelled = true; };
   }, []);
 
-  // Fetch connected providers once, deduplicate by provider type
-  // Always include noAuth free providers (e.g. opencode) regardless of connections
+  // Fetch the provider list for the topology once: active connections,
+  // deduplicated by provider type, plus free noAuth providers only when they
+  // have recorded traffic of their own.
   useEffect(() => {
     // Providers feed the topology and nothing else. An API-key session never
     // renders it, so the two requests are not worth making.
@@ -269,8 +282,12 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
     Promise.all([
       fetch("/api/providers").then((r) => r.ok ? r.json() : null),
       fetch("/api/provider-nodes").then((r) => r.ok ? r.json() : null),
+      // period=all so the set of "providers in use" is lifetime-stable and
+      // does not change with the period selector.
+      fetch("/api/usage/stats?period=all").then((r) => r.ok ? r.json() : null),
     ])
-      .then(([d, nodesData]) => {
+      .then(([d, nodesData, allStats]) => {
+        const usedProviders = new Set(Object.keys(allStats?.byProvider || {}));
         // Build node name lookup for custom providers
         const nodeNameMap = {};
         const nodeLogoMap = {};
@@ -290,8 +307,11 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
           nodeName: nodeNameMap[c.provider] || null,
           nodeLogo: nodeLogoMap[c.provider] || null,
         }));
+        // Only show providers that are connected or have real recorded
+        // traffic. Listing every free noAuth provider by default made unused
+        // ones (Devin CLI, …) read as live nodes in the map.
         const noAuthProviders = Object.values(FREE_PROVIDERS)
-          .filter((p) => p.noAuth && !seen.has(p.id) && isLLMProvider(p.id))
+          .filter((p) => p.noAuth && !seen.has(p.id) && isLLMProvider(p.id) && usedProviders.has(p.id))
           .map((p) => ({ provider: p.id, name: p.name }));
         setProviders([...unique, ...noAuthProviders]);
       })
@@ -340,6 +360,20 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
         setFetching(false);
       });
   }, [period]);
+
+  // Sparkline series + heatmap source. Separate fetch on purpose: when it
+  // fails the overview still renders, just without the trend lines.
+  useEffect(() => {
+    fetch(`/api/usage/sparks?period=${period}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) setSparks(data); })
+      .catch(() => {});
+  }, [period]);
+
+  const heat = useMemo(
+    () => (sparks?.heatTimestamps?.length ? bucketTimestampsByDowHour(sparks.heatTimestamps) : null),
+    [sparks],
+  );
 
   // SSE connection - real-time updates synced to selected period
   const esRef = useRef(null);
@@ -560,7 +594,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       {!loading && isApiKeyUser && <AvailableModelsCard visible={isApiKeyUser === true} />}
 
       {/* Overview cards */}
-      {loading ? spinner : <OverviewCards stats={stats} />}
+      {loading ? spinner : <OverviewCards stats={stats} trends={sparks} />}
 
       {/* Provider map + Recent Requests. The map shows every provider wired into
           9Router, which is infrastructure rather than one key's usage, so an
@@ -589,6 +623,16 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       {loading ? spinner : (
         <>
           <UsageChart period={period} updateKey={chartUpdateKey} />
+
+          {heat && heat.total > 0 && (
+            <Card className="flex min-w-0 flex-col gap-3" padding="sm">
+              <span className="text-xs font-semibold text-text-muted uppercase tracking-wide">Activity heatmap</span>
+              <ActivityHeatmap grid={heat.grid} max={heat.max} />
+              <span className="text-[11px] text-text-muted">
+                Requests by weekday and hour in your local time · last {sparks.heatTimestamps.length} session requests
+              </span>
+            </Card>
+          )}
 
           {(stats.byProvider || stats.byModel) && (
             <div className="grid min-w-0 grid-cols-1 gap-2 lg:grid-cols-2">

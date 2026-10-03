@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import ChangelogModal from "./ChangelogModal";
 import { ConfirmModal } from "./Modal";
+import ThemeModal from "./ThemeModal";
 
 function MenuItem({ icon, label, onClick, trailing, danger }) {
   return (
@@ -35,6 +36,7 @@ MenuItem.propTypes = {
 export default function HeaderMenu({ onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
+  const [themeModalOpen, setThemeModalOpen] = useState(false);
   const [shutdownOpen, setShutdownOpen] = useState(false);
   const [isShuttingDown, setIsShuttingDown] = useState(false);
   const menuRef = useRef(null);
@@ -83,6 +85,11 @@ export default function HeaderMenu({ onLogout }) {
               onClick={() => { close(); setChangelogOpen(true); }}
             />
             <MenuItem
+              icon="palette"
+              label="Theme"
+              onClick={() => { close(); setThemeModalOpen(true); }}
+            />
+            <MenuItem
               icon="power_settings_new"
               label="Shutdown"
               danger
@@ -99,6 +106,7 @@ export default function HeaderMenu({ onLogout }) {
       </div>
 
       <ChangelogModal isOpen={changelogOpen} onClose={() => setChangelogOpen(false)} />
+      <ThemeModal isOpen={themeModalOpen} onClose={() => setThemeModalOpen(false)} />
       <ConfirmModal
         isOpen={shutdownOpen}
         onClose={() => setShutdownOpen(false)}

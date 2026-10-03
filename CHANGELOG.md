@@ -6,16 +6,34 @@
 ## Internal
 - **Auth**: release v0.5.153 (auth guard enforced at HTTP layer)
 
-# v0.5.154 (2026-10-03) · 5 commits
+# v0.5.154 (2026-10-03) · 21 commits
 
 ## Features
+- **Dashboard**: add PRD Builder to FEATURE+
+- **Theme**: add a glassmorphism mode alongside dark
+- **Theme**: dedicated theme button next to the grid menu
+- **Theme**: glass becomes the default theme, listed above dark
+- **Theme**: theme picker lives under Change Log in the grid menu
+- **Theme**: theme picker opens as a modal, matching Change Log
 - **Token saver**: level presets for pruning and a measurable response cache
+- **Usage**: add activity heatmap, card sparklines, and smart empty states
+- **Usage**: remove the live request inspector tab
+- **Usage**: token saver analytics tab with real-savings estimates
 
 ## Fixes
 - **Models**: honor .env PORT on start and persist free model catalogues
+- **Combo**: combo pills report the real window instead of the 200k default
 - **Providers**: drop the duplicate MiMo free registry entries
 - **Providers**: keep suggested free models visible when opencode flakes
+- **Token saver**: keep option rows under their own text
+- **Token saver**: move the two toggles to the bottom, stack all pickers
 - **UI**: merge duplicate category headings in day-rolled changelog cards
+- **Usage**: center summary card numbers and pin them to one baseline
+- **Usage**: only show providers with real traffic in the topology
+- **Usage**: savings table empty state must not blame the filter
+
+## Docs
+- **Token saver**: shorten the two longest row labels
 
 # v0.5.153 (2026-10-02) · 18 commits
 

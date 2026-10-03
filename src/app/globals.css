@@ -631,3 +631,77 @@ button:disabled,
   border-top: 1px solid var(--color-border);
   margin: 1.5rem 0;
 }
+
+/* ============================================================
+   Glassmorphism theme — dark base with frosted translucent surfaces
+   Applied as `<html class="dark glass">`.
+
+   Why explicit colours instead of token overrides: `@theme inline` bakes each
+   design token into the utilities that use it, so `.bg-surface` in the built
+   CSS contains the literal `#262626` rather than `var(--color-surface)`.
+   Overriding `--color-surface` under `.glass` therefore changed the variable
+   but not the rendered panel. The rules below set the glass colours directly
+   and use `!important` where a utility would otherwise win, which is the only
+   reliable lever here.
+   ============================================================ */
+/* GLASS-REWORK */
+.dark.glass,
+.dark.glass body {
+  background-color: #0b0e14;
+}
+.dark.glass body {
+  background-image:
+    radial-gradient(42rem 30rem at 8% 6%, rgba(229, 106, 74, 0.55), transparent 60%),
+    radial-gradient(40rem 28rem at 94% 8%, rgba(129, 140, 248, 0.5), transparent 58%),
+    radial-gradient(46rem 32rem at 78% 96%, rgba(56, 189, 248, 0.42), transparent 60%),
+    radial-gradient(34rem 26rem at 22% 78%, rgba(16, 185, 129, 0.28), transparent 62%);
+  background-attachment: fixed;
+}
+
+.dark.glass aside {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark.glass .bg-surface {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+}
+.dark.glass .bg-surface-2 {
+  background-color: rgba(255, 255, 255, 0.11) !important;
+}
+.dark.glass .bg-surface-3 {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+.dark.glass .bg-bg-alt {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* The shell's opaque bg-bg would bury the aurora; let it show through. */
+.dark.glass .bg-bg {
+  background-color: transparent !important;
+}
+
+/* Nested menus, modals and popovers inherit the same frost. */
+.dark.glass [class*="bg-surface"] {
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+/* Inputs keep a solid base; a translucent field loses the caret against blur. */
+.dark.glass input,
+.dark.glass select,
+.dark.glass textarea {
+  background-color: rgba(13, 17, 23, 0.72) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Scrollbars have to stay visible against a translucent track. */
+.dark.glass ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+}
+.dark.glass ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+

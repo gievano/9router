@@ -141,7 +141,7 @@ export default function ModelSelectModal({
       return kinds.includes(kindFilter);
     });
   }, [activeProviders, kindFilter]);
-  const { getCaps } = useModelCaps();
+  const { getCaps, getComboCaps } = useModelCaps();
   const [searchQuery, setSearchQuery] = useState("");
   const [combos, setCombos] = useState([]);
   const [providerNodes, setProviderNodes] = useState([]);
@@ -795,8 +795,8 @@ export default function ModelSelectModal({
                     )}
                     {combo.name}
                     <span className="text-[9px] opacity-60 font-normal">combo</span>
-                    <ContextTag caps={getCaps(combo.name)} />
-                    <CapacityBadges caps={getCaps(combo.name)} />
+                    <ContextTag caps={getComboCaps(combo.name)} />
+                    <CapacityBadges caps={getComboCaps(combo.name)} />
                   </button>
                 );
               })}

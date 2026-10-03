@@ -23,6 +23,17 @@ function buildMaps(models) {
   return { byFull, byId };
 }
 
+// Combo mutations happen on pages that may mount no picker at all, so this
+// both drops the shared map (next mount refetches) and reuses the existing
+// customModelChanged listener to refresh whatever consumer IS mounted right
+// now — the combos page resolves member caps through one.
+export function invalidateModelCaps() {
+  cache = null;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("customModelChanged"));
+  }
+}
+
 function loadModelCaps() {
   if (cache) return Promise.resolve(cache);
   if (inflight) return inflight;
@@ -89,5 +100,13 @@ export function useModelCaps() {
     [byFull, byId],
   );
 
-  return { getCaps };
+  // Combo pills ask only for what the server shipped. An empty combo has no
+  // entry, and the heuristic's 200k default is a fabricated window — better to
+  // render no number at all.
+  const getComboCaps = useCallback(
+    (key) => (key ? byFull[key] || null : null),
+    [byFull],
+  );
+
+  return { getCaps, getComboCaps };
 }
