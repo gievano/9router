@@ -272,7 +272,9 @@ async function socksFetch(targetUrl, options, proxyUrl) {
   // Literal specifiers on both branches — webpack forbids fully dynamic import().
   const mod = parsed.protocol === "http:" ? await import("node:http") : await import("node:https");
   const lib = mod.default ?? mod;
-  const { Readable } = await import("node:stream");
+  // NOTE: use the top-level `Readable` (imported from "stream" at module scope).
+  // A local `await import("node:stream")` here does not resolve correctly in the
+  // webpack server bundle and shadows it with undefined → TypeError on .toWeb().
 
   const headers = {};
   const raw = options.headers;
