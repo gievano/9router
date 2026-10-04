@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card, Button, Toggle, Input, Select, DownloadBackupModal, ProgressCard } from "@/shared/components";
 import Modal, { ConfirmModal } from "@/shared/components/Modal";
 import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
+import SettingsHistory from "@/shared/components/SettingsHistory";
 import { cn } from "@/shared/utils/cn";
 import { APP_CONFIG } from "@/shared/constants/config";
 import { LOCALE_COOKIE, normalizeLocale } from "@/i18n/config";
@@ -1845,6 +1846,14 @@ export default function ProfilePage() {
             />
           </div>
         </Card>
+
+        {/* Settings history: who changed what, with revert. */}
+        <SettingsHistory
+          onReverted={() => {
+            // Settings may have been replaced wholesale; re-read the form.
+            if (typeof window !== "undefined") window.location.reload();
+          }}
+        />
 
         {/* Account actions */}
         <div className="flex flex-col sm:flex-row gap-2">

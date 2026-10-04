@@ -4,6 +4,7 @@ import { filterModelsByAllowedModels, worstModelStatus } from "@/lib/usage/avail
 import { AI_MODELS } from "@/shared/constants/config";
 import { FREE_PROVIDERS, getProviderAlias, resolveProviderId } from "@/shared/constants/providers";
 import { getDisabledModels } from "@/lib/disabledModelsDb";
+import { getCapabilitiesForModel } from "open-sse/providers/capabilities.js";
 
 export const dynamic = "force-dynamic";
 
@@ -197,6 +198,44 @@ export async function GET() {
       return "ready";
     };
 
+    // Context window per entry, read from the same capability table the runtime
+    // uses. A combo reports the smallest window among its members: routing can
+    // land on any member, so the smallest is the limit the caller must plan
+    // against. A model the table does not know reports null rather than a guess -
+    // a wrong window is worse than an absent one.
+    const lookupContext = (provider, bareModel) => {
+      try {
+        const caps = getCapabilitiesForModel(provider, bareModel);
+        const win = Number(caps?.contextWindow);
+        return Number.isFinite(win) && win > 0 ? win : null;
+      } catch {
+        return null;
+      }
+    };
+    const comboContext = (name, depth = 0) => {
+      if (depth > 4) return null;
+      const members = comboMembers[name] || [];
+      const windows = [];
+      for (const member of members) {
+        const value = String(member || "").trim();
+        if (!value) continue;
+        if (comboMembers[value]) {
+          const nested = comboContext(value, depth + 1);
+          if (nested) windows.push(nested);
+          continue;
+        }
+        const slash = value.indexOf("/");
+        // A bare member id still resolves: capability lookup matches patterns
+        // with or without a provider prefix.
+        const win =
+          slash > 0
+            ? lookupContext(value.slice(0, slash), value.slice(slash + 1))
+            : lookupContext("", value);
+        if (win) windows.push(win);
+      }
+      return windows.length ? Math.min(...windows) : null;
+    };
+
     const withStatus = entries.map((entry) => {
       let status = "ready";
       if (entry.origin === "combo") {
@@ -210,7 +249,13 @@ export async function GET() {
           modelLockStatus(entry.provider, entry.model),
         ]);
       }
-      return { ...entry, status };
+      let contextWindow = null;
+      if (entry.origin === "combo") {
+        contextWindow = comboContext(entry.model);
+      } else {
+        contextWindow = lookupContext(entry.provider, entry.model);
+      }
+      return { ...entry, status, contextWindow };
     });
 
     const models = filterModelsByAllowedModels(withStatus, allowedModelsRaw);

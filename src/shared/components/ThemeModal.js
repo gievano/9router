@@ -35,6 +35,9 @@ const MODES = [
 export default function ThemeModal({ isOpen, onClose }) {
   const theme = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
+  // A key-signed session has no theme control: the site-wide mode is an
+  // administrator setting, so the picker is replaced by an explanation.
+  const canChangeTheme = useThemeStore((state) => state.canChangeTheme);
   const modalRef = useRef(null);
 
   useEffect(() => {
@@ -76,6 +79,17 @@ export default function ThemeModal({ isOpen, onClose }) {
           </button>
         </div>
 
+        {!canChangeTheme && (
+          <div className="p-4 text-sm text-text-muted leading-relaxed">
+            <span className="flex items-center gap-2 text-text-main font-medium mb-1">
+              <span className="material-symbols-outlined text-[18px]">lock</span>
+              Administrator setting
+            </span>
+            The theme applies to the whole site and can only be changed from a password sign-in.
+            This session signed in with an API key, so the mode stays as the administrator set it.
+          </div>
+        )}
+
         <div className="p-3 flex flex-col gap-2">
           {THEME_IDS.map((id) => {
             const mode = MODES.find((m) => m.id === id);
@@ -84,13 +98,15 @@ export default function ThemeModal({ isOpen, onClose }) {
             return (
               <button
                 key={id}
-                onClick={() => setTheme(id)}
+                onClick={() => canChangeTheme && setTheme(id)}
+                disabled={!canChangeTheme}
                 aria-pressed={active}
                 className={cn(
                   "flex items-center gap-3 w-full p-3 rounded-xl border text-left transition-colors",
                   active
                     ? "border-primary/50 bg-primary/10"
                     : "border-border-subtle hover:bg-surface-2",
+                  !canChangeTheme && "opacity-60 cursor-not-allowed hover:bg-transparent",
                 )}
               >
                 {/* Mini preview of the palette so the choice is visible, not just named. */}
@@ -114,6 +130,11 @@ export default function ThemeModal({ isOpen, onClose }) {
                 {active && (
                   <span className="material-symbols-outlined text-[20px] text-primary shrink-0">
                     check
+                  </span>
+                )}
+                {!canChangeTheme && !active && (
+                  <span className="material-symbols-outlined text-[18px] text-text-muted shrink-0">
+                    lock
                   </span>
                 )}
               </button>

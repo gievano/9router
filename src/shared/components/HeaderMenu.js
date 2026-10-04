@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import ChangelogModal from "./ChangelogModal";
 import { ConfirmModal } from "./Modal";
 import ThemeModal from "./ThemeModal";
+import { useSessionStore } from "@/store/sessionStore";
 
 function MenuItem({ icon, label, onClick, trailing, danger }) {
   return (
@@ -34,6 +35,10 @@ MenuItem.propTypes = {
 };
 
 export default function HeaderMenu({ onLogout }) {
+  // The site-wide theme is an administrator setting; a key-signed session gets
+  // no control over it at all.
+  const role = useSessionStore((state) => state.role);
+  const canChangeTheme = role !== "apikey";
   const [isOpen, setIsOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
@@ -84,11 +89,13 @@ export default function HeaderMenu({ onLogout }) {
               label="Change Log"
               onClick={() => { close(); setChangelogOpen(true); }}
             />
-            <MenuItem
-              icon="palette"
-              label="Theme"
-              onClick={() => { close(); setThemeModalOpen(true); }}
-            />
+            {canChangeTheme && (
+              <MenuItem
+                icon="palette"
+                label="Theme"
+                onClick={() => { close(); setThemeModalOpen(true); }}
+              />
+            )}
             <MenuItem
               icon="power_settings_new"
               label="Shutdown"

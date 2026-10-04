@@ -97,6 +97,24 @@ function groupByReleaseDate(sections) {
  return groups;
 }
 
+// Commits for one release: the heading when it already carries one
+// ("# v0.5.154 (2026-10-03) · 21 commits"), otherwise the bullet lines in the
+// body -- the changelog hook writes one bullet per commit.
+function countSectionCommits(section) {
+ if (section.commits != null) return section.commits;
+ return countBodyCommits(section.body);
+}
+
+function countBodyCommits(body) {
+ const lines = String(body || "").split("\n");
+ return lines.filter((l) => /^\s*[-*]\s+\S/.test(l)).length;
+}
+
+// Drop any existing "· N commits" so a recomputed total is never appended twice.
+function stripCommitCount(title) {
+ return title.replace(/\s*·\s*\d+\s+commits?\b/i, "");
+}
+
 function renderBody(bodyMd) {
  if (!bodyMd.trim()) return "";
  const demoted = bodyMd.replace(/^#{2,6}\s/gm, (m) => "#".repeat(Math.min(6, m.length + 2)) + " ");
@@ -147,11 +165,19 @@ function renderVersionCards(md, accent) {
  const sortKey = (a, b) =>
  versionOf(a).localeCompare(versionOf(b), undefined, { numeric: true });
  const newest = [...group.items].sort(sortKey).pop();
- const head = group.items.length === 1
+ // Every card states how many commits it carries -- a single-commit release
+ // included -- so entries from before the hook wrote counts ("v0.5.140
+ // (2026-09-28)") are no longer indistinguishable from bigger ones.
+ let head = group.items.length === 1
  ? group.items[0].title
  : newest.title.includes("(")
  ? newest.title
  : `${newest.title} (${group.date})`;
+ const commits = group.items.reduce((sum, s) => sum + countSectionCommits(s), 0);
+ head = stripCommitCount(head);
+ if (commits > 0) {
+ head += ` · ${commits} ${commits === 1 ? "commit" : "commits"}`;
+ }
  const inner = group.items.length === 1
  ? renderBody(group.items[0].body)
  : renderBody(mergeBodiesByCategory(group.items.map((section) => section.body)));

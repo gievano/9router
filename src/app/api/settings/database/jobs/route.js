@@ -39,7 +39,15 @@ export async function POST(request) {
       );
     }
 
-    return NextResponse.json({ jobId: job.jobId, status: job.status }, { status: 202 });
+    // The poll credential leaves with this response. The import will replace
+    // the settings row that stores the password hash, so the client presents
+    // this token on every poll instead of re-authenticating with the password;
+    // without it the password fallback 401s mid-restore and the UI reports
+    // "Invalid password" over a restore that actually commits.
+    return NextResponse.json(
+      { jobId: job.jobId, status: job.status, pollToken: job.pollToken },
+      { status: 202 }
+    );
   } catch (error) {
     console.log("Error starting database import job:", error);
     return NextResponse.json(

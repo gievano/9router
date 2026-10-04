@@ -8,6 +8,7 @@ import {
   Badge,
   Button,
   Toggle,
+  ProgressCard,
 } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { getProviderIconSrc } from "@/shared/utils/providerIcon";
@@ -513,7 +514,7 @@ export default function ProvidersPage() {
               >
                 play_arrow
               </span>
-              {testingMode === "oauth" ? "Testing..." : "Test All"}
+              Test All
             </button>
           </div>
         </div>
@@ -558,7 +559,7 @@ export default function ProvidersPage() {
             >
               play_arrow
             </span>
-            {testingMode === "free" ? "Testing..." : "Test All"}
+            Test All
           </button>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -642,7 +643,7 @@ export default function ProvidersPage() {
             >
               play_arrow
             </span>
-            {testingMode === "apikey" ? "Testing..." : "Test All"}
+            Test All
           </button>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -698,6 +699,18 @@ export default function ProvidersPage() {
         />
 
       {/* Test Results Modal */}
+      {testingMode && (
+        <ProgressCard
+          title="Testing connections"
+          message={
+            testingMode === "provider"
+              ? "Testing every connection on this provider"
+              : `Testing all ${testingMode === "oauth" ? "OAuth" : testingMode === "free" ? "Free tier" : "API key"} connections`
+          }
+          section="Results appear below when the run finishes"
+        />
+      )}
+
       {testResults && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center px-3 pt-[6vh] sm:pt-[10vh]"

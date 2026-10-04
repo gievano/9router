@@ -4,6 +4,7 @@ import { getConsistentMachineId } from "@/shared/utils/machineId";
 import { getSessionContext, DEFAULT_PERMISSIONS } from "@/lib/auth/dashboardPermissions";
 import { creatorNameFor, DASHBOARD_CREATOR, visibleApiKeys } from "@/lib/auth/keyCreator";
 import { parseAllowedModels, matchesAllowedModels } from "@/lib/db/repos/apiKeysRepo";
+import { recordSecurityEvent } from "@/lib/db/repos/securityLogRepo";
 
 export const dynamic = "force-dynamic";
 
@@ -108,6 +109,23 @@ export async function POST(request) {
       permissions: finalPermissions,
       createdBy,
     });
+
+    // A credential appearing: record who minted it and exactly what it may do.
+    try {
+      await recordSecurityEvent({
+        type: "key_created",
+        severity: "info",
+        actor:
+          ctx.session?.role === "apikey"
+            ? `API key "${ctx.session.keyName || ctx.session.keyId}"`
+            : "Password user",
+        method: "POST",
+        path: "/api/keys",
+        detail: `Created API key "${trimmedName}" — permissions: ${JSON.stringify(finalPermissions || {})}`,
+      });
+    } catch {
+      // Auditing is best effort.
+    }
 
     return NextResponse.json({
       key: apiKey.key,

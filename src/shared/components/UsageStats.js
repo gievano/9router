@@ -65,12 +65,6 @@ function RecentRequests({ requests = [] }) {
       {!requests.length ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4 text-center">
           <span className="text-text-muted text-sm">No requests yet.</span>
-          <a
-            href="/dashboard/endpoint"
-            className="rounded-lg border border-border px-3 py-1.5 text-xs text-primary transition-colors hover:bg-bg-hover"
-          >
-            Get an API key →
-          </a>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto">

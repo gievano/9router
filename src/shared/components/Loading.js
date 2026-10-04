@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/shared/utils/cn";
+import LongTaskBanner from "./LongTaskBanner";
 
 // Spinner loading
 export function Spinner({ size = "md", className }) {
@@ -35,87 +36,55 @@ export function PageLoading({ message = "Loading..." }) {
 }
 
 // Centered busy overlay for long operations (e.g. backup export/import).
-// Renders above modals with a dark blurred backdrop, a large spinner
-// centered on screen, an optional message, and an optional progress bar.
-// Pass fixed={false} to render as an absolute fill inside a relative
-// parent (e.g. inside a modal) instead of a fullscreen fixed overlay.
-export function CenterLoading({ message, progress = null, fixed = true, className }) {
-  const pct =
-    typeof progress === "number" ? Math.min(100, Math.max(0, progress)) : null;
-
+// Same contract as before — message, progress, fixed/absolute — now rendered by
+// LongTaskBanner so every banner in the app shares one look. Pass onCancel to
+// also offer Cancel and the minimize-to-corner control; without it the overlay
+// is purely informational, exactly as callers have always used it.
+export function CenterLoading({ message, progress = null, fixed = true, className, onCancel }) {
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={cn(
-        "flex items-center justify-center bg-black/55 backdrop-blur-[3px]",
-        fixed ? "fixed inset-0 z-[70]" : "absolute inset-0 z-10 rounded-[10px]",
-        className
-      )}
-    >
-      <div className="flex flex-col items-center justify-center px-6 text-center">
-        <Spinner size="xl" />
-        {message ? (
-          <p className="mt-4 text-sm font-medium text-white">{message}</p>
-        ) : null}
-        {pct !== null ? (
-          <div className="mt-4 h-1.5 w-48 overflow-hidden rounded-full bg-white/20">
-            <div
-              className="h-full rounded-full bg-white transition-all"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-        ) : null}
-      </div>
-    </div>
+    <LongTaskBanner
+      title={message || "Working"}
+      message={null}
+      progress={typeof progress === "number" ? progress : null}
+      fixed={fixed}
+      className={className}
+      onCancel={onCancel}
+      // A page-level overlay is always escapable now, so its chip can reopen it.
+      canExpand
+    />
   );
 }
 
 export const BusyOverlay = CenterLoading;
 
 // Blocking progress card for long operations (backup export/import, bulk
-// imports, bulk adds). Card centered on screen over a dark blurred backdrop,
-// with a spinner, title, message, optional percent, optional section line,
-// and an optional progress bar. Extra info tolerated: callers pass
-// { title, message, section, progress } where progress is 0-100 or null.
-export function ProgressCard({ title, message, section, progress = null, fixed = true, className }) {
-  const percent =
-    typeof progress === "number" && Number.isFinite(progress)
-      ? Math.min(100, Math.max(0, Math.round(progress <= 1 ? progress * 100 : progress)))
-      : null;
-
+// imports, bulk adds). Callers keep passing { title, message, section, progress };
+// the presentation lives in LongTaskBanner so every banner shares the same
+// framed, theme-aware look.
+//
+// A caller that passes onCancel also gets Cancel (Esc works too) and a
+// minimize control that shrinks the card to a corner chip without losing it —
+// both are advisory: the card hides itself at once and the caller decides what
+// actually stops. Callers without onCancel see the same informational card they
+// always had, so no existing flow changed behaviour by upgrading.
+export function ProgressCard({ title, message, section, progress = null, fixed = true, className, onCancel, onBackground }) {
+  // Keyed by title: a second operation remounts the banner instead of
+  // inheriting the previous one's collapsed state.
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={cn(
-        "flex items-center justify-center bg-black/55 backdrop-blur-[3px]",
-        fixed ? "fixed inset-0 z-[70]" : "absolute inset-0 z-10 rounded-[10px]",
-        className
-      )}
-    >
-      <div className="w-full max-w-sm rounded-xl border border-white/10 bg-surface p-4 shadow-xl mx-4">
-        <div className="flex items-center gap-3">
-          <Spinner size="md" />
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-text-main">{title || "Working"}</p>
-            {message ? <p className="truncate text-xs text-text-muted">{message}</p> : null}
-          </div>
-          {percent !== null ? (
-            <span className="ml-auto shrink-0 text-xs text-text-muted">{`${percent}%`}</span>
-          ) : null}
-        </div>
-        {section ? <p className="mt-2 text-xs text-text-muted">{section}</p> : null}
-        {percent !== null ? (
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: `${percent}%` }}
-            />
-          </div>
-        ) : null}
-      </div>
-    </div>
+    <LongTaskBanner
+      key={title}
+      title={title}
+      message={message}
+      section={section}
+      progress={progress ?? null}
+      fixed={fixed}
+      className={className}
+      onCancel={onCancel}
+      // The banner offers "Run in background" itself on a fixed overlay, so an
+      // absent callback still leaves the operator a way out.
+      onBackground={onBackground}
+      canExpand
+    />
   );
 }
 

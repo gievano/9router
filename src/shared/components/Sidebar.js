@@ -8,6 +8,7 @@ import { cn } from "@/shared/utils/cn";
 import { APP_CONFIG } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 import useSettingsStore from "@/store/settingsStore";
+import { useSessionStore } from "@/store/sessionStore";
 
 // const VISIBLE_MEDIA_KINDS = ["embedding", "image", "imageToText", "tts", "stt", "webSearch", "webFetch", "video", "music"];
 const VISIBLE_MEDIA_KINDS = ["embedding", "image", "video", "tts", "stt", "systemone"];
@@ -29,6 +30,7 @@ const navItems = [
 // Custom features added by this fork — open-ended, new tools land here too.
 const workshopItems = [
   { href: "/dashboard/arena", label: "Compare Models", icon: "swords" },
+  { href: "/dashboard/benchmark", label: "Benchmark", icon: "speed" },
   { href: "/dashboard/model-editor", label: "Custom Models", icon: "auto_awesome" },
   { href: "/dashboard/plugins", label: "Custom Plugins", icon: "widgets" },
   { href: "/dashboard/prd-builder", label: "PRD Builder", icon: "description" },
@@ -36,6 +38,7 @@ const workshopItems = [
 
 const debugItems = [
   { href: "/dashboard/console-log", label: "Console Log", icon: "monitor" },
+  { href: "/dashboard/security-log", label: "Security Log", icon: "shield" },
   { href: "/dashboard/translator", label: "Translator", icon: "translate" },
 ];
 
@@ -77,17 +80,30 @@ export default function Sidebar({ onClose }) {
   const pathname = usePathname();
   const [mediaOpen, setMediaOpen] = useState(false);
   const [enableTranslator, setEnableTranslator] = useState(false);
-  const [authStatus, setAuthStatus] = useState(null);
+  // One cached session for the whole shell; the theme store and HeaderMenu read
+  // the same role instead of each fetching /api/auth/status again.
+  // Two scalar selectors: an object-returning selector would hand React a new
+  // identity on every store change and re-render the sidebar in a loop.
+  const sessionRole = useSessionStore((state) => state.role);
+  const sessionPermissions = useSessionStore((state) => state.permissions);
+  const setSession = useSessionStore((state) => state.setSession);
+  const authStatus = { role: sessionRole, permissions: sessionPermissions };
 
   useEffect(() => {
+    let cancelled = false;
     fetch("/api/auth/status")
-      .then(res => res.json())
-      .then(data => setAuthStatus(data))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setSession(data);
+      })
       .catch(() => {});
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [setSession]);
 
-  const isApiKeyUser = authStatus?.role === "apikey";
-  const permissions = authStatus?.permissions || { manageApiKeys: true, manageModels: true, manageProviders: true, manageTools: true, manageAdvanced: true, managePlugins: true, manageMediaProviders: true, viewUsage: true };
+  const isApiKeyUser = authStatus.role === "apikey";
+  const permissions = authStatus.permissions || { manageApiKeys: true, manageModels: true, manageProviders: true, manageTools: true, manageAdvanced: true, managePlugins: true, manageMediaProviders: true, viewUsage: true };
 
   const filteredNavItems = navItems.filter((item) => {
     if (!isApiKeyUser) return true;
@@ -103,6 +119,7 @@ export default function Sidebar({ onClose }) {
 
   const filteredWorkshopItems = workshopItems.filter((item) => {
     if (!isApiKeyUser) return true;
+    if (item.href === "/dashboard/benchmark") return false;
     if (item.href === "/dashboard/model-editor" || item.href === "/dashboard/arena" || item.href === "/dashboard/prd-builder") {
       return permissions.manageModels;
     }
@@ -111,6 +128,10 @@ export default function Sidebar({ onClose }) {
   });
 
   const filteredDebugItems = debugItems.filter((item) => {
+    // The security trail names who signed in and from where: administrators only,
+    // regardless of what a key holds. A password session is the administrator,
+    // so it is kept; a key-signed session is refused whatever it carries.
+    if (item.href === "/dashboard/security-log") return !isApiKeyUser;
     if (!isApiKeyUser) return true;
     return permissions.manageAdvanced;
   });

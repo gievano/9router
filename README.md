@@ -8,7 +8,7 @@ A fork of [Decolua/9router](https://github.com/Decolua/9router) with extra featu
 
 One gateway, one API key, any model: an OpenAI-compatible endpoint that routes to Claude, GPT, Gemini, Kimi, Qwen, GLM, DeepSeek, Grok and many more, with OAuth or your own accounts. This is still that router, with the parts I use daily changed and the rough edges fixed, free for anyone to use.
 
-![License](https://img.shields.io/badge/license-MIT-green) ![Upstream](https://img.shields.io/badge/upstream-Decolua%2F9router-blue) ![Release](https://img.shields.io/badge/releases-v0.5.x--Custom-orange)
+![License](https://img.shields.io/badge/license-MIT-green) ![Upstream](https://img.shields.io/badge/upstream-Decolua%2F9router-blue) ![Edition](https://img.shields.io/badge/edition-fork--custom-orange)
 
 </div>
 
@@ -38,21 +38,13 @@ It is not only chat. The same gateway also serves text to image, image to text, 
 
 ## What this fork adds
 
-Everything below lives alongside upstream's features and is documented in the [changelog](./CHANGELOG.md).
+Everything lives alongside upstream's features. The short version:
 
-**Per-key control.** Every generated key can carry its own token limit, auto-reset interval, expiry, model allow-list (with wildcards) and on/off switch. Limits are enforced on every endpoint, not just chat.
+- **Per-key control** — every key carries its own token limit, reset interval, expiry and model allow-list, enforced on every endpoint.
+- **Custom models & plugins** — models that answer under your own name (the real target never leaks), per-model plugin badges, a model playground and comparisons.
+- **Operability** — scheduled backups to Telegram or GitHub, proxy pools, a security log of who signed in and from where, a theme that applies to the whole site, and an in-dashboard update banner.
 
-**Custom Models.** Define a model with your own name that answers as itself; the target behind it never leaks into responses or listings. Custom providers can carry their own logo.
-
-**Custom Plugins.** Four per-model plugins: Image Vision (text extraction for models without vision), Think Deeper (forced deep reasoning), Speed Mode (skips thinking for faster answers) and Uncensored Output (direct technical answers). Selected models show a badge.
-
-**Compare Models.** Send one prompt to up to four models and compare speed, cost and output side by side, streaming live.
-
-**Token Saver.** Compresses request context before it goes upstream, so long agent sessions spend fewer tokens.
-
-**Automatic Backup.** The database can back itself up on a schedule (24 hours, 7 days, 30 days or custom) to a Telegram bot or a GitHub repository, with a live countdown. Manual Download Backup lets you pick which sections to include and shows each section's size.
-
-**Update checks.** The dashboard compares your checkout against this repository and tells you when new commits are available, with a one-click auto updater on CLI installs.
+The [changelog](./CHANGELOG.md) is the source of truth: it is regenerated on every release, so it always lists what is actually new. Anything not written here yet may already ship in your build — check the changelog rather than this file.
 
 ## Getting started
 

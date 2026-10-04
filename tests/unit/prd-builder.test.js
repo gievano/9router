@@ -10,16 +10,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  SECTIONS,
-  QUESTIONS,
-  STORAGE_KEY,
-  loadDraft,
-  saveDraft,
-  buildMarkdown,
-  countDone,
-  splitModel,
-} from "../../src/app/(dashboard)/dashboard/prd-builder/prd_model.js";
+import { STORAGE_KEY, buildPrompt, loadDraft, saveDraft } from "../../src/app/(dashboard)/dashboard/prd-builder/prd_model.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const builderDir = resolve(here, "../../src/app/(dashboard)/dashboard/prd-builder");
@@ -39,29 +30,50 @@ function fakeStorage(initial = {}) {
   };
 }
 
-describe("schema", () => {
-  it("defines six sections, each with a distinct prompt", () => {
-    expect(SECTIONS).toHaveLength(6);
-    expect(SECTIONS.map((s) => s.id)).toEqual(["background", "goals", "users", "features", "nonGoals", "criteria"]);
-    expect(new Set(SECTIONS.map((s) => s.prompt)).size).toBe(6);
+describe("buildPrompt", () => {
+  it("asks for a complete PRD in one pass", () => {
+    const prompt = buildPrompt("build a usage alerting service");
+    expect(prompt).toContain("complete PRD");
+    expect(prompt).toContain("in one pass");
+    expect(prompt).toContain("build a usage alerting service");
   });
 
-  it("asks every question the PRD flow needs", () => {
-    const ids = QUESTIONS.map((q) => q.id);
-    for (const id of ["feature", "problem", "mustHave", "nonGoals", "constraints", "done"]) {
-      expect(ids).toContain(id);
+  it("prescribes every section, in order", () => {
+    const prompt = buildPrompt("x");
+    const sections = [
+      "1. Overview",
+      "2. Problem & background",
+      "3. Goals",
+      "4. Users",
+      "5. Features",
+      "6. Non-goals",
+      "7. Technical constraints",
+      "8. Success criteria",
+      "9. Risks & open questions",
+    ];
+    let cursor = -1;
+    for (const heading of sections) {
+      const at = prompt.indexOf(heading);
+      expect(at).toBeGreaterThan(cursor);
+      cursor = at;
     }
   });
 
-  it("keeps the storage key stable across sessions", () => {
-    expect(STORAGE_KEY).toBe("prd-builder-draft-v1");
+  it("follows the user's language instead of pinning a locale", () => {
+    expect(buildPrompt("x")).toContain("same language as the user's request");
+    // The dashboard copy itself must stay English: the rest of the app is.
+    expect(modelSrc).not.toMatch(/[a-zA-Z]nya\b/);
   });
 
-  it("carries no non-Latin script in copy", () => {
-    // The build once shipped Chinese/Japanese glyphs into labels. Copy is
-    // Indonesian plus code — anything else is a paste accident.
-    // eslint-disable-next-line no-control-regex
-    expect(modelSrc).not.toMatch(/[一-鿿ﭐ-﷿]/);
+  it("sends gaps to open questions rather than inventing requirements", () => {
+    const prompt = buildPrompt("x");
+    expect(prompt).toContain("instead of guessing");
+    expect(prompt).toContain("open question in section 9");
+    expect(prompt).toContain("Do not invent requirements");
+  });
+
+  it("never emits an empty request", () => {
+    expect(buildPrompt("   ")).toContain("(no request given)");
   });
 });
 
@@ -70,90 +82,57 @@ describe("loadDraft / saveDraft", () => {
     expect(loadDraft(fakeStorage())).toBeNull();
   });
 
-  it("round-trips model, answers, and sections", () => {
+  it("round-trips model, prompt, and document", () => {
     const storage = fakeStorage();
     expect(
       saveDraft(storage, {
         model: "opencode/spark",
-        answers: { feature: "x" },
-        sections: { background: "y" },
+        prompt: "an alerting bot",
+        document: "# PRD",
       }),
     ).toBe(true);
     const got = loadDraft(storage);
     expect(got.model).toBe("opencode/spark");
-    expect(got.answers).toEqual({ feature: "x" });
-    expect(got.sections).toEqual({ background: "y" });
+    expect(got.prompt).toBe("an alerting bot");
+    expect(got.document).toBe("# PRD");
     expect(typeof got.updatedAt).toBe("string");
   });
 
-  it("normalizes a corrupt payload instead of throwing", () => {
-    const storage = fakeStorage({ [STORAGE_KEY]: '{"oops":' });
-    expect(loadDraft(storage)).toBeNull();
-    const storage2 = fakeStorage({ [STORAGE_KEY]: JSON.stringify({ model: 7, answers: ["x"], sections: null }) });
-    expect(loadDraft(storage2)).toEqual({ model: "", answers: {}, sections: {}, updatedAt: null });
+  it("normalises a corrupt payload instead of throwing", () => {
+    expect(loadDraft(fakeStorage({ [STORAGE_KEY]: '{"oops:' }))).toBeNull();
+    const bad = fakeStorage({ [STORAGE_KEY]: JSON.stringify({ model: 7, prompt: ["a"], document: null }) });
+    expect(loadDraft(bad)).toEqual({ model: "", prompt: "", document: "", updatedAt: null });
+  });
+
+  it("drops the old section-by-section draft shape", () => {
+    // v1 stored { answers, sections }; nothing there is still usable.
+    const old = fakeStorage({
+      [STORAGE_KEY]: JSON.stringify({ model: "m", answers: { feature: "x" }, sections: { background: "y" } }),
+    });
+    expect(loadDraft(old)).toEqual({ model: "m", prompt: "", document: "", updatedAt: null });
   });
 
   it("reports failure instead of throwing when storage is unusable", () => {
     const broken = { getItem: () => null, setItem: () => { throw new Error("denied"); } };
-    expect(saveDraft(broken, { model: "m", answers: {}, sections: {} })).toBe(false);
-  });
-
-  it("ignores a missing storage object", () => {
-    expect(loadDraft(null)).toBeNull();
+    expect(saveDraft(broken, { model: "m" })).toBe(false);
     expect(saveDraft(null, {})).toBe(false);
+    expect(loadDraft(null)).toBeNull();
   });
 });
 
-describe("buildMarkdown", () => {
-  it("assembles all six sections with the chosen model stamped", () => {
-    const md = buildMarkdown("opencode/spark", { feature: "Notif Telegram" }, { goals: "- cepat" });
-    expect(md).toContain("# Notif Telegram");
-    expect(md).toContain("`opencode/spark`");
-    for (const s of SECTIONS) expect(md).toContain(`## ${s.prompt}`);
-    expect(md).toContain("- cepat");
-  });
-
-  it("marks skipped sections explicitly instead of dropping them", () => {
-    const md = buildMarkdown("m", { feature: "F" }, {});
-    expect(md.match(/_Bagian ini dilewati\._/g)).toHaveLength(6);
-  });
-
-  it("falls back to a title and model placeholder for an empty draft", () => {
-    const md = buildMarkdown("", {}, {});
-    expect(md).toContain("# PRD");
-    expect(md).toContain("tidak ditentukan");
-  });
-
-  it("appends the raw answers once, without empty ones", () => {
-    const md = buildMarkdown("m", { feature: "F", constraints: "  ", done: "besok" }, {});
-    expect(md).toContain("## Jawaban Mentah");
-    expect(md).toContain("besok");
-    expect(md).not.toContain("constraints");
-  });
-
-  it("ends with a draft status line", () => {
-    expect(buildMarkdown("m", {}, {}).trimEnd().endsWith("Status: Draft")).toBe(true);
-  });
-});
-
-describe("countDone / splitModel", () => {
-  it("counts only sections with real text", () => {
-    expect(countDone({})).toBe(0);
-    expect(countDone({ background: "  ", goals: "ok" })).toBe(1);
-    expect(countDone({ background: "a", goals: "b", users: "c", features: "d", nonGoals: "e", criteria: "f" })).toBe(6);
-  });
-
-  it("splits provider/model and refuses to guess without a slash", () => {
-    expect(splitModel("opencode/glm-4.7-free")).toEqual({ provider: "opencode", model: "glm-4.7-free" });
-    expect(splitModel("mimo-auto")).toEqual({ provider: null, model: "mimo-auto" });
-    expect(splitModel("")).toEqual({ provider: null, model: "" });
+describe("model names are accepted verbatim", () => {
+  it("does not require a provider/ prefix, so combos stay selectable", () => {
+    // The gateway resolves bare names ("mine", a combo; "mimo-auto") itself.
+    // An earlier gate split on "/" and rejected every combo.
+    expect(component).not.toContain("splitModel");
+    expect(component).toContain('if (!String(model || "").trim())');
   });
 });
 
 describe("component contracts", () => {
   it("calls the gateway like any other client, through the shared streamer", () => {
     expect(component).toContain("streamChatCompletion");
-    expect(component).toContain("from \"@/shared/utils/chatStream\"");
+    expect(component).toContain('from "@/shared/utils/chatStream"');
     expect(component).not.toContain("/api/prd-builder/generate");
   });
 
@@ -162,24 +141,31 @@ describe("component contracts", () => {
     expect(component).toContain("activeProviders={activeProviders}");
   });
 
-  it("generates sequentially and streams deltas into the card", () => {
-    expect(component).toContain("no-await-in-loop");
-    expect(component).toContain("onDelta");
-    expect(component).toContain("AbortController");
+  it("is one prompt in, one document out — no wizard left", () => {
+    // The six-question wizard asked the user to structure the PRD by hand.
+    expect(component).not.toContain("QUESTIONS");
+    expect(component).not.toContain("SECTIONS");
+    expect(component.match(/await streamChatCompletion\(/g)).toHaveLength(1);
   });
 
-  it("advertises regenerate per section and a global stop", () => {
-    expect(component).toContain("Regenerate");
-    expect(component).toContain("stopAll");
+  it("streams into a single editable document and can be stopped", () => {
+    expect(component).toContain("onDelta");
+    expect(component).toContain("AbortController");
+    expect(component).toContain("Stop");
+  });
+
+  it("keeps its copy in English like the rest of the dashboard", () => {
+    for (const label of ["Select model", "Generate PRD", "Copy Markdown", "Download .md", "Clear draft"]) {
+      expect(component).toContain(label);
+    }
+    // eslint-disable-next-line no-control-regex
+    expect(component).not.toMatch(/[一-鿿ﭐ-﷿]/);
+    expect(component).not.toContain("Buat PRD");
+    expect(component).not.toContain("Hapus draft");
   });
 
   it("persists only in the browser, never to the server", () => {
     expect(component).toContain("localStorage");
-    expect(component).not.toContain("fetch(\"/api/prd-builder");
-  });
-
-  it("carries no non-Latin script in its own copy", () => {
-    // eslint-disable-next-line no-control-regex
-    expect(component).not.toMatch(/[一-鿿ﭐ-﷿]/);
+    expect(component).not.toContain('fetch("/api/prd-builder');
   });
 });

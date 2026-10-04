@@ -34,5 +34,5 @@ export default {
   passthroughModels: true,
   // Upstream answers 400 Unsupported model for every chat request: the free
   // channel is closed on their side, so do not advertise it as usable.
-  statusBadge: { label: "Maintenance", variant: "warning" },
+  statusBadge: { label: "Unavailable", variant: "error" },
 };

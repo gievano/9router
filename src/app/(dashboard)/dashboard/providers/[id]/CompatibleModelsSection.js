@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { Button } from "@/shared/components";
+import { Button, ProgressCard } from "@/shared/components";
 import { getProviderCustomModelRows } from "@/shared/utils/providerCustomModels";
 function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }) {
   const borderColor = testStatus === "ok"
@@ -75,6 +75,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const [newModel, setNewModel] = useState("");
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importTotals, setImportTotals] = useState(null);
   const [testingModelId, setTestingModelId] = useState(null);
   const [modelTestResults, setModelTestResults] = useState({});
 
@@ -140,13 +141,22 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         alert("No models returned from /models.");
         return;
       }
+      setImportTotals({ done: 0, total: models.length });
       let importedCount = 0;
-      for (const model of models) {
+      for (let index = 0; index < models.length; index += 1) {
+        const model = models[index];
         const modelId = model.id || model.name || model.model;
-        if (!modelId) continue;
-        if (allModels.some((entry) => entry.id === modelId)) continue;
+        if (!modelId) {
+          setImportTotals({ done: index + 1, total: models.length });
+          continue;
+        }
+        if (allModels.some((entry) => entry.id === modelId)) {
+          setImportTotals({ done: index + 1, total: models.length });
+          continue;
+        }
         await onAddCustomModel(modelId);
         importedCount += 1;
+        setImportTotals({ done: index + 1, total: models.length });
       }
       if (importedCount === 0) {
         alert("No new models were added.");
@@ -155,6 +165,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
       console.log("Error importing models:", error);
     } finally {
       setImporting(false);
+      setImportTotals(null);
     }
   };
 
@@ -183,7 +194,7 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
           {adding ? "Adding..." : "Add"}
         </Button>
         <Button size="sm" variant="secondary" icon="download" onClick={handleImport} disabled={!canImport || importing}>
-          {importing ? "Importing..." : "Import from /models"}
+          Import from /models
         </Button>
       </div>
 
@@ -209,6 +220,23 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
             />
           ))}
         </div>
+      )}
+
+      {importing && (
+        <ProgressCard
+          fixed={false}
+          title="Importing models"
+          message={
+            importTotals && importTotals.total > 0
+              ? `${importTotals.done}/${importTotals.total} models`
+              : "Fetching model list"
+          }
+          progress={
+            importTotals && importTotals.total > 0
+              ? Math.round((importTotals.done / importTotals.total) * 100)
+              : null
+          }
+        />
       )}
     </div>
   );

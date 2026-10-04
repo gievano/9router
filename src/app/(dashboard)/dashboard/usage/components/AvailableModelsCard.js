@@ -4,15 +4,14 @@ import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import Card from "@/shared/components/Card";
 
-// Where one catalog entry comes from, in the same words the dashboard uses
-// for the model pages.
-function originLabel(entry) {
-  switch (entry?.origin) {
-    case "combo": return "Combo";
-    case "studio": return "Studio";
-    case "custom": return "Custom";
-    default: return "Provider";
-  }
+// Context window, in the compact form the model lists use elsewhere. A model
+// the capability table does not know renders nothing rather than a guess.
+function contextLabel(entry) {
+  const win = Number(entry?.contextWindow);
+  if (!Number.isFinite(win) || win <= 0) return null;
+  if (win >= 1_000_000) return `${Math.round(win / 1_000_000)}M context`;
+  if (win >= 1000) return `${Math.round(win / 1000)}K context`;
+  return `${win} context`;
 }
 
 // Short health of one entry, from the connection and lock state the server saw
@@ -105,9 +104,9 @@ export default function AvailableModelsCard({ visible }) {
                 <span className="truncate font-mono text-xs text-text-main" title={m.routedModel || m.fullModel || m.model}>
                   {m.alias && m.alias !== m.model ? `${m.alias} (${m.model})` : m.model}
                 </span>
-                <span className="truncate text-[11px] text-text-muted">
-                  {originLabel(m)}{m.provider && m.origin !== "combo" ? ` : ${m.provider}` : ""}
-                </span>
+                {contextLabel(m) ? (
+                  <span className="truncate text-[11px] text-text-muted">{contextLabel(m)}</span>
+                ) : null}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <StatusPill status={m.status} />

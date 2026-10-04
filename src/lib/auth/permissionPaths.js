@@ -95,6 +95,7 @@ const API_PERMISSION_RULES = [
   { prefix: "/api/pxpipe", permissions: ["manageAdvanced"] },
   { prefix: "/api/plugins", permissions: ["managePlugins"] },
   { prefix: "/api/media-providers", permissions: ["manageMediaProviders"] },
+  { prefix: "/api/security-logs", permissions: [] },
   { prefix: "/api/usage", permissions: ["viewUsage"] },
   // Read-only catalog for a key session that holds only viewUsage. It answers
   // GET only; any other method falls through to the /api/usage rule above and
@@ -135,6 +136,9 @@ const PAGE_PERMISSION_RULES = [
   { prefix: "/dashboard/cli-tools", permissions: ["manageTools"] },
   { prefix: "/dashboard/token-saver", permissions: ["manageTools"] },
   { prefix: "/dashboard/console-log", permissions: ["manageAdvanced"] },
+  // The security trail names who signed in and from where, so it stays with the
+  // administrators; a key session never opens it.
+  { prefix: "/dashboard/security-log", permissions: [] },
   { prefix: "/dashboard/translator", permissions: ["manageAdvanced"] },
   { prefix: "/dashboard/proxy-pools", permissions: ["manageAdvanced"] },
   { prefix: "/dashboard/pxpipe", permissions: ["manageAdvanced"] },
@@ -183,6 +187,7 @@ export function firstAllowedPage(permissions) {
   const candidates = [
     { path: "/dashboard/endpoint", permissions: ["manageApiKeys"] },
     { path: "/dashboard/usage", permissions: ["viewUsage"] },
+    { path: "/dashboard/benchmark", permissions: [] },
     { path: "/dashboard/providers", permissions: ["manageProviders"] },
     { path: "/dashboard/model-editor", permissions: ["manageModels"] },
     { path: "/dashboard/combos", permissions: ["manageModels"] },

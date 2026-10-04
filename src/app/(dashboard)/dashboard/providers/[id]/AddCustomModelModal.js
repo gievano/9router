@@ -9,6 +9,8 @@ const defaultCaps = () => Object.fromEntries(Object.keys(CAPACITY_META).map((key
 
 export default function AddCustomModelModal({ isOpen, providerAlias, providerDisplayAlias, onSave, onClose }) {
   const [modelId, setModelId] = useState("");
+  // Optional free-form owned_by label; blank keeps the provider alias.
+  const [ownedBy, setOwnedBy] = useState("");
   const [caps, setCaps] = useState(defaultCaps);
   const [testStatus, setTestStatus] = useState(null); // null | "testing" | "ok" | "error"
   const [testError, setTestError] = useState("");
@@ -18,7 +20,7 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
 
   // Reset state when modal opens
   useEffect(() => {
-    if (isOpen) { setModelId(""); setCaps(defaultCaps()); setTransport(""); setTestStatus(null); setTestError(""); }
+    if (isOpen) { setModelId(""); setOwnedBy(""); setCaps(defaultCaps()); setTransport(""); setTestStatus(null); setTestError(""); }
   }, [isOpen]);
 
   // Strip provider's own alias prefix (e.g. "cc/model" -> "model" for cc provider)
@@ -54,7 +56,7 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
     try {
       // caps.stt is UI-only; the parent save flow derives the model type from
       // it and forwards the pinned transport (null unless the caller picked one).
-      await onSave(cleanId, caps, caps.stt ? transport : null);
+      await onSave(cleanId, caps, caps.stt ? transport : null, ownedBy.trim());
     } finally {
       setSaving(false);
     }
@@ -108,6 +110,22 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
               />
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium mb-1.5 block">
+            Owned by <span className="font-normal opacity-60">(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={ownedBy}
+            onChange={(e) => setOwnedBy(e.target.value)}
+            placeholder="Defaults to the provider name"
+            className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+          />
+          <p className="text-xs text-text-muted mt-1">
+            Shown as <code className="font-mono">owned_by</code> when clients list models.
+          </p>
         </div>
 
         {/* STT is a model TYPE, not a chat capability: the save flow turns this

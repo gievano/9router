@@ -24,7 +24,7 @@ const FAILURE_TTL_MS = 300000; // a failed lookup is retried after 5 minutes
 const MAX_PAYLOAD = 2 * 1024 * 1024; // never buffer a runaway response
 const GIT_UPDATE_CMD = "git pull --ff-only && npm install && npm run build";
 
-const cache = (global.__updateCheck ??= { info: null, fetchedAt: 0, revision: undefined, gitInstall: undefined, remoteRelease: undefined, localRelease: undefined });
+const cache = (global.__updateCheck ??= { info: null, fetchedAt: 0, revision: undefined, gitInstall: undefined, remoteRelease: undefined, remoteReleaseAt: 0, localRelease: undefined });
 
 function githubJson(endpoint) {
   return new Promise((resolve) => {
@@ -123,11 +123,25 @@ async function fetchRemoteHead() {
 // Newest entry of the repository changelog: the version this build should move to,
 // with a short preview of what it contains.
 async function fetchRemoteRelease() {
-  if (cache.remoteRelease !== undefined) return cache.remoteRelease;
+  // Same one-hour TTL as the rest of the lookup. This used to cache the release
+  // for the life of the process while every other signal expired on schedule, so
+  // a long-running deploy (Railway, a laptop left open) kept comparing against
+  // the "latest" version as it stood at boot and never showed the update banner
+  // for anything published afterwards — the classic "my friend's deploy never
+  // tells him there is an update".
+  const fresh = cache.remoteReleaseAt && Date.now() - cache.remoteReleaseAt < CHECK_TTL_MS;
+  if (cache.remoteRelease !== undefined && fresh) return cache.remoteRelease;
   const text = await fetchText(GITHUB_CONFIG.changelogUrl);
-  if (!text) return null;
+  if (!text) {
+    // A failed fetch must not pin the previous answer forever either: drop it so
+    // the next attempt (after the failure TTL) starts clean.
+    cache.remoteRelease = undefined;
+    cache.remoteReleaseAt = 0;
+    return null;
+  }
   const release = parseChangelogRelease(text);
   cache.remoteRelease = release;
+  cache.remoteReleaseAt = Date.now();
   return release;
 }
 

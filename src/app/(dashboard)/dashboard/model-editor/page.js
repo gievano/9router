@@ -232,6 +232,9 @@ function StudioFormModal({
   const [showPicker, setShowPicker] = useState(false);
   const [callName, setCallName] = useState(editing?.callName || "");
   const [displayName, setDisplayName] = useState(editing?.displayName || "");
+  // Label this model claims in a model listing (owned_by). Free-form; blank means
+  // "present itself as the model name clients call".
+  const [ownedBy, setOwnedBy] = useState(editing?.ownedBy || "");
   const [targetModel, setTargetModel] = useState(editing?.targetModel || "");
   const [combos, setCombos] = useState([]);
   const [siblings, setSiblings] = useState([]);
@@ -303,6 +306,7 @@ function StudioFormModal({
           callName: callName.trim(),
           previousName: editing?.callName,
           displayName: displayName.trim(),
+          ownedBy: ownedBy.trim(),
           targetModel,
           contextWindow: contextWindow ? Number(contextWindow) : 0,
           systemPrompt,
@@ -406,6 +410,21 @@ function StudioFormModal({
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Friendly label shown in the dashboard"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-text-main mb-1">
+              Owned by <span className="text-text-muted font-normal">(optional)</span>
+            </label>
+            <Input
+              value={ownedBy}
+              onChange={(e) => setOwnedBy(e.target.value)}
+              placeholder={`Defaults to "${callName || "the model name"}"`}
+            />
+            <p className="text-[11px] text-text-muted mt-1">
+              Shown as <code className="font-mono">owned_by</code> when clients list
+              models. The real target model is never exposed.
+            </p>
           </div>
 
           <div>

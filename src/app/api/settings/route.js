@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { getDashboardAuthSession } from "@/lib/auth/dashboardSession";
+import { snapshotSettings } from "@/lib/db/repos/settingsHistoryRepo.js";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
 import { resetComboRotation } from "open-sse/services/combo.js";
@@ -13,6 +16,12 @@ const SETTINGS_RESPONSE_HEADERS = {
 
 // Secrets must never be mass-assigned from request body (CWE-915)
 const PROTECTED_SETTING_KEYS = ["password", "mitmSudoEncrypted"];
+
+// Administrator-only settings. The theme is a site-wide choice, so a key-signed
+// session must not be able to repaint the dashboard for everyone else by writing
+// it here; /api/theme is the one place an administrator changes it, and it checks
+// the session role too. This is the belt to that route's braces.
+const ADMIN_ONLY_SETTING_KEYS = ["theme"];
 
 export async function GET() {
   try {
@@ -41,6 +50,24 @@ export async function PATCH(request) {
 
     // Strip protected secrets before any internal handling sets them
     for (const key of PROTECTED_SETTING_KEYS) delete body[key];
+
+    // Refuse (rather than silently drop) an admin-only field from a key session:
+    // answering 403 tells the caller the truth instead of letting them believe
+    // the site-wide theme changed.
+    const adminOnlyAttempt = ADMIN_ONLY_SETTING_KEYS.find(
+      (key) => key in body && body[key] !== undefined
+    );
+    if (adminOnlyAttempt) {
+      const cookieStore = await cookies();
+      const session = await getDashboardAuthSession(cookieStore.get("auth_token")?.value);
+      if (session?.role === "apikey") {
+        return NextResponse.json(
+          { error: `"${adminOnlyAttempt}" is an administrator setting and cannot be changed by an API key session` },
+          { status: 403 }
+        );
+      }
+      delete body[adminOnlyAttempt];
+    }
 
     // If updating password, hash it
     if (body.newPassword) {
@@ -74,6 +101,21 @@ export async function PATCH(request) {
       if (!body.oidcClientSecret || !String(body.oidcClientSecret).trim()) {
         delete body.oidcClientSecret;
       }
+    }
+
+    // Before-image of this mutation, so a bad change can be reverted. Taken
+    // after the handler stripped protected fields, so secrets never enter the
+    // history, and before the write, so it is the state that was replaced.
+    try {
+      const before = await getSettings();
+      await snapshotSettings({
+        before,
+        actor: "Password user",
+        reason: Object.keys(body).join(", "),
+      });
+    } catch (err) {
+      // History is a convenience; never fail the change itself.
+      console.warn("[settings-history] snapshot failed:", err?.message || err);
     }
 
     const settings = await updateSettings(body);

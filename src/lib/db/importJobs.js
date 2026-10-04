@@ -74,7 +74,11 @@ async function runImportJob(jobId) {
       currentSection: "done",
     };
     current.payload = null;
-    current.pollTokenHash = null;
+    // The poll digest stays until the job record itself expires: nulling it
+    // here made the completion polls fall back to the password header - which
+    // the token-based client no longer sends - so the last poll answered
+    // 401 "Invalid password" over a restore that had just reported done.
+    // RESULT_TTL cleanup removes the record (and this digest) shortly after.
 
     try {
       const { getSettings } = await import("./repos/settingsRepo.js");
@@ -102,7 +106,6 @@ async function runImportJob(jobId) {
     current.error = err?.message || "Failed to import database";
     current.message = "Import failed";
     current.payload = null;
-    current.pollTokenHash = null;
     touch(current);
   } finally {
     scheduleResultCleanup(jobId);

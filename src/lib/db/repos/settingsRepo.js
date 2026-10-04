@@ -34,6 +34,10 @@ const DEFAULT_SETTINGS = {
   },
   requireLogin: true,
   requireApiKey: true,
+  // Site-wide theme (glass | dark). An administrator picks it once here instead
+  // of every browser choosing its own: the value is rendered into the document
+  // for all visitors, so the whole site matches what the admin selected.
+  theme: "glass",
   tunnelDashboardAccess: true,
   authMode: "password",
   ssoType: "oidc",
