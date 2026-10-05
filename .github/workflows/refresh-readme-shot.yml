@@ -1,0 +1,49 @@
+name: Refresh README screenshot
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Start the app
+        run: |
+          npm run build
+          (npm run start -- --port 20128 >/tmp/app.log 2>&1 &)
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:20128/api/health >/dev/null && break
+            sleep 3
+          done
+          curl -sf http://127.0.0.1:20128/api/health
+
+      - name: Capture dashboard screenshot
+        run: |
+          npm i -g puppeteer@23 --no-audit --no-fund >/dev/null 2>&1 || npm i -g puppeteer@23
+          node scripts/refresh-readme-shot.mjs
+        env:
+          SHOT_BASE: http://127.0.0.1:20128
+          SHOT_PASSWORD: ${{ secrets.SHOT_PASSWORD }}
+          SHOT_OUT: ${{ github.workspace }}/images/9router.png
+
+      - name: Commit when the shot changed
+        run: |
+          git config user.name serenhope
+          git config user.email 252454700+serenhope@users.noreply.github.com
+          git add images/9router.png
+          git diff --cached --quiet && echo "unchanged, nothing to commit" && exit 0
+          git commit -m "docs(readme): refresh dashboard screenshot"
+          git push
