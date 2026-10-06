@@ -560,118 +560,6 @@ export default function TokenSaverClient() {
           />
         </div>
 
-        {/* Smart Context Truncation & History Pruning */}
-        <div className="flex items-center justify-between py-4 border-b border-border gap-4 flex-wrap">
-          <div className="min-w-0 flex-1">
-            <p className="font-medium">
-              Smart Context Truncation & Pruning
-            </p>
-            <p className="text-sm text-text-muted">
-              Keep the system prompt and the most recent N messages, trimming older chat turns to save 30-50% input tokens in long sessions
-            </p>
-            {contextPruningEnabled && (
-              <div className="mt-2 space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  {PRUNING_PRESETS.map((lvl) => (
-                    <button
-                      key={lvl.id}
-                      onClick={() => applyPruningPreset(lvl)}
-                      className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
-                        contextPruningLevel === lvl.id
-                          ? "bg-primary text-white border-primary"
-                          : "bg-transparent border-border text-text-muted hover:bg-surface-2"
-                      }`}
-                      title={lvl.desc}
-                    >
-                      {lvl.label}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-primary">
-                  {PRUNING_PRESETS.find((lvl) => lvl.id === contextPruningLevel)?.desc ||
-                    `Custom budget: keep the last ${maxMessagesLimit} messages`}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-text-muted">Max recent messages to keep:</span>
-                  <input
-                    type="number"
-                    min="4"
-                    max="100"
-                    value={maxMessagesLimit}
-                    onChange={(e) => {
-                      const val = Number(e.target.value) || 20;
-                      setMaxMessagesLimit(val);
-                      // A hand-tuned budget is no longer a preset value, so
-                      // clear the level and stop the picker from overriding it.
-                      setContextPruningLevel("custom");
-                      patchSetting({ maxMessagesLimit: val, contextPruningLevel: "custom" });
-                    }}
-                    className="w-16 px-2 py-1 text-xs rounded border border-border bg-surface text-text-main font-mono"
-                  />
-                  <span className="text-xs text-text-muted">
-                    {contextPruningLevel === "custom"
-                      ? "custom (preset off)"
-                      : PRUNING_PRESETS.find((lvl) => lvl.maxMessages === maxMessagesLimit)
-                        ? "matches preset"
-                        : "custom"}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-          <Toggle
-            checked={contextPruningEnabled}
-            onChange={() => handleContextPruningEnabled(!contextPruningEnabled)}
-          />
-        </div>
-
-        {/* Semantic / Local Response Caching */}
-        <div className="flex items-center justify-between py-4 border-b border-border gap-4 flex-wrap">
-          <div className="min-w-0 flex-1">
-            <p className="font-medium">
-              Response Caching (Instant & 0-Cost Cache)
-            </p>
-            <p className="text-sm text-text-muted">
-              Keeps identical prompt completions in memory so duplicates return instantly (~10ms) at 0 upstream tokens.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            {semanticCacheEnabled && (
-              <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-1.5">
-                  <label className="text-xs text-text-muted">TTL (h)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="720"
-                    value={semanticCacheTtlHours}
-                    onChange={(e) => handleCacheTtlChange(e.target.value)}
-                    className="w-14 px-2 py-1 text-xs rounded border border-border bg-surface text-text-main font-mono"
-                  />
-                  <label className="text-xs text-text-muted">Max entries</label>
-                  <input
-                    type="number"
-                    min="10"
-                    max="10000"
-                    value={semanticCacheMaxEntries}
-                    onChange={(e) => handleCacheMaxEntriesChange(e.target.value)}
-                    className="w-20 px-2 py-1 text-xs rounded border border-border bg-surface text-text-main font-mono"
-                  />
-                </div>
-                {cacheStats && (
-                  <p className="text-xs text-primary">
-                    {cacheStats.hits} hits / {cacheStats.misses} misses ·{" "}
-                    {cacheStats.entries} cached
-                  </p>
-                )}
-              </div>
-            )}
-            <Toggle
-              checked={semanticCacheEnabled}
-              onChange={() => handleSemanticCacheEnabled(!semanticCacheEnabled)}
-            />
-          </div>
-        </div>
         <div className="flex items-center justify-between py-4 gap-4 flex-wrap">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3 flex-wrap">
@@ -806,7 +694,7 @@ export default function TokenSaverClient() {
             </p>
           </div>
         )}
-        <div className="flex items-center justify-between pt-4 border-t border-border gap-4 flex-wrap">
+        <div className="flex items-start justify-between pt-4 border-t border-border gap-4 flex-wrap">
           <div className="min-w-0 flex-1">
             <p className="font-medium">
               Compress LLM output{" "}
@@ -822,11 +710,9 @@ export default function TokenSaverClient() {
             <p className="text-sm text-text-muted">
               Terse-style system prompt → ~65% fewer output tokens (up to 87%)
             </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
             {cavemanEnabled && (
-              <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-1.5">
+              <div className="mt-2 space-y-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {visibleCavemanLevels.map((lvl) => (
                     <button
                       key={lvl.id}
@@ -850,13 +736,15 @@ export default function TokenSaverClient() {
                 </p>
               </div>
             )}
+          </div>
+          <div className="shrink-0 pt-0.5">
             <Toggle
               checked={cavemanEnabled}
               onChange={() => handleCavemanEnabled(!cavemanEnabled)}
             />
           </div>
         </div>
-        <div className="flex items-center justify-between pt-4 mt-4 border-t border-border gap-4 flex-wrap">
+        <div className="flex items-start justify-between pt-4 mt-4 border-t border-border gap-4 flex-wrap">
           <div className="min-w-0 flex-1">
             <p className="font-medium">
               Lazy senior dev{" "}
@@ -873,11 +761,9 @@ export default function TokenSaverClient() {
               Bias the model toward minimal code: YAGNI, reuse stdlib,
               deletion over addition
             </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
             {ponytailEnabled && (
-              <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-1.5">
+              <div className="mt-2 space-y-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {PONYTAIL_LEVELS.map((lvl) => (
                     <button
                       key={lvl.id}
@@ -901,9 +787,125 @@ export default function TokenSaverClient() {
                 </p>
               </div>
             )}
+          </div>
+          <div className="shrink-0 pt-0.5">
             <Toggle
               checked={ponytailEnabled}
               onChange={() => handlePonytailEnabled(!ponytailEnabled)}
+            />
+          </div>
+        </div>
+        {/* Trim chat history */}
+        <div className="flex items-start justify-between py-4 border-b border-border gap-4 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">
+              Trim chat history
+            </p>
+            <p className="text-sm text-text-muted">
+              Keep the system prompt + last N messages; 30-50% fewer input tokens in long sessions
+            </p>
+            {contextPruningEnabled && (
+              <div className="mt-2 space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  {PRUNING_PRESETS.map((lvl) => (
+                    <button
+                      key={lvl.id}
+                      onClick={() => applyPruningPreset(lvl)}
+                      className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
+                        contextPruningLevel === lvl.id
+                          ? "bg-primary text-white border-primary"
+                          : "bg-transparent border-border text-text-muted hover:bg-surface-2"
+                      }`}
+                      title={lvl.desc}
+                    >
+                      {lvl.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-primary">
+                  {PRUNING_PRESETS.find((lvl) => lvl.id === contextPruningLevel)?.desc ||
+                    `Custom budget: keep the last ${maxMessagesLimit} messages`}
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-text-muted">Max recent messages to keep:</span>
+                  <input
+                    type="number"
+                    min="4"
+                    max="100"
+                    value={maxMessagesLimit}
+                    onChange={(e) => {
+                      const val = Number(e.target.value) || 20;
+                      setMaxMessagesLimit(val);
+                      // A hand-tuned budget is no longer a preset value, so
+                      // clear the level and stop the picker from overriding it.
+                      setContextPruningLevel("custom");
+                      patchSetting({ maxMessagesLimit: val, contextPruningLevel: "custom" });
+                    }}
+                    className="w-16 px-2 py-1 text-xs rounded border border-border bg-surface text-text-main font-mono"
+                  />
+                  <span className="text-xs text-text-muted">
+                    {contextPruningLevel === "custom"
+                      ? "custom (preset off)"
+                      : PRUNING_PRESETS.find((lvl) => lvl.maxMessages === maxMessagesLimit)
+                        ? "matches preset"
+                        : "custom"}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="shrink-0 pt-0.5">
+            <Toggle
+              checked={contextPruningEnabled}
+              onChange={() => handleContextPruningEnabled(!contextPruningEnabled)}
+            />
+          </div>
+        </div>
+
+        {/* Cache repeat prompts */}
+        <div className="flex items-start justify-between py-4 border-b border-border gap-4 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">
+              Cache repeat prompts
+            </p>
+            <p className="text-sm text-text-muted">
+              Same prompt answers instantly (~10ms) at 0 upstream tokens.
+            </p>
+            {semanticCacheEnabled && (
+              <div className="mt-2 space-y-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <label className="text-xs text-text-muted">TTL (h)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="720"
+                    value={semanticCacheTtlHours}
+                    onChange={(e) => handleCacheTtlChange(e.target.value)}
+                    className="w-14 px-2 py-1 text-xs rounded border border-border bg-surface text-text-main font-mono"
+                  />
+                  <label className="text-xs text-text-muted">Max entries</label>
+                  <input
+                    type="number"
+                    min="10"
+                    max="10000"
+                    value={semanticCacheMaxEntries}
+                    onChange={(e) => handleCacheMaxEntriesChange(e.target.value)}
+                    className="w-20 px-2 py-1 text-xs rounded border border-border bg-surface text-text-main font-mono"
+                  />
+                </div>
+                {cacheStats && (
+                  <p className="text-xs text-primary">
+                    {cacheStats.hits} hits / {cacheStats.misses} misses ·{" "}
+                    {cacheStats.entries} cached
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="shrink-0 pt-0.5">
+            <Toggle
+              checked={semanticCacheEnabled}
+              onChange={() => handleSemanticCacheEnabled(!semanticCacheEnabled)}
             />
           </div>
         </div>

@@ -5,9 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { RequestLogger, CardSkeleton, SegmentedControl } from "@/shared/components";
 import UsageStats from "@/shared/components/UsageStats";
 import RequestDetailsTab from "./components/RequestDetailsTab";
-import LiveRequestInspectorTab from "./components/LiveRequestInspectorTab";
 import ErrorClassificationTab from "./components/ErrorClassificationTab";
 import ModelLeaderboardTab from "./components/ModelLeaderboardTab";
+import TokenSavingsTab from "./components/TokenSavingsTab";
 
 const PERIODS = [
   { value: "today", label: "Today" },
@@ -33,7 +33,7 @@ function UsageContent() {
   const [period, setPeriod] = useState("today");
 
   const tabFromUrl = searchParams.get("tab");
-  const activeTab = tabFromUrl && ["overview", "logs", "details", "errors", "leaderboard", "inspector"].includes(tabFromUrl)
+  const activeTab = tabFromUrl && ["overview", "logs", "details", "errors", "leaderboard", "savings"].includes(tabFromUrl)
     ? tabFromUrl
     : "overview";
 
@@ -52,15 +52,15 @@ function UsageContent() {
           options={[
             { value: "overview", label: "Overview" },
             { value: "details", label: "Details" },
- { value: "inspector", label: "Inspector" },
  { value: "errors", label: "Errors" },
  { value: "leaderboard", label: "Leaderboard" },
+            { value: "savings", label: "Savings" },
           ]}
           value={activeTab}
           onChange={handleTabChange}
           className="w-full sm:w-auto"
         />
-        {(activeTab === "overview" || activeTab === "errors" || activeTab === "leaderboard") && (
+        {(activeTab === "overview" || activeTab === "errors" || activeTab === "leaderboard" || activeTab === "savings") && (
           <SegmentedControl
             options={PERIODS}
             value={period}
@@ -78,9 +78,9 @@ function UsageContent() {
       )}
       {activeTab === "logs" && <RequestLogger />}
       {activeTab === "details" && <RequestDetailsTab />}
-      {activeTab === "inspector" && <LiveRequestInspectorTab />}
  {activeTab === "errors" && <ErrorClassificationTab period={period} />}
  {activeTab === "leaderboard" && <ModelLeaderboardTab period={period} />}
+      {activeTab === "savings" && <TokenSavingsTab period={period} />}
     </div>
   );
 }

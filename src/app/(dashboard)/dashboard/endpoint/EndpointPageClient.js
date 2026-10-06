@@ -23,6 +23,7 @@ import { clientPingUrl, clientPingAny } from "./endpointPing";
 import { cn } from "@/shared/utils/cn";
 import useSettingsStore from "@/store/settingsStore";
 import EndpointRow from "./components/EndpointRow";
+import BulkEditKeys from "./components/BulkEditKeys";
 import StatusAlert from "./components/StatusAlert";
 import Tooltip from "./components/Tooltip";
 import SecurityWarning from "./components/SecurityWarning";
@@ -150,6 +151,10 @@ function generateSnippet(lang, apiKey, baseUrl) {
 
 export default function APIPageClient({ machineId }) {
   const [keys, setKeys] = useState([]);
+  // Bulk edit: which rows are ticked, and whether the dialog is open. Nothing is
+  // written until Apply, and only the fields the operator ticks are sent.
+  const [selectedKeyIds, setSelectedKeyIds] = useState(() => new Set());
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
@@ -485,6 +490,30 @@ const scopedModelPatterns =
     } finally {
       setCustomDomainSaving(false);
     }
+  };
+
+  const handleBulkEditApply = async (patch) => {
+    const ids = Array.from(selectedKeyIds);
+    const res = await fetch("/api/keys/bulk", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, patch }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to apply bulk changes");
+    }
+    if (data.missing && data.missing.length) {
+      // Rows deleted elsewhere since the list loaded: drop them from the
+      // selection so a second Apply does not keep reporting them.
+      setSelectedKeyIds((prev) => {
+        const next = new Set(prev);
+        for (const id of data.missing) next.delete(id);
+        return next;
+      });
+    }
+    setShowBulkEdit(false);
+    await fetchData();
   };
 
   const fetchData = async () => {
@@ -1426,6 +1455,26 @@ const scopedModelPatterns =
           </div>
         )}
 
+        {!isApiKeyUser && selectedKeyIds.size > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3 rounded-xl border border-primary/25 bg-primary/5 px-3.5 py-2.5">
+            <span className="text-sm text-text-main">
+              {selectedKeyIds.size} key{selectedKeyIds.size === 1 ? "" : "s"} selected
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedKeyIds(new Set())}
+                className="text-xs text-text-muted hover:text-text-main transition-colors"
+              >
+                Clear selection
+              </button>
+              <Button variant="primary" onClick={() => setShowBulkEdit(true)}>
+                Bulk edit
+              </Button>
+            </div>
+          </div>
+        )}
+
         {keys.length === 0 ? (
           <div className="text-center py-12">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
@@ -1444,6 +1493,22 @@ const scopedModelPatterns =
                 key={key.id}
                 className={`group flex flex-wrap items-center justify-between gap-3 py-3 border-b border-black/[0.03] dark:border-white/[0.03] last:border-b-0 ${key.isActive === false ? "opacity-60" : ""}`}
               >
+                {!isApiKeyUser && (
+                  <input
+                    type="checkbox"
+                    checked={selectedKeyIds.has(key.id)}
+                    onChange={() => {
+                      setSelectedKeyIds((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(key.id)) next.delete(key.id);
+                        else next.add(key.id);
+                        return next;
+                      });
+                    }}
+                    className="size-4 accent-brand-500 shrink-0"
+                    aria-label={`Select ${key.name}`}
+                  />
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate min-w-0">{key.name}</p>
                   {creatorLabelFor(key) && (
@@ -2190,6 +2255,14 @@ const scopedModelPatterns =
         message={confirmState?.message}
         variant="danger"
       />
+
+      {showBulkEdit && (
+        <BulkEditKeys
+          selectedCount={selectedKeyIds.size}
+          onApply={handleBulkEditApply}
+          onClose={() => setShowBulkEdit(false)}
+        />
+      )}
     </div>
   );
 }

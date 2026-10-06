@@ -9,6 +9,7 @@ import { Card, Button, Modal, Input, CardSkeleton, ModelSelectModal, ConfirmModa
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { aggregateComboCapabilities } from "open-sse/providers/capabilities.js";
+import { invalidateModelCaps } from "@/shared/hooks/useModelCaps";
 
 // Validate combo name: only a-z, A-Z, 0-9, -, _
 const VALID_NAME_REGEX = /^[a-zA-Z0-9_.\-]+$/;
@@ -199,6 +200,7 @@ export default function CombosPage() {
         body: JSON.stringify(data),
       });
       if (res.ok) {
+        invalidateModelCaps();
         await fetchData();
         setShowCreateModal(false);
       } else {
@@ -218,6 +220,7 @@ export default function CombosPage() {
         body: JSON.stringify(data),
       });
       if (res.ok) {
+        invalidateModelCaps();
         await fetchData();
         setEditingCombo(null);
       } else {
@@ -259,6 +262,7 @@ export default function CombosPage() {
             }
             setCombos((prev) => prev.filter((c) => c.id !== id));
             setSelectedIds((prev) => prev.filter((x) => x !== id));
+            invalidateModelCaps();
           }
           setConfirmState(null);
         } catch (error) {
@@ -291,6 +295,7 @@ export default function CombosPage() {
           setCombos((prev) => prev.filter((c) => !ids.includes(c.id)));
           clearSelection();
           setConfirmState(null);
+          invalidateModelCaps();
           if (failed > 0) alert(`Deleted with ${failed} failure${failed === 1 ? "" : "s"}.`);
         } catch (error) {
           console.log("Error bulk deleting combos:", error);

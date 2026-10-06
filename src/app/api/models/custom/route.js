@@ -39,13 +39,22 @@ export async function GET() {
 // POST /api/models/custom - Add custom model
 export async function POST(request) {
   try {
-    const { providerAlias, id, type, name, caps, transport } = await request.json();
+    const { providerAlias, id, type, name, ownedBy, caps, transport } = await request.json();
     if (!providerAlias || !id) {
       return NextResponse.json({ error: "providerAlias and id required" }, { status: 400 });
     }
     const cleanCaps = sanitizeCaps(caps);
     const cleanTransport = sanitizeTransport(transport, type || "llm");
-    const added = await addCustomModel({ providerAlias, id, type: type || "llm", name, ...(cleanCaps ? { caps: cleanCaps } : {}), ...(cleanTransport ? { transport: cleanTransport } : {}) });
+    const added = await addCustomModel({
+      providerAlias,
+      id,
+      type: type || "llm",
+      name,
+      // Optional free-form label; blank keeps the provider alias as before.
+      ownedBy: typeof ownedBy === "string" ? ownedBy.trim() : "",
+      ...(cleanCaps ? { caps: cleanCaps } : {}),
+      ...(cleanTransport ? { transport: cleanTransport } : {}),
+    });
     return NextResponse.json({ success: true, added });
   } catch (error) {
     console.log("Error adding custom model:", error);

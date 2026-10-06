@@ -8,9 +8,35 @@ import { isSamlConfigured } from "@/lib/auth/saml.js";
 import { checkLock, recordFail, recordSuccess, getClientIp } from "@/lib/auth/loginLimiter";
 import { isTrustedNetworkRequest } from "@/lib/auth/trustedPeer";
 import { normalizePermissions, firstAllowedPage } from "@/lib/auth/permissionPaths";
+import { recordSecurityEvent } from "@/lib/db/repos/securityLogRepo";
+
+// One helper so every branch below writes the same shape, and so the raw secret
+// can never reach the log by accident.
+function audit(request, ip, event) {
+  return recordSecurityEvent({
+    ...event,
+    ip,
+    method: "POST",
+    path: "/api/auth/login",
+    userAgent: request.headers?.get?.("user-agent") || "",
+  });
+}
 
 const RESET_HINT = "Forgot password? Reset to default via 9Router CLI → Settings → Reset Password to Default.";
 const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
+
+// Short, non-sensitive description of what a key may do, for the audit trail.
+function permissionsPreview(raw) {
+  try {
+    const parsed = typeof raw === "string" ? JSON.parse(raw || "{}") : raw || {};
+    const held = Object.entries(parsed)
+      .filter(([, on]) => on === true)
+      .map(([name]) => name);
+    return held.length ? held.join(", ") : "no permissions";
+  } catch {
+    return "unknown permissions";
+  }
+}
 
 function isTunnelRequest(request, settings) {
   const host = (request.headers.get("host") || "").split(":")[0].toLowerCase();
@@ -24,6 +50,11 @@ export async function POST(request) {
     const ip = getClientIp(request);
     const lock = checkLock(ip);
     if (lock.locked) {
+      await audit(request, ip, {
+        type: "login_locked",
+        severity: "warn",
+        detail: `Locked out after repeated failures; retry allowed in ${lock.retryAfter}s`,
+      });
       return NextResponse.json(
         { error: `Too many failed attempts. Try again in ${lock.retryAfter}s. ${RESET_HINT}`, retryAfter: lock.retryAfter, resetHint: RESET_HINT },
         { status: 429, headers: { "Retry-After": String(lock.retryAfter) } }
@@ -49,6 +80,13 @@ export async function POST(request) {
         else if (valid === "KEY_EXPIRED") msg = "API key is expired";
         else if (valid === "QUOTA_EXCEEDED") msg = "API key quota exceeded";
         else if (valid === "IP_NOT_ALLOWED") msg = "Client IP not allowed for this API key";
+        await audit(request, ip, {
+          type: "apikey_login_failed",
+          severity: "warn",
+          // The reason, never the key: this table is readable in the dashboard.
+          detail: msg,
+          actor: keyStr.slice(0, 8) + "…",
+        });
         return NextResponse.json({ error: msg }, { status: 401 });
       }
 
@@ -58,6 +96,12 @@ export async function POST(request) {
       }
 
       recordSuccess(ip);
+      await audit(request, ip, {
+        type: "apikey_login_success",
+        severity: "info",
+        actor: keyObj.name || keyObj.id,
+        detail: `Signed in with API key "${keyObj.name || keyObj.id}" (${permissionsPreview(keyObj.permissions)})`,
+      });
       const cookieStore = await cookies();
       const permissions = normalizePermissions(keyObj.permissions);
       await setDashboardAuthCookie(cookieStore, request, {
@@ -125,6 +169,11 @@ export async function POST(request) {
         // before first launch. This is a deliberate security trade-off, not an
         // oversight: issuing any credential before the default password is
         // rotated re-opens the exact attack chain this branch closes.
+        await audit(request, ip, {
+          type: "login_default_password",
+          severity: "critical",
+          detail: "The published default password was used from a remote address; no session was issued",
+        });
         return NextResponse.json(
           { success: false, error: "The default password only works from the machine running 9Router, or from the same Docker/LAN network. Open localhost there and change it, or start once with INITIAL_PASSWORD. Set ALLOW_REMOTE_DEFAULT_LOGIN=true to allow the first login from anywhere.", mustChangePassword },
           { status: 403, headers: NO_STORE_HEADERS }
@@ -133,6 +182,14 @@ export async function POST(request) {
 
       const cookieStore = await cookies();
       await setDashboardAuthCookie(cookieStore, request, { role: "admin" });
+      await audit(request, ip, {
+        type: "login_success",
+        severity: "info",
+        actor: "Password user",
+        detail: storedHash
+          ? "Password sign-in"
+          : "Password sign-in using the initial/default password",
+      });
 
       return NextResponse.json({ success: true, role: "admin", mustChangePassword: false }, { headers: NO_STORE_HEADERS });
     }
@@ -145,6 +202,11 @@ export async function POST(request) {
         { status: 429, headers: { "Retry-After": String(postLock.retryAfter) } }
       );
     }
+    await audit(request, ip, {
+      type: "login_failed",
+      severity: "warn",
+      detail: `Wrong password; ${remainingBeforeLock} attempt(s) left before lockout`,
+    });
     return NextResponse.json(
       { error: `Invalid password. ${remainingBeforeLock} attempt(s) left before lockout.`, remainingBeforeLock },
       { status: 401 }

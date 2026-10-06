@@ -49,6 +49,9 @@ function toModel(callName, value) {
   return {
   callName,
   displayName: (value.displayName || "").trim() || callName,
+  // Free-form label this model claims in a model listing. Never derived from the
+  // target, so a studio model can present itself as whatever the owner wants.
+  ownedBy: (typeof value.ownedBy === "string" ? value.ownedBy.trim() : "") || "",
   targetModel: target,
    targetLabel: (value.targetLabel || value.targetModel || "").trim() || target,
   provider: target.slice(0, firstSlash),
@@ -65,6 +68,7 @@ function toComboTargetModel(callName, value, target) {
   return {
   callName,
   displayName: (value.displayName || "").trim() || callName,
+  ownedBy: (typeof value.ownedBy === "string" ? value.ownedBy.trim() : "") || "",
   targetModel: target,
    targetLabel: (value.targetLabel || value.targetModel || "").trim() || target,
   provider: "combo",
@@ -113,10 +117,11 @@ export async function getStudioModel(callName) {
   return value ? toModel(callName, value) : null;
 }
 
-export async function setStudioModel({ callName, displayName, targetModel, targetLabel, contextWindow, systemPrompt }) {
+export async function setStudioModel({ callName, displayName, ownedBy, targetModel, targetLabel, contextWindow, systemPrompt }) {
   const payload = {
   callName,
   displayName: (displayName || "").trim(),
+  ownedBy: (ownedBy || "").trim(),
   targetModel: (targetModel || "").trim(),
    targetLabel: (targetLabel || targetModel || "").trim(),
   contextWindow: Number(contextWindow) || 0,

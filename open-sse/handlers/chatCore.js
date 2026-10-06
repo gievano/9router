@@ -34,6 +34,8 @@ import { injectCaveman } from "../rtk/caveman.js";
 import { injectPonytail } from "../rtk/ponytail.js";
 import { pruneContextMessages, resolvePruningLimit } from "../rtk/contextPruning.js";
 import { checkSemanticCache, saveToSemanticCache, setSemanticCacheTtlMs, setSemanticCacheMaxEntries } from "../rtk/semanticCache.js";
+import { getAdapter } from "@/lib/db/driver.js";
+import { recordTokenSavings, measurePruningSavings, measureRtkSavings, measureCacheSavings } from "../rtk/tokenSaverStats.js";
 import { compressMessages, formatRtkLog } from "../rtk/index.js";
 import { compressWithHeadroom, formatHeadroomLog, formatHeadroomSizeLog, isHeadroomPhantomSavings } from "../rtk/headroom.js";
 import { compressWithPxpipe } from "../rtk/pxpipe.js";
@@ -107,6 +109,9 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     const cachedResponse = checkSemanticCache(body, `${provider}/${model}`);
     if (cachedResponse) {
       log?.info?.("CACHE", `⚡ Instant semantic cache hit for ${provider}/${model}`);
+      // A hit replays the provider's own billed usage — that is exactly what
+      // the second identical request would have cost.
+      recordTokenSavings(getAdapter(), { provider, model, cache: measureCacheSavings(cachedResponse) });
       // A cache hit must not name the model that originally served it either.
       applyModelAlias(cachedResponse, calledModelName(requestedModel, model));
       return {
@@ -363,10 +368,16 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
       presetLimit !== undefined && (!Number.isFinite(explicit) || explicit === 20)
         ? presetLimit
         : maxMessagesLimit || 20;
+    const prunedTokens = measurePruningSavings(translatedBody, effective);
     pruneContextMessages(translatedBody, effective);
+    if (prunedTokens > 0) recordTokenSavings(getAdapter(), { provider, model, pruning: prunedTokens });
     xf.push(`PRUNING:${effective}msgs`);
   }
-  if (rtkStats?.hits?.length) xf.push(`RTK:${rtkStats.hits.length}`);
+  if (rtkStats?.hits?.length) {
+    const rtkSaved = measureRtkSavings(rtkStats);
+    if (rtkSaved > 0) recordTokenSavings(getAdapter(), { provider, model, rtk: rtkSaved });
+    xf.push(`RTK:${rtkStats.hits.length}`);
+  }
 
   // Caveman: inject terse-style system prompt
   if (tokenSaverEnabled && cavemanEnabled && cavemanLevel) {

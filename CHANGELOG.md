@@ -1,4 +1,4 @@
-# v0.5.154-Custom
+# v0.5.159-Custom
 
 ## Fixes
 - **Auth**: enforce the dashboard guard in custom-server because Next 14 middleware is Edge-only
@@ -6,16 +6,167 @@
 ## Internal
 - **Auth**: release v0.5.153 (auth guard enforced at HTTP layer)
 
-# v0.5.154 (2026-10-03) · 5 commits
+# v0.5.159 (2026-10-05) · 1 commit
+
+## Fixes
+- **Auth**: refuse shutdown and live-update for API key sessions; hide the controls too
+
+# v0.5.158 (2026-10-04) · 25 commits
 
 ## Features
+- **Antigravity**: add Claude Opus 5.5 and Sonnet 5.5 models
+- **Antigravity**: list Claude 5.5 models and flag them when tier-blocked
+- **Dashboard**: full request bodies, notification bell, settings rollback, bulk key edit, model benchmark
+- **Dashboard**: make PRD Builder one prompt, English copy
+- **Key catalog**: show context window instead of the studio label; install the fork from github in the update banner
+- **Models**: optional owned_by on custom models; fix hidden security log; drop usage CTA
+- **Security**: persistent security log with red breach flags, admin-only site theme
+- **Studio,banner**: hide the upstream model, custom owned_by, cancellable background banners
+
+## Fixes
+- **Auth**: fail closed when the dashboard guard cannot run
+- **Dashboard**: accept combo names in PRD Builder
+- **Docker**: ship the auth guard sources into the runtime image
+- **Docker**: ship the guard runtime deps the src tree imports
+- **Docker**: stamp APP_REVISION from Railway commit SHA so update banner works there
+- **Import**: keep the poll digest alive until the job record expires
+- **Import**: return the poll token in the job creation response
+- **Models**: publish custom model owned_by on the connected path too
+- **Notifications**: point the update notice at the profile page, not the dead settings route
+- **Providers**: mark MiMoCode Free as Unavailable in red
+- **UI**: replay update banner animation on navigation and animate dismissal
+- **UI**: ship icon subset font and show commit counts on changelog cards
+- **UI**: show long operations in a ProgressCard banner
+- **UI**: theme the loading banner, keep progress on the background chip, always offer cancel and background
+
+## Docs
+- **Readme**: current screenshot, evergreen feature section, auto-refresh workflow
+- **Readme**: refresh dashboard screenshot to v0.5.155
+
+## Internal
+- **Models**: Revert "feat(antigravity): add Claude Opus 5.5 and Sonnet 5.5 models"
+
+# v0.5.157 (2026-10-04) · 22 commits
+
+## Features
+- **Antigravity**: add Claude Opus 5.5 and Sonnet 5.5 models
+- **Antigravity**: list Claude 5.5 models and flag them when tier-blocked
+- **Dashboard**: full request bodies, notification bell, settings rollback, bulk key edit, model benchmark
+- **Dashboard**: make PRD Builder one prompt, English copy
+- **Models**: optional owned_by on custom models; fix hidden security log; drop usage CTA
+- **Security**: persistent security log with red breach flags, admin-only site theme
+- **Studio,banner**: hide the upstream model, custom owned_by, cancellable background banners
+
+## Fixes
+- **Auth**: fail closed when the dashboard guard cannot run
+- **Dashboard**: accept combo names in PRD Builder
+- **Docker**: ship the auth guard sources into the runtime image
+- **Docker**: ship the guard runtime deps the src tree imports
+- **Docker**: stamp APP_REVISION from Railway commit SHA so update banner works there
+- **Import**: keep the poll digest alive until the job record expires
+- **Import**: return the poll token in the job creation response
+- **Models**: publish custom model owned_by on the connected path too
+- **Providers**: mark MiMoCode Free as Unavailable in red
+- **UI**: replay update banner animation on navigation and animate dismissal
+- **UI**: ship icon subset font and show commit counts on changelog cards
+- **UI**: show long operations in a ProgressCard banner
+
+## Docs
+- **Readme**: current screenshot, evergreen feature section, auto-refresh workflow
+- **Readme**: refresh dashboard screenshot to v0.5.155
+
+## Internal
+- **Models**: Revert "feat(antigravity): add Claude Opus 5.5 and Sonnet 5.5 models"
+
+# v0.5.156 (2026-10-04) · 21 commits
+
+## Features
+- **Antigravity**: add Claude Opus 5.5 and Sonnet 5.5 models
+- **Antigravity**: list Claude 5.5 models and flag them when tier-blocked
+- **Dashboard**: full request bodies, notification bell, settings rollback, bulk key edit, model benchmark
+- **Dashboard**: make PRD Builder one prompt, English copy
+- **Models**: optional owned_by on custom models; fix hidden security log; drop usage CTA
+- **Security**: persistent security log with red breach flags, admin-only site theme
+- **Studio,banner**: hide the upstream model, custom owned_by, cancellable background banners
+
+## Fixes
+- **Auth**: fail closed when the dashboard guard cannot run
+- **Dashboard**: accept combo names in PRD Builder
+- **Docker**: ship the auth guard sources into the runtime image
+- **Docker**: ship the guard runtime deps the src tree imports
+- **Docker**: stamp APP_REVISION from Railway commit SHA so update banner works there
+- **Import**: keep the poll digest alive until the job record expires
+- **Import**: return the poll token in the job creation response
+- **Models**: publish custom model owned_by on the connected path too
+- **Providers**: mark MiMoCode Free as Unavailable in red
+- **UI**: ship icon subset font and show commit counts on changelog cards
+- **UI**: show long operations in a ProgressCard banner
+
+## Docs
+- **Readme**: current screenshot, evergreen feature section, auto-refresh workflow
+- **Readme**: refresh dashboard screenshot to v0.5.155
+
+## Internal
+- **Models**: Revert "feat(antigravity): add Claude Opus 5.5 and Sonnet 5.5 models"
+
+# v0.5.155 (2026-10-04) · 20 commits
+
+## Features
+- **Antigravity**: add Claude Opus 5.5 and Sonnet 5.5 models
+- **Antigravity**: list Claude 5.5 models and flag them when tier-blocked
+- **Dashboard**: make PRD Builder one prompt, English copy
+- **Models**: optional owned_by on custom models; fix hidden security log; drop usage CTA
+- **Security**: persistent security log with red breach flags, admin-only site theme
+- **Studio,banner**: hide the upstream model, custom owned_by, cancellable background banners
+
+## Fixes
+- **Auth**: fail closed when the dashboard guard cannot run
+- **Dashboard**: accept combo names in PRD Builder
+- **Docker**: ship the auth guard sources into the runtime image
+- **Docker**: ship the guard runtime deps the src tree imports
+- **Docker**: stamp APP_REVISION from Railway commit SHA so update banner works there
+- **Import**: keep the poll digest alive until the job record expires
+- **Import**: return the poll token in the job creation response
+- **Models**: publish custom model owned_by on the connected path too
+- **Providers**: mark MiMoCode Free as Unavailable in red
+- **UI**: ship icon subset font and show commit counts on changelog cards
+- **UI**: show long operations in a ProgressCard banner
+
+## Docs
+- **Readme**: current screenshot, evergreen feature section, auto-refresh workflow
+- **Readme**: refresh dashboard screenshot to v0.5.155
+
+## Internal
+- **Models**: Revert "feat(antigravity): add Claude Opus 5.5 and Sonnet 5.5 models"
+
+# v0.5.154 (2026-10-03) · 21 commits
+
+## Features
+- **Dashboard**: add PRD Builder to FEATURE+
+- **Theme**: add a glassmorphism mode alongside dark
+- **Theme**: dedicated theme button next to the grid menu
+- **Theme**: glass becomes the default theme, listed above dark
+- **Theme**: theme picker lives under Change Log in the grid menu
+- **Theme**: theme picker opens as a modal, matching Change Log
 - **Token saver**: level presets for pruning and a measurable response cache
+- **Usage**: add activity heatmap, card sparklines, and smart empty states
+- **Usage**: remove the live request inspector tab
+- **Usage**: token saver analytics tab with real-savings estimates
 
 ## Fixes
 - **Models**: honor .env PORT on start and persist free model catalogues
+- **Combo**: combo pills report the real window instead of the 200k default
 - **Providers**: drop the duplicate MiMo free registry entries
 - **Providers**: keep suggested free models visible when opencode flakes
+- **Token saver**: keep option rows under their own text
+- **Token saver**: move the two toggles to the bottom, stack all pickers
 - **UI**: merge duplicate category headings in day-rolled changelog cards
+- **Usage**: center summary card numbers and pin them to one baseline
+- **Usage**: only show providers with real traffic in the topology
+- **Usage**: savings table empty state must not blame the filter
+
+## Docs
+- **Token saver**: shorten the two longest row labels
 
 # v0.5.153 (2026-10-02) · 18 commits
 

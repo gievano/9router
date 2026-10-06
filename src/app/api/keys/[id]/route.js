@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { deleteApiKey, getApiKeyById, getApiKeys, updateApiKey } from "@/lib/localDb";
 import { getSessionContext, DEFAULT_PERMISSIONS } from "@/lib/auth/dashboardPermissions";
+import { recordSecurityEvent } from "@/lib/db/repos/securityLogRepo";
 import { parseAllowedModels, matchesAllowedModels } from "@/lib/db/repos/apiKeysRepo";
 
 // GET /api/keys/[id] - Get single key
@@ -154,6 +155,22 @@ export async function DELETE(request, { params }) {
     const deleted = await deleteApiKey(id);
     if (!deleted) {
       return NextResponse.json({ error: "Key not found" }, { status: 404 });
+    }
+
+    try {
+      await recordSecurityEvent({
+        type: "key_deleted",
+        severity: "warn",
+        actor:
+          ctx.session?.role === "apikey"
+            ? `API key "${ctx.session.keyName || ctx.session.keyId}"`
+            : "Password user",
+        method: "DELETE",
+        path: `/api/keys/${id}`,
+        detail: `Deleted API key "${existing.name || id}"`,
+      });
+    } catch {
+      // Auditing is best effort.
     }
 
     return NextResponse.json({ message: "Key deleted successfully" });

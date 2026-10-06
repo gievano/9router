@@ -4,6 +4,11 @@ import { useState, useEffect } from "react";
 import { Card, Button, Badge, Modal, Input, ModelSelectModal } from "@/shared/components";
 import Image from "next/image";
 
+/** Claude 5.5 model ids — gated behind Antigravity's own paid tier, not Google One. */
+const isClaude55 = (id = "") =>
+  /opus[-_.]?5[-_.]?5/i.test(id) || /sonnet[-_.]?5[-_.]?5/i.test(id);
+
+
 export default function AntigravityToolCard({
   tool,
   isExpanded,
@@ -26,6 +31,10 @@ export default function AntigravityToolCard({
   const [modalOpen, setModalOpen] = useState(false);
   const [currentEditingAlias, setCurrentEditingAlias] = useState(null);
   const [modelAliases, setModelAliases] = useState({});
+  // Live Antigravity tier: Claude 5.5 sits behind Antigravity standard-tier,
+  // NOT Google One AI Pro. A One trial keeps the account on free-tier and
+  // upstream 404s those ids, so the row is flagged rather than left to fail.
+  const [claude55Blocked, setClaude55Blocked] = useState(false);
 
   useEffect(() => {
     if (apiKeys?.length > 0 && !selectedApiKey) {
@@ -67,6 +76,13 @@ export default function AntigravityToolCard({
       if (res.ok) setModelAliases(data.aliases || {});
     } catch (error) {
       console.log("Error fetching model aliases:", error);
+    } finally {
+      fetch("/api/usage/antigravity-tier")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((t) => {
+          if (t) setClaude55Blocked(t.canUseClaude55 === false);
+        })
+        .catch(() => {});
     }
   };
 
@@ -340,7 +356,21 @@ export default function AntigravityToolCard({
 
               {tool.defaultModels.map((model) => (
                 <div key={model.alias} className="grid grid-cols-1 gap-1.5 sm:grid-cols-[8rem_auto_1fr_auto] sm:items-center sm:gap-2">
-                  <span className="text-xs font-semibold text-text-main sm:text-right sm:text-sm">{model.name}</span>
+                  <span
+                    className={`text-xs font-semibold sm:text-right sm:text-sm ${
+                      isClaude55(model.alias) && claude55Blocked ? "text-red-500" : "text-text-main"
+                    }`}
+                  >
+                    {model.name}
+                  </span>
+                  {isClaude55(model.alias) && claude55Blocked && (
+                    <span
+                      className="material-symbols-outlined text-red-500 text-[14px] sm:inline"
+                      title="Needs Antigravity standard-tier. This account is on free-tier, so upstream answers this model with 404."
+                    >
+                      error
+                    </span>
+                  )}
                   <span className="material-symbols-outlined hidden text-text-muted text-[14px] sm:inline">arrow_forward</span>
                   <div className="relative w-full min-w-0">
                     <input

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import EmptyWithAction from "./EmptyWithAction.js";
 
 export default function ModelLeaderboardTab({ period }) {
   const [data, setData] = useState(null);
@@ -14,7 +15,9 @@ export default function ModelLeaderboardTab({ period }) {
   }, [period]);
 
   if (loading) return <div className="text-zinc-500 text-sm">Loading leaderboard...</div>;
-  if (!data || !data.leaderboard || data.leaderboard.length === 0) return <div className="text-zinc-500 text-sm">No data available.</div>;
+  if (!data || !data.leaderboard || data.leaderboard.length === 0) {
+    return <EmptyWithAction icon="leaderboard" title="No model traffic yet" hint="The leaderboard ranks models by request volume once your first request lands." actionHref="/dashboard/endpoint" actionLabel="Get an API key" secondaryHref="/dashboard/arena" secondaryLabel="Send a test request" />;
+  }
 
   const fmt = (n) => {
     if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";

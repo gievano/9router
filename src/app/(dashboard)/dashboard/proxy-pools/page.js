@@ -1,8 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { Badge, Button, Card, CardSkeleton, Input, Modal, Toggle, ConfirmModal } from "@/shared/components";
+import { Badge, Button, Card, CardSkeleton, Input, Modal, ProgressCard, Toggle, ConfirmModal } from "@/shared/components";
 import { useNotificationStore } from "@/store/notificationStore";
+import { useTaskStore } from "@/store/taskStore";
+
+// One task id for the batch import, shared by the loop, the seed of `importing`
+// after a navigation, and the banner in the layout dock.
+const PROXY_IMPORT_TASK = "proxy-pools-import";
 
 function getStatusVariant(status) {
   if (status === "active") return "success";
@@ -43,8 +48,12 @@ export default function ProxyPoolsPage() {
   const [cloudflareForm, setCloudflareForm] = useState({ accountId: "", apiToken: "", projectName: "cloudflare-relay" });
   const [denoForm, setDenoForm] = useState({ denoToken: "", orgDomain: "", projectName: "" });
   const [saving, setSaving] = useState(false);
-  const [importing, setImporting] = useState(false);
+  const [importing, setImporting] = useState(() =>
+    useTaskStore.getState().tasks.some((t) => t.id === PROXY_IMPORT_TASK)
+  );
+  const importAbortRef = useRef(null);
   const [deploying, setDeploying] = useState(false);
+  const [deployLabel, setDeployLabel] = useState(null);
   const [testingId, setTestingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [healthChecking, setHealthChecking] = useState(false);
@@ -374,6 +383,7 @@ export default function ProxyPoolsPage() {
 
   const handleVercelDeploy = async () => {
     if (!vercelForm.vercelToken.trim()) return;
+    setDeployLabel("Deploying Vercel Relay");
     setDeploying(true);
     try {
       const res = await fetch("/api/proxy-pools/vercel-deploy", {
@@ -394,11 +404,13 @@ export default function ProxyPoolsPage() {
       notify.error("Deploy failed");
     } finally {
       setDeploying(false);
+      setDeployLabel(null);
     }
   };
 
   const handleCloudflareDeploy = async () => {
     if (!cloudflareForm.accountId.trim() || !cloudflareForm.apiToken.trim()) return;
+    setDeployLabel("Deploying Cloudflare Worker");
     setDeploying(true);
     try {
       const res = await fetch("/api/proxy-pools/cloudflare-deploy", {
@@ -419,11 +431,13 @@ export default function ProxyPoolsPage() {
       notify.error("Deploy failed");
     } finally {
       setDeploying(false);
+      setDeployLabel(null);
     }
   };
 
   const handleDenoDeploy = async () => {
     if (!denoForm.denoToken.trim()) return;
+    setDeployLabel("Deploying Deno Relay");
     setDeploying(true);
     try {
       const res = await fetch("/api/proxy-pools/deno-deploy", {
@@ -444,6 +458,7 @@ export default function ProxyPoolsPage() {
       notify.error("Deploy failed");
     } finally {
       setDeploying(false);
+      setDeployLabel(null);
     }
   };
 
@@ -512,19 +527,36 @@ export default function ProxyPoolsPage() {
     }
 
     setImporting(true);
+    const abort = new AbortController();
+    importAbortRef.current = abort;
+    const total = parsedEntries.length;
+    useTaskStore.getState().start({
+      id: PROXY_IMPORT_TASK,
+      title: "Importing proxies",
+      message: `0/${total} proxies`,
+      section: "Runs in the background — you can keep working while it finishes",
+      progress: 0,
+      onCancel: () => abort.abort(),
+    });
+    // Declared before the try so the catch can report how far a cancelled run got.
+    let created = 0;
+    let skipped = 0;
+    let failed = 0;
+    let processed = 0;
     try {
       const existingKeys = new Set(
         proxyPools.map((pool) => `${(pool.proxyUrl || "").trim()}|||${(pool.noProxy || "").trim()}`)
       );
 
-      let created = 0;
-      let skipped = 0;
-      let failed = 0;
-
       for (const entry of parsedEntries) {
         const dedupeKey = `${entry.proxyUrl}|||`;
         if (existingKeys.has(dedupeKey)) {
           skipped += 1;
+          processed += 1;
+          useTaskStore.getState().update(PROXY_IMPORT_TASK, {
+            message: `${processed}/${total} proxies`,
+            progress: Math.round((processed / total) * 100),
+          });
           continue;
         }
 
@@ -537,6 +569,9 @@ export default function ProxyPoolsPage() {
             noProxy: "",
             isActive: true,
           }),
+          // Cancel from the banner aborts this request; the loop stops before
+          // starting the next one.
+          signal: abort.signal,
         });
 
         if (res.ok) {
@@ -545,15 +580,29 @@ export default function ProxyPoolsPage() {
         } else {
           failed += 1;
         }
+
+        processed += 1;
+        useTaskStore.getState().update(PROXY_IMPORT_TASK, {
+          message: `${processed}/${total} proxies`,
+          progress: Math.round((processed / total) * 100),
+        });
       }
 
       await fetchProxyPools();
       setShowBatchImportModal(false);
       notify.success(`Batch import completed: Created ${created}, Skipped ${skipped}, Failed ${failed}`);
     } catch (error) {
-      console.log("Error batch importing proxies:", error);
-      notify.error("Batch import failed");
+      if (error?.name === "AbortError") {
+        notify.info(
+          `Batch import cancelled: Created ${created ?? 0}, Skipped ${skipped ?? 0}`
+        );
+      } else {
+        console.log("Error batch importing proxies:", error);
+        notify.error("Batch import failed");
+      }
     } finally {
+      useTaskStore.getState().finish(PROXY_IMPORT_TASK);
+      importAbortRef.current = null;
       setImporting(false);
     }
   };
@@ -778,6 +827,14 @@ export default function ProxyPoolsPage() {
         )}
       </Card>
 
+      {deploying && (
+        <ProgressCard
+          title={deployLabel || "Deploying relay"}
+          message="Pushing worker build to the edge, this can take about a minute"
+          section="Do not close this tab"
+        />
+      )}
+
       <Modal
         isOpen={showBatchImportModal}
         title="Batch Import Proxies"
@@ -799,13 +856,16 @@ export default function ProxyPoolsPage() {
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button fullWidth onClick={handleBatchImport} disabled={!batchImportText.trim() || importing}>
-              {importing ? "Importing..." : "Import"}
+              Import
             </Button>
             <Button fullWidth variant="ghost" onClick={closeBatchImportModal} disabled={importing}>
               Cancel
             </Button>
           </div>
         </div>
+
+        {/* The import banner lives in the layout's TaskDock so it survives
+            navigation; no second card inside the modal. */}
       </Modal>
 
       <Modal
@@ -847,7 +907,7 @@ export default function ProxyPoolsPage() {
               onClick={handleVercelDeploy}
               disabled={!vercelForm.vercelToken.trim() || deploying}
             >
-              {deploying ? "Deploying... (may take ~1 min)" : "Deploy"}
+              Deploy
             </Button>
             <Button fullWidth variant="ghost" onClick={closeVercelModal} disabled={deploying}>
               Cancel
@@ -911,7 +971,7 @@ export default function ProxyPoolsPage() {
               onClick={handleCloudflareDeploy}
               disabled={!cloudflareForm.accountId.trim() || !cloudflareForm.apiToken.trim() || deploying}
             >
-              {deploying ? "Deploying..." : "Deploy Worker"}
+              Deploy Worker
             </Button>
             <Button fullWidth variant="ghost" onClick={closeCloudflareModal} disabled={deploying}>
               Cancel
@@ -975,7 +1035,7 @@ export default function ProxyPoolsPage() {
               onClick={handleDenoDeploy}
               disabled={!denoForm.denoToken.trim() || !denoForm.orgDomain.trim() || deploying}
             >
-              {deploying ? "Deploying..." : "Deploy Relay"}
+              Deploy Relay
             </Button>
             <Button fullWidth variant="ghost" onClick={closeDenoModal} disabled={deploying}>
               Cancel

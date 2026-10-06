@@ -111,6 +111,7 @@ export async function POST(request) {
   targetModel,
   targetLabel: body.targetModel,
   displayName: body.displayName,
+  ownedBy: body.ownedBy,
   contextWindow: body.contextWindow,
   systemPrompt: body.systemPrompt,
   });
@@ -143,6 +144,7 @@ export async function PUT(request) {
   targetModel,
   targetLabel: body.targetModel,
   displayName: body.displayName,
+  ownedBy: body.ownedBy,
   contextWindow: body.contextWindow,
   systemPrompt: body.systemPrompt,
   });

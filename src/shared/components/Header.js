@@ -6,6 +6,7 @@ import Link from "next/link";
 import PropTypes from "prop-types";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import HeaderMenu from "@/shared/components/HeaderMenu";
+import NotificationBell from "@/shared/components/NotificationBell";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS } from "@/shared/constants/config";
 import { MEDIA_PROVIDER_KINDS, AI_PROVIDERS } from "@/shared/constants/providers";
@@ -159,6 +160,22 @@ const getPageInfo = (pathname) => {
       icon: "translate",
       breadcrumbs: [],
     };
+  if (pathname.includes("/benchmark"))
+    return {
+      title: "Benchmark",
+      description: "Model speed ranking",
+      icon: "speed",
+      breadcrumbs: [{ label: "Benchmark", href: "/dashboard/benchmark" }],
+    };
+
+  if (pathname.includes("/security-log"))
+    return {
+      title: "Security Log",
+      description: "Sign-ins, refusals and admin changes",
+      icon: "shield",
+      breadcrumbs: [{ label: "Security Log", href: "/dashboard/security-log" }],
+    };
+
   if (pathname.includes("/console-log"))
     return {
       title: "Console Log",
@@ -330,6 +347,7 @@ export default function Header({ onMenuClick, showMenuButton = true }) {
           </svg>
           <span className="whitespace-nowrap">Visit On GitHub</span>
         </a>
+        <NotificationBell />
         <HeaderMenu onLogout={handleLogout} />
       </div>
     </header>

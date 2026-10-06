@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import EmptyWithAction from "./EmptyWithAction.js";
 
 export default function ErrorClassificationTab({ period }) {
  const [data, setData] = useState(null);
@@ -14,7 +15,9 @@ export default function ErrorClassificationTab({ period }) {
  }, [period]);
 
  if (loading) return <div className="text-zinc-500 text-sm">Loading error data...</div>;
- if (!data || data.total === 0) return <div className="text-zinc-500 text-sm">No data available for this period.</div>;
+ if (!data || data.total === 0) {
+    return <EmptyWithAction icon="check_circle" title="No errors in this period" hint="Nothing failed — pick a wider period to see past errors." actionHref="/dashboard/console-log" actionLabel="Open console log" />;
+  }
 
  return (
  <div className="flex flex-col gap-4">

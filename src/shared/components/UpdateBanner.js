@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import PropTypes from "prop-types";
 import Button from "./Button";
 import { ConfirmModal } from "./Modal";
@@ -36,12 +37,16 @@ function readDismissed() {
  * a deploy without git history is still told to update.
  */
 export default function UpdateBanner({ pollMs = POLL_MS }) {
+  // Re-keyed per route below, so the banner briefly exits and re-enters on
+  // navigation instead of sitting frozen while the page swaps beneath it.
+  const pathname = usePathname();
   const [info, setInfo] = useState(null);
   const [dismissed, setDismissed] = useState("");
   const [isApiKeyUser, setIsApiKeyUser] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [shutdownCountdown, setShutdownCountdown] = useState(0);
   const { copied, copy } = useCopyToClipboard(2000);
 
@@ -126,7 +131,10 @@ export default function UpdateBanner({ pollMs = POLL_MS }) {
   return (
     <>
       {visible && (
-        <div className="mx-6 lg:mx-10 mb-4 max-w-7xl slide-in-top">
+        <div
+          key={pathname}
+          className={`mx-6 lg:mx-10 mb-4 max-w-7xl ${closing ? "pointer-events-none -translate-y-2 opacity-0 transition-all duration-200 ease-in" : "slide-in-top"}`}
+        >
           <div className="flex flex-col gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:flex-row sm:items-center">
             <span className="material-symbols-outlined shrink-0 text-[20px] text-amber-500">system_update_alt</span>
             <div className="min-w-0 flex-1">
@@ -170,12 +178,18 @@ export default function UpdateBanner({ pollMs = POLL_MS }) {
               <button
                 type="button"
                 onClick={() => {
-                  try {
-                    window.localStorage.setItem(DISMISSED_KEY, identity);
-                  } catch {
-                    // Storage blocked: the banner simply comes back after a reload.
-                  }
-                  setDismissed(identity);
+                  // Animate out first: without this the dismiss is an instant pop
+                  // and the content below jumps up with no transition.
+                  setClosing(true);
+                  setTimeout(() => {
+                    try {
+                      window.localStorage.setItem(DISMISSED_KEY, identity);
+                    } catch {
+                      // Storage blocked: the banner simply comes back after a reload.
+                    }
+                    setDismissed(identity);
+                    setClosing(false);
+                  }, 200);
                 }}
                 className="rounded p-1 text-text-muted transition-colors hover:text-amber-500"
                 title="Close"
