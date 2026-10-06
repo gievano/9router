@@ -269,6 +269,32 @@ function buildCliPackage() {
   }
   console.log("");
 
+  // Step 3c (fork): ship the auth guard sources into the CLI bundle.
+  // custom-server.js loads src/dashboardGuard.js + scripts/auth-guard-hooks.mjs
+  // by path at runtime (getGuardModule), and the guard imports the src/ tree
+  // directly with the "@/" alias mapped by the loader. Since the auth-guard
+  // fail-closed change, a guard that cannot load turns EVERY request into 503.
+  // Mirrors the Dockerfile runtime-image fix (scripts/, src/, jose, uuid,
+  // bcryptjs).
+  console.log("3️⃣ c Shipping auth guard sources...");
+  copyRecursive(path.join(appDir, "src"), path.join(cliAppDir, "src"));
+  console.log("✅ Copied src/ (auth guard tree)");
+  copyRecursive(path.join(appDir, "scripts"), path.join(cliAppDir, "scripts"));
+  console.log("✅ Copied scripts/ (auth guard loader)");
+  for (const pkg of ["jose", "uuid", "bcryptjs"]) {
+    ensureModuleInBundle(pkg);
+  }
+  // The standalone trace prunes node_modules/next to what the Next server
+  // needs; the root server.js shim (which auth-guard-hooks.mjs maps
+  // "next/server" onto) is dropped. Restore it or the guard import throws.
+  const nextServerShimSrc = path.join(appDir, "node_modules", "next", "server.js");
+  const nextServerShimDest = path.join(cliAppDir, "node_modules", "next", "server.js");
+  if (!fs.existsSync(nextServerShimDest) && fs.existsSync(nextServerShimSrc)) {
+    fs.copyFileSync(nextServerShimSrc, nextServerShimDest);
+    console.log("✅ Restored node_modules/next/server.js shim");
+  }
+  console.log("");
+
   // Step 4: Copy static files
   console.log("4️⃣  Copying static files...");
   const staticSrc = path.join(appDir, ".next", "static");

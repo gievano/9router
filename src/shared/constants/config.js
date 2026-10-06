@@ -28,8 +28,9 @@ export const UPDATER_CONFIG = {
   // `9router` from npm would hand the operator a different codebase than the one
   // reporting the update, so the command points at this repository instead.
   npmPackageName: "9router",
+  repoPackageSpec: "github:gievano/9router",
   installCmd: "npm i -g 9router",
-  installCmdLatest: "npm i -g 9router@latest --prefer-online",
+  installCmdLatest: "npm install -g github:gievano/9router@master",
   // When set, the updater runs this Node script instead of `npm i -g` —
   // ponytail: fork mode pulls/builds/swaps the local checkout; relaunch is
   // still the updater's job (via forkAutostartVbs). Absolute paths are fine
