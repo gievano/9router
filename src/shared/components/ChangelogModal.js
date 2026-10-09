@@ -118,6 +118,42 @@ function stripCommitCount(title) {
 // How each changelog category reads at a glance. `verb` is the label shown in
 // the pill; `icon` is the material symbol. Colors are inline because the card
 // is rendered as an HTML string, outside the Tailwind tree.
+// One entry per MEANING, not per spelling. CHANGELOG.md carries 15 distinct
+// headings for 7 ideas (measured), so the aliases below collapse synonyms into a
+// single heading before the merge runs.
+const CATEGORY_ALIAS = {
+ features: "Features",
+ improvements: "Features",
+ changes: "Features",
+ enhancements: "Features",
+ "custom features & enhancements": "Features",
+ "fixes & enhancements": "Fixes",
+ fixes: "Fixes",
+ security: "Security",
+ removals: "Removed",
+ removed: "Removed",
+ "breaking changes": "Removed",
+ deprecated: "Deprecated",
+ deprecations: "Deprecated",
+ renames: "Deprecated",
+ docs: "Docs",
+ documentation: "Docs",
+ internal: "Internal",
+ notes: "Internal",
+ tests: "Internal",
+ refactor: "Internal",
+};
+
+// "Sync with upstream v0.5.86" is a release note, not a change kind. Without
+// this it became a 7th category that looked like a change section.
+function canonicalCategory(name) {
+ const key = String(name || "").trim();
+ if (!key) return "";
+ if (/^sync with upstream\b/i.test(key)) return "Internal";
+ const probe = key.toLowerCase().replace(/[\u2010-\u2015\-]+/g, "-").replace(/\s*&\s*/g, " & ");
+ return CATEGORY_ALIAS[probe] || CATEGORY_ALIAS[key.toLowerCase()] || key;
+}
+
 const CATEGORY_STYLE = {
  Features: { verb: "Added", icon: "add_circle", color: "#22c55e", tint: "rgba(34,197,94,.10)" },
  Fixes: { verb: "Fixed", icon: "build", color: "#f59e0b", tint: "rgba(245,158,11,.10)" },
@@ -129,7 +165,7 @@ const CATEGORY_STYLE = {
 };
 
 function categoryStyle(name) {
- const key = String(name || "").trim();
+ const key = canonicalCategory(name);
  return (
  CATEGORY_STYLE[key] ||
  // Unknown categories still get a stable look instead of falling back to the
@@ -172,8 +208,9 @@ function renderBody(bodyMd) {
  // element and the visual treatment comes from the pill, so the document keeps
  // its structure while reading as a labelled category.
  let out = html.replace(/<h([1-6])([^>]*)>([\s\S]*?)<\/h\1>/g, (_m, level, attrs, inner) => {
- const name = inner.replace(/<[^>]+>/g, "").trim();
- const st = categoryStyle(name);
+ const raw = inner.replace(/<[^>]+>/g, "").trim();
+ const name = canonicalCategory(raw);
+ const st = categoryStyle(raw);
  return (
  `<h${level}${attrs} class="cl-cat" style="display:flex;align-items:center;gap:8px;margin:18px 0 10px;padding:7px 11px;border-radius:9999px;` +
  `background:${st.tint};border:1px solid ${st.color}33;font-size:inherit;font-weight:inherit;">` +
@@ -265,7 +302,7 @@ function mergeBodiesByCategory(bodies) {
  for (const line of String(body || "").split("\n")) {
  const m = line.match(/^#{2,6}\s+(.+?)\s*$/);
  if (m) {
- current = m[1].trim();
+ current = canonicalCategory(m[1]);
  if (!byCat.has(current)) {
  byCat.set(current, []);
  order.push(current);
@@ -292,7 +329,7 @@ function foldBody(bodyMd) {
  for (const line of String(bodyMd || "").split("\n")) {
  const m = line.match(/^#{2,6}\s+(.+?)\s*$/);
  if (m) {
- const cat = m[1].trim();
+ const cat = canonicalCategory(m[1]);
  if (!byCat.has(cat)) { byCat.set(cat, []); order.push(cat); }
  } else if (order.length) {
  byCat.get(order[order.length - 1]).push(line);
