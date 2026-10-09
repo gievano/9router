@@ -1,3 +1,8 @@
+# v0.5.162 (2026-10-09) · 1 commit
+
+## Features
+- **Dashboard**: drop the Benchmark menu, page and API route
+
 # v0.5.161 (2026-10-07) · 5 commits
 
 ## Features
