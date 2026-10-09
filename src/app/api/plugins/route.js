@@ -5,6 +5,14 @@ import { clearPluginCache } from "@/lib/plugins/customPluginsRuntime";
 
 export const dynamic = "force-dynamic";
 
+// Anti Slop intensity, kept in step with the page's picker. "full" is the
+// fallback: a plugin that silently stops filtering is worse than one that
+// filters hard.
+const ANTISLOP_LEVELS = new Set(["lite", "full", "ultra"]);
+function normalizeAntislopLevel(level) {
+  return ANTISLOP_LEVELS.has(level) ? level : "full";
+}
+
 export async function GET() {
   try {
     const settings = await getSettings();
@@ -19,6 +27,7 @@ export async function GET() {
       customPlugins[key] = {
         enabled: Boolean(entry?.enabled),
         models: Array.isArray(entry?.models) ? entry.models.filter(Boolean) : [],
+        ...(key === "antiSlop" ? { level: normalizeAntislopLevel(entry?.level) } : {}),
       };
     }
     return NextResponse.json({ customPlugins }, { headers: { "Cache-Control": "no-store" } });
@@ -45,6 +54,10 @@ export async function PUT(request) {
       merged[key] = {
         enabled: Boolean(entry?.enabled),
         models: Array.isArray(entry?.models) ? entry.models.filter(Boolean) : [],
+        // Anti Slop's level rides on the same entry. Without this line the merge
+        // rebuilt every entry as {enabled, models} and the level was dropped on
+        // every save — the same failure shape as the lost openaiToolBridge key.
+        ...(key === "antiSlop" ? { level: normalizeAntislopLevel(entry?.level) } : {}),
       };
     }
 

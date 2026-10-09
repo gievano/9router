@@ -31,6 +31,8 @@ export async function GET() {
     const csModels = new Set(customPlugins.contextSqueezer?.models || []);
     const otbEnabled = Boolean(customPlugins.openaiToolBridge?.enabled);
     const otbModels = new Set(customPlugins.openaiToolBridge?.models || []);
+    const asEnabled = Boolean(customPlugins.antiSlop?.enabled);
+    const asModels = new Set(customPlugins.antiSlop?.models || []);
 
     // One resolver for every branch below. It used to be five copies of the same
     // five statements, so any change had to be made five times and a missed copy
@@ -42,6 +44,7 @@ export async function GET() {
       ["jsonGuard", jgEnabled, jgModels, { jsonGuard: true }],
       ["contextSqueezer", csEnabled, csModels, { contextSqueezer: true }],
       ["openaiToolBridge", otbEnabled, otbModels, { openaiToolBridge: true }],
+      ["antiSlop", asEnabled, asModels, { antiSlop: true }],
     ];
 
     /**

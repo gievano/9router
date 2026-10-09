@@ -75,11 +75,37 @@ const PLUGINS = [
     description:
       "Keep tool calling working on models that cannot do it natively. Text-only providers (browser-session models with tools disabled) answer in prose; the bridge reads the tools you offered, picks the calls the model wrote out in its answer, and hands your client proper tool_calls with arguments filtered to the schema it declared.",
   },
+  {
+    key: "antiSlop",
+    title: "Anti Slop",
+    iconColor: "text-teal-500",
+    iconBg: "bg-teal-500/10 border-teal-500/20",
+    badgeColor: "text-teal-400",
+    badgeBg: "bg-teal-500/20",
+    levelled: true,
+    description:
+      "Injects the antislop rules (https://github.com/miqdadbadjuber/anti-slop) into the system prompt of the models you pick, so they stop shipping generic AI UI, copy and code. Three intensities: Lite catches the obvious patterns, Full adds the hard-gate rules and the craftsmanship standard, Ultra adds the mandatory PASS/FAIL delivery report.",
+  },
 ];
 
 // One shape for every plugin: enabled flag plus the model list it applies to.
 // `stored` is whatever settings held, so an unknown key in settings is ignored
 // and a plugin missing from settings comes back off rather than undefined.
+// Anti Slop ships three intensities, mirroring Ponytail's levels. The level is
+// stored on the plugin entry so it rides along in settings rather than living in
+// a second place that could disagree with the toggle.
+export const ANTISLOP_LEVELS = [
+  { id: "lite", label: "Lite", desc: "Purpose test plus a scan for the obvious AI patterns." },
+  { id: "full", label: "Full", desc: "Adds the Hard Gate rules, the craftsmanship standard and the swap test." },
+  { id: "ultra", label: "Ultra", desc: "Adds the mandatory four-block PASS/FAIL delivery report." },
+];
+
+const DEFAULT_ANTISLOP_LEVEL = "full";
+
+function normalizeAntislopLevel(level) {
+  return ANTISLOP_LEVELS.some((l) => l.id === level) ? level : DEFAULT_ANTISLOP_LEVEL;
+}
+
 function defaultPluginsFrom(stored) {
   const out = {};
   for (const key of CUSTOM_PLUGIN_KEYS) {
@@ -87,6 +113,8 @@ function defaultPluginsFrom(stored) {
     out[key] = {
       enabled: Boolean(entry?.enabled),
       models: Array.isArray(entry?.models) ? entry.models.filter(Boolean) : [],
+      // Only Anti Slop has a level; every other plugin keeps {enabled, models}.
+      ...(key === "antiSlop" ? { level: normalizeAntislopLevel(entry?.level) } : {}),
     };
   }
   return out;
@@ -155,6 +183,22 @@ export default function PluginsPage() {
       }
     },
     []
+  );
+
+  // Level lives on the plugin entry, so it saves through the same path as the
+  // toggle — no second settings key that could disagree with it.
+  const handleLevelChange = useCallback(
+    (pluginKey, level) => {
+      setCustomPlugins((prev) => {
+        const updated = {
+          ...prev,
+          [pluginKey]: { ...prev[pluginKey], level },
+        };
+        savePlugins(updated);
+        return updated;
+      });
+    },
+    [savePlugins]
   );
 
   const handleToggle = useCallback(
@@ -285,6 +329,34 @@ export default function PluginsPage() {
               <p className="text-sm text-text-muted leading-relaxed mb-5">
                 {plugin.description}
               </p>
+
+              {/* Intensity, shown only while the plugin is on — same shape as the
+                  Ponytail level picker on the Token Saver page. */}
+              {plugin.levelled && isEnabled && (
+                <div className="mb-4 space-y-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {ANTISLOP_LEVELS.map((lvl) => (
+                      <button
+                        key={lvl.id}
+                        type="button"
+                        onClick={() => handleLevelChange(plugin.key, lvl.id)}
+                        className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
+                          (customPlugins[plugin.key]?.level || "full") === lvl.id
+                            ? "bg-primary text-white border-primary"
+                            : "bg-transparent border-border text-text-muted hover:bg-surface-2"
+                        }`}
+                      >
+                        {lvl.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-text-muted">
+                    {ANTISLOP_LEVELS.find(
+                      (lvl) => lvl.id === (customPlugins[plugin.key]?.level || "full")
+                    )?.desc}
+                  </p>
+                </div>
+              )}
 
               {isEnabled && (
                 <div className="mt-auto pt-4 border-t border-border-subtle">

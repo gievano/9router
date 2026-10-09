@@ -13,4 +13,5 @@ export const CUSTOM_PLUGIN_KEYS = [
   "jsonGuard",
   "contextSqueezer",
   "openaiToolBridge",
+  "antiSlop",
 ];

@@ -61,6 +61,15 @@ const PLUGIN_MARKS = {
       <circle cx="15.5" cy="12" r="2.1" />
     </>
   ),
+  // Anti Slop: a sieve catching specks — the technique stays, the slop falls.
+  antiSlop: (
+    <>
+      <path d="M4 4h16l-1.2 8.2a4.5 4.5 0 0 1-4.4 3.8h-4.8a4.5 4.5 0 0 1-4.4-3.8z" />
+      <path d="M4 4h16" />
+      <path d="M9.5 16v4M14.5 16v4" />
+      <circle cx="9.5" cy="20.8" r="1" />
+    </>
+  ),
 };
 
 // The corner badge on the card. It stays a badge, but drawn as its own glyph
@@ -101,6 +110,14 @@ const PLUGIN_BADGE_MARKS = {
       <path d="M4 8.5v7M20 8.5v7" />
       <path d="M4 12h4.5M15.5 12H20" />
       <rect x="8.5" y="9.6" width="7" height="4.8" rx="1.4" />
+    </>
+  ),
+  antiSlop: (
+    <>
+      <path d="M3.5 7.5h17" />
+      <path d="M5 12h14" />
+      <path d="M7.5 16.5h6" />
+      <circle cx="15" cy="18.5" r="1.3" />
     </>
   ),
 };

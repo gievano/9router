@@ -23,6 +23,7 @@ import { getSettings } from "@/lib/localDb";
 import { FORMATS } from "open-sse/translator/formats.js";
 import { getCapabilitiesForModel } from "open-sse/providers/capabilities.js";
 import { squeezeContext } from "open-sse/translator/concerns/contextSqueezer.js";
+import { applyAntiSlop } from "open-sse/rtk/antislop.js";
 
 // Default plugin state for fresh installs / missing settings
 const DEFAULT_PLUGINS = {
@@ -32,6 +33,7 @@ const DEFAULT_PLUGINS = {
   jsonGuard: { enabled: false, models: [] },
   contextSqueezer: { enabled: false, models: [] },
   openaiToolBridge: { enabled: false, models: [] },
+  antiSlop: { enabled: false, models: [] },
 };
 
 // Cached plugin settings to avoid DB hits on every stream chunk
@@ -347,6 +349,7 @@ export async function applyCustomPlugins(body, provider, model, sourceFormat, re
     isJsonGuardActive: false,
     isContextSqueezerActive: false,
     isToolBridgeActive: false,
+    isAntiSlopActive: false,
     contextStats: null,
   };
 
@@ -380,6 +383,11 @@ export async function applyCustomPlugins(body, provider, model, sourceFormat, re
 
   if (config.openaiToolBridge?.enabled && checkMatch(config.openaiToolBridge.models)) {
     result.isToolBridgeActive = applyOpenAIToolBridgeRequest(body, provider, model);
+  }
+
+  if (config.antiSlop?.enabled && checkMatch(config.antiSlop.models)) {
+    result.isAntiSlopActive = true;
+    applyAntiSlop(body, sourceFormat, config.antiSlop.level);
   }
 
   return result;

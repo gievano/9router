@@ -133,4 +133,9 @@ export const PLUGIN_MARK_META = {
     desc: "OpenAI Tool Bridge plugin: recovers tool calls a text-only model wrote out in prose",
     color: "text-rose-300",
   },
+  antiSlop: {
+    label: "Anti Slop",
+    desc: "Anti Slop plugin: injects the antislop rules so the model avoids generic AI UI, copy and code",
+    color: "text-teal-400",
+  },
 };
