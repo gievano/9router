@@ -1,3 +1,17 @@
+# v0.5.163 (2026-10-09) · 1 commit
+
+## Features
+- **Plugins**: add OpenAI Tool Bridge — recovers tool calls from a text-only provider's answer instead of failing the request
+- **Plugins**: restyle every custom plugin mark — two-layer tile with a docked badge and an enabled ring
+
+## Fixes
+- **Changelog**: stop the merge of two same-day releases from printing one bullet twice, and fold repeated scope prefixes into a single heading
+- **Changelog**: group entries by scope
+- **Loading**: move Cancel and Run in background inside the banner frame as one compact control cluster
+- **Loading**: keep backgrounding across a remount so the overlay cannot come back over the page
+- **Models**: name each available-model row with the connection it calls, so one model reachable through several providers no longer looks like a duplicate
+- **Models**: collapse rows that are the same call path
+
 # v0.5.162 (2026-10-09) · 1 commit
 
 ## Features

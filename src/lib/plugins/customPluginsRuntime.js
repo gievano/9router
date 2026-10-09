@@ -31,6 +31,7 @@ const DEFAULT_PLUGINS = {
   speedMode: { enabled: false, models: [] },
   jsonGuard: { enabled: false, models: [] },
   contextSqueezer: { enabled: false, models: [] },
+  openaiToolBridge: { enabled: false, models: [] },
 };
 
 // Cached plugin settings to avoid DB hits on every stream chunk
@@ -273,6 +274,57 @@ export function applyContextSqueezer(body, provider, model) {
 }
 
 /* ------------------------------------------------------------------ *
+ * OpenAI Tool Bridge — request side
+ * ------------------------------------------------------------------ */
+
+/**
+ * OpenAI Tool Bridge, request side.
+ *
+ * The response side is where the repair happens (a model with `tools: false`
+ * answers in prose and the bridge turns that prose back into tool_calls), but
+ * the repair needs the tool catalogue the client offered, and `tools` is
+ * translated away before dispatch. Snapshotting it here is what lets the
+ * response layer answer "was that tool even offered?" instead of trusting any
+ * tool name that appeared in prose.
+ */
+export function applyOpenAIToolBridgeRequest(body, provider, model) {
+  if (!body) return false;
+  if (!Array.isArray(body.tools) || !body.tools.length) {
+    if (!Array.isArray(body.functions) || !body.functions.length) return false;
+  }
+  body._openaiToolBridge = {
+    provider,
+    model,
+    tools: Array.isArray(body.tools) ? body.tools : [],
+    functions: Array.isArray(body.functions) ? body.functions : [],
+  };
+
+  // Drop the tool list for a backend that cannot take it. Web-cookie providers
+  // are text-only (capabilities.js: `tools: false`) and their executors reject
+  // any request carrying tools with a hard 400 — "Gemini Web does not support
+  // OpenAI function tools" — so the model never gets a chance to answer. The
+  // catalogue is already snapshotted above; the response side turns the model's
+  // answer back into tool_calls from that snapshot.
+  //
+  // Only an explicit `tools: false` triggers this. A provider with no entry in
+  // the capability table keeps its tools, because guessing "unsupported" from
+  // silence would silently strip tools from providers that do support them.
+  let caps = null;
+  try {
+    caps = getCapabilitiesForModel(provider, model);
+  } catch {
+    caps = null;
+  }
+  if (caps && caps.tools === false) {
+    delete body.tools;
+    delete body.tool_choice;
+    if (Array.isArray(body.functions)) body.functions = [];
+    return true;
+  }
+  return true;
+}
+
+/* ------------------------------------------------------------------ *
  * Dispatch
  * ------------------------------------------------------------------ */
 
@@ -294,6 +346,7 @@ export async function applyCustomPlugins(body, provider, model, sourceFormat, re
     isSpeedModeActive: false,
     isJsonGuardActive: false,
     isContextSqueezerActive: false,
+    isToolBridgeActive: false,
     contextStats: null,
   };
 
@@ -323,6 +376,10 @@ export async function applyCustomPlugins(body, provider, model, sourceFormat, re
   if (config.contextSqueezer?.enabled && checkMatch(config.contextSqueezer.models)) {
     result.isContextSqueezerActive = true;
     result.contextStats = applyContextSqueezer(body, provider, model);
+  }
+
+  if (config.openaiToolBridge?.enabled && checkMatch(config.openaiToolBridge.models)) {
+    result.isToolBridgeActive = applyOpenAIToolBridgeRequest(body, provider, model);
   }
 
   return result;

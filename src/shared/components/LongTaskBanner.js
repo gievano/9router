@@ -97,7 +97,7 @@ function IconButton({ label, glyph, onClick, tone = "default", className }) {
  */
 function BackgroundChip({ title, message, percent, onExpand, onCancel, canCancel, inline = false }) {
   return (
-    <div className={inline ? "pointer-events-none" : "pointer-events-none fixed bottom-20 right-4 z-[65] sm:bottom-6"}>
+    <div className={inline ? "pointer-events-none" : "pointer-events-none fixed bottom-20 right-4 z-[80] sm:bottom-6"}>
       <div
         role="status"
         aria-live="polite"
@@ -144,7 +144,7 @@ function BackgroundChip({ title, message, percent, onExpand, onCancel, canCancel
 }
 
 /** Framed card: accent rail on the left that sweeps with the percent. */
-function Panel({ title, message, section, percent }) {
+function Panel({ title, message, section, percent, canCancel, canBackground, onCancel, onBackground }) {
   return (
     <div className="modal-in relative w-full max-w-sm overflow-hidden rounded-2xl border border-border-subtle bg-surface/95 shadow-[var(--shadow-elev)] backdrop-blur-md mx-4">
       {/* Accent rail: a full-height strip on the left that fills with progress. */}
@@ -167,11 +167,35 @@ function Panel({ title, message, section, percent }) {
               <p className="mt-0.5 truncate text-xs text-text-muted">{message}</p>
             ) : null}
           </div>
-          {percent !== null ? (
-            <span className="mt-1 shrink-0 rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-primary">
-              {percent}%
-            </span>
-          ) : null}
+          {/* Controls live inside the banner: one compact cluster, so the
+              card stays a single object instead of trailing two text buttons
+              under its own frame. */}
+          <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
+            <div className="flex items-center gap-1">
+              {canCancel ? (
+                <IconButton
+                  label="Cancel"
+                  glyph="close"
+                  tone="danger"
+                  onClick={onCancel}
+                  className="size-7 border border-red-500/30 bg-red-500/10"
+                />
+              ) : null}
+              {canBackground ? (
+                <IconButton
+                  label="Run in background"
+                  glyph="vertical_align_bottom"
+                  onClick={onBackground}
+                  className="size-7 border border-border-subtle bg-surface"
+                />
+              ) : null}
+            </div>
+            {percent !== null ? (
+              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+                {percent}%
+              </span>
+            ) : null}
+          </div>
         </div>
 
         {section ? (
@@ -187,38 +211,13 @@ function Panel({ title, message, section, percent }) {
   );
 }
 
-/** Control buttons under the panel. Background is always offered on a
- * full-screen banner; cancel only when the caller can cancel. */
-function Controls({ canCancel, canBackground, onCancel, onBackground }) {
-  if (!canCancel && !canBackground) return null;
-  return (
-    <div className="mt-3 flex items-center justify-center gap-2">
-      {canCancel ? (
-        <button
-          type="button"
-          onClick={onCancel}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/20"
-        >
-          <span className="material-symbols-outlined text-[15px]">close</span>
-          Cancel
-        </button>
-      ) : null}
-      {canBackground ? (
-        <button
-          type="button"
-          onClick={onBackground}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-surface px-3 py-1.5 text-xs font-medium text-text-main transition-colors hover:bg-surface-2"
-        >
-          <span className="material-symbols-outlined text-[15px]">vertical_align_bottom</span>
-          Run in background
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
 /** How long the overlay fades before the chip takes over. Matches the fade. */
 const SWAP_MS = 160;
+
+// Background decision per banner instance. Keyed the same way the callers key
+// their ProgressCard (by title), so a remount re-reads it instead of starting
+// the operator over at a full-screen overlay.
+const backgroundedKeys = new Set();
 
 export default function LongTaskBanner({
   title,
@@ -238,15 +237,27 @@ export default function LongTaskBanner({
   // itself instead of expanding inside this component.
   onExpand = null,
 }) {
+  const instanceKey = typeof title === "string" && title ? title : "__banner__";
   const percent =
     typeof progress === "number" && Number.isFinite(progress)
       ? Math.min(100, Math.max(0, Math.round(progress <= 1 ? progress * 100 : progress)))
       : null;
-  const [backgrounded, setBackgrounded] = useState(false);
+  const [backgrounded, setBackgrounded] = useState(() => backgroundedKeys.has(instanceKey));
   const [exiting, setExiting] = useState(false);
   const swapTimer = useRef(null);
   const cancelRef = useRef(onCancel);
   cancelRef.current = onCancel;
+
+  // Backgrounding must survive a remount. ProgressCard is keyed by `title`, so
+  // an operation whose card remounts used to come back full-screen even though
+  // the operator had already sent it to the corner -- that is the "stuck"
+  // report: the overlay reappeared and kept covering the page. The decision is
+  // therefore stored per instance key in a module map, not per mount.
+  const setBackgroundedPersisted = (value) => {
+    if (value) backgroundedKeys.set(instanceKey, true);
+    else backgroundedKeys.delete(instanceKey);
+    setBackgrounded(value);
+  };
 
   // The swap timer outlives renders that change props mid-transition.
   useEffect(() => () => clearTimeout(swapTimer.current), []);
@@ -263,7 +274,7 @@ export default function LongTaskBanner({
   }, [backgrounded, onCancel]);
 
   const handleCancel = () => {
-    setBackgrounded(false);
+    setBackgroundedPersisted(false);
     setExiting(false);
     clearTimeout(swapTimer.current);
     onCancel?.();
@@ -277,10 +288,12 @@ export default function LongTaskBanner({
     // Fade the overlay out first; an instant swap reads as a teleport.
     setExiting(true);
     clearTimeout(swapTimer.current);
+    // Tell the caller first: a host modal closes at once instead of staying
+    // mounted on top of the page, which is what made the UI feel stuck.
+    onBackground?.();
     swapTimer.current = setTimeout(() => {
-      setBackgrounded(true);
+      setBackgroundedPersisted(true);
       setExiting(false);
-      onBackground?.();
     }, SWAP_MS);
   };
 
@@ -312,7 +325,7 @@ export default function LongTaskBanner({
         percent={percent}
         canCancel={canCancel}
         canExpand={canExpand && typeof onBackground === "function"}
-        onExpand={() => setBackgrounded(false)}
+        onExpand={() => setBackgroundedPersisted(false)}
         onCancel={handleCancel}
       />
     );
@@ -330,8 +343,11 @@ export default function LongTaskBanner({
       )}
     >
       <div className="flex w-full max-w-sm flex-col items-center">
-        <Panel title={title} message={message} section={section} percent={percent} />
-        <Controls
+        <Panel
+          title={title}
+          message={message}
+          section={section}
+          percent={percent}
           canCancel={canCancel}
           canBackground={canBackground}
           onCancel={handleCancel}

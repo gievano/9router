@@ -19,6 +19,9 @@ const PLUGINS = [
     icon: "visibility",
     iconColor: "text-blue-500",
     iconBg: "bg-blue-500/10 border-blue-500/20",
+    badge: "image",
+    badgeColor: "text-blue-400",
+    badgeBg: "bg-blue-500/20",
     description:
       "Enable image understanding for models that don't natively support vision. Images are converted to text descriptions, allowing any model to process visual content in CLI tools and agents.",
   },
@@ -28,6 +31,9 @@ const PLUGINS = [
     icon: "psychology",
     iconColor: "text-purple-500",
     iconBg: "bg-purple-500/10 border-purple-500/20",
+    badge: "stairs",
+    badgeColor: "text-purple-400",
+    badgeBg: "bg-purple-500/20",
     description:
       "Enhance reasoning with multi-step chain-of-thought analysis. Forces the model to break problems into steps before answering, producing more thorough and accurate responses.",
   },
@@ -37,6 +43,9 @@ const PLUGINS = [
     icon: "bolt",
     iconColor: "text-cyan-500",
     iconBg: "bg-cyan-500/10 border-cyan-500/20",
+    badge: "speed",
+    badgeColor: "text-cyan-400",
+    badgeBg: "bg-cyan-500/20",
     description:
       "Skip thinking for faster responses. Disables reasoning mode on the selected models and instructs them to answer directly, ideal for simple tasks where low latency matters more than deep analysis.",
   },
@@ -46,6 +55,9 @@ const PLUGINS = [
     icon: "data_object",
     iconColor: "text-emerald-500",
     iconBg: "bg-emerald-500/10 border-emerald-500/20",
+    badge: "verified",
+    badgeColor: "text-emerald-400",
+    badgeBg: "bg-emerald-500/20",
     description:
       "Keep machine-readable output parseable. Strips prose and markdown fences around JSON, fixes Python-style literals and trailing commas, closes payloads the output limit cut off, and drops tool-call arguments the schema never declared.",
   },
@@ -55,8 +67,23 @@ const PLUGINS = [
     icon: "compress",
     iconColor: "text-amber-500",
     iconBg: "bg-amber-500/10 border-amber-500/20",
+    badge: "unfold_less",
+    badgeColor: "text-amber-400",
+    badgeBg: "bg-amber-500/20",
     description:
       "Fit long conversations into the model's context window. The oldest turns are replaced with a short recap and oversized tool output is trimmed, so the newest turns always arrive intact instead of the provider rejecting the request.",
+  },
+  {
+    key: "openaiToolBridge",
+    title: "OpenAI Tool Bridge",
+    icon: "extension",
+    iconColor: "text-rose-400",
+    iconBg: "bg-rose-500/10 border-rose-500/20",
+    badge: "cable",
+    badgeColor: "text-rose-300",
+    badgeBg: "bg-rose-500/20",
+    description:
+      "Keep tool calling working on models that cannot do it natively. Text-only providers (browser-session models with tools disabled) answer in prose; the bridge reads the tools you offered, picks the calls the model wrote out in its answer, and hands your client proper tool_calls with arguments filtered to the schema it declared.",
   },
 ];
 
@@ -66,6 +93,7 @@ const DEFAULT_PLUGINS_STATE = {
   speedMode: { enabled: false, models: [] },
   jsonGuard: { enabled: false, models: [] },
   contextSqueezer: { enabled: false, models: [] },
+  openaiToolBridge: { enabled: false, models: [] },
 };
 
 function formatModelName(modelVal) {
@@ -251,14 +279,30 @@ export default function PluginsPage() {
             <Card key={plugin.key} className="flex flex-col h-full">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`size-10 rounded-xl flex items-center justify-center border shrink-0 ${plugin.iconBg}`}
-                  >
-                    <span
-                      className={`material-symbols-outlined text-[22px] leading-none ${plugin.iconColor}`}
+                  {/* Two-layer plugin mark: a tile in the plugin's own colour
+                      carrying the primary glyph, with a smaller badge docked
+                      at its corner saying what it DOES. The tile gets a solid
+                      coloured ring when the plugin is enabled and a flat
+                      hairline when it is off. */}
+                  <div className="relative shrink-0">
+                    <div
+                      className={`size-10 rounded-xl flex items-center justify-center border ${plugin.iconBg} ${plugin.iconColor} ${isEnabled ? "ring-2 ring-current ring-offset-0" : ""}`}
                     >
-                      {plugin.icon}
-                    </span>
+                      <span className="material-symbols-outlined text-[22px] leading-none">
+                        {plugin.icon}
+                      </span>
+                    </div>
+                    {plugin.badge ? (
+                      <div
+                        className={`absolute -bottom-1 -right-1 size-5 rounded-md flex items-center justify-center border border-bg ${plugin.badgeBg || ""}`}
+                      >
+                        <span
+                          className={`material-symbols-outlined text-[13px] leading-none ${plugin.badgeColor || ""}`}
+                        >
+                          {plugin.badge}
+                        </span>
+                      </div>
+                    ) : null}
                   </div>
                   <h3 className="font-semibold text-base text-text-main">
                     {plugin.title}

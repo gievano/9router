@@ -125,6 +125,58 @@ function renderBody(bodyMd) {
 // ## Features / ## Fixes headings. Split every body on its h2 sub-headings and
 // rejoin items under one heading each, keeping the order the headings first
 // appear in — so Fixes shows once with all fixes, not four times.
+// Fold a category's bullets under their shared `**Scope**:` prefix and drop
+// duplicates. Folding is what the reader asked for: three separate
+// "- **Antigravity**: ..." lines collapse into one Antigravity heading with the
+// lines beneath it. A scope is folded only when it holds two or more items, so
+// a single-entry category keeps its compact one-line form.
+const SCOPE_BULLET = /^[-*]\s+\*\*(.+?)\*\*\s*:\s*(.*)$/;
+
+function foldCategoryByScope(rawLines) {
+ const lines = (rawLines || []).filter((l) => l.trim() !== "");
+ const seen = new Set();
+ const kept = [];
+ for (const line of lines) {
+ const key = line.trim().replace(/\s+/g, " ");
+ if (key.startsWith("-") || key.startsWith("*")) {
+ if (seen.has(key)) continue; // same-day merge repeated it
+ seen.add(key);
+ }
+ kept.push(line);
+ }
+
+ const out = [];
+ const done = new Set();
+ let i = 0;
+ while (i < kept.length) {
+ const line = kept[i];
+ const m = line.match(SCOPE_BULLET);
+ if (!m) { out.push(line); i++; continue; }
+ const scope = m[1].trim();
+ if (done.has(scope)) { i++; continue; } // already emitted at first sight
+ done.add(scope);
+
+ // Sweep the whole category for this scope so the heading stays grouped even
+ // when another scope appeared in between.
+ const items = [];
+ for (let j = 0; j < kept.length; j++) {
+ const k = kept[j].match(SCOPE_BULLET);
+ if (k && k[1].trim() === scope) {
+ const text = k[2].trim();
+ if (text) items.push(text);
+ }
+ }
+ if (items.length >= 2) {
+ out.push(`**${scope}:**`);
+ for (const text of items) out.push(`- ${text}`);
+ } else {
+ out.push(kept[i].trim());
+ }
+ i++;
+ }
+ return out.join("\n");
+}
+
 function mergeBodiesByCategory(bodies) {
  const order = [];
  const byCat = new Map();
@@ -143,9 +195,36 @@ function mergeBodiesByCategory(bodies) {
  }
  }
  }
+ // Joining raw bodies left a blank line between them; the fold pass also
+ // normalises indentation, so emit only what it produced.
  return order
- .map((cat) => `## ${cat}\n${byCat.get(cat).join("\n").replace(/\n+$/, "")}`)
+ .map((cat) => `## ${cat}\n${foldCategoryByScope(byCat.get(cat))}`)
  .join("\n\n");
+}
+
+// Same treatment for a body rendered on its own: split on h2 headings, fold
+// each category, rejoin. Keeps the single-release card identical in style to a
+// merged one.
+function foldBody(bodyMd) {
+ const order = [];
+ const byCat = new Map();
+ let plain = [];
+ for (const line of String(bodyMd || "").split("\n")) {
+ const m = line.match(/^#{2,6}\s+(.+?)\s*$/);
+ if (m) {
+ const cat = m[1].trim();
+ if (!byCat.has(cat)) { byCat.set(cat, []); order.push(cat); }
+ } else if (order.length) {
+ byCat.get(order[order.length - 1]).push(line);
+ } else {
+ plain.push(line);
+ }
+ }
+ const parts = [];
+ const head = plain.join("\n").trim();
+ if (head) parts.push(head);
+ for (const cat of order) parts.push(`## ${cat}\n${foldCategoryByScope(byCat.get(cat))}`);
+ return parts.join("\n\n");
 }
 
 function renderVersionCards(md, accent) {
@@ -179,7 +258,7 @@ function renderVersionCards(md, accent) {
  head += ` · ${commits} ${commits === 1 ? "commit" : "commits"}`;
  }
  const inner = group.items.length === 1
- ? renderBody(group.items[0].body)
+ ? renderBody(foldBody(group.items[0].body))
  : renderBody(mergeBodiesByCategory(group.items.map((section) => section.body)));
  return `<div style="${cardStyle}">
  <h3 style="${titleStyle}">

@@ -258,7 +258,25 @@ export async function GET() {
       return { ...entry, status, contextWindow };
     });
 
-    const models = filterModelsByAllowedModels(withStatus, allowedModelsRaw);
+    // Deliberately NOT de-duplicated here: two rows sharing a bare model id
+    // but sitting behind different provider connections are different call
+    // paths, and both must stay. The card disambiguates the label instead.
+    // Collapse rows that are the SAME call path. The catalog can list one
+    // model twice under one provider (a marketing variant with the same id),
+    // and that really is a duplicate the operator sees as "one model twice".
+    // Two rows behind DIFFERENT connections are NOT duplicates and stay.
+    const seenCallPath = new Set();
+    const distinct = [];
+    for (const entry of withStatus) {
+      const callPath =
+        `${String(entry.provider || "").trim().toLowerCase()}\u0000` +
+        `${String(entry.model || entry.name || "").trim().toLowerCase()}`;
+      if (seenCallPath.has(callPath)) continue;
+      seenCallPath.add(callPath);
+      distinct.push(entry);
+    }
+
+    const models = filterModelsByAllowedModels(distinct, allowedModelsRaw);
     models.sort((a, b) => String(a.name).localeCompare(String(b.name)));
 
     return NextResponse.json(
