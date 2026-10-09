@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import ChangelogModal from "./ChangelogModal";
 import { useSessionStore } from "@/store/sessionStore";
 
 const POLL_MS = 60000;
@@ -21,6 +21,7 @@ export default function NotificationBell() {
   const role = useSessionStore((state) => state.role);
   const isAdmin = role !== "apikey";
   const [open, setOpen] = useState(false);
+  const [changelogOpen, setChangelogOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const ref = useRef(null);
@@ -157,25 +158,28 @@ export default function NotificationBell() {
                     </span>
                   </>
                 );
-                return n.link ? (
-                  <Link
+                // Every entry opens the changelog: the bell says something
+                // changed, and the changelog says what.
+                return (
+                  <button
                     key={n.id}
-                    href={n.link}
-                    onClick={() => setOpen(false)}
-                    className="block border-b border-border-subtle/60 last:border-0"
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      setChangelogOpen(true);
+                    }}
+                    className="block w-full text-left border-b border-border-subtle/60 last:border-0"
                   >
                     {body}
-                  </Link>
-                ) : (
-                  <div key={n.id} className="border-b border-border-subtle/60 last:border-0">
-                    {body}
-                  </div>
+                  </button>
                 );
               })
             )}
           </div>
         </div>
       )}
+
+      <ChangelogModal isOpen={changelogOpen} onClose={() => setChangelogOpen(false)} />
     </div>
   );
 }

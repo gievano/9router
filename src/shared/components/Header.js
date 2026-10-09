@@ -168,14 +168,6 @@ const getPageInfo = (pathname) => {
       breadcrumbs: [{ label: "Benchmark", href: "/dashboard/benchmark" }],
     };
 
-  if (pathname.includes("/security-log"))
-    return {
-      title: "Security Log",
-      description: "Sign-ins, refusals and admin changes",
-      icon: "shield",
-      breadcrumbs: [{ label: "Security Log", href: "/dashboard/security-log" }],
-    };
-
   if (pathname.includes("/console-log"))
     return {
       title: "Console Log",

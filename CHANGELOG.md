@@ -1,7 +1,14 @@
-# v0.5.159-Custom
+# v0.5.161-Custom
+
+## Features
+- **Dashboard**: add inbox error listing failed requests
+- **Notifications**: bell opens the changelog; drop the inbox error and security log surfaces
+- **Notifications**: surface failed requests and security events in the bell
 
 ## Fixes
 - **Auth**: enforce the dashboard guard in custom-server because Next 14 middleware is Edge-only
+- **Security log**: stop probe signatures from swallowing sign-in events
+- **UI**: scroll the update banner with the page and use English copy in the error inbox
 
 ## Internal
 - **Auth**: release v0.5.153 (auth guard enforced at HTTP layer)
