@@ -115,10 +115,87 @@ function stripCommitCount(title) {
  return title.replace(/\s*·\s*\d+\s+commits?\b/i, "");
 }
 
+// How each changelog category reads at a glance. `verb` is the label shown in
+// the pill; `icon` is the material symbol. Colors are inline because the card
+// is rendered as an HTML string, outside the Tailwind tree.
+const CATEGORY_STYLE = {
+ Features: { verb: "Added", icon: "add_circle", color: "#22c55e", tint: "rgba(34,197,94,.10)" },
+ Fixes: { verb: "Fixed", icon: "build", color: "#f59e0b", tint: "rgba(245,158,11,.10)" },
+ Security: { verb: "Security", icon: "shield", color: "#ef4444", tint: "rgba(239,68,68,.10)" },
+ Removed: { verb: "Removed", icon: "remove_circle", color: "#f43f5e", tint: "rgba(244,63,94,.10)" },
+ Deprecated: { verb: "Deprecated", icon: "warning", color: "#a855f7", tint: "rgba(168,85,247,.10)" },
+ Docs: { verb: "Docs", icon: "menu_book", color: "#38bdf8", tint: "rgba(56,189,248,.10)" },
+ Internal: { verb: "Internal", icon: "build_circle", color: "#94a3b8", tint: "rgba(148,163,184,.10)" },
+};
+
+function categoryStyle(name) {
+ const key = String(name || "").trim();
+ return (
+ CATEGORY_STYLE[key] ||
+ // Unknown categories still get a stable look instead of falling back to the
+ // heading style that made everything blur together.
+ { verb: key, icon: "label", color: "#94a3b8", tint: "rgba(148,163,184,.08)" }
+ );
+}
+
+// The leading verb of a bullet says what the change IS. Matching on the verb
+// rather than the whole line keeps the rest of the sentence untouched.
+const CHANGE_VERB = [
+ { re: /^(add(ed|s)?|introduc(e|ed|es|ing)|support(ed|s)?|implement(ed|s)?|new)\b/i, kind: "Added", icon: "add", color: "#22c55e" },
+ { re: /^(fix(es|ed)?|correct(s|ed)?|repair(s|ed)?|resolv(e|es|ed))\b/i, kind: "Fixed", icon: "build", color: "#f59e0b" },
+ { re: /^(remove[sd]?|delet(e|es|ed)|drop(s|ped)?|retire[sd]?)\b/i, kind: "Removed", icon: "remove", color: "#f43f5e" },
+ { re: /^(deprecat(e|ed|es)|renam(e|ed|es)|chang(e|ed|es))\b/i, kind: "Changed", icon: "edit", color: "#a855f7" },
+ { re: /^(upgrad(e|ed|es)|bump(s|ed)?|rais(e|ed|es)|increas(e|ed|es))\b/i, kind: "Changed", icon: "trending_up", color: "#a855f7" },
+ { re: /^(secur(e|ity)|harden(s|ed)?|sign(s|ed)?|authent(icat(e|ion)))\b/i, kind: "Security", icon: "shield", color: "#ef4444" },
+];
+
+function changeKind(text) {
+ const t = String(text || "").trim();
+ if (!t) return null;
+ // Folded lines already lost their bullet; the scope heading is handled apart.
+ if (t.startsWith("**")) return null;
+ for (const v of CHANGE_VERB) {
+ if (v.re.test(t)) return v;
+ }
+ return null;
+}
+
 function renderBody(bodyMd) {
  if (!bodyMd.trim()) return "";
  const demoted = bodyMd.replace(/^#{2,6}\s/gm, (m) => "#".repeat(Math.min(6, m.length + 2)) + " ");
- return marked.parse(demoted);
+ // Heading level is kept for structure, then restyled below into a pill: the
+ // parser output decides what is a category and what is a bullet.
+ const html = marked.parse(demoted);
+
+ // h2 is the category level the fold pass emits.
+ let out = html.replace(/<h2([^>]*)>([\s\S]*?)<\/h2>/g, (_m, attrs, inner) => {
+ const name = inner.replace(/<[^>]+>/g, "").trim();
+ const st = categoryStyle(name);
+ return (
+ `<div class="cl-cat" style="display:flex;align-items:center;gap:8px;margin:18px 0 10px;padding:7px 11px;border-radius:9999px;` +
+ `background:${st.tint};border:1px solid ${st.color}33;">` +
+ `<span class="material-symbols-outlined" style="font-size:16px;color:${st.color};line-height:1;">${st.icon}</span>` +
+ `<span style="font-size:13px;font-weight:700;letter-spacing:.02em;color:${st.color};">${escapeHtml(st.verb.toUpperCase())}</span>` +
+ `<span style="font-size:12px;font-weight:600;color:${st.color};opacity:.65;">${escapeHtml(name)}</span>` +
+ `</div>`
+ );
+ });
+
+ // Each bullet gets its change-kind icon, so add / fix / remove are separable
+ // without reading the sentence.
+ out = out.replace(/<li>([\s\S]*?)<\/li>/g, (m, inner) => {
+ const text = inner.replace(/<[^>]+>/g, "").trim();
+ const v = changeKind(text);
+ if (!v) return m;
+ return (
+ `<li style="position:relative;list-style:none;margin:0 0 6px;padding-left:24px;">` +
+ `<span class="material-symbols-outlined" style="position:absolute;left:2px;top:1px;font-size:15px;color:${v.color};line-height:1.4;">${v.icon}</span>` +
+ inner +
+ `</li>`
+ );
+ });
+
+ return out;
 }
 
 // A merged day card concatenates several patch bodies, each carrying its own
@@ -232,6 +309,9 @@ function renderVersionCards(md, accent) {
  const cardStyle = `margin:0 0 14px;padding:14px 16px;border:1px solid ${accent.border};border-radius:12px;background:${accent.bg};box-sizing:border-box;`;
  const titleStyle = `margin:0 0 10px;font-size:15px;font-weight:700;color:${accent.color};display:flex;align-items:center;gap:8px;`;
  const subStyle = `margin:16px 0 8px;font-size:13.5px;font-weight:700;color:${accent.color};opacity:.9;`;
+ // Release card: give the version header a divider under it so each release
+ // reads as its own block instead of blending into the next one.
+ const headRule = `margin:0 0 2px;padding-bottom:8px;border-bottom:1px solid ${accent.border};`;
  if (!sections.length) {
  const html = md ? marked.parse(md) : "";
  return html ? `<div style="${cardStyle}"><div class="changelog-body">${html}</div></div>` : "";
@@ -261,7 +341,7 @@ function renderVersionCards(md, accent) {
  ? renderBody(foldBody(group.items[0].body))
  : renderBody(mergeBodiesByCategory(group.items.map((section) => section.body)));
  return `<div style="${cardStyle}">
- <h3 style="${titleStyle}">
+ <h3 style="${titleStyle}${headRule}">
  <span class="material-symbols-outlined" style="font-size:18px;">${accent.icon}</span>
  ${escapeHtml(head)}
  </h3>

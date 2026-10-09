@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { Badge, Button, Card, CardSkeleton, Input, Modal, ProgressCard, Toggle, ConfirmModal } from "@/shared/components";
+import { Badge, Button, Card, CardSkeleton, Input, Modal, Pagination, ProgressCard, Toggle, ConfirmModal } from "@/shared/components";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useTaskStore } from "@/store/taskStore";
 
@@ -56,6 +56,12 @@ export default function ProxyPoolsPage() {
   const [deployLabel, setDeployLabel] = useState(null);
   const [testingId, setTestingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+  // The row markup is heavy, so a large import used to render every pool at
+  // once and lock the page up. A page window plus a filter bounds the DOM.
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [statusFilter, setStatusFilter] = useState("all");
   const [healthChecking, setHealthChecking] = useState(false);
   const [healthProgress, setHealthProgress] = useState({ current: 0, total: 0 });
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -217,9 +223,41 @@ export default function ProxyPoolsPage() {
     }
   };
 
-  const allSelected = proxyPools.length > 0 && selectedIds.length === proxyPools.length;
   const toggleSelect = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  const toggleSelectAll = () => setSelectedIds(allSelected ? [] : proxyPools.map((p) => p.id));
+  const filteredPools = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return proxyPools.filter((pool) => {
+      if (statusFilter === "active" && pool.isActive !== true) return false;
+      if (statusFilter === "inactive" && pool.isActive === true) return false;
+      if (statusFilter === "unbound" && (pool.boundConnectionCount || 0) > 0) return false;
+      if (!q) return true;
+      return (
+        String(pool.name || "").toLowerCase().includes(q) ||
+        String(pool.proxyUrl || "").toLowerCase().includes(q)
+      );
+    });
+  }, [proxyPools, search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPools.length / pageSize));
+  // Clamping in render (not in an effect) keeps one source of truth and
+  // avoids a paint where the list is briefly the wrong page.
+  const safePage = Math.min(page, totalPages);
+  const visiblePools = useMemo(
+    () => filteredPools.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filteredPools, safePage, pageSize]
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, pageSize]);
+
+  const allSelected =
+    visiblePools.length > 0 && visiblePools.every((p) => selectedIds.includes(p.id));
+  // Bulk actions still act on the whole selection across pages; the checkbox
+  // only ever refers to the visible window.
+  const someVisibleSelected = visiblePools.some((p) => selectedIds.includes(p.id));
+
+  const toggleSelectAll = () => setSelectedIds(allSelected ? [] : visiblePools.map((p) => p.id));
   const clearSelection = () => setSelectedIds([]);
 
   const bulkSetActive = async (isActive) => {
@@ -737,6 +775,45 @@ export default function ProxyPoolsPage() {
           </div>
         )}
 
+        {proxyPools.length > 0 && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-4">
+            <div className="flex-1 min-w-0">
+              <Input
+                placeholder="Search by name or proxy URL..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                icon="search"
+                className="w-full"
+              />
+            </div>
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-black/5 dark:bg-white/5">
+              {[
+                { id: "all", label: "All" },
+                { id: "active", label: "Active" },
+                { id: "inactive", label: "Inactive" },
+                { id: "unbound", label: "Unbound" },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setStatusFilter(opt.id)}
+                  aria-pressed={statusFilter === opt.id}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                    statusFilter === opt.id
+                      ? "bg-surface text-text-main shadow-sm"
+                      : "text-text-muted hover:text-text-main"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-text-muted whitespace-nowrap">
+              {filteredPools.length} of {proxyPools.length}
+            </span>
+          </div>
+        )}
+
         {proxyPools.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-text-main font-medium mb-1">No proxy pool entries yet</p>
@@ -745,9 +822,26 @@ export default function ProxyPoolsPage() {
             </p>
             <Button icon="add" onClick={openCreateModal}>Add Proxy Pool</Button>
           </div>
+        ) : filteredPools.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-text-main font-medium mb-1">No proxy pools match this filter</p>
+            <p className="text-sm text-text-muted mb-4">
+              {proxyPools.length} entries are loaded. Clear the search or pick another status.
+            </p>
+            <Button
+              variant="secondary"
+              icon="filter_alt_off"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+              }}
+            >
+              Clear filter
+            </Button>
+          </div>
         ) : (
           <div className="flex flex-col divide-y divide-black/[0.04] dark:divide-white/[0.05]">
-            {proxyPools.map((pool) => (
+            {visiblePools.map((pool) => (
               <div key={pool.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                   <input
@@ -824,6 +918,16 @@ export default function ProxyPoolsPage() {
               </div>
             ))}
           </div>
+        )}
+
+        {filteredPools.length > 0 && totalPages > 1 && (
+          <Pagination
+            currentPage={safePage}
+            pageSize={pageSize}
+            totalItems={filteredPools.length}
+            onPageChange={setPage}
+            onPageSizeChange={(n) => setPageSize(n)}
+          />
         )}
       </Card>
 
