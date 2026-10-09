@@ -29,6 +29,40 @@ export async function GET() {
     const jgModels = new Set(customPlugins.jsonGuard?.models || []);
     const csEnabled = Boolean(customPlugins.contextSqueezer?.enabled);
     const csModels = new Set(customPlugins.contextSqueezer?.models || []);
+    const otbEnabled = Boolean(customPlugins.openaiToolBridge?.enabled);
+    const otbModels = new Set(customPlugins.openaiToolBridge?.models || []);
+
+    // One resolver for every branch below. It used to be five copies of the same
+    // five statements, so any change had to be made five times and a missed copy
+    // surfaced as a plugin mark that appeared in one view and not another.
+    const PLUGIN_SOURCES = [
+      ["imageVision", ivEnabled, ivModels, { vision: true, imageVision: true }],
+      ["thinkDeeper", tdEnabled, tdModels, { reasoning: true, thinkDeeper: true }],
+      ["speedMode", smEnabled, smModels, { speedMode: true }],
+      ["jsonGuard", jgEnabled, jgModels, { jsonGuard: true }],
+      ["contextSqueezer", csEnabled, csModels, { contextSqueezer: true }],
+      ["openaiToolBridge", otbEnabled, otbModels, { openaiToolBridge: true }],
+    ];
+
+    /**
+     * Turn on the plugins whose model list matches this entry and return the
+     * keys that matched. `ids` is every shape the model may be listed under
+     * (full model, routed model, the caller's own id).
+     *
+     * Image Vision sets BOTH caps.vision (vision-gated UI depends on it) and
+     * caps.imageVision. Setting only caps.vision was the original bug: it is
+     * indistinguishable from native vision, so the plugin drew no mark.
+     */
+    const applyPluginMarks = (caps, ids) => {
+      const marks = [];
+      for (const [key, enabled, models, effect] of PLUGIN_SOURCES) {
+        if (!enabled) continue;
+        if (!ids.some((id) => id && models.has(id))) continue;
+        marks.push(key);
+        Object.assign(caps, effect);
+      }
+      return marks;
+    };
 
     const models = AI_MODELS
       .filter((m) => {
@@ -48,28 +82,14 @@ export async function GET() {
           contextWindow: c.contextWindow,
           maxOutput: c.maxOutput,
         };
-        if (ivEnabled && (ivModels.has(fullModel) || ivModels.has(routedModel) || ivModels.has(m.model))) {
-          caps.vision = true;
-        }
-        if (tdEnabled && (tdModels.has(fullModel) || tdModels.has(routedModel) || tdModels.has(m.model))) {
-          caps.reasoning = true;
-          caps.thinkDeeper = true;
-        }
-        if (smEnabled && (smModels.has(fullModel) || smModels.has(routedModel) || smModels.has(m.model))) {
-          caps.speedMode = true;
-        }
-        if (jgEnabled && (jgModels.has(fullModel) || jgModels.has(routedModel) || jgModels.has(m.model))) {
-          caps.jsonGuard = true;
-        }
-        if (csEnabled && (csModels.has(fullModel) || csModels.has(routedModel) || csModels.has(m.model))) {
-          caps.contextSqueezer = true;
-        }
+        const pluginMarks = applyPluginMarks(caps, [fullModel, routedModel, m.model]);
         return {
           ...m,
           fullModel,
           routedModel,
           alias: modelAliases[fullModel] || m.model,
           caps,
+        pluginMarks,
         };
       });
 
@@ -98,22 +118,7 @@ export async function GET() {
           contextWindow: c.contextWindow ?? live.contextLength,
           maxOutput: c.maxOutput,
         };
-        if (ivEnabled && (ivModels.has(fullModel) || ivModels.has(live.id))) {
-          caps.vision = true;
-        }
-        if (tdEnabled && (tdModels.has(fullModel) || tdModels.has(live.id))) {
-          caps.reasoning = true;
-          caps.thinkDeeper = true;
-        }
-        if (smEnabled && (smModels.has(fullModel) || smModels.has(live.id))) {
-          caps.speedMode = true;
-        }
-        if (jgEnabled && (jgModels.has(fullModel) || jgModels.has(live.id))) {
-          caps.jsonGuard = true;
-        }
-        if (csEnabled && (csModels.has(fullModel) || csModels.has(live.id))) {
-          caps.contextSqueezer = true;
-        }
+        const pluginMarks = applyPluginMarks(caps, [fullModel, live.id]);
         const entry = {
           provider: alias,
           model: live.id,
@@ -122,6 +127,7 @@ export async function GET() {
           routedModel: fullModel,
           alias: modelAliases[fullModel] || live.id,
           caps,
+        pluginMarks,
           liveSuggested: true,
         };
         models.push(entry);
@@ -145,22 +151,7 @@ export async function GET() {
         maxOutput: c.maxOutput,
         ...(m.caps || {}),
       };
-      if (ivEnabled && (ivModels.has(fullModel) || ivModels.has(m.id))) {
-        caps.vision = true;
-      }
-      if (tdEnabled && (tdModels.has(fullModel) || tdModels.has(m.id))) {
-        caps.reasoning = true;
-        caps.thinkDeeper = true;
-      }
-      if (smEnabled && (smModels.has(fullModel) || smModels.has(m.id))) {
-        caps.speedMode = true;
-      }
-      if (jgEnabled && (jgModels.has(fullModel) || jgModels.has(m.id))) {
-        caps.jsonGuard = true;
-      }
-      if (csEnabled && (csModels.has(fullModel) || csModels.has(m.id))) {
-        caps.contextSqueezer = true;
-      }
+      const pluginMarks = applyPluginMarks(caps, [fullModel, m.id]);
       models.push({
         provider: m.providerAlias,
         model: m.id,
@@ -169,6 +160,7 @@ export async function GET() {
         routedModel: fullModel,
         alias: modelAliases[fullModel] || m.id,
         caps,
+        pluginMarks,
       });
     }
 
@@ -217,6 +209,7 @@ export async function GET() {
         routedModel: s.callName,
         alias: s.callName,
         caps,
+        pluginMarks,
         isStudio: true,
       });
     }
@@ -242,21 +235,15 @@ export async function GET() {
       const aggregated = aggregateComboCapabilities(members, comboByName, 0, Number(combo.contextWindow) || 0);
       if (!aggregated) continue;
       const comboCaps = { ...aggregated };
-      if (ivEnabled && (ivModels.has(combo.name) || ivModels.has(`combo/${combo.name}`) || members.some((m) => ivModels.has(m)))) {
-        comboCaps.vision = true;
-      }
-      if (tdEnabled && (tdModels.has(combo.name) || tdModels.has(`combo/${combo.name}`) || members.some((m) => tdModels.has(m)))) {
-        comboCaps.reasoning = true;
-        comboCaps.thinkDeeper = true;
-      }
-      if (smEnabled && (smModels.has(combo.name) || smModels.has(`combo/${combo.name}`) || members.some((m) => smModels.has(m)))) {
-        comboCaps.speedMode = true;
-      }
-      if (jgEnabled && (jgModels.has(combo.name) || jgModels.has(`combo/${combo.name}`) || members.some((m) => jgModels.has(m)))) {
-        comboCaps.jsonGuard = true;
-      }
-      if (csEnabled && (csModels.has(combo.name) || csModels.has(`combo/${combo.name}`) || members.some((m) => csModels.has(m)))) {
-        comboCaps.contextSqueezer = true;
+      // A combo's marks come from its members: the plugin selection was made per
+      // model when the combo was configured, so those are the marks that apply.
+      // The previous lookup wrote into an undefined `caps` and matched a stray
+      // `m` from the outer loop, so a combo never showed a plugin mark.
+      const comboMarks = new Set();
+      for (const member of members) {
+        for (const mark of applyPluginMarks(comboCaps, [member, String(member).split("/").pop()])) {
+          comboMarks.add(mark);
+        }
       }
       models.push({
         provider: "combo",
@@ -266,6 +253,7 @@ export async function GET() {
         routedModel: combo.name,
         alias: combo.name,
         caps: comboCaps,
+        pluginMarks: [...comboMarks],
         isCombo: true,
       });
     }

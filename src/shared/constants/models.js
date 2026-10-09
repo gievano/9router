@@ -69,3 +69,70 @@ export function isSttTransport(transport) {
   if (typeof transport !== "string") return false;
   return Object.prototype.hasOwnProperty.call(STT_TRANSPORT_META, transport.trim());
 }
+
+// Keys of the custom plugins, in the order their marks are drawn on a model row.
+// This is the single list every surface reads — the plugin page, the model
+// picker, the usage view and /v1/models. A plugin missing here is a plugin whose
+// mark can never appear on a model.
+export const CUSTOM_PLUGIN_KEYS = [
+  "imageVision",
+  "thinkDeeper",
+  "speedMode",
+  "jsonGuard",
+  "contextSqueezer",
+  "openaiToolBridge",
+];
+
+/**
+ * Plugin keys active for one model entry.
+ *
+ * `pluginMarks` on the payload is authoritative; the caps flags are still read as
+ * a fallback because older payloads only carry those. The list is kept separate
+ * from caps on purpose: a plugin used to signal itself by setting a capability
+ * (Image Vision set caps.vision), which is indistinguishable from a native
+ * capability and therefore drew no mark at all.
+ */
+export function pluginMarksFor(entry) {
+  if (!entry) return [];
+  const set = new Set(Array.isArray(entry.pluginMarks) ? entry.pluginMarks : []);
+  const caps = entry.caps || entry;
+  for (const key of CUSTOM_PLUGIN_KEYS) {
+    if (!set.has(key) && caps && caps[key]) set.add(key);
+  }
+  return CUSTOM_PLUGIN_KEYS.filter((key) => set.has(key));
+}
+
+// Tooltip text and colour for each plugin mark. Kept beside CUSTOM_PLUGIN_KEYS so
+// a plugin cannot have a key with no mark to draw or no label to explain it.
+export const PLUGIN_MARK_META = {
+  imageVision: {
+    label: "Image Vision",
+    desc: "Image Vision plugin: image input handled by the plugin",
+    color: "text-blue-400",
+  },
+  thinkDeeper: {
+    label: "Think Deeper",
+    desc: "Think Deeper plugin: multi-step deep reasoning",
+    color: "text-purple-400",
+  },
+  speedMode: {
+    label: "Speed",
+    desc: "Speed Mode plugin: skips thinking for faster responses",
+    color: "text-cyan-400",
+  },
+  jsonGuard: {
+    label: "JSON Guard",
+    desc: "JSON Guard plugin: repairs unparseable JSON and tool arguments",
+    color: "text-emerald-400",
+  },
+  contextSqueezer: {
+    label: "Squeeze",
+    desc: "Context Squeezer plugin: trims old turns to fit the context window",
+    color: "text-amber-400",
+  },
+  openaiToolBridge: {
+    label: "Tool Bridge",
+    desc: "OpenAI Tool Bridge plugin: recovers tool calls a text-only model wrote out in prose",
+    color: "text-rose-300",
+  },
+};

@@ -11,15 +11,14 @@ import {
 } from "@/shared/components";
 import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { useNotificationStore } from "@/store/notificationStore";
+import PluginMark from "@/shared/components/PluginMark";
 
 const PLUGINS = [
   {
     key: "imageVision",
     title: "Image Vision",
-    icon: "visibility",
     iconColor: "text-blue-500",
     iconBg: "bg-blue-500/10 border-blue-500/20",
-    badge: "image",
     badgeColor: "text-blue-400",
     badgeBg: "bg-blue-500/20",
     description:
@@ -28,10 +27,8 @@ const PLUGINS = [
   {
     key: "thinkDeeper",
     title: "Think Deeper",
-    icon: "psychology",
     iconColor: "text-purple-500",
     iconBg: "bg-purple-500/10 border-purple-500/20",
-    badge: "stairs",
     badgeColor: "text-purple-400",
     badgeBg: "bg-purple-500/20",
     description:
@@ -40,10 +37,8 @@ const PLUGINS = [
   {
     key: "speedMode",
     title: "Speed Mode",
-    icon: "bolt",
     iconColor: "text-cyan-500",
     iconBg: "bg-cyan-500/10 border-cyan-500/20",
-    badge: "speed",
     badgeColor: "text-cyan-400",
     badgeBg: "bg-cyan-500/20",
     description:
@@ -52,10 +47,8 @@ const PLUGINS = [
   {
     key: "jsonGuard",
     title: "JSON Guard",
-    icon: "data_object",
     iconColor: "text-emerald-500",
     iconBg: "bg-emerald-500/10 border-emerald-500/20",
-    badge: "verified",
     badgeColor: "text-emerald-400",
     badgeBg: "bg-emerald-500/20",
     description:
@@ -64,10 +57,8 @@ const PLUGINS = [
   {
     key: "contextSqueezer",
     title: "Context Squeezer",
-    icon: "compress",
     iconColor: "text-amber-500",
     iconBg: "bg-amber-500/10 border-amber-500/20",
-    badge: "unfold_less",
     badgeColor: "text-amber-400",
     badgeBg: "bg-amber-500/20",
     description:
@@ -76,10 +67,8 @@ const PLUGINS = [
   {
     key: "openaiToolBridge",
     title: "OpenAI Tool Bridge",
-    icon: "extension",
     iconColor: "text-rose-400",
     iconBg: "bg-rose-500/10 border-rose-500/20",
-    badge: "cable",
     badgeColor: "text-rose-300",
     badgeBg: "bg-rose-500/20",
     description:
@@ -288,21 +277,18 @@ export default function PluginsPage() {
                     <div
                       className={`size-10 rounded-xl flex items-center justify-center border ${plugin.iconBg} ${plugin.iconColor} ${isEnabled ? "ring-2 ring-current ring-offset-0" : ""}`}
                     >
-                      <span className="material-symbols-outlined text-[22px] leading-none">
-                        {plugin.icon}
+                      <PluginMark name={plugin.key} size={22} strokeWidth={1.7} />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 size-5 rounded-md flex items-center justify-center border border-bg bg-surface">
+                      <span className={`inline-flex items-center justify-center ${plugin.iconColor}`}>
+                        <PluginMark
+                          name={plugin.key}
+                          variant="badge"
+                          size={13}
+                          strokeWidth={2.3}
+                        />
                       </span>
                     </div>
-                    {plugin.badge ? (
-                      <div
-                        className={`absolute -bottom-1 -right-1 size-5 rounded-md flex items-center justify-center border border-bg ${plugin.badgeBg || ""}`}
-                      >
-                        <span
-                          className={`material-symbols-outlined text-[13px] leading-none ${plugin.badgeColor || ""}`}
-                        >
-                          {plugin.badge}
-                        </span>
-                      </div>
-                    ) : null}
                   </div>
                   <h3 className="font-semibold text-base text-text-main">
                     {plugin.title}

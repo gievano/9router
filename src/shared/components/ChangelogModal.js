@@ -255,9 +255,14 @@ function foldCategoryByScope(rawLines) {
  const kept = [];
  for (const line of lines) {
  const key = line.trim().replace(/\s+/g, " ");
- if (key.startsWith("-") || key.startsWith("*")) {
- if (seen.has(key)) continue; // same-day merge repeated it
- seen.add(key);
+ // Bullet identity ignores the list marker and case, so the same sentence
+ // arriving with a different marker is still one entry, not two.
+ const bulletKey = key.startsWith("-") || key.startsWith("*")
+ ? key.replace(/^[-*]\s*/, "").toLowerCase()
+ : null;
+ if (bulletKey) {
+ if (seen.has(bulletKey)) continue; // same-day merge repeated it
+ seen.add(bulletKey);
  }
  kept.push(line);
  }
@@ -280,14 +285,20 @@ function foldCategoryByScope(rawLines) {
  const k = kept[j].match(SCOPE_BULLET);
  if (k && k[1].trim() === scope) {
  const text = k[2].trim();
- if (text) items.push(text);
+ if (text && !items.some((t) => t.toLowerCase() === text.toLowerCase())) {
+ items.push(text);
  }
  }
- if (items.length >= 2) {
+ }
+ // Every scope folds, not only the ones with two or more items. Promoting
+ // Antigravity to a heading while Bedrock stayed a one-liner produced two
+ // visual languages in one list, which is what made the section look unravelled.
+ // A blank line before each heading (except the first) keeps the uniform result
+ // from becoming a wall of text instead.
+ if (items.length) {
+ if (out.length) out.push("");
  out.push(`**${scope}:**`);
  for (const text of items) out.push(`- ${text}`);
- } else {
- out.push(kept[i].trim());
  }
  i++;
  }
