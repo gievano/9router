@@ -1,4 +1,4 @@
-# v0.5.161 (2026-10-07) · 5 commits
+# v0.5.161-Custom
 
 ## Features
 - **Dashboard**: add inbox error listing failed requests
@@ -6,13 +6,12 @@
 - **Notifications**: surface failed requests and security events in the bell
 
 ## Fixes
+- **Auth**: enforce the dashboard guard in custom-server because Next 14 middleware is Edge-only
 - **Security log**: stop probe signatures from swallowing sign-in events
 - **UI**: scroll the update banner with the page and use English copy in the error inbox
 
-# v0.5.160 (2026-10-07) · 1 commit
-
-## Features
-- **Dashboard**: add inbox error listing failed requests
+## Internal
+- **Auth**: release v0.5.153 (auth guard enforced at HTTP layer)
 
 # v0.5.159 (2026-10-05) · 1 commit
 
@@ -177,6 +176,7 @@
 - **Token saver**: shorten the two longest row labels
 
 # v0.5.153 (2026-10-02) · 18 commits
+
 
 ## Features
 - **Plugins**: JSON Guard + Context Squeezer custom plugins
