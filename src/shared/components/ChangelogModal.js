@@ -167,17 +167,20 @@ function renderBody(bodyMd) {
  // parser output decides what is a category and what is a bullet.
  const html = marked.parse(demoted);
 
- // h2 is the category level the fold pass emits.
- let out = html.replace(/<h2([^>]*)>([\s\S]*?)<\/h2>/g, (_m, attrs, inner) => {
+ // The demotion above moves every category to a different heading level, so
+ // this matches h1..h6 rather than one level. The level is preserved on the
+ // element and the visual treatment comes from the pill, so the document keeps
+ // its structure while reading as a labelled category.
+ let out = html.replace(/<h([1-6])([^>]*)>([\s\S]*?)<\/h\1>/g, (_m, level, attrs, inner) => {
  const name = inner.replace(/<[^>]+>/g, "").trim();
  const st = categoryStyle(name);
  return (
- `<div class="cl-cat" style="display:flex;align-items:center;gap:8px;margin:18px 0 10px;padding:7px 11px;border-radius:9999px;` +
- `background:${st.tint};border:1px solid ${st.color}33;">` +
+ `<h${level}${attrs} class="cl-cat" style="display:flex;align-items:center;gap:8px;margin:18px 0 10px;padding:7px 11px;border-radius:9999px;` +
+ `background:${st.tint};border:1px solid ${st.color}33;font-size:inherit;font-weight:inherit;">` +
  `<span class="material-symbols-outlined" style="font-size:16px;color:${st.color};line-height:1;">${st.icon}</span>` +
  `<span style="font-size:13px;font-weight:700;letter-spacing:.02em;color:${st.color};">${escapeHtml(st.verb.toUpperCase())}</span>` +
  `<span style="font-size:12px;font-weight:600;color:${st.color};opacity:.65;">${escapeHtml(name)}</span>` +
- `</div>`
+ `</h${level}>`
  );
  });
 
