@@ -74,14 +74,12 @@ export function isSttTransport(transport) {
 // This is the single list every surface reads — the plugin page, the model
 // picker, the usage view and /v1/models. A plugin missing here is a plugin whose
 // mark can never appear on a model.
-export const CUSTOM_PLUGIN_KEYS = [
-  "imageVision",
-  "thinkDeeper",
-  "speedMode",
-  "jsonGuard",
-  "contextSqueezer",
-  "openaiToolBridge",
-];
+// Imported and re-exported from the leaf so the guard chain never has to import
+// this module (it opens with `from "open-sse/config/..."`, which does not
+// resolve inside .next/standalone and once took every route down with a 503).
+// A plain `export ... from` would leave no local binding for pluginMarksFor.
+import { CUSTOM_PLUGIN_KEYS } from "./pluginKeys";
+export { CUSTOM_PLUGIN_KEYS };
 
 /**
  * Plugin keys active for one model entry.

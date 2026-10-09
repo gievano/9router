@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { CUSTOM_PLUGIN_KEYS } from "@/shared/constants/pluginKeys";
 import { getSettings, updateSettings } from "@/lib/localDb";
 import { clearPluginCache } from "@/lib/plugins/customPluginsRuntime";
 
@@ -7,13 +8,19 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const settings = await getSettings();
-    const customPlugins = settings.customPlugins || {
-      imageVision: { enabled: false, models: [] },
-      thinkDeeper: { enabled: false, models: [] },
-      speedMode: { enabled: false, models: [] },
-      jsonGuard: { enabled: false, models: [] },
-      contextSqueezer: { enabled: false, models: [] },
-    };
+    const stored = settings.customPlugins || {};
+    // Answer over the key list, not whatever shape settings happen to hold:
+    // settings written by older code have five keys, and returning them verbatim
+    // left openaiToolBridge undefined (its toggle would render OFF even after a
+    // correct save). A plugin missing from settings reads as off, never undefined.
+    const customPlugins = {};
+    for (const key of CUSTOM_PLUGIN_KEYS) {
+      const entry = stored[key];
+      customPlugins[key] = {
+        enabled: Boolean(entry?.enabled),
+        models: Array.isArray(entry?.models) ? entry.models.filter(Boolean) : [],
+      };
+    }
     return NextResponse.json({ customPlugins }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Error getting custom plugins:", error);
@@ -29,28 +36,17 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Invalid customPlugins payload" }, { status: 400 });
     }
 
-    const merged = {
-      imageVision: {
-        enabled: Boolean(customPlugins.imageVision?.enabled),
-        models: Array.isArray(customPlugins.imageVision?.models) ? customPlugins.imageVision.models.filter(Boolean) : [],
-      },
-      thinkDeeper: {
-        enabled: Boolean(customPlugins.thinkDeeper?.enabled),
-        models: Array.isArray(customPlugins.thinkDeeper?.models) ? customPlugins.thinkDeeper.models.filter(Boolean) : [],
-      },
-      speedMode: {
-        enabled: Boolean(customPlugins.speedMode?.enabled),
-        models: Array.isArray(customPlugins.speedMode?.models) ? customPlugins.speedMode.models.filter(Boolean) : [],
-      },
-      jsonGuard: {
-        enabled: Boolean(customPlugins.jsonGuard?.enabled),
-        models: Array.isArray(customPlugins.jsonGuard?.models) ? customPlugins.jsonGuard.models.filter(Boolean) : [],
-      },
-      contextSqueezer: {
-        enabled: Boolean(customPlugins.contextSqueezer?.enabled),
-        models: Array.isArray(customPlugins.contextSqueezer?.models) ? customPlugins.contextSqueezer.models.filter(Boolean) : [],
-      },
-    };
+    // Merged over the key list, not a hand-written literal: the literal had five
+    // keys while six plugins existed, so saving from the page silently dropped
+    // openaiToolBridge from settings and it could never stay enabled.
+    const merged = {};
+    for (const key of CUSTOM_PLUGIN_KEYS) {
+      const entry = customPlugins[key];
+      merged[key] = {
+        enabled: Boolean(entry?.enabled),
+        models: Array.isArray(entry?.models) ? entry.models.filter(Boolean) : [],
+      };
+    }
 
     await updateSettings({ customPlugins: merged });
     clearPluginCache();

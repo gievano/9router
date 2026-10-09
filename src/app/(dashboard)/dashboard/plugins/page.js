@@ -12,6 +12,7 @@ import {
 import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { useNotificationStore } from "@/store/notificationStore";
 import PluginMark from "@/shared/components/PluginMark";
+import { CUSTOM_PLUGIN_KEYS } from "@/shared/constants/pluginKeys";
 
 const PLUGINS = [
   {
@@ -76,14 +77,22 @@ const PLUGINS = [
   },
 ];
 
-const DEFAULT_PLUGINS_STATE = {
-  imageVision: { enabled: false, models: [] },
-  thinkDeeper: { enabled: false, models: [] },
-  speedMode: { enabled: false, models: [] },
-  jsonGuard: { enabled: false, models: [] },
-  contextSqueezer: { enabled: false, models: [] },
-  openaiToolBridge: { enabled: false, models: [] },
-};
+// One shape for every plugin: enabled flag plus the model list it applies to.
+// `stored` is whatever settings held, so an unknown key in settings is ignored
+// and a plugin missing from settings comes back off rather than undefined.
+function defaultPluginsFrom(stored) {
+  const out = {};
+  for (const key of CUSTOM_PLUGIN_KEYS) {
+    const entry = stored?.[key];
+    out[key] = {
+      enabled: Boolean(entry?.enabled),
+      models: Array.isArray(entry?.models) ? entry.models.filter(Boolean) : [],
+    };
+  }
+  return out;
+}
+
+const DEFAULT_PLUGINS_STATE = defaultPluginsFrom(null);
 
 function formatModelName(modelVal) {
   if (!modelVal) return "";
@@ -110,38 +119,11 @@ export default function PluginsPage() {
         if (pluginsRes.ok) {
           const data = await pluginsRes.json();
           if (data.customPlugins) {
-            setCustomPlugins({
-              imageVision: {
-                enabled: Boolean(data.customPlugins.imageVision?.enabled),
-                models: Array.isArray(data.customPlugins.imageVision?.models)
-                  ? data.customPlugins.imageVision.models
-                  : [],
-              },
-              thinkDeeper: {
-                enabled: Boolean(data.customPlugins.thinkDeeper?.enabled),
-                models: Array.isArray(data.customPlugins.thinkDeeper?.models)
-                  ? data.customPlugins.thinkDeeper.models
-                  : [],
-              },
-              speedMode: {
-                enabled: Boolean(data.customPlugins.speedMode?.enabled),
-                models: Array.isArray(data.customPlugins.speedMode?.models)
-                  ? data.customPlugins.speedMode.models
-                  : [],
-              },
-              jsonGuard: {
-                enabled: Boolean(data.customPlugins.jsonGuard?.enabled),
-                models: Array.isArray(data.customPlugins.jsonGuard?.models)
-                  ? data.customPlugins.jsonGuard.models
-                  : [],
-              },
-              contextSqueezer: {
-                enabled: Boolean(data.customPlugins.contextSqueezer?.enabled),
-                models: Array.isArray(data.customPlugins.contextSqueezer?.models)
-                  ? data.customPlugins.contextSqueezer.models
-                  : [],
-              },
-            });
+            // Derived from CUSTOM_PLUGIN_KEYS rather than spelled out again:
+            // a hand-written literal had drifted to five keys while the plugin
+            // table has six, so openaiToolBridge always came back undefined and
+            // its toggle rendered OFF after every reload.
+            setCustomPlugins(defaultPluginsFrom(data.customPlugins));
           }
         }
 

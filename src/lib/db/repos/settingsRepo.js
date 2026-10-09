@@ -1,4 +1,5 @@
 import { getAdapter } from "../driver.js";
+import { CUSTOM_PLUGIN_KEYS } from "@/shared/constants/pluginKeys";
 import { parseJson, stringifyJson } from "../helpers/jsonCol.js";
 
 const DEFAULT_MITM_ROUTER_BASE = "http://localhost:20128";
@@ -23,13 +24,11 @@ const DEFAULT_SETTINGS = {
     audioInput: { enabled: true, roundRobin: false, models: [] },
     videoInput: { enabled: false, roundRobin: false, models: [] },
   },
-  customPlugins: {
-    imageVision: { enabled: false, models: [] },
-    thinkDeeper: { enabled: false, models: [] },
-    speedMode: { enabled: false, models: [] },
-    jsonGuard: { enabled: false, models: [] },
-    contextSqueezer: { enabled: false, models: [] },
-  },
+  // Keys come from CUSTOM_PLUGIN_KEYS so a new plugin cannot be missing here;
+  // this literal had five entries while six plugins existed.
+  customPlugins: Object.fromEntries(
+    CUSTOM_PLUGIN_KEYS.map((key) => [key, { enabled: false, models: [] }])
+  ),
   requireLogin: true,
   requireApiKey: true,
   // Site-wide theme (glass | dark). An administrator picks it once here instead
