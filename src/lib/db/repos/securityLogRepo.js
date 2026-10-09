@@ -93,10 +93,17 @@ export function classify(event) {
   const path = String(event.path || "");
   const detail = String(event.detail || "");
   const haystack = `${path} ${detail}`;
+  const type = String(event.type || "");
+  const isAuthFlow = /^(login|apikey_login|apikey_logout|logout)/.test(type);
 
+  // Probe signatures describe request traffic. An auth line is allowed to
+  // mention a password — that is what sign-ins are about — so the signature
+  // match runs against the path only there. Testing the detail as well turned
+  // every default-password sign-in into a bogus "Auth material probe".
+  const probeScope = isAuthFlow ? path : haystack;
   const probe = PROBE_SIGNATURES.find((sig) => {
     sig.pattern.lastIndex = 0;
-    return sig.pattern.test(haystack);
+    return sig.pattern.test(probeScope);
   });
 
   if (probe) {

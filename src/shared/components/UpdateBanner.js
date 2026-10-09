@@ -131,9 +131,11 @@ export default function UpdateBanner({ pollMs = POLL_MS }) {
   return (
     <>
       {visible && (
+        // In-flow, not fixed: this sits above the content inside the layout, so
+        // scrolling the page moves it like any other block instead of sticking.
         <div
           key={pathname}
-          className={`mx-6 lg:mx-10 mb-4 max-w-7xl ${closing ? "pointer-events-none -translate-y-2 opacity-0 transition-all duration-200 ease-in" : "slide-in-top"}`}
+          className={`w-full mb-4 ${closing ? "pointer-events-none -translate-y-2 opacity-0 transition-all duration-200 ease-in" : "slide-in-top"}`}
         >
           <div className="flex flex-col gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:flex-row sm:items-center">
             <span className="material-symbols-outlined shrink-0 text-[20px] text-amber-500">system_update_alt</span>

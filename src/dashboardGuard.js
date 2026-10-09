@@ -32,8 +32,7 @@ const PUBLIC_API_PATHS = [
   "/api/auth/saml",
   "/api/version",
   // One non-sensitive value that every visitor needs before sign-in; writing it
-  // is checked inside the route (password session only). /api/security-logs is
-  // deliberately NOT here: it names who signed in, so it stays behind auth.
+  // is checked inside the route (password session only).
   "/api/theme",
   "/api/settings/require-login",
 ];

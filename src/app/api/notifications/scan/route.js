@@ -80,6 +80,7 @@ export async function GET() {
         await clearNotificationByKind("quota", `quota:${key.id}:critical`);
       }
     }
+
   } catch (error) {
     // Deriving conditions must never break the dashboard.
     console.warn("[notifications] scan failed:", error?.message || error);
