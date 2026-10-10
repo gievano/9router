@@ -37,6 +37,31 @@ const OPENCODE_TOOL_RE =
   /(?:^|\n)\s*(?:assistant\s+)?to\s*=\s*([A-Za-z_][\w.-]*)\s*(\{[\s\S]*?\})\s*(?:\n|$)/g;
 const FENCED_TOOL_RE =
   /```(?:json|tool_call|tool)?\s*(\{[^{}]*?"(?:tool_)?(?:name|call)"[\s\S]*?\})\s*```/gi;
+// DeepSeek-V3/R1 chat template: control tokens around name+arguments.
+const DEEPSEEK_TOOL_RE =
+  /<\u{FF5C}tool\u{2581}calls\u{2581}begin\u{FF5C}>([\s\S]*?)<\u{FF5C}tool\u{2581}calls\u{2581}end\u{FF5C}>/gu;
+const DEEPSEEK_ITEM_RE =
+  /<\u{FF5C}function\u{2581}invoke\u{2581}begin\u{FF5C}>\s*<\u{FF5C}function\u{2581}invoke\u{2581}name\u{FF5C}>([^<\s]+)<\u{FF5C}function\u{2581}invoke\u{2581}arguments\u{FF5C}>([\s\S]*?)<\u{FF5C}function\u{2581}invoke\u{2581}end\u{FF5C}>/gu;
+// Mistral instruct + Llama-3.1 chat template: a JSON array under a header.
+const MISTRAL_TOOL_RE =
+  /\[TOOL_CALLS\]\s*(\[[\s\S]*?\])/g;
+// Anthropic-style XML spoken by several mid-size models.
+const INVOKE_XML_RE =
+  /<invoke\s+name\s*=\s*["']([^"']+)["']\s*>([\s\S]*?)<\/invoke>/gi;
+const INVOKE_PARAM_RE =
+  /<parameter\s+name\s*=\s*["']([^"']+)["']\s*>([\s\S]*?)<\/parameter>/gi;
+// Claude-style namespaced variant of the same shape.
+const ANTML_INVOKE_RE =
+  /<antml:invoke\s+name\s*=\s*["']([^"']+)["']\s*>([\s\S]*?)<\/antml:invoke>/gi;
+// A trainer shorthand: <function=name>{"args":...}</function>.
+const FUNCTION_TAG_RE =
+  /<function\s*=\s*["']?([A-Za-z_][\w.-]*)["']?\s*>([\s\S]*?)<\/function>/gi;
+// A bare {"function": "x", "arguments": {...}} object on its own line.
+const BARE_OBJECT_RE =
+  /(?:^|\n)\s*(\{\s*"function"\s*:\s*"[^"]+"[\s\S]*?\})\s*(?:\n|$)/g;
+// A bare "tool_calls": [...] array the model wrote inline in its answer.
+const BARE_ARRAY_RE =
+  /"tool_calls"\s*:\s*\[([\s\S]*?)\]\s*(?=,\s*"|\}|\n|$)/g;
 
 /** Parse leniently: models emit single quotes, trailing commas, Python literals. */
 function parseMaybeJson(text) {
@@ -65,6 +90,15 @@ function normaliseArgs(raw) {
   if (typeof raw === "object") return raw;
   const parsed = parseMaybeJson(String(raw));
   return parsed && typeof parsed === "object" ? parsed : {};
+}
+
+/** Turn <parameter name="p">v</parameter> children into an argument object. */
+function argsFromInvokeXml(inner) {
+  const args = {};
+  for (const m of inner.matchAll(INVOKE_PARAM_RE)) {
+    args[m[1].trim()] = m[2].trim();
+  }
+  return args;
 }
 
 /** Pull the tool name out of the many shapes a model wraps a call in. */
@@ -166,6 +200,81 @@ export function extractToolCallsFromText(text) {
   if (!calls.length) {
     for (const m of [...text.matchAll(FENCED_TOOL_RE)]) harvest(m[0], null, m[1]);
   }
+  // DeepSeek control tokens: one outer block, items inside, name in its own
+  // token rather than inside the arguments JSON.
+  if (!calls.length) {
+    for (const outer of [...text.matchAll(DEEPSEEK_TOOL_RE)]) {
+      for (const inner of outer[1].matchAll(DEEPSEEK_ITEM_RE)) {
+        const payload = parseMaybeJson(inner[2]) ?? {};
+        const name = inner[1].trim() || nameFrom(payload);
+        if (name) calls.push({ name, arguments: argsFrom(payload) });
+      }
+      if (calls.length) cleaned = cleaned.replace(outer[0], "");
+    }
+  }
+  // Mistral/Llama header + JSON array of {name, arguments} objects.
+  if (!calls.length) {
+    for (const m of [...text.matchAll(MISTRAL_TOOL_RE)]) {
+      const items = parseMaybeJson(m[1]);
+      if (!Array.isArray(items)) continue;
+      let took = 0;
+      for (const item of items) {
+        const name = nameFrom(item);
+        if (!name) continue;
+        calls.push({ name, arguments: argsFrom(item) });
+        took += 1;
+      }
+      if (took) cleaned = cleaned.replace(m[0], "");
+    }
+  }
+  // Invoke-style XML (plain and Claude-namespaced): parameters become args.
+  if (!calls.length) {
+    for (const RE of [INVOKE_XML_RE, ANTML_INVOKE_RE]) {
+      for (const m of [...text.matchAll(RE)]) {
+        const name = m[1].trim();
+        if (!name) continue;
+        const args = argsFromInvokeXml(m[2]);
+        if (Object.keys(args).length) {
+          calls.push({ name, arguments: args });
+          cleaned = cleaned.replace(m[0], "");
+        }
+      }
+      if (calls.length) break;
+    }
+  }
+  // Trainer shorthand <function=name>args</function>.
+  if (!calls.length) {
+    for (const m of [...text.matchAll(FUNCTION_TAG_RE)]) {
+      const payload = parseMaybeJson(m[2]) ?? {};
+      calls.push({ name: m[1].trim(), arguments: argsFrom(payload) });
+      cleaned = cleaned.replace(m[0], "");
+    }
+  }
+  // A bare {"function": "x", "arguments": {...}} line.
+  if (!calls.length) {
+    for (const m of [...text.matchAll(BARE_OBJECT_RE)]) {
+      const payload = parseMaybeJson(m[1]);
+      const name = nameFrom(payload);
+      if (!name) continue;
+      calls.push({ name, arguments: argsFrom(payload) });
+      cleaned = cleaned.replace(m[0], "");
+    }
+  }
+  // Inline array: entries are OpenAI tool objects, arguments already JSON.
+  if (!calls.length) {
+    for (const m of [...text.matchAll(BARE_ARRAY_RE)]) {
+      const items = parseMaybeJson("[" + m[1] + "]");
+      if (!Array.isArray(items)) continue;
+      let took = 0;
+      for (const item of items) {
+        const name = nameFrom(item);
+        if (!name) continue;
+        calls.push({ name, arguments: argsFrom(item) });
+        took += 1;
+      }
+      if (took) cleaned = cleaned.replace(m[0], "");
+    }
+  }
 
   return { calls, cleaned: cleaned.trim() };
 }
@@ -189,6 +298,14 @@ export function applyOpenAIToolBridge(response, body) {
     diagnostics.reason = "already-structured";
     return Object.assign(response, { openaiToolBridge: diagnostics });
   }
+  // No catalogue, no bridge. The client asked for no tools, so any marker in
+  // the prose is just prose - converting it would invent a call the client
+  // cannot execute. (The filter below used to be the only guard, and it
+  // deliberately skips filtering when the catalogue is empty.)
+  if (!Array.isArray(body?.tools) && !Array.isArray(body?.functions)) {
+    diagnostics.reason = "no-tools-in-request";
+    return Object.assign(response, { openaiToolBridge: diagnostics });
+  }
 
   const catalogue = catalogueOf(body);
   const { calls, cleaned } = extractToolCallsFromText(response.content);
@@ -198,7 +315,21 @@ export function applyOpenAIToolBridge(response, body) {
   }
 
   // A tool the client never offered is a hallucination, not a call. Drop it.
-  const accepted = calls.filter((call) => !catalogue.size || catalogue.has(call.name));
+  // A near miss (case, `-` vs `_`) is the same tool with sloppy spelling: keep
+  // the call, but emit the declared name so client-side handlers still match.
+  const norm = (v) => v.toLowerCase().replace(/[-_]+/g, "_");
+  const resolve = (name) => {
+    if (!catalogue.size) return name;
+    if (catalogue.has(name)) return name;
+    const target = norm(name);
+    for (const declared of catalogue.keys()) {
+      if (norm(declared) === target) return declared;
+    }
+    return null;
+  };
+  const accepted = calls
+    .map((call) => ({ ...call, name: resolve(call.name) || "" }))
+    .filter((call) => call.name);
   if (!accepted.length) {
     diagnostics.reason = "no-called-tool-was-offered";
     return Object.assign(response, { openaiToolBridge: diagnostics });

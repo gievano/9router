@@ -22,18 +22,21 @@ import { GITHUB_CONFIG } from "@/shared/constants/config";
 //
 // Every control works: Get started dismisses, View changelog closes this dialog
 // and mounts the same ChangelogModal the header menu uses (as a sibling, so two
-// overlays never stack), Star on GitHub opens the repo, Don't show this again
-// persists the refusal. Modal renders its X on mobile only and this dialog sets
+// overlays never stack) and Star on GitHub opens the repo. There is no opt-out:
+// the dialog only appears right after a login. Modal renders its X on mobile
+// only and this dialog sets
 // closeOnOverlay={false}, so Get started is the desktop exit — it must stay.
 export default function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
 
   useEffect(() => {
-    const neverShow = localStorage.getItem("9router:welcomeNeverShow") === "true";
+    if (localStorage.getItem("9router:welcomeNeverShow") === "true") {
+      localStorage.removeItem("9router:welcomeNeverShow");
+    }
     const justLoggedIn = sessionStorage.getItem("9router:justLoggedIn") === "true";
 
-    if (neverShow || !justLoggedIn) {
+    if (!justLoggedIn) {
       setIsOpen(false);
     } else {
       sessionStorage.removeItem("9router:justLoggedIn");
@@ -41,10 +44,6 @@ export default function WelcomeModal() {
     }
   }, []);
 
-  const handleDontShowAgain = () => {
-    localStorage.setItem("9router:welcomeNeverShow", "true");
-    setIsOpen(false);
-  };
 
   const handleClose = () => {
     setIsOpen(false);
@@ -82,10 +81,10 @@ export default function WelcomeModal() {
             className="size-11 rounded-xl border border-border-subtle"
           />
           <div>
-            <p className="text-lg font-bold tracking-tight leading-tight">
-              9<span className="text-primary">Router</span>
+            <p className="text-lg font-bold tracking-tight leading-tight text-primary">
+              9Router
             </p>
-            <p className="text-xs text-text-muted">Welcome</p>
+            <p className="text-xs text-text-muted">Welcome back — here is the quick tour</p>
           </div>
         </div>
 
@@ -128,7 +127,7 @@ export default function WelcomeModal() {
           </Button>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-text-muted">
+        <p className="mt-4 text-[11px] text-text-muted">
           <a
             href={GITHUB_CONFIG.repoUrl}
             target="_blank"
@@ -137,14 +136,7 @@ export default function WelcomeModal() {
           >
             Star on GitHub
           </a>
-          <button
-            type="button"
-            onClick={handleDontShowAgain}
-            className="underline-offset-2 transition-colors hover:text-text-main hover:underline"
-          >
-            Don&apos;t show this again
-          </button>
-        </div>
+        </p>
       </Modal>
       <ChangelogModal isOpen={changelogOpen} onClose={() => setChangelogOpen(false)} />
     </>
