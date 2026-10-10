@@ -37,6 +37,10 @@ const DEFAULT_SETTINGS = {
   theme: "glass",
   tunnelDashboardAccess: true,
   authMode: "password",
+  // Dashboard-password second factor (TOTP). API-key login never consults these.
+  totpSecret: "",
+  totpEnabled: false,
+  totpCreatedAt: 0,
   ssoType: "oidc",
   oidcIssuerUrl: "",
   oidcClientId: "",

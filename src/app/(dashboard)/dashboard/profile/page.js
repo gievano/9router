@@ -74,6 +74,11 @@ function BackupCountdown({ target, onExpire, showDate = false }) {
 const IMPORT_JOB_ENDPOINT = "/api/settings/database/jobs";
 
 export default function ProfilePage() {
+  // Second factor state, from /api/auth/status (otpEnabled) plus local UI state.
+  const [otpEnabled, setOtpEnabled] = useState(null);
+  const [otpDisabling, setOtpDisabling] = useState(false);
+  const [otpConfirm, setOtpConfirm] = useState(false);
+  const [otpMsg, setOtpMsg] = useState({ type: "", message: "" });
   const [locale, setLocale] = useState(() => getLocaleFromCookie());
   const [langOpen, setLangOpen] = useState(false);
   const [shutdownOpen, setShutdownOpen] = useState(false);
@@ -137,6 +142,44 @@ export default function ProfilePage() {
 
   const importFileRef = useRef(null);
   // Progress overlay state. `busy` holds { title, message, section, progress };
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/status");
+        if (res.ok) {
+          const data = await res.json();
+          setOtpEnabled(data.otpEnabled === true);
+        }
+      } catch {
+        // unknown stays unknown; the row hides itself
+      }
+    })();
+  }, []);
+
+  const handleDisableOtp = async () => {
+    if (!otpConfirm) {
+      setOtpConfirm(true);
+      return;
+    }
+    setOtpDisabling(true);
+    setOtpMsg({ type: "", message: "" });
+    try {
+      const res = await fetch("/api/auth/otp", { method: "DELETE" });
+      if (res.ok) {
+        setOtpEnabled(false);
+        setOtpConfirm(false);
+        setOtpMsg({ type: "success", message: "Two-factor authentication is off. Password login alone opens the dashboard now." });
+      } else {
+        const data = await res.json();
+        setOtpMsg({ type: "error", message: data.error || "Could not turn off two-factor authentication." });
+      }
+    } catch {
+      setOtpMsg({ type: "error", message: "An error occurred. Please try again." });
+    } finally {
+      setOtpDisabling(false);
+    }
+  };
+
   // ProgressCard from the shared Loading module renders it directly.
   const [busy, setBusy] = useState(null);
   const [proxyForm, setProxyForm] = useState({
@@ -1106,6 +1149,36 @@ export default function ProfilePage() {
                 disabled={loading}
               />
             </div>
+            {otpEnabled !== null && (
+              <div className="flex items-start sm:items-center justify-between gap-4 pt-4 border-t border-border/50">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm sm:text-base">Two-factor authentication</p>
+                  <p className="text-xs sm:text-sm text-text-muted">
+                    {otpEnabled
+                      ? "On. Password login asks for a 6-digit code from your authenticator app."
+                      : "Off. Turn it on by signing out and signing back in with your password — the setup appears after the password is accepted."}
+                  </p>
+                  {otpMsg.message && (
+                    <p className={`text-xs sm:text-sm mt-1 ${otpMsg.type === "error" ? "text-red-500" : "text-green-500"}`}>
+                      {otpMsg.message}
+                    </p>
+                  )}
+                </div>
+                {otpEnabled ? (
+                  <Button
+                    type="button"
+                    variant={otpConfirm ? "danger" : "outline"}
+                    loading={otpDisabling}
+                    onClick={handleDisableOtp}
+                    className="shrink-0"
+                  >
+                    {otpConfirm ? "Click again to turn off" : "Turn off"}
+                  </Button>
+                ) : (
+                  <span className="text-xs sm:text-sm text-text-muted shrink-0">Not set up</span>
+                )}
+              </div>
+            )}
             {settings.requireLogin === true && (
               <form onSubmit={handlePasswordChange} className="flex flex-col gap-4 pt-4 border-t border-border/50">
                 {settings.hasPassword && (

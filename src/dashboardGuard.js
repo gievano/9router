@@ -30,6 +30,7 @@ const PUBLIC_API_PATHS = [
   "/api/auth/status",
   "/api/auth/oidc",
   "/api/auth/saml",
+  "/api/auth/otp",
   "/api/version",
   // One non-sensitive value that every visitor needs before sign-in; writing it
   // is checked inside the route (password session only).

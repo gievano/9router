@@ -44,6 +44,9 @@ export async function GET() {
       requireLogin,
       authMode,
       ssoType,
+      // Password sign-in is two-factor on this instance; the login page uses
+      // this only to render copy, never to decide whether to enforce.
+      otpEnabled: settings.totpEnabled === true && !!settings.totpSecret,
       oidcConfigured: isOidcConfigured(settings),
       oidcLoginLabel: (settings.oidcLoginLabel || "Sign in with OIDC").trim() || "Sign in with OIDC",
       samlConfigured: isSamlConfigured(settings),

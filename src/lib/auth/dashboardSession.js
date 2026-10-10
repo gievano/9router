@@ -10,9 +10,14 @@ import { getSettings } from "@/lib/localDb";
 const DEFAULT_PASSWORD = "seren123";
 const SESSION_MAX_AGE_SEC = 24 * 60 * 60;
 
+// The file name carries the auth shape version: when password login became
+// two-step, old cookies had to die rather than keep dashboard access. Any future
+// auth change bumps the suffix and every issued cookie stops verifying.
+const SESSION_EPOCH = "v2";
+
 function loadJwtSecret() {
   if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  const file = path.join(DATA_DIR, "jwt-secret");
+  const file = path.join(DATA_DIR, `jwt-secret-${SESSION_EPOCH}`);
   try {
     return fs.readFileSync(file, "utf8").trim();
   } catch {}
@@ -32,18 +37,43 @@ export function shouldUseSecureCookie(request) {
 }
 
 export async function createDashboardAuthToken(claims = {}) {
-  return new SignJWT({ authenticated: true, ...claims })
+  return new SignJWT({ authenticated: true, purpose: "dashboard-auth", ...claims })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("24h")
     .sign(SECRET);
 }
 
+// Short-lived token proving "password was correct, OTP still pending".
+// It is deliberately NOT accepted by verifyDashboardAuthToken below: a
+// half-finished login must never open the dashboard, even if the bearer
+// presents this token to the guard.
+export async function createOtpPendingToken() {
+  return new SignJWT({ authenticated: false, purpose: "otp-pending" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("5m")
+    .sign(SECRET);
+}
+
+export async function verifyOtpPendingToken(token) {
+  if (!token) return false;
+  try {
+    const { payload } = await jwtVerify(token, SECRET);
+    return payload && payload.purpose === "otp-pending" ? payload : false;
+  } catch {
+    return false;
+  }
+}
+
 export async function verifyDashboardAuthToken(token) {
   if (!token) return false;
   try {
-    await jwtVerify(token, SECRET);
-    return true;
+    const { payload } = await jwtVerify(token, SECRET);
+    // Full sessions only. The otp-pending token proves the password but not the
+    // second factor, so it must fail here even though it is genuinely signed.
+    if (payload.purpose && payload.purpose !== "dashboard-auth") return false;
+    return payload.authenticated === true;
   } catch {
     return false;
   }

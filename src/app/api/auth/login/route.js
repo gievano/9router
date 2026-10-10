@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/localDb";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
-import { setDashboardAuthCookie } from "@/lib/auth/dashboardSession";
+import { createOtpPendingToken } from "@/lib/auth/dashboardSession";
 import { isOidcConfigured } from "@/lib/auth/oidc";
 import { isSamlConfigured } from "@/lib/auth/saml.js";
 import { checkLock, recordFail, recordSuccess, getClientIp } from "@/lib/auth/loginLimiter";
@@ -180,18 +180,24 @@ export async function POST(request) {
         );
       }
 
-      const cookieStore = await cookies();
-      await setDashboardAuthCookie(cookieStore, request, { role: "admin" });
+      // Password is correct, but no session yet: the second factor decides.
+      // The pending token proves step one for five minutes; the client shows
+      // either the OTP field or the first-time enrollment from needsOtpSetup.
+      const { createOtpPendingToken: mintPending } = await import("@/lib/auth/dashboardSession");
+      const otpToken = await mintPending();
       await audit(request, ip, {
-        type: "login_success",
+        type: "login_password_ok",
         severity: "info",
         actor: "Password user",
         detail: storedHash
-          ? "Password sign-in"
-          : "Password sign-in using the initial/default password",
+          ? "Password accepted, OTP still pending"
+          : "Initial/default password accepted, OTP still pending",
       });
-
-      return NextResponse.json({ success: true, role: "admin", mustChangePassword: false }, { headers: NO_STORE_HEADERS });
+      const needsOtpSetup = !settings.totpEnabled || !settings.totpSecret;
+      return NextResponse.json(
+        { success: false, needsOtp: true, needsOtpSetup, otpToken },
+        { headers: NO_STORE_HEADERS }
+      );
     }
 
     const { remainingBeforeLock } = recordFail(ip);
