@@ -41,13 +41,13 @@ export const getModelKind = (m, fallback = null) => m?.kind || m?.type || fallba
 
 // Capacity metadata for UI badges — icon + label + color per capability.
 export const CAPACITY_META = {
-  vision: { icon: "visibility", label: "Vision", desc: "Supports image input", color: "text-blue-500" },
+  vision: { mark: "vision", label: "Vision", desc: "Supports image input", color: "text-blue-500" },
   // search: temporarily hidden (feature not wired yet)
-  reasoning: { icon: "neurology", label: "Reasoning", desc: "Supports reasoning / thinking", color: "text-amber-500" },
-  thinkDeeper: { icon: "psychology", label: "Think Deeper", desc: "Think Deeper Plugin: multi-step deep reasoning", color: "text-purple-400" },
-  speedMode: { icon: "bolt", label: "Speed", desc: "Speed Mode: skips thinking for faster responses", color: "text-cyan-400" },
-  jsonGuard: { icon: "data_object", label: "JSON", desc: "JSON Guard: repairs unparseable JSON and tool arguments", color: "text-emerald-400" },
-  contextSqueezer: { icon: "compress", label: "Squeeze", desc: "Context Squeezer: trims old turns to fit the context window", color: "text-amber-400" },
+  reasoning: { mark: "reasoning", label: "Reasoning", desc: "Supports reasoning / thinking", color: "text-amber-500" },
+  thinkDeeper: { mark: "thinkDeeper", label: "Think Deeper", desc: "Think Deeper Plugin: multi-step deep reasoning", color: "text-purple-400" },
+  speedMode: { mark: "speedMode", label: "Speed", desc: "Speed Mode: skips thinking for faster responses", color: "text-cyan-400" },
+  jsonGuard: { mark: "jsonGuard", label: "JSON", desc: "JSON Guard: repairs unparseable JSON and tool arguments", color: "text-emerald-400" },
+  contextSqueezer: { mark: "contextSqueezer", label: "Squeeze", desc: "Context Squeezer: trims old turns to fit the context window", color: "text-amber-400" },
 };
 
 // Realtime STT transport markers accepted on custom models — single source of

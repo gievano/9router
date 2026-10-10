@@ -307,12 +307,7 @@ export default function PluginsPage() {
                     </div>
                     <div className="absolute -bottom-1 -right-1 size-5 rounded-md flex items-center justify-center border border-bg bg-surface">
                       <span className={`inline-flex items-center justify-center ${plugin.iconColor}`}>
-                        <PluginMark
-                          name={plugin.key}
-                          variant="badge"
-                          size={13}
-                          strokeWidth={2.3}
-                        />
+                        <PluginMark name={plugin.key} size={13} strokeWidth={2.1} />
                       </span>
                     </div>
                   </div>
