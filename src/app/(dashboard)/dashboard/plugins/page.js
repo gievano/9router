@@ -294,22 +294,15 @@ export default function PluginsPage() {
             <Card key={plugin.key} className="flex flex-col h-full">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex items-center gap-3">
-                  {/* Two-layer plugin mark: a tile in the plugin's own colour
-                      carrying the primary glyph, with a smaller badge docked
-                      at its corner saying what it DOES. The tile gets a solid
-                      coloured ring when the plugin is enabled and a flat
-                      hairline when it is off. */}
-                  <div className="relative shrink-0">
-                    <div
-                      className={`size-10 rounded-xl flex items-center justify-center border ${plugin.iconBg} ${plugin.iconColor} ${isEnabled ? "ring-2 ring-current ring-offset-0" : ""}`}
-                    >
-                      <PluginMark name={plugin.key} size={22} strokeWidth={1.7} />
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 size-5 rounded-md flex items-center justify-center border border-bg bg-surface">
-                      <span className={`inline-flex items-center justify-center ${plugin.iconColor}`}>
-                        <PluginMark name={plugin.key} size={13} strokeWidth={2.1} />
-                      </span>
-                    </div>
+                  {/* Single plugin mark: one tile in the plugin's own colour.
+                      An earlier pass drew the same glyph twice (tile plus a
+                      docked mini badge); the duplicate read as a second logo,
+                      so the badge is gone. The tile gets a solid coloured ring
+                      when the plugin is enabled and a flat hairline when off. */}
+                  <div
+                    className={`size-11 rounded-xl flex items-center justify-center border shrink-0 ${plugin.iconBg} ${plugin.iconColor} ${isEnabled ? "ring-2 ring-current ring-offset-0" : ""}`}
+                  >
+                    <PluginMark name={plugin.key} size={24} strokeWidth={1.7} />
                   </div>
                   <h3 className="font-semibold text-base text-text-main">
                     {plugin.title}
