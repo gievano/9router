@@ -50,7 +50,11 @@ export default function WelcomeModal() {
     setIsOpen(false);
   };
 
-  if (!isOpen) return null;
+  // No early `return null` here: the changelog mounts as a sibling below, and an
+  // early return would unmount the whole fragment (changelog included) the moment
+  // "View changelog" closes the welcome dialog. <Modal> already renders nothing
+  // when isOpen is false, so passing it through is enough.
+  if (!isOpen && !changelogOpen) return null;
 
   const facts = [
     "One key and one base URL in front of every provider you connect.",
