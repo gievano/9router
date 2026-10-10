@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/localDb";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
-import { createOtpPendingToken } from "@/lib/auth/dashboardSession";
+import { createPendingToken } from "@/lib/auth/dashboardSession";
 import { isOidcConfigured } from "@/lib/auth/oidc";
 import { isSamlConfigured } from "@/lib/auth/saml.js";
 import { checkLock, recordFail, recordSuccess, getClientIp } from "@/lib/auth/loginLimiter";
@@ -182,20 +182,20 @@ export async function POST(request) {
 
       // Password is correct, but no session yet: the second factor decides.
       // The pending token proves step one for five minutes; the client shows
-      // either the OTP field or the first-time enrollment from needsOtpSetup.
-      const { createOtpPendingToken: mintPending } = await import("@/lib/auth/dashboardSession");
-      const otpToken = await mintPending();
+      // either the PIN field or, when none is set, the create-PIN form.
+      const { createPendingToken: mintPending } = await import("@/lib/auth/dashboardSession");
+      const pendingToken = await mintPending();
       await audit(request, ip, {
         type: "login_password_ok",
         severity: "info",
         actor: "Password user",
         detail: storedHash
-          ? "Password accepted, OTP still pending"
-          : "Initial/default password accepted, OTP still pending",
+          ? "Password accepted, PIN still pending"
+          : "Initial/default password accepted, PIN still pending",
       });
-      const needsOtpSetup = !settings.totpEnabled || !settings.totpSecret;
+      const needsPinSetup = !settings.pinEnabled || !settings.pinHash;
       return NextResponse.json(
-        { success: false, needsOtp: true, needsOtpSetup, otpToken },
+        { success: false, needsPin: true, needsPinSetup, pendingToken },
         { headers: NO_STORE_HEADERS }
       );
     }

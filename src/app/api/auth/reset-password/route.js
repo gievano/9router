@@ -6,8 +6,8 @@ import { updateSettings } from "@/lib/localDb";
 export async function POST() {
   try {
     // Clearing the password also clears the second factor: a locked-out operator
-    // who resets to default must not face an OTP whose secret they lost.
-    await updateSettings({ password: null, totpSecret: "", totpEnabled: false, totpCreatedAt: 0 });
+    // who resets to default must not face a PIN they cannot remember.
+    await updateSettings({ password: null, pinHash: "", pinEnabled: false, pinCreatedAt: 0 });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

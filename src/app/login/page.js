@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { Card, Button, Input } from "@/shared/components";
 
-// Two-factor step for password login. The secret/URI enrollment block appears
-// only on first setup; the steady state is just the six-digit field.
-function OtpStep({
-  challenge,
+// Two-factor step for password login. Verify mode asks for the PIN; setup mode
+// (first login, none set yet) asks for a new PIN twice.
+function PinStep({
+  setup,
   value,
+  confirm,
   onChange,
+  onConfirmChange,
   onSubmit,
   onBack,
   loading,
@@ -17,58 +19,53 @@ function OtpStep({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <p className="text-sm text-text-muted text-center">
-        {challenge
-          ? "Set up two-factor authentication"
-          : "Enter the 6-digit code from your authenticator app"}
+        {setup
+          ? "Create a PIN to protect dashboard sign-in"
+          : "Enter your PIN"}
       </p>
 
-      {challenge && (
-        <div className="rounded-xl border border-border-subtle bg-bg-subtle p-3 flex flex-col gap-2">
-          <p className="text-xs text-text-muted">
-            Add this key to your authenticator app (Google Authenticator, Authy,
-            1Password, …). Tap the key to select it, then paste or type it in the
-            app&apos;s &quot;can&apos;t scan&quot; option.
-          </p>
-          <code
-            className="block select-all text-sm font-mono text-text-main bg-sidebar rounded px-2 py-2 text-center tracking-wider"
-            onClick={(e) => {
-              const sel = window.getSelection();
-              const range = document.createRange();
-              range.selectNodeContents(e.currentTarget);
-              sel.removeAllRanges();
-              sel.addRange(range);
-            }}
-          >
-            {challenge.secret}
-          </code>
-          <details className="text-xs text-text-muted">
-            <summary className="cursor-pointer select-none">
-              or paste this setup link into your app
-            </summary>
-            <code className="block break-all font-mono mt-2 select-all">
-              {challenge.uri}
-            </code>
-          </details>
-        </div>
+      {setup && (
+        <p className="text-xs text-text-muted text-center">
+          You choose it yourself. 4 to 8 digits, easy to remember,
+          asked on every password login from now on.
+        </p>
       )}
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium">Authentication code</label>
+        <label className="text-sm font-medium">{setup ? "New PIN" : "PIN"}</label>
         <Input
+          type="password"
           inputMode="numeric"
-          autoComplete="one-time-code"
-          placeholder="123456"
+          autoComplete={setup ? "new-password" : "current-password"}
+          placeholder={setup ? "Choose a PIN" : "Enter your PIN"}
           maxLength={8}
           value={value}
           onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}
           required
           autoFocus
         />
-        {error && <p className="text-xs text-red-500">{error}</p>}
       </div>
 
+      {setup && (
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium">Confirm PIN</label>
+          <Input
+            type="password"
+            inputMode="numeric"
+            autoComplete="new-password"
+            placeholder="Repeat the PIN"
+            maxLength={8}
+            value={confirm}
+            onChange={(e) => onConfirmChange(e.target.value.replace(/[^0-9]/g, ""))}
+            required
+          />
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+
       <Button type="submit" variant="primary" className="w-full" loading={loading} disabled={loading}>
-        {challenge ? "Confirm and sign in" : "Verify and sign in"}
+        {setup ? "Save PIN and sign in" : "Verify and sign in"}
       </Button>
       <button
         type="button"
@@ -99,14 +96,16 @@ export default function LoginPage() {
   const [loginMethod, setLoginMethod] = useState("password");
   const [apiKey, setApiKey] = useState("");
   const [noAccess, setNoAccess] = useState(false);
-  // Two-factor step for password login. The pending token stays in memory only:
-  // a refresh restarts at the password field, which is the safe default.
-  const [otpStep, setOtpStep] = useState("none");
-  const [otpToken, setOtpToken] = useState("");
-  const [otpChallenge, setOtpChallenge] = useState(null); // {secret, uri, challengeId} on enrollment
-  const [otpInput, setOtpInput] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpError, setOtpError] = useState("");
+  // Two-factor step for password login: the self-chosen PIN. The pending token
+  // stays in memory only - a refresh restarts at the password field, which is
+  // the safe default.
+  const [pinStep, setPinStep] = useState("none");
+  const [pinToken, setPinToken] = useState("");
+  const [pinIsSetup, setPinIsSetup] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
+  const [pinError, setPinError] = useState("");
 
   // A key that signed in but holds no permission would bounce between /login and
   // the dashboard, so it stays here and can sign out instead.
@@ -185,22 +184,13 @@ export default function LoginPage() {
 
       if (res.ok) {
         const data = await res.json();
-        if (data.needsOtp) {
-          setOtpToken(data.otpToken || "");
-          setOtpInput("");
-          setOtpError("");
-          if (data.needsOtpSetup) {
-            try {
-              const ch = await fetch("/api/auth/otp/challenge", {
-                headers: { Authorization: `Bearer ${data.otpToken}` },
-              });
-              if (ch.ok) setOtpChallenge(await ch.json());
-              else setOtpChallenge(null);
-            } catch {
-              setOtpChallenge(null);
-            }
-          }
-          setOtpStep("otp");
+        if (data.needsPin) {
+          setPinToken(data.pendingToken || "");
+          setPinInput("");
+          setPinConfirm("");
+          setPinError("");
+          setPinIsSetup(data.needsPinSetup === true);
+          setPinStep("pin");
           setLoading(false);
           return;
         }
@@ -257,20 +247,24 @@ export default function LoginPage() {
     }
   };
 
-  // Second factor: exchange the pending token for a full session.
-  const handleOtpSubmit = async (e) => {
+  // Second factor: exchange the pending token for a full session. When
+  // pinIsSetup the same call creates the PIN (pin + confirm), otherwise it
+  // verifies against the stored hash.
+  const handlePinSubmit = async (e) => {
     e.preventDefault();
-    setOtpLoading(true);
-    setOtpError("");
+    if (pinIsSetup && pinInput !== pinConfirm) {
+      setPinError("The two PINs do not match.");
+      return;
+    }
+    setPinLoading(true);
+    setPinError("");
     try {
-      const res = await fetch("/api/auth/otp", {
+      const res = await fetch("/api/auth/pin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          otpToken,
-          code: otpInput.trim(),
-          challengeId: otpChallenge?.challengeId,
-        }),
+        body: pinIsSetup
+          ? JSON.stringify({ pendingToken: pinToken, pin: pinInput.trim(), confirmPin: pinConfirm.trim() })
+          : JSON.stringify({ pendingToken: pinToken, pin: pinInput.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -280,19 +274,19 @@ export default function LoginPage() {
         window.location.assign("/dashboard");
         return;
       }
-      setOtpError(data.error || "Invalid code");
+      setPinError(data.error || "Invalid PIN");
     } catch {
-      setOtpError("An error occurred. Please try again.");
+      setPinError("An error occurred. Please try again.");
     } finally {
-      setOtpLoading(false);
+      setPinLoading(false);
     }
   };
 
-  const handleOtpBack = () => {
-    setOtpStep("none");
-    setOtpError("");
-    setOtpInput("");
-    setOtpChallenge(null);
+  const handlePinBack = () => {
+    setPinStep("none");
+    setPinError("");
+    setPinInput("");
+    setPinConfirm("");
   };
 
   const handleOidcLogin = () => {
@@ -365,15 +359,17 @@ export default function LoginPage() {
         </div>
 
         <Card>
-          {otpStep === "otp" ? (
-            <OtpStep
-              challenge={otpChallenge}
-              value={otpInput}
-              onChange={setOtpInput}
-              onSubmit={handleOtpSubmit}
-              onBack={handleOtpBack}
-              loading={otpLoading}
-              error={otpError}
+          {pinStep === "pin" ? (
+            <PinStep
+              setup={pinIsSetup}
+              value={pinInput}
+              confirm={pinConfirm}
+              onChange={setPinInput}
+              onConfirmChange={setPinConfirm}
+              onSubmit={handlePinSubmit}
+              onBack={handlePinBack}
+              loading={pinLoading}
+              error={pinError}
             />
           ) : mustChange ? (
             <form onSubmit={handleSetNewPassword} className="flex flex-col gap-4">

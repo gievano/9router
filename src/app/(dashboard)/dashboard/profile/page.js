@@ -74,11 +74,11 @@ function BackupCountdown({ target, onExpire, showDate = false }) {
 const IMPORT_JOB_ENDPOINT = "/api/settings/database/jobs";
 
 export default function ProfilePage() {
-  // Second factor state, from /api/auth/status (otpEnabled) plus local UI state.
-  const [otpEnabled, setOtpEnabled] = useState(null);
-  const [otpDisabling, setOtpDisabling] = useState(false);
-  const [otpConfirm, setOtpConfirm] = useState(false);
-  const [otpMsg, setOtpMsg] = useState({ type: "", message: "" });
+  // Second-factor (PIN) state, from /api/auth/status (pinEnabled).
+  const [pinEnabled, setPinEnabled] = useState(null);
+  const [pinDisabling, setPinDisabling] = useState(false);
+  const [pinConfirm, setPinConfirm] = useState(false);
+  const [pinMsg, setPinMsg] = useState({ type: "", message: "" });
   const [locale, setLocale] = useState(() => getLocaleFromCookie());
   const [langOpen, setLangOpen] = useState(false);
   const [shutdownOpen, setShutdownOpen] = useState(false);
@@ -148,7 +148,7 @@ export default function ProfilePage() {
         const res = await fetch("/api/auth/status");
         if (res.ok) {
           const data = await res.json();
-          setOtpEnabled(data.otpEnabled === true);
+          setPinEnabled(data.pinEnabled === true);
         }
       } catch {
         // unknown stays unknown; the row hides itself
@@ -156,27 +156,27 @@ export default function ProfilePage() {
     })();
   }, []);
 
-  const handleDisableOtp = async () => {
-    if (!otpConfirm) {
-      setOtpConfirm(true);
+  const handleDisablePin = async () => {
+    if (!pinConfirm) {
+      setPinConfirm(true);
       return;
     }
-    setOtpDisabling(true);
-    setOtpMsg({ type: "", message: "" });
+    setPinDisabling(true);
+    setPinMsg({ type: "", message: "" });
     try {
-      const res = await fetch("/api/auth/otp", { method: "DELETE" });
+      const res = await fetch("/api/auth/pin", { method: "DELETE" });
       if (res.ok) {
-        setOtpEnabled(false);
-        setOtpConfirm(false);
-        setOtpMsg({ type: "success", message: "Two-factor authentication is off. Password login alone opens the dashboard now." });
+        setPinEnabled(false);
+        setPinConfirm(false);
+        setPinMsg({ type: "success", message: "PIN is off. Password login alone opens the dashboard now. Sign in again to choose a new PIN." });
       } else {
         const data = await res.json();
-        setOtpMsg({ type: "error", message: data.error || "Could not turn off two-factor authentication." });
+        setPinMsg({ type: "error", message: data.error || "Could not turn the PIN off." });
       }
     } catch {
-      setOtpMsg({ type: "error", message: "An error occurred. Please try again." });
+      setPinMsg({ type: "error", message: "An error occurred. Please try again." });
     } finally {
-      setOtpDisabling(false);
+      setPinDisabling(false);
     }
   };
 
@@ -1149,30 +1149,30 @@ export default function ProfilePage() {
                 disabled={loading}
               />
             </div>
-            {otpEnabled !== null && (
+            {pinEnabled !== null && (
               <div className="flex items-start sm:items-center justify-between gap-4 pt-4 border-t border-border/50">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm sm:text-base">Two-factor authentication</p>
+                  <p className="font-medium text-sm sm:text-base">Login PIN (2FA)</p>
                   <p className="text-xs sm:text-sm text-text-muted">
-                    {otpEnabled
-                      ? "On. Password login asks for a 6-digit code from your authenticator app."
-                      : "Off. Turn it on by signing out and signing back in with your password — the setup appears after the password is accepted."}
+                    {pinEnabled
+                      ? "On. Password login asks for your PIN. It is hashed on the server and never shown anywhere."
+                      : "Off. Turn it on by signing out and signing back in with your password — the create-PIN form appears after the password is accepted."}
                   </p>
-                  {otpMsg.message && (
-                    <p className={`text-xs sm:text-sm mt-1 ${otpMsg.type === "error" ? "text-red-500" : "text-green-500"}`}>
-                      {otpMsg.message}
+                  {pinMsg.message && (
+                    <p className={`text-xs sm:text-sm mt-1 ${pinMsg.type === "error" ? "text-red-500" : "text-green-500"}`}>
+                      {pinMsg.message}
                     </p>
                   )}
                 </div>
-                {otpEnabled ? (
+                {pinEnabled ? (
                   <Button
                     type="button"
-                    variant={otpConfirm ? "danger" : "outline"}
-                    loading={otpDisabling}
-                    onClick={handleDisableOtp}
+                    variant={pinConfirm ? "danger" : "outline"}
+                    loading={pinDisabling}
+                    onClick={handleDisablePin}
                     className="shrink-0"
                   >
-                    {otpConfirm ? "Click again to turn off" : "Turn off"}
+                    {pinConfirm ? "Click again to turn off" : "Turn off"}
                   </Button>
                 ) : (
                   <span className="text-xs sm:text-sm text-text-muted shrink-0">Not set up</span>

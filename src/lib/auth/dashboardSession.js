@@ -44,23 +44,47 @@ export async function createDashboardAuthToken(claims = {}) {
     .sign(SECRET);
 }
 
-// Short-lived token proving "password was correct, OTP still pending".
+// Short-lived token proving "password was correct, PIN still pending".
 // It is deliberately NOT accepted by verifyDashboardAuthToken below: a
-// half-finished login must never open the dashboard, even if the bearer
+// A half-finished login must never open the dashboard, even if the bearer
 // presents this token to the guard.
-export async function createOtpPendingToken() {
-  return new SignJWT({ authenticated: false, purpose: "otp-pending" })
+// jti -> unix expiry. A pending token is single-use: once it has been
+// exchanged for a session it must not mint a second one.
+const SPENT_PENDING = new Map();
+
+function dropSpent(jti) {
+  const exp = SPENT_PENDING.get(jti);
+  SPENT_PENDING.delete(jti);
+  return exp;
+}
+
+// Called only after a successful exchange. A failed attempt deliberately does
+// not spend the token, so the operator can retry without retyping the password.
+export function spendPendingToken(payload) {
+  const jti = payload?.jti;
+  if (!jti) return;
+  SPENT_PENDING.set(jti, payload.exp || Math.floor(Date.now() / 1000) + 300);
+  setTimeout(
+    () => dropSpent(jti),
+    Math.max(1000, (payload.exp || 0) * 1000 - Date.now() + 60000)
+  ).unref?.();
+}
+
+export async function createPendingToken() {
+  return new SignJWT({ authenticated: false, purpose: "pending", jti: crypto.randomUUID() })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("5m")
     .sign(SECRET);
 }
 
-export async function verifyOtpPendingToken(token) {
+export async function verifyPendingToken(token) {
   if (!token) return false;
   try {
     const { payload } = await jwtVerify(token, SECRET);
-    return payload && payload.purpose === "otp-pending" ? payload : false;
+    if (!payload || payload.purpose !== "pending") return false;
+    if (payload.jti && SPENT_PENDING.has(payload.jti)) return false;
+    return payload;
   } catch {
     return false;
   }
@@ -70,8 +94,8 @@ export async function verifyDashboardAuthToken(token) {
   if (!token) return false;
   try {
     const { payload } = await jwtVerify(token, SECRET);
-    // Full sessions only. The otp-pending token proves the password but not the
-    // second factor, so it must fail here even though it is genuinely signed.
+    // Full sessions only. The pending token proves the password but not the
+    // factor, so it must fail here even though it is genuinely signed.
     if (payload.purpose && payload.purpose !== "dashboard-auth") return false;
     return payload.authenticated === true;
   } catch {
