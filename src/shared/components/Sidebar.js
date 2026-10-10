@@ -30,7 +30,6 @@ const navItems = [
 // Custom features added by this fork — open-ended, new tools land here too.
 const workshopItems = [
   { href: "/dashboard/arena", label: "Compare Models", icon: "swords" },
-  { href: "/dashboard/benchmark", label: "Benchmark", icon: "speed" },
   { href: "/dashboard/model-editor", label: "Custom Models", icon: "auto_awesome" },
   { href: "/dashboard/plugins", label: "Custom Plugins", icon: "widgets" },
   { href: "/dashboard/prd-builder", label: "PRD Builder", icon: "description" },
@@ -120,7 +119,6 @@ export default function Sidebar({ onClose }) {
 
   const filteredWorkshopItems = workshopItems.filter((item) => {
     if (!isApiKeyUser) return true;
-    if (item.href === "/dashboard/benchmark") return false;
     if (item.href === "/dashboard/model-editor" || item.href === "/dashboard/arena" || item.href === "/dashboard/prd-builder") {
       return permissions.manageModels;
     }

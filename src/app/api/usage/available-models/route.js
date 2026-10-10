@@ -5,6 +5,8 @@ import { AI_MODELS } from "@/shared/constants/config";
 import { FREE_PROVIDERS, getProviderAlias, resolveProviderId } from "@/shared/constants/providers";
 import { getDisabledModels } from "@/lib/disabledModelsDb";
 import { getCapabilitiesForModel } from "open-sse/providers/capabilities.js";
+import { getSettings } from "@/lib/db/repos/settingsRepo.js";
+import { CUSTOM_PLUGIN_KEYS } from "@/shared/constants/models";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +14,32 @@ function isDisabled(disabled, provider, model) {
   const alias = getProviderAlias(provider) || provider;
   const list = disabled[alias] || disabled[provider] || [];
   return Array.isArray(list) && list.includes(model);
+}
+
+// Plugin marks for a row.
+//
+// /api/models marks a model by setting flags on its caps, but this route builds
+// its own rows and had no plugin logic at all, so the Usage and API-key views
+// showed nothing even for a model with a plugin clearly active. The same rules
+// are applied here from the same stored settings, keyed by every shape a row can
+// be addressed by (its full id, the routed id, the bare id, and the combo name).
+async function pluginMarkResolver() {
+  const settings = await getSettings().catch(() => ({}));
+  const plugins = settings?.customPlugins || {};
+  const sources = CUSTOM_PLUGIN_KEYS.map((key) => [
+    key,
+    Boolean(plugins[key]?.enabled),
+    new Set(plugins[key]?.models || []),
+  ]).filter(([, enabled]) => enabled);
+
+  if (!sources.length) return () => [];
+
+  return (ids) => {
+    const candidates = ids.filter(Boolean).map(String);
+    return sources
+      .filter(([, , models]) => candidates.some((id) => models.has(id)))
+      .map(([key]) => key);
+  };
 }
 
 // A connection locked for every model it serves reports "__all"; anything
@@ -236,6 +264,8 @@ export async function GET() {
       return windows.length ? Math.min(...windows) : null;
     };
 
+    const resolvePluginMarks = await pluginMarkResolver();
+
     const withStatus = entries.map((entry) => {
       let status = "ready";
       if (entry.origin === "combo") {
@@ -255,10 +285,41 @@ export async function GET() {
       } else {
         contextWindow = lookupContext(entry.provider, entry.model);
       }
-      return { ...entry, status, contextWindow };
+      // A row is reachable as its full id, its bare model id, and — for a
+      // combo — the combo name, so all of them are offered to the resolver. A
+      // combo inherits the marks of its members, matching /api/models.
+      const markIds =
+        entry.origin === "combo"
+          ? [entry.model, `combo/${entry.model}`, ...(comboMembers[entry.model] || [])]
+          : [
+              `${entry.provider}/${entry.model}`,
+              entry.fullModel,
+              entry.routedModel,
+              entry.model,
+            ];
+      const pluginMarks = resolvePluginMarks(markIds);
+      return { ...entry, status, contextWindow, pluginMarks };
     });
 
-    const models = filterModelsByAllowedModels(withStatus, allowedModelsRaw);
+    // Deliberately NOT de-duplicated here: two rows sharing a bare model id
+    // but sitting behind different provider connections are different call
+    // paths, and both must stay. The card disambiguates the label instead.
+    // Collapse rows that are the SAME call path. The catalog can list one
+    // model twice under one provider (a marketing variant with the same id),
+    // and that really is a duplicate the operator sees as "one model twice".
+    // Two rows behind DIFFERENT connections are NOT duplicates and stay.
+    const seenCallPath = new Set();
+    const distinct = [];
+    for (const entry of withStatus) {
+      const callPath =
+        `${String(entry.provider || "").trim().toLowerCase()}\u0000` +
+        `${String(entry.model || entry.name || "").trim().toLowerCase()}`;
+      if (seenCallPath.has(callPath)) continue;
+      seenCallPath.add(callPath);
+      distinct.push(entry);
+    }
+
+    const models = filterModelsByAllowedModels(distinct, allowedModelsRaw);
     models.sort((a, b) => String(a.name).localeCompare(String(b.name)));
 
     return NextResponse.json(

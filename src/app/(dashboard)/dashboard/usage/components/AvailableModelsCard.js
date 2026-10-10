@@ -43,6 +43,28 @@ function StatusPill({ status }) {
  * GET /api/usage/available-models, which narrows the shared catalog to this
  * key's allowedModels before answering.
  */
+/**
+ * Display name for one row.
+ *
+ * A bare model id that only one row carries reads best on its own. The same id
+ * reachable through several provider connections would print the same string
+ * several times — four rows all saying "minimax-m2" read as a bug (they did).
+ * Those ambiguous rows show the provider so each one names the connection it
+ * actually calls.
+ */
+function labelFor(entry, ambiguous) {
+  const bare = String(entry.model || entry.name || "");
+  if (!ambiguous) return bare;
+  // routedModel is the address a request actually goes to, and it is unique
+  // per connection — including when the model id already carries a vendor
+  // prefix (`kc/openai/gpt-4.1` vs `openai/gpt-4.1`), which a hand-built
+  // `provider/bare` prefix cannot disambiguate.
+  const routed = String(entry.routedModel || entry.fullModel || "").trim();
+  if (routed) return routed;
+  const provider = String(entry.provider || "").trim();
+  return provider ? `${provider}/${bare}` : bare;
+}
+
 export default function AvailableModelsCard({ visible }) {
   const [models, setModels] = useState(null);
   const [meta, setMeta] = useState(null);
@@ -69,6 +91,15 @@ export default function AvailableModelsCard({ visible }) {
   if (!visible || failed) return null;
 
   const count = models ? models.length : null;
+  // A bare name reachable through more than one row must say which connection
+  // it calls, or the list shows the same label several times over.
+  const bareCounts = {};
+  if (Array.isArray(models)) {
+    for (const m of models) {
+      const b = String(m.model || m.name || "");
+      bareCounts[b] = (bareCounts[b] || 0) + 1;
+    }
+  }
   const subtitle = meta && count !== null
     ? `${count} of ${meta.total} models available to ${meta.keyName || "this key"}`
     : "Loading the models this key may call";
@@ -102,7 +133,7 @@ export default function AvailableModelsCard({ visible }) {
             >
               <div className="flex min-w-0 flex-col">
                 <span className="truncate font-mono text-xs text-text-main" title={m.routedModel || m.fullModel || m.model}>
-                  {m.alias && m.alias !== m.model ? `${m.alias} (${m.model})` : m.model}
+                  {(() => { const amb = (bareCounts[String(m.model || m.name || "")] || 0) > 1; const label = labelFor(m, amb); return (m.alias && m.alias !== label) ? `${m.alias} (${label})` : label; })()}
                 </span>
                 {contextLabel(m) ? (
                   <span className="truncate text-[11px] text-text-muted">{contextLabel(m)}</span>

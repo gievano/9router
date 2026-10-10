@@ -153,17 +153,12 @@ export default function UpdateBanner({ pollMs = POLL_MS }) {
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              {/* The command stays visible and selectable; copying it is the
+                  job of "Update now" -> "Copy & Shutdown", so a second Copy
+                  button here only offered the same clipboard write twice. */}
               <code className="hidden select-all overflow-x-auto whitespace-nowrap rounded-lg border border-border-subtle bg-bg px-2.5 py-1.5 font-mono text-[11px] text-text-muted sm:block">
                 {installCmd}
               </code>
-              <Button
-                variant="outline"
-                size="sm"
-                icon={copied ? "check" : "content_copy"}
-                onClick={() => copy(installCmd)}
-              >
-                {copied ? "Copied" : "Copy"}
-              </Button>
               <Button
                 variant="primary"
                 size="sm"
@@ -212,8 +207,8 @@ export default function UpdateBanner({ pollMs = POLL_MS }) {
           setIsUpdating(true);
         }}
         title="Update 9Router"
-        message={`Show install command for v${info.latestVersion || ""}? You can copy it and shutdown to install manually.`}
-        confirmText="Show Command"
+        message={`Update 9Router to v${info.latestVersion || ""}? The install command is copied and the server shuts down so you can run it in a terminal.`}
+        confirmText="Update"
         cancelText="Cancel"
         variant="primary"
       />

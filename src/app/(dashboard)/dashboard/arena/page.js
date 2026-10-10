@@ -590,29 +590,112 @@ function buildRanking(slots, results) {
     });
 }
 
+// One metric, described once: what it is, how a lower (or higher) number
+// reads, how to render it, and which winner it produced. The winner rail, the
+// table bars and the header all read from this single list, so a metric can
+// never be shown as the winner in one place and left unbarred in another.
+const METRIC_DEFS = [
+ {
+  key: "ms",
+  label: "Fastest",
+  icon: "speed",
+  color: "#f59e0b",
+  lowerIsBetter: true,
+  value: (r) => (r.ms == null ? null : r.ms),
+  format: (v) => `${v}ms`,
+  hint: "total time to finish",
+ },
+ {
+  key: "ttft",
+  label: "First token",
+  icon: "bolt",
+  color: "#38bdf8",
+  lowerIsBetter: true,
+  value: (r) => (r.ttftMs == null ? null : r.ttftMs),
+  format: (v) => `${v}ms`,
+  hint: "time to first token",
+ },
+ {
+  key: "cost",
+  label: "Cheapest",
+  icon: "payments",
+  color: "#22c55e",
+  lowerIsBetter: true,
+  value: (r) => (r.cost == null ? null : r.cost),
+  format: (v) => showCost(v),
+  hint: "price of this answer",
+ },
+ {
+  key: "tokens",
+  label: "Leanest",
+  icon: "data_usage",
+  color: "#a855f7",
+  lowerIsBetter: true,
+  value: (r) => (r.totalTokens ? r.totalTokens : null),
+  format: (v) => String(v),
+  hint: "tokens billed",
+ },
+ {
+  key: "chars",
+  label: "Longest",
+  icon: "article",
+  color: "#f43f5e",
+  lowerIsBetter: false,
+  value: (r) => (r.chars ? r.chars : null),
+  format: (v) => String(v),
+  hint: "characters written",
+ },
+];
+
+// Winner per metric, computed from the same pool the table shows: only finished,
+// unstopped, answered runs compete.
+function metricsFor(answered) {
+  return METRIC_DEFS.map((def) => {
+    const withValue = answered
+      .map((r) => ({ r, v: def.value(r) }))
+      .filter((x) => x.v != null && !Number.isNaN(x.v));
+    if (!withValue.length) return { def, winner: null, best: null, worst: null };
+    const sorted = withValue.slice().sort((a, b) =>
+      def.lowerIsBetter ? a.v - b.v : b.v - a.v
+    );
+    return { def, winner: sorted[0].r, best: sorted[0].v, worst: sorted[sorted.length - 1].v };
+  });
+}
+
+// Width of the bar for one value inside a metric. A single metric with one
+// entrant gets a full bar; otherwise it is scaled against the worst value so
+// the shape of the comparison is visible.
+function barPct(v, best, worst) {
+  if (v == null || best == null || worst == null) return 0;
+  if (best === worst) return 100;
+  const lo = Math.min(best, worst);
+  const hi = Math.max(best, worst);
+  // Floor at 8% so a cheap/fast entry is never invisible.
+  return Math.max(8, Math.round(((v - lo) / (hi - lo)) * 92) + 8);
+}
+
 function FinalResult({ ranked, pick, setPick, runId }) {
   // An empty 200 response is not a win, and neither is an answer the user cut off,
   // so every award needs a real finished answer.
   const answered = ranked.filter((r) => r.answered && !r.stopped);
+  const metrics = useMemo(() => metricsFor(answered), [ranked]);
+  // Kept under the old names because the table below still refers to them; they
+  // are now derived from the shared metric list instead of five hand-rolled
+  // sorts that could disagree with the rail.
   const winners = {
-    fastest: answered.slice().sort((a, b) => a.ms - b.ms)[0],
-    cheapest: answered
-      .filter((r) => r.cost != null)
-      .slice()
-      .sort((a, b) => a.cost - b.cost)[0],
-    leanest: answered
-      .filter((r) => r.totalTokens > 0)
-      .slice()
-      .sort((a, b) => a.totalTokens - b.totalTokens)[0],
-    richest: answered.slice().sort((a, b) => b.chars - a.chars)[0],
-    firstToken: answered
-      .filter((r) => r.ttftMs != null)
-      .slice()
-      .sort((a, b) => a.ttftMs - b.ttftMs)[0],
+    fastest: metrics.find((m) => m.def.key === "ms")?.winner || null,
+    cheapest: metrics.find((m) => m.def.key === "cost")?.winner || null,
+    leanest: metrics.find((m) => m.def.key === "tokens")?.winner || null,
+    richest: metrics.find((m) => m.def.key === "chars")?.winner || null,
+    firstToken: metrics.find((m) => m.def.key === "ttft")?.winner || null,
   };
 
   const leader = ranked[0];
   const manual = pick != null ? ranked.find((r) => r.index === pick) : null;
+  const byKey = useMemo(
+    () => Object.fromEntries(metrics.map((m) => [m.def.key, m])),
+    [metrics]
+  );
 
   return (
     <Card padding="md" className="flex flex-col gap-4">
@@ -635,6 +718,54 @@ function FinalResult({ ranked, pick, setPick, runId }) {
           </div>
         </div>
         <span className="text-[10px] text-text-muted">run #{runId}</span>
+      </div>
+
+      {answered.length > 1 && (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+          {metrics
+            .filter((m) => m.winner)
+            .map(({ def, winner, best }) => (
+              <button
+                key={def.key}
+                type="button"
+                onClick={() => setPick(winner.index)}
+                title={`${def.hint} — tap to make it your pick`}
+                className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-colors ${
+                  pick === winner.index
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-border hover:border-primary/30 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+                }`}
+              >
+                <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                  <span
+                    className="material-symbols-outlined text-[13px] leading-none"
+                    style={{ color: def.color }}
+                  >
+                    {def.icon}
+                  </span>
+                  {def.label}
+                </span>
+                <span
+                  className="text-lg font-bold font-mono tabular-nums leading-none"
+                  style={{ color: def.color }}
+                >
+                  {def.format(best)}
+                </span>
+                <span className="text-[11px] font-mono text-text-main truncate">
+                  {winner.model}
+                </span>
+              </button>
+            ))}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-text-muted">
+        <span className="material-symbols-outlined text-[12px] leading-none">info</span>
+        <span>
+          Ranked automatically on speed and spend only — bars compare the same
+          metric across contenders. Answer quality is yours to judge, so use
+          “My pick”.
+        </span>
       </div>
 
       <div className="min-w-0 overflow-x-auto">
@@ -677,17 +808,21 @@ function FinalResult({ ranked, pick, setPick, runId }) {
                   </span>
                 )}
                   </td>
-                  <td className="py-2 px-3 text-right font-mono tabular-nums">
-                    {entry.ok ? `${entry.ms}ms` : "—"}
+                  <td className="py-2 px-3 text-right">
+                    <MetricCell entry={entry} metric={byKey.ms} format={(v) => (v == null ? "—" : `${v}ms`)} />
                   </td>
-                  <td className="py-2 px-3 text-right font-mono tabular-nums">
-                    {entry.ttftMs != null ? `${entry.ttftMs}ms` : "—"}
+                  <td className="py-2 px-3 text-right">
+                    <MetricCell entry={entry} metric={byKey.ttft} format={(v) => (v == null ? "—" : `${v}ms`)} />
                   </td>
-                  <td className="py-2 px-3 text-right font-mono tabular-nums">
-                    {entry.ok ? entry.totalTokens || "—" : "—"}
+                  <td className="py-2 px-3 text-right">
+                    <MetricCell
+                      entry={entry}
+                      metric={byKey.tokens}
+                      format={(v) => (v == null ? "—" : String(v))}
+                    />
                   </td>
-                  <td className="py-2 px-3 text-right font-mono tabular-nums">
-                    {entry.ok ? showCost(entry.cost) : "—"}
+                  <td className="py-2 px-3 text-right">
+                    <MetricCell entry={entry} metric={byKey.cost} format={(v) => showCost(v)} />
                   </td>
                   <td className="py-2 pl-3 text-right">
                     <button
@@ -708,6 +843,42 @@ function FinalResult({ ranked, pick, setPick, runId }) {
         </table>
       </div>
     </Card>
+  );
+}
+
+// Number plus bar. The bar is what makes the comparison readable; the digits
+// stay for exactness. A missing value shows a dash and no bar rather than a
+// zero-length bar that would read as "fastest".
+function MetricCell({ entry, metric, format }) {
+  if (!metric) return <span className="font-mono tabular-nums text-text-muted">—</span>;
+  const v = metric.def.value(entry);
+  if (v == null) return <span className="font-mono tabular-nums text-text-muted">—</span>;
+  const isWinner = metric.winner?.index === entry.index;
+  const pct = barPct(v, metric.best, metric.worst);
+  return (
+    <span className="flex flex-col items-end gap-1">
+      <span
+        className={`font-mono tabular-nums ${isWinner ? "font-semibold" : ""}`}
+        style={isWinner ? { color: metric.def.color } : undefined}
+      >
+        {format(v)}
+        {isWinner ? (
+          <span className="material-symbols-outlined align-middle ml-0.5 text-[11px] leading-none">
+            star
+          </span>
+        ) : null}
+      </span>
+      <span className="block w-full min-w-[42px] max-w-[90px] h-1 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+        <span
+          className="block h-full rounded-full"
+          style={{
+            width: `${pct}%`,
+            background: metric.def.color,
+            opacity: isWinner ? 1 : 0.45,
+          }}
+        />
+      </span>
+    </span>
   );
 }
 
