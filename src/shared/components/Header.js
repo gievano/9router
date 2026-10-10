@@ -160,13 +160,6 @@ const getPageInfo = (pathname) => {
       icon: "translate",
       breadcrumbs: [],
     };
-  if (pathname.includes("/benchmark"))
-    return {
-      title: "Benchmark",
-      description: "Model speed ranking",
-      icon: "speed",
-      breadcrumbs: [{ label: "Benchmark", href: "/dashboard/benchmark" }],
-    };
 
   if (pathname.includes("/console-log"))
     return {

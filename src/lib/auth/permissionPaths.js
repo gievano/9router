@@ -185,7 +185,6 @@ export function firstAllowedPage(permissions) {
   const candidates = [
     { path: "/dashboard/endpoint", permissions: ["manageApiKeys"] },
     { path: "/dashboard/usage", permissions: ["viewUsage"] },
-    { path: "/dashboard/benchmark", permissions: [] },
     { path: "/dashboard/providers", permissions: ["manageProviders"] },
     { path: "/dashboard/model-editor", permissions: ["manageModels"] },
     { path: "/dashboard/combos", permissions: ["manageModels"] },

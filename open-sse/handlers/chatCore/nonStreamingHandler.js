@@ -6,6 +6,7 @@ import { addBufferToUsage, filterUsageForFormat } from "../../utils/usageTrackin
 import { createErrorResult } from "../../utils/error.js";
 import { rescueResponse } from "../../translator/concerns/toolCallRescue.js";
 import { applyJsonGuard } from "../../translator/concerns/jsonGuard.js";
+import { applyOpenAIToolBridge } from "../../translator/concerns/toolBridge.js";
 import { upstreamResponseHeaders } from "../../utils/upstreamHeaders.js";
 import { HTTP_STATUS } from "../../config/runtimeConfig.js";
 import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
@@ -25,6 +26,77 @@ function parseToolArguments(value) {
   } catch {
     return {};
   }
+}
+
+
+/**
+ * OpenAI Tool Bridge — response side, non-streaming.
+ *
+ * A text-only provider (browser-session models with `tools: false`) answers a
+ * tool request in prose, so the client receives a plain string and waits for a
+ * tool_call that never arrives. The model's own answer is where the invocation
+ * is declared — `{"name": ...}`, `<tool_use>`, `to=read_file {...}` — so
+ * rewriting it is a FORMAT repair on content the model wrote, never a guess
+ * about intent.
+ *
+ * Both client shapes are covered: the OpenAI chat envelope
+ * (`choices[0].message.content`) and the Claude envelope (`content[]` text
+ * blocks). The tool catalogue comes from the request the client actually sent,
+ * which is the only trustworthy list of what may be called.
+ */
+function bridgeOpenAIChatResponse(response, body) {
+  // The catalogue travels with the request in whichever shape the client used.
+  const catalogue = body?._openaiToolBridge || {};
+  const sourceTools = Array.isArray(body?.tools) && body.tools.length
+    ? body.tools
+    : (Array.isArray(catalogue.tools) ? catalogue.tools : undefined);
+  const sourceFunctions = Array.isArray(body?.functions) && body.functions.length
+    ? body.functions
+    : (Array.isArray(catalogue.functions) ? catalogue.functions : undefined);
+
+  const args = {
+    tools: sourceTools,
+    functions: sourceFunctions,
+  };
+
+  let applied = 0;
+
+  // OpenAI chat envelope.
+  const message = response?.choices?.[0]?.message;
+  if (message && typeof message.content === "string" && !message.tool_calls) {
+    const out = applyOpenAIToolBridge({ content: message.content }, args);
+    if (out.openaiToolBridge?.applied) {
+      message.content = out.content;
+      message.tool_calls = out.tool_calls;
+      applied += out.tool_calls.length;
+    }
+  }
+
+  // Claude envelope: content is an array of blocks; the bridge reads text blocks.
+  if (Array.isArray(response?.content) && !response?.tool_calls) {
+    const texts = response.content.filter((b) => b?.type === "text" && typeof b.text === "string");
+    if (texts.length) {
+      const joined = texts.map((b) => b.text).join("\n");
+      const out = applyOpenAIToolBridge({ content: joined }, args);
+      if (out.openaiToolBridge?.applied) {
+        // Keep the prose as a text block (it explains the call) and add tool_use
+        // blocks after it, mirroring what a natively tool-capable model emits.
+        texts[0].text = out.content;
+        for (let i = 1; i < texts.length; i++) texts[i].text = "";
+        for (const tc of out.tool_calls) {
+          response.content.push({
+            type: "tool_use",
+            id: tc.id,
+            name: tc.function.name,
+            input: parseToolArguments(tc.function.arguments),
+          });
+        }
+        applied += out.tool_calls.length;
+      }
+    }
+  }
+
+  return applied;
 }
 
 function openAICompletionToClaudeMessage(responseBody) {
@@ -365,6 +437,16 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
     const rescued = rescueResponse(translatedResponse, translatedBody.tools);
     if (rescued.renamed || rescued.recovered || rescued.dropped) {
       log?.debug?.("TOOLRESCUE", `${rescued.renamed} renamed, ${rescued.recovered} recovered, ${rescued.dropped} dropped (response)`);
+    }
+  }
+
+  // OpenAI Tool Bridge (opt-in per model): a provider with no native tool
+  // support answers in prose. The invocation is already in the model's answer,
+  // so promoting it to tool_calls is a format repair, not a guess.
+  if (pluginResult?.isToolBridgeActive && translatedResponse && typeof translatedResponse === "object") {
+    const bridged = bridgeOpenAIChatResponse(translatedResponse, body);
+    if (bridged > 0) {
+      log?.debug?.("TOOLBRIDGE", `${bridged} call(s) recovered from prose · ${provider}/${model}`);
     }
   }
 

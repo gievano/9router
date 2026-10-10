@@ -115,16 +115,196 @@ function stripCommitCount(title) {
  return title.replace(/\s*·\s*\d+\s+commits?\b/i, "");
 }
 
+// How each changelog category reads at a glance. `verb` is the label shown in
+// the pill; `icon` is the material symbol. Colors are inline because the card
+// is rendered as an HTML string, outside the Tailwind tree.
+// One entry per MEANING, not per spelling. CHANGELOG.md carries 15 distinct
+// headings for 7 ideas (measured), so the aliases below collapse synonyms into a
+// single heading before the merge runs.
+const CATEGORY_ALIAS = {
+ features: "Features",
+ improvements: "Features",
+ changes: "Features",
+ enhancements: "Features",
+ "custom features & enhancements": "Features",
+ "fixes & enhancements": "Fixes",
+ fixes: "Fixes",
+ security: "Security",
+ removals: "Removed",
+ removed: "Removed",
+ "breaking changes": "Removed",
+ deprecated: "Deprecated",
+ deprecations: "Deprecated",
+ renames: "Deprecated",
+ docs: "Docs",
+ documentation: "Docs",
+ internal: "Internal",
+ notes: "Internal",
+ tests: "Internal",
+ refactor: "Internal",
+};
+
+// "Sync with upstream v0.5.86" is a release note, not a change kind. Without
+// this it became a 7th category that looked like a change section.
+function canonicalCategory(name) {
+ const key = String(name || "").trim();
+ if (!key) return "";
+ if (/^sync with upstream\b/i.test(key)) return "Internal";
+ const probe = key.toLowerCase().replace(/[\u2010-\u2015\-]+/g, "-").replace(/\s*&\s*/g, " & ");
+ return CATEGORY_ALIAS[probe] || CATEGORY_ALIAS[key.toLowerCase()] || key;
+}
+
+const CATEGORY_STYLE = {
+ Features: { verb: "Added", icon: "add_circle", color: "#22c55e", tint: "rgba(34,197,94,.10)" },
+ Fixes: { verb: "Fixed", icon: "build", color: "#f59e0b", tint: "rgba(245,158,11,.10)" },
+ Security: { verb: "Security", icon: "shield", color: "#ef4444", tint: "rgba(239,68,68,.10)" },
+ Removed: { verb: "Removed", icon: "remove_circle", color: "#f43f5e", tint: "rgba(244,63,94,.10)" },
+ Deprecated: { verb: "Deprecated", icon: "warning", color: "#a855f7", tint: "rgba(168,85,247,.10)" },
+ Docs: { verb: "Docs", icon: "menu_book", color: "#38bdf8", tint: "rgba(56,189,248,.10)" },
+ Internal: { verb: "Internal", icon: "build_circle", color: "#94a3b8", tint: "rgba(148,163,184,.10)" },
+};
+
+function categoryStyle(name) {
+ const key = canonicalCategory(name);
+ return (
+ CATEGORY_STYLE[key] ||
+ // Unknown categories still get a stable look instead of falling back to the
+ // heading style that made everything blur together.
+ { verb: key, icon: "label", color: "#94a3b8", tint: "rgba(148,163,184,.08)" }
+ );
+}
+
+// The leading verb of a bullet says what the change IS. Matching on the verb
+// rather than the whole line keeps the rest of the sentence untouched.
+const CHANGE_VERB = [
+ { re: /^(add(ed|s)?|introduc(e|ed|es|ing)|support(ed|s)?|implement(ed|s)?|new)\b/i, kind: "Added", icon: "add", color: "#22c55e" },
+ { re: /^(fix(es|ed)?|correct(s|ed)?|repair(s|ed)?|resolv(e|es|ed))\b/i, kind: "Fixed", icon: "build", color: "#f59e0b" },
+ { re: /^(remove[sd]?|delet(e|es|ed)|drop(s|ped)?|retire[sd]?)\b/i, kind: "Removed", icon: "remove", color: "#f43f5e" },
+ { re: /^(deprecat(e|ed|es)|renam(e|ed|es)|chang(e|ed|es))\b/i, kind: "Changed", icon: "edit", color: "#a855f7" },
+ { re: /^(upgrad(e|ed|es)|bump(s|ed)?|rais(e|ed|es)|increas(e|ed|es))\b/i, kind: "Changed", icon: "trending_up", color: "#a855f7" },
+ { re: /^(secur(e|ity)|harden(s|ed)?|sign(s|ed)?|authent(icat(e|ion)))\b/i, kind: "Security", icon: "shield", color: "#ef4444" },
+];
+
+function changeKind(text) {
+ const t = String(text || "").trim();
+ if (!t) return null;
+ // Folded lines already lost their bullet; the scope heading is handled apart.
+ if (t.startsWith("**")) return null;
+ for (const v of CHANGE_VERB) {
+ if (v.re.test(t)) return v;
+ }
+ return null;
+}
+
 function renderBody(bodyMd) {
  if (!bodyMd.trim()) return "";
  const demoted = bodyMd.replace(/^#{2,6}\s/gm, (m) => "#".repeat(Math.min(6, m.length + 2)) + " ");
- return marked.parse(demoted);
+ // Heading level is kept for structure, then restyled below into a pill: the
+ // parser output decides what is a category and what is a bullet.
+ const html = marked.parse(demoted);
+
+ // The demotion above moves every category to a different heading level, so
+ // this matches h1..h6 rather than one level. The level is preserved on the
+ // element and the visual treatment comes from the pill, so the document keeps
+ // its structure while reading as a labelled category.
+ let out = html.replace(/<h([1-6])([^>]*)>([\s\S]*?)<\/h\1>/g, (_m, level, attrs, inner) => {
+ const raw = inner.replace(/<[^>]+>/g, "").trim();
+ const name = canonicalCategory(raw);
+ const st = categoryStyle(raw);
+ return (
+ `<h${level}${attrs} class="cl-cat" style="display:flex;align-items:center;gap:8px;margin:18px 0 10px;padding:7px 11px;border-radius:9999px;` +
+ `background:${st.tint};border:1px solid ${st.color}33;font-size:inherit;font-weight:inherit;">` +
+ `<span class="material-symbols-outlined" style="font-size:16px;color:${st.color};line-height:1;">${st.icon}</span>` +
+ `<span style="font-size:13px;font-weight:700;letter-spacing:.02em;color:${st.color};">${escapeHtml(st.verb.toUpperCase())}</span>` +
+ `<span style="font-size:12px;font-weight:600;color:${st.color};opacity:.65;">${escapeHtml(name)}</span>` +
+ `</h${level}>`
+ );
+ });
+
+ // Each bullet gets its change-kind icon, so add / fix / remove are separable
+ // without reading the sentence.
+ out = out.replace(/<li>([\s\S]*?)<\/li>/g, (m, inner) => {
+ const text = inner.replace(/<[^>]+>/g, "").trim();
+ const v = changeKind(text);
+ if (!v) return m;
+ return (
+ `<li style="position:relative;list-style:none;margin:0 0 6px;padding-left:24px;">` +
+ `<span class="material-symbols-outlined" style="position:absolute;left:2px;top:1px;font-size:15px;color:${v.color};line-height:1.4;">${v.icon}</span>` +
+ inner +
+ `</li>`
+ );
+ });
+
+ return out;
 }
 
 // A merged day card concatenates several patch bodies, each carrying its own
 // ## Features / ## Fixes headings. Split every body on its h2 sub-headings and
 // rejoin items under one heading each, keeping the order the headings first
 // appear in — so Fixes shows once with all fixes, not four times.
+// Fold a category's bullets under their shared `**Scope**:` prefix and drop
+// duplicates. Folding is what the reader asked for: three separate
+// "- **Antigravity**: ..." lines collapse into one Antigravity heading with the
+// lines beneath it. A scope is folded only when it holds two or more items, so
+// a single-entry category keeps its compact one-line form.
+const SCOPE_BULLET = /^[-*]\s+\*\*(.+?)\*\*\s*:\s*(.*)$/;
+
+function foldCategoryByScope(rawLines) {
+ const lines = (rawLines || []).filter((l) => l.trim() !== "");
+ const seen = new Set();
+ const kept = [];
+ for (const line of lines) {
+ const key = line.trim().replace(/\s+/g, " ");
+ // Bullet identity ignores the list marker and case, so the same sentence
+ // arriving with a different marker is still one entry, not two.
+ const bulletKey = key.startsWith("-") || key.startsWith("*")
+ ? key.replace(/^[-*]\s*/, "").toLowerCase()
+ : null;
+ if (bulletKey) {
+ if (seen.has(bulletKey)) continue; // same-day merge repeated it
+ seen.add(bulletKey);
+ }
+ kept.push(line);
+ }
+
+ const out = [];
+ const done = new Set();
+ let i = 0;
+ while (i < kept.length) {
+ const line = kept[i];
+ const m = line.match(SCOPE_BULLET);
+ if (!m) { out.push(line); i++; continue; }
+ const scope = m[1].trim();
+ if (done.has(scope)) { i++; continue; } // already emitted at first sight
+ done.add(scope);
+
+ // Sweep the whole category for this scope so the heading stays grouped even
+ // when another scope appeared in between.
+ const items = [];
+ for (let j = 0; j < kept.length; j++) {
+ const k = kept[j].match(SCOPE_BULLET);
+ if (k && k[1].trim() === scope) {
+ const text = k[2].trim();
+ if (text && !items.some((t) => t.toLowerCase() === text.toLowerCase())) {
+ items.push(text);
+ }
+ }
+ }
+ // Every scope folds, not only the ones with two or more items. Promoting
+ // Antigravity to a heading while Bedrock stayed a one-liner produced two
+ // visual languages in one list, which is what made the section look unravelled.
+ // A blank line before each heading (except the first) keeps the uniform result
+ // from becoming a wall of text instead.
+ if (items.length) {
+ if (out.length) out.push("");
+ out.push(`**${scope}:**`);
+ for (const text of items) out.push(`- ${text}`);
+ }
+ i++;
+ }
+ return out.join("\n");
+}
+
 function mergeBodiesByCategory(bodies) {
  const order = [];
  const byCat = new Map();
@@ -133,7 +313,7 @@ function mergeBodiesByCategory(bodies) {
  for (const line of String(body || "").split("\n")) {
  const m = line.match(/^#{2,6}\s+(.+?)\s*$/);
  if (m) {
- current = m[1].trim();
+ current = canonicalCategory(m[1]);
  if (!byCat.has(current)) {
  byCat.set(current, []);
  order.push(current);
@@ -143,9 +323,36 @@ function mergeBodiesByCategory(bodies) {
  }
  }
  }
+ // Joining raw bodies left a blank line between them; the fold pass also
+ // normalises indentation, so emit only what it produced.
  return order
- .map((cat) => `## ${cat}\n${byCat.get(cat).join("\n").replace(/\n+$/, "")}`)
+ .map((cat) => `## ${cat}\n${foldCategoryByScope(byCat.get(cat))}`)
  .join("\n\n");
+}
+
+// Same treatment for a body rendered on its own: split on h2 headings, fold
+// each category, rejoin. Keeps the single-release card identical in style to a
+// merged one.
+function foldBody(bodyMd) {
+ const order = [];
+ const byCat = new Map();
+ let plain = [];
+ for (const line of String(bodyMd || "").split("\n")) {
+ const m = line.match(/^#{2,6}\s+(.+?)\s*$/);
+ if (m) {
+ const cat = canonicalCategory(m[1]);
+ if (!byCat.has(cat)) { byCat.set(cat, []); order.push(cat); }
+ } else if (order.length) {
+ byCat.get(order[order.length - 1]).push(line);
+ } else {
+ plain.push(line);
+ }
+ }
+ const parts = [];
+ const head = plain.join("\n").trim();
+ if (head) parts.push(head);
+ for (const cat of order) parts.push(`## ${cat}\n${foldCategoryByScope(byCat.get(cat))}`);
+ return parts.join("\n\n");
 }
 
 function renderVersionCards(md, accent) {
@@ -153,6 +360,9 @@ function renderVersionCards(md, accent) {
  const cardStyle = `margin:0 0 14px;padding:14px 16px;border:1px solid ${accent.border};border-radius:12px;background:${accent.bg};box-sizing:border-box;`;
  const titleStyle = `margin:0 0 10px;font-size:15px;font-weight:700;color:${accent.color};display:flex;align-items:center;gap:8px;`;
  const subStyle = `margin:16px 0 8px;font-size:13.5px;font-weight:700;color:${accent.color};opacity:.9;`;
+ // Release card: give the version header a divider under it so each release
+ // reads as its own block instead of blending into the next one.
+ const headRule = `margin:0 0 2px;padding-bottom:8px;border-bottom:1px solid ${accent.border};`;
  if (!sections.length) {
  const html = md ? marked.parse(md) : "";
  return html ? `<div style="${cardStyle}"><div class="changelog-body">${html}</div></div>` : "";
@@ -179,10 +389,10 @@ function renderVersionCards(md, accent) {
  head += ` · ${commits} ${commits === 1 ? "commit" : "commits"}`;
  }
  const inner = group.items.length === 1
- ? renderBody(group.items[0].body)
+ ? renderBody(foldBody(group.items[0].body))
  : renderBody(mergeBodiesByCategory(group.items.map((section) => section.body)));
  return `<div style="${cardStyle}">
- <h3 style="${titleStyle}">
+ <h3 style="${titleStyle}${headRule}">
  <span class="material-symbols-outlined" style="font-size:18px;">${accent.icon}</span>
  ${escapeHtml(head)}
  </h3>
