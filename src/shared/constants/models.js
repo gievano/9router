@@ -131,7 +131,7 @@ export const PLUGIN_MARK_META = {
   openaiToolBridge: {
     label: "Tool Bridge",
     desc: "OpenAI Tool Bridge plugin: recovers tool calls a text-only model wrote out in prose",
-    color: "text-rose-300",
+    color: "text-fuchsia-400",
   },
   antiSlop: {
     label: "Anti Slop",
