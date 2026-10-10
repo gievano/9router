@@ -10,14 +10,9 @@ import { getSettings } from "@/lib/localDb";
 const DEFAULT_PASSWORD = "seren123";
 const SESSION_MAX_AGE_SEC = 24 * 60 * 60;
 
-// The file name carries the auth shape version: when password login became
-// two-step, old cookies had to die rather than keep dashboard access. Any future
-// auth change bumps the suffix and every issued cookie stops verifying.
-const SESSION_EPOCH = "v2";
-
 function loadJwtSecret() {
   if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  const file = path.join(DATA_DIR, `jwt-secret-${SESSION_EPOCH}`);
+  const file = path.join(DATA_DIR, "jwt-secret");
   try {
     return fs.readFileSync(file, "utf8").trim();
   } catch {}
@@ -37,67 +32,18 @@ export function shouldUseSecureCookie(request) {
 }
 
 export async function createDashboardAuthToken(claims = {}) {
-  return new SignJWT({ authenticated: true, purpose: "dashboard-auth", ...claims })
+  return new SignJWT({ authenticated: true, ...claims })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("24h")
     .sign(SECRET);
 }
 
-// Short-lived token proving "password was correct, PIN still pending".
-// It is deliberately NOT accepted by verifyDashboardAuthToken below: a
-// A half-finished login must never open the dashboard, even if the bearer
-// presents this token to the guard.
-// jti -> unix expiry. A pending token is single-use: once it has been
-// exchanged for a session it must not mint a second one.
-const SPENT_PENDING = new Map();
-
-function dropSpent(jti) {
-  const exp = SPENT_PENDING.get(jti);
-  SPENT_PENDING.delete(jti);
-  return exp;
-}
-
-// Called only after a successful exchange. A failed attempt deliberately does
-// not spend the token, so the operator can retry without retyping the password.
-export function spendPendingToken(payload) {
-  const jti = payload?.jti;
-  if (!jti) return;
-  SPENT_PENDING.set(jti, payload.exp || Math.floor(Date.now() / 1000) + 300);
-  setTimeout(
-    () => dropSpent(jti),
-    Math.max(1000, (payload.exp || 0) * 1000 - Date.now() + 60000)
-  ).unref?.();
-}
-
-export async function createPendingToken() {
-  return new SignJWT({ authenticated: false, purpose: "pending", jti: crypto.randomUUID() })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("5m")
-    .sign(SECRET);
-}
-
-export async function verifyPendingToken(token) {
-  if (!token) return false;
-  try {
-    const { payload } = await jwtVerify(token, SECRET);
-    if (!payload || payload.purpose !== "pending") return false;
-    if (payload.jti && SPENT_PENDING.has(payload.jti)) return false;
-    return payload;
-  } catch {
-    return false;
-  }
-}
-
 export async function verifyDashboardAuthToken(token) {
   if (!token) return false;
   try {
-    const { payload } = await jwtVerify(token, SECRET);
-    // Full sessions only. The pending token proves the password but not the
-    // factor, so it must fail here even though it is genuinely signed.
-    if (payload.purpose && payload.purpose !== "dashboard-auth") return false;
-    return payload.authenticated === true;
+    await jwtVerify(token, SECRET);
+    return true;
   } catch {
     return false;
   }

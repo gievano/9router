@@ -3,81 +3,6 @@
 import { useState, useEffect } from "react";
 import { Card, Button, Input } from "@/shared/components";
 
-// Two-factor step for password login. Verify mode asks for the PIN; setup mode
-// (first login, none set yet) asks for a new PIN twice.
-function PinStep({
-  setup,
-  value,
-  confirm,
-  onChange,
-  onConfirmChange,
-  onSubmit,
-  onBack,
-  loading,
-  error,
-}) {
-  return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <p className="text-sm text-text-muted text-center">
-        {setup
-          ? "Create a PIN to protect dashboard sign-in"
-          : "Enter your PIN"}
-      </p>
-
-      {setup && (
-        <p className="text-xs text-text-muted text-center">
-          You choose it yourself. 4 to 8 digits, easy to remember,
-          asked on every password login from now on.
-        </p>
-      )}
-
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium">{setup ? "New PIN" : "PIN"}</label>
-        <Input
-          type="password"
-          inputMode="numeric"
-          autoComplete={setup ? "new-password" : "current-password"}
-          placeholder={setup ? "Choose a PIN" : "Enter your PIN"}
-          maxLength={8}
-          value={value}
-          onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}
-          required
-          autoFocus
-        />
-      </div>
-
-      {setup && (
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Confirm PIN</label>
-          <Input
-            type="password"
-            inputMode="numeric"
-            autoComplete="new-password"
-            placeholder="Repeat the PIN"
-            maxLength={8}
-            value={confirm}
-            onChange={(e) => onConfirmChange(e.target.value.replace(/[^0-9]/g, ""))}
-            required
-          />
-        </div>
-      )}
-
-      {error && <p className="text-xs text-red-500">{error}</p>}
-
-      <Button type="submit" variant="primary" className="w-full" loading={loading} disabled={loading}>
-        {setup ? "Save PIN and sign in" : "Verify and sign in"}
-      </Button>
-      <button
-        type="button"
-        onClick={onBack}
-        className="text-xs text-text-muted hover:text-text-main transition-colors"
-      >
-        Back to password
-      </button>
-    </form>
-  );
-}
-
 export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -96,16 +21,6 @@ export default function LoginPage() {
   const [loginMethod, setLoginMethod] = useState("password");
   const [apiKey, setApiKey] = useState("");
   const [noAccess, setNoAccess] = useState(false);
-  // Two-factor step for password login: the self-chosen PIN. The pending token
-  // stays in memory only - a refresh restarts at the password field, which is
-  // the safe default.
-  const [pinStep, setPinStep] = useState("none");
-  const [pinToken, setPinToken] = useState("");
-  const [pinIsSetup, setPinIsSetup] = useState(false);
-  const [pinInput, setPinInput] = useState("");
-  const [pinConfirm, setPinConfirm] = useState("");
-  const [pinLoading, setPinLoading] = useState(false);
-  const [pinError, setPinError] = useState("");
 
   // A key that signed in but holds no permission would bounce between /login and
   // the dashboard, so it stays here and can sign out instead.
@@ -184,16 +99,6 @@ export default function LoginPage() {
 
       if (res.ok) {
         const data = await res.json();
-        if (data.needsPin) {
-          setPinToken(data.pendingToken || "");
-          setPinInput("");
-          setPinConfirm("");
-          setPinError("");
-          setPinIsSetup(data.needsPinSetup === true);
-          setPinStep("pin");
-          setLoading(false);
-          return;
-        }
         if (data.mustChangePassword) {
           setMustChange(true);
           return;
@@ -245,48 +150,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Second factor: exchange the pending token for a full session. When
-  // pinIsSetup the same call creates the PIN (pin + confirm), otherwise it
-  // verifies against the stored hash.
-  const handlePinSubmit = async (e) => {
-    e.preventDefault();
-    if (pinIsSetup && pinInput !== pinConfirm) {
-      setPinError("The two PINs do not match.");
-      return;
-    }
-    setPinLoading(true);
-    setPinError("");
-    try {
-      const res = await fetch("/api/auth/pin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: pinIsSetup
-          ? JSON.stringify({ pendingToken: pinToken, pin: pinInput.trim(), confirmPin: pinConfirm.trim() })
-          : JSON.stringify({ pendingToken: pinToken, pin: pinInput.trim() }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("9router:justLoggedIn", "true");
-        }
-        window.location.assign("/dashboard");
-        return;
-      }
-      setPinError(data.error || "Invalid PIN");
-    } catch {
-      setPinError("An error occurred. Please try again.");
-    } finally {
-      setPinLoading(false);
-    }
-  };
-
-  const handlePinBack = () => {
-    setPinStep("none");
-    setPinError("");
-    setPinInput("");
-    setPinConfirm("");
   };
 
   const handleOidcLogin = () => {
@@ -359,19 +222,7 @@ export default function LoginPage() {
         </div>
 
         <Card>
-          {pinStep === "pin" ? (
-            <PinStep
-              setup={pinIsSetup}
-              value={pinInput}
-              confirm={pinConfirm}
-              onChange={setPinInput}
-              onConfirmChange={setPinConfirm}
-              onSubmit={handlePinSubmit}
-              onBack={handlePinBack}
-              loading={pinLoading}
-              error={pinError}
-            />
-          ) : mustChange ? (
+          {mustChange ? (
             <form onSubmit={handleSetNewPassword} className="flex flex-col gap-4">
               <p className="text-sm text-amber-600 dark:text-amber-400 text-center">
                 Set a new password before accessing the dashboard remotely.

@@ -74,11 +74,6 @@ function BackupCountdown({ target, onExpire, showDate = false }) {
 const IMPORT_JOB_ENDPOINT = "/api/settings/database/jobs";
 
 export default function ProfilePage() {
-  // Second-factor (PIN) state, from /api/auth/status (pinEnabled).
-  const [pinEnabled, setPinEnabled] = useState(null);
-  const [pinDisabling, setPinDisabling] = useState(false);
-  const [pinConfirm, setPinConfirm] = useState(false);
-  const [pinMsg, setPinMsg] = useState({ type: "", message: "" });
   const [locale, setLocale] = useState(() => getLocaleFromCookie());
   const [langOpen, setLangOpen] = useState(false);
   const [shutdownOpen, setShutdownOpen] = useState(false);
@@ -142,44 +137,6 @@ export default function ProfilePage() {
 
   const importFileRef = useRef(null);
   // Progress overlay state. `busy` holds { title, message, section, progress };
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/auth/status");
-        if (res.ok) {
-          const data = await res.json();
-          setPinEnabled(data.pinEnabled === true);
-        }
-      } catch {
-        // unknown stays unknown; the row hides itself
-      }
-    })();
-  }, []);
-
-  const handleDisablePin = async () => {
-    if (!pinConfirm) {
-      setPinConfirm(true);
-      return;
-    }
-    setPinDisabling(true);
-    setPinMsg({ type: "", message: "" });
-    try {
-      const res = await fetch("/api/auth/pin", { method: "DELETE" });
-      if (res.ok) {
-        setPinEnabled(false);
-        setPinConfirm(false);
-        setPinMsg({ type: "success", message: "PIN is off. Password login alone opens the dashboard now. Sign in again to choose a new PIN." });
-      } else {
-        const data = await res.json();
-        setPinMsg({ type: "error", message: data.error || "Could not turn the PIN off." });
-      }
-    } catch {
-      setPinMsg({ type: "error", message: "An error occurred. Please try again." });
-    } finally {
-      setPinDisabling(false);
-    }
-  };
-
   // ProgressCard from the shared Loading module renders it directly.
   const [busy, setBusy] = useState(null);
   const [proxyForm, setProxyForm] = useState({
@@ -1149,36 +1106,6 @@ export default function ProfilePage() {
                 disabled={loading}
               />
             </div>
-            {pinEnabled !== null && (
-              <div className="flex items-start sm:items-center justify-between gap-4 pt-4 border-t border-border/50">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm sm:text-base">Login PIN (2FA)</p>
-                  <p className="text-xs sm:text-sm text-text-muted">
-                    {pinEnabled
-                      ? "On. Password login asks for your PIN. It is hashed on the server and never shown anywhere."
-                      : "Off. Turn it on by signing out and signing back in with your password — the create-PIN form appears after the password is accepted."}
-                  </p>
-                  {pinMsg.message && (
-                    <p className={`text-xs sm:text-sm mt-1 ${pinMsg.type === "error" ? "text-red-500" : "text-green-500"}`}>
-                      {pinMsg.message}
-                    </p>
-                  )}
-                </div>
-                {pinEnabled ? (
-                  <Button
-                    type="button"
-                    variant={pinConfirm ? "danger" : "outline"}
-                    loading={pinDisabling}
-                    onClick={handleDisablePin}
-                    className="shrink-0"
-                  >
-                    {pinConfirm ? "Click again to turn off" : "Turn off"}
-                  </Button>
-                ) : (
-                  <span className="text-xs sm:text-sm text-text-muted shrink-0">Not set up</span>
-                )}
-              </div>
-            )}
             {settings.requireLogin === true && (
               <form onSubmit={handlePasswordChange} className="flex flex-col gap-4 pt-4 border-t border-border/50">
                 {settings.hasPassword && (

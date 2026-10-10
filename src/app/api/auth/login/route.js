@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/localDb";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
-import { createPendingToken } from "@/lib/auth/dashboardSession";
+import { setDashboardAuthCookie } from "@/lib/auth/dashboardSession";
 import { isOidcConfigured } from "@/lib/auth/oidc";
 import { isSamlConfigured } from "@/lib/auth/saml.js";
 import { checkLock, recordFail, recordSuccess, getClientIp } from "@/lib/auth/loginLimiter";
@@ -180,24 +180,18 @@ export async function POST(request) {
         );
       }
 
-      // Password is correct, but no session yet: the second factor decides.
-      // The pending token proves step one for five minutes; the client shows
-      // either the PIN field or, when none is set, the create-PIN form.
-      const { createPendingToken: mintPending } = await import("@/lib/auth/dashboardSession");
-      const pendingToken = await mintPending();
+      const cookieStore = await cookies();
+      await setDashboardAuthCookie(cookieStore, request, { role: "admin" });
       await audit(request, ip, {
-        type: "login_password_ok",
+        type: "login_success",
         severity: "info",
         actor: "Password user",
         detail: storedHash
-          ? "Password accepted, PIN still pending"
-          : "Initial/default password accepted, PIN still pending",
+          ? "Password sign-in"
+          : "Password sign-in using the initial/default password",
       });
-      const needsPinSetup = !settings.pinEnabled || !settings.pinHash;
-      return NextResponse.json(
-        { success: false, needsPin: true, needsPinSetup, pendingToken },
-        { headers: NO_STORE_HEADERS }
-      );
+
+      return NextResponse.json({ success: true, role: "admin", mustChangePassword: false }, { headers: NO_STORE_HEADERS });
     }
 
     const { remainingBeforeLock } = recordFail(ip);

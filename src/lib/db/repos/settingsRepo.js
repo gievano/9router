@@ -37,12 +37,6 @@ const DEFAULT_SETTINGS = {
   theme: "glass",
   tunnelDashboardAccess: true,
   authMode: "password",
-  // Dashboard-password second factor (TOTP). API-key login never consults these.
-  // 2FA for password login: a self-chosen PIN, scrypt-hashed. Empty = the
-  // next password login shows the create-PIN form instead of asking for one.
-  pinHash: "",
-  pinEnabled: false,
-  pinCreatedAt: 0,
   ssoType: "oidc",
   oidcIssuerUrl: "",
   oidcClientId: "",
