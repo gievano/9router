@@ -35,7 +35,7 @@ describe("Windows find-path detection", () => {
       "C:\\Users\\me\\project\\src\\c.js:30:const z = 3"
     ].join("\n");
     // Each line is grep-shaped (file:line:content), so it routes to `grep`
-    // — but a drive-letter-only dump would route to `find`. Both are
+    // - but a drive-letter-only dump would route to `find`. Both are
     // compaction-positive, so either is acceptable here.
     const f = autoDetectFilter(input);
     expect(f).not.toBeNull();

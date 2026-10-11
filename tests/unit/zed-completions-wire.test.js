@@ -109,7 +109,7 @@ describe("completion payload shaping", () => {
     expect(captured.body.provider).toBe("google");
     expect(captured.body.provider_request).not.toHaveProperty("safetySettings");
 
-    // Sanity: the shared translator still emits safetySettings — the removal
+    // Sanity: the shared translator still emits safetySettings - the removal
     // happens in the Zed executor, not in shared/native Gemini behavior.
     const { openaiToGeminiRequest } = await import(
       "open-sse/translator/request/openai-to-gemini.js"

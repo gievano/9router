@@ -60,7 +60,7 @@ function lookup(fullId, requestedKind) {
     return buildInfo({ alias, providerId, model: m, kind, providerInfo });
   }
 
-  // Web search/fetch — virtual model id "search" / "fetch"
+  // Web search/fetch - virtual model id "search" / "fetch"
   if (modelId === "search" && providerInfo?.searchConfig) {
     return buildInfo({
       alias, providerId, kind: "webSearch", providerInfo,
@@ -82,7 +82,7 @@ export async function OPTIONS() {
   });
 }
 
-// GET /v1/models/info?id={alias}/{modelId} — metadata for a single model
+// GET /v1/models/info?id={alias}/{modelId} - metadata for a single model
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");

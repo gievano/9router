@@ -93,7 +93,7 @@ function chatBodyWithDiff(model, diff) {
   };
 }
 
-// Matrix of routes to cover — one entry per translator target format.
+// Matrix of routes to cover - one entry per translator target format.
 const ROUTES = [
   { name: "claude (cc/* → openai→claude)",        model: "cc/claude-opus-4-7" },
   { name: "codex (cx/* → openai→openai-responses)", model: "cx/gpt-5.4" },

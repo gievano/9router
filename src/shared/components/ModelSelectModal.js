@@ -61,7 +61,7 @@ const PROVIDER_ORDER = [
   ...Object.keys(APIKEY_PROVIDERS),
 ];
 
-// Providers that need no auth — always show in model selector.
+// Providers that need no auth - always show in model selector.
 // Hidden entries stay out: their upstream channel is gone, but they keep
 // `noAuth` so the request path still resolves if an old model id is replayed.
 const NO_AUTH_PROVIDER_IDS = Object.keys(FREE_PROVIDERS).filter(
@@ -310,12 +310,19 @@ export default function ModelSelectModal({
     // self-hosted endpoints (Ollama, internal relays, etc.) don't always need a stored
     // key, so gating on connections hides models the user already added. These nodes
     // are LLM-only, so only surface them when no kind filter is active.
+    //
+    // The node itself must still exist. A custom model outlives the node it was
+    // registered against, and without the node record there is no prefix, key or
+    // endpoint left to route it: the group opens as a raw "OpenAI Compatible
+    // (xxxxxxxx)" heading holding only dead rows. This rule mirrors
+    // isOrphanCompatAlias for the ungrouped custom models below.
     // See #4177, #2113, #2119, #1988.
     const compatibleNodeIds = kindFilter
       ? []
       : customModels
           .map((m) => m.providerAlias)
-          .filter((alias) => isOpenAICompatibleProvider(alias) || isAnthropicCompatibleProvider(alias));
+          .filter((alias) => isOpenAICompatibleProvider(alias) || isAnthropicCompatibleProvider(alias))
+          .filter((alias) => (providerNodes || []).some((node) => node?.id === alias));
 
     // Only show connected providers (including both standard and custom)
     const providerIdsToShow = new Set([
@@ -410,7 +417,7 @@ export default function ModelSelectModal({
           };
         }
       } else if (isCustomProvider) {
-        // Custom (openai/anthropic-compatible) providers are LLM-only — skip for typed media kinds
+        // Custom (openai/anthropic-compatible) providers are LLM-only - skip for typed media kinds
         if (kindFilter && TYPED_KINDS.has(kindFilter)) return;
         // Find connection object to get prefix synchronously without waiting for providerNodes fetch
         const connection = activeProviders.find(p => p.provider === providerId);
@@ -531,7 +538,7 @@ export default function ModelSelectModal({
     //
     // They used to be pushed into the first provider with passthroughModels, which
     // merged unrelated models under that provider's heading and rewrote their
-    // value to that provider's prefix — so picking one silently retargeted the
+    // value to that provider's prefix - so picking one silently retargeted the
     // request at a provider the model never belonged to.
     const groupedModelIds = new Set(
       Object.values(groups).flatMap((g) => (g.models || []).map((m) => m.id))
@@ -646,7 +653,7 @@ export default function ModelSelectModal({
     return groups;
   }, [filteredActiveProviders, modelAliases, allProviders, providerNodes, customModels, disabledModels, kindFilter, activeProviders, cursorModels, clineModels, clinepassModels, studioModels, showStudioTargets, allowedModelPatterns]);
 
-  // Filter combos by search query (and hide combos when kindFilter is set — combos are LLM-only by design)
+  // Filter combos by search query (and hide combos when kindFilter is set - combos are LLM-only by design)
   const filteredCombos = useMemo(() => {
     if (kindFilter || capFilter) return [];
     let list = combos;

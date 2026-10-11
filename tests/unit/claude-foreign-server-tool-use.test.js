@@ -12,7 +12,7 @@ const glmServerToolUse = () => ({
   ],
 });
 
-describe("normalizeClaudePassthrough — foreign server_tool_use ids", () => {
+describe("normalizeClaudePassthrough - foreign server_tool_use ids", () => {
   it("drops a server_tool_use block whose id is not an srvtoolu_ id", () => {
     const out = normalizeClaudePassthrough({ messages: [glmServerToolUse()] });
     expect(out.messages[0].content).toEqual([{ type: "text", text: "searching" }]);

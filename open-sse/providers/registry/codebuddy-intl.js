@@ -1,4 +1,4 @@
-// CodeBuddy international (codebuddy.ai) — mirrors codebuddy-cn registry shape,
+// CodeBuddy international (codebuddy.ai) - mirrors codebuddy-cn registry shape,
 // swapping the Tencent CN domain for the .ai endpoint set. All OAuth/plugin URLs
 // use the /v2/plugin prefix with platform=ide (CN uses platform=CLI).
 export default {
@@ -43,7 +43,7 @@ export default {
       url: "https://www.codebuddy.ai/v2/billing/meter/get-user-resource",
     },
   },
-  // Same model lineup exposed by the CN gateway — intl backend is the same catalog.
+  // Same model lineup exposed by the CN gateway - intl backend is the same catalog.
   models: [
     { id: "glm-5.2", name: "GLM-5.2" },
     { id: "glm-5.1", name: "GLM-5.1" },

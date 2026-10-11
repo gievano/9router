@@ -40,7 +40,7 @@ function maskKey(key) {
   return key.length <= 10 ? key.slice(0, 4) + "***" : key.slice(0, 10) + "***";
 }
 
-// GET /api/usage/api-keys — one row per generated API key: quota state plus
+// GET /api/usage/api-keys - one row per generated API key: quota state plus
 // request/token/cost aggregates and per-model breakdown from usageHistory.
 export async function GET() {
   try {
@@ -49,7 +49,7 @@ export async function GET() {
     const allKeys = await getApiKeys();
     // Same visibility rule as the endpoint list: an API key session sees its own
     // key plus the keys it created, and never another branch's names, quotas or
-    // model scopes. Keeping this per-page was the bug — a key that created a key
+    // model scopes. Keeping this per-page was the bug - a key that created a key
     // saw the child on the endpoint page and not here.
     const keys = visibleApiKeys(allKeys, ctx.session);
     const [db] = await Promise.all([getAdapter()]);

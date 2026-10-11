@@ -30,7 +30,7 @@ function generateRootCA() {
     return { key: ROOT_CA_KEY_PATH, cert: ROOT_CA_CERT_PATH };
   }
   if (exists) {
-    console.log("🔐 Root CA expired or expiring soon — regenerating...");
+    console.log("🔐 Root CA expired or expiring soon - regenerating...");
     try { fs.unlinkSync(ROOT_CA_KEY_PATH); } catch { /* ignore */ }
     try { fs.unlinkSync(ROOT_CA_CERT_PATH); } catch { /* ignore */ }
   }

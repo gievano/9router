@@ -1,4 +1,4 @@
-// Issue #3010 — Dashboard "Test" button fails for reasoning models because of a
+// Issue #3010 - Dashboard "Test" button fails for reasoning models because of a
 // tiny max_tokens probe. pingModelByKind must use a sane budget (1024) and treat a
 // reasoning-only (length-limited) response as a successful connection.
 //
@@ -51,7 +51,7 @@ describe("pingModelByKind reasoning models (#3010)", () => {
         choices: [
           {
             finish_reason: "length",
-            message: { content: "", reasoning: "The user said hi — a simple greeting..." },
+            message: { content: "", reasoning: "The user said hi - a simple greeting..." },
           },
         ],
       })

@@ -34,7 +34,7 @@ export function isChatCompletionBody(body) {
 /**
  * Drain a provider response into a parsed JSON document, or null when the body is
  * empty / not JSON. The caller keeps the parsed value because reading a body
- * consumes it — a second `.json()` on the same Response always throws.
+ * consumes it - a second `.json()` on the same Response always throws.
  */
 export async function readJsonBody(response) {
   let text = "";
@@ -134,7 +134,7 @@ export function collectJsonFrames(rawText) {
       const whole = JSON.parse(text);
       return Array.isArray(whole) ? whole.filter((item) => item && typeof item === "object") : [whole];
     } catch {
-      /* not one document — fall through to the line scan */
+      /* not one document - fall through to the line scan */
     }
   }
 

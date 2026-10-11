@@ -33,7 +33,7 @@ export async function handleResponsesCore({ body, modelInfo, credentials, log, o
     convertedBody.stream = false;
   }
 
-  // Call chat core handler — force sourceFormat so streaming path knows this is a Responses API client
+  // Call chat core handler - force sourceFormat so streaming path knows this is a Responses API client
   const result = await handleChatCore({
     body: convertedBody,
     modelInfo,

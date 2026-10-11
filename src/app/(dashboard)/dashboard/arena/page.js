@@ -31,7 +31,7 @@ function estimateCost(modelName, usage, studioTargets) {
 
 // Battle costs are usually sub-cent, so two decimals would render every row as $0.00.
 function showCost(cost) {
-  if (cost === null || cost === undefined || Number.isNaN(cost)) return "—";
+  if (cost === null || cost === undefined || Number.isNaN(cost)) return "n/a";
   if (cost >= 0.01) return formatCost(cost);
   if (cost < 0.0001) return `$${cost.toExponential(1)}`;
   return `$${cost.toFixed(4)}`;
@@ -339,7 +339,7 @@ function ArenaContent() {
                   <Input
                     value={model}
                     onChange={(e) => setSlot(index, e.target.value)}
-                    placeholder="e.g. cc/claude-sonnet-4.5 — or pick one"
+                    placeholder="e.g. cc/claude-sonnet-4.5 - or pick one"
                     className="flex-1 font-mono text-sm"
                   />
                   <Button variant="secondary" icon="search" onClick={() => setShowPicker(index)} />
@@ -405,7 +405,7 @@ function ArenaContent() {
             return (
               <Card key={index} padding="sm" className="h-full flex flex-col min-w-0">
                 <div className="flex items-center justify-between gap-2 pb-3 border-b border-border mb-3">
-                  <span className="font-mono text-sm font-semibold truncate min-w-0">{model || "—"}</span>
+                  <span className="font-mono text-sm font-semibold truncate min-w-0">{model || "n/a"}</span>
                   {loading && <Elapsed startedAt={results[index]?.startedAt} />}
                   {result && !loading && (
                     <span
@@ -710,7 +710,7 @@ function FinalResult({ ranked, pick, setPick, runId }) {
               ) : leader?.stopped ? (
                 "Every run was stopped before it finished."
               ) : leader?.answered ? (
-                <><code className="font-mono">{leader.model}</code> answered fastest — tap “My pick” below for quality.</>
+                <><code className="font-mono">{leader.model}</code> answered fastest - tap “My pick” below for quality.</>
               ) : (
                 "No contender answered successfully."
               )}
@@ -729,7 +729,7 @@ function FinalResult({ ranked, pick, setPick, runId }) {
                 key={def.key}
                 type="button"
                 onClick={() => setPick(winner.index)}
-                title={`${def.hint} — tap to make it your pick`}
+                title={`${def.hint} - tap to make it your pick`}
                 className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-colors ${
                   pick === winner.index
                     ? "border-primary/50 bg-primary/5"
@@ -762,7 +762,7 @@ function FinalResult({ ranked, pick, setPick, runId }) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-text-muted">
         <span className="material-symbols-outlined text-[12px] leading-none">info</span>
         <span>
-          Ranked automatically on speed and spend only — bars compare the same
+          Ranked automatically on speed and spend only - bars compare the same
           metric across contenders. Answer quality is yours to judge, so use
           “My pick”.
         </span>
@@ -809,16 +809,16 @@ function FinalResult({ ranked, pick, setPick, runId }) {
                 )}
                   </td>
                   <td className="py-2 px-3 text-right">
-                    <MetricCell entry={entry} metric={byKey.ms} format={(v) => (v == null ? "—" : `${v}ms`)} />
+                    <MetricCell entry={entry} metric={byKey.ms} format={(v) => (v == null ? "n/a" : `${v}ms`)} />
                   </td>
                   <td className="py-2 px-3 text-right">
-                    <MetricCell entry={entry} metric={byKey.ttft} format={(v) => (v == null ? "—" : `${v}ms`)} />
+                    <MetricCell entry={entry} metric={byKey.ttft} format={(v) => (v == null ? "n/a" : `${v}ms`)} />
                   </td>
                   <td className="py-2 px-3 text-right">
                     <MetricCell
                       entry={entry}
                       metric={byKey.tokens}
-                      format={(v) => (v == null ? "—" : String(v))}
+                      format={(v) => (v == null ? "n/a" : String(v))}
                     />
                   </td>
                   <td className="py-2 px-3 text-right">
@@ -850,9 +850,9 @@ function FinalResult({ ranked, pick, setPick, runId }) {
 // stay for exactness. A missing value shows a dash and no bar rather than a
 // zero-length bar that would read as "fastest".
 function MetricCell({ entry, metric, format }) {
-  if (!metric) return <span className="font-mono tabular-nums text-text-muted">—</span>;
+  if (!metric) return <span className="font-mono tabular-nums text-text-muted">-</span>;
   const v = metric.def.value(entry);
-  if (v == null) return <span className="font-mono tabular-nums text-text-muted">—</span>;
+  if (v == null) return <span className="font-mono tabular-nums text-text-muted">-</span>;
   const isWinner = metric.winner?.index === entry.index;
   const pct = barPct(v, metric.best, metric.worst);
   return (

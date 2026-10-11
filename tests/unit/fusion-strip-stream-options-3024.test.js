@@ -1,4 +1,4 @@
-// Issue #3024 — Fusion combo must strip `stream_options` from panel requests
+// Issue #3024 - Fusion combo must strip `stream_options` from panel requests
 // when running non-streaming, or DeepSeek rejects with
 // "stream_options should be set along with stream = true".
 

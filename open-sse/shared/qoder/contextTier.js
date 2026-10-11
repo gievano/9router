@@ -16,7 +16,7 @@
  *   model_config.max_input_tokens
  *
  * Override with QODER_CONTEXT_TIER = auto (default) | max | default | <tier name, e.g. 1M>.
- * Pure functions, no I/O — the executor wires them into buildQoderRequestBody.
+ * Pure functions, no I/O - the executor wires them into buildQoderRequestBody.
  */
 
 import { QODER_CONTEXT_TIER_HEADROOM, QODER_CONTEXT_TIER_MODES } from "./constants.js";
@@ -70,7 +70,7 @@ const CJK_RE = /[\u1100-\u11ff\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uff
 
 /**
  * Rough prompt-size estimate in tokens. CJK characters count ~1 token each, everything
- * else ~4 chars/token — the plain chars/4 rule underestimates Chinese/Japanese by up to
+ * else ~4 chars/token - the plain chars/4 rule underestimates Chinese/Japanese by up to
  * 4x, which is exactly when a tier decision matters.
  */
 export function estimateQoderPromptTokens({ system, messages, tools } = {}) {

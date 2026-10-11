@@ -241,7 +241,7 @@ function renderBody(bodyMd) {
 // A merged day card concatenates several patch bodies, each carrying its own
 // ## Features / ## Fixes headings. Split every body on its h2 sub-headings and
 // rejoin items under one heading each, keeping the order the headings first
-// appear in — so Fixes shows once with all fixes, not four times.
+// appear in - so Fixes shows once with all fixes, not four times.
 // Fold a category's bullets under their shared `**Scope**:` prefix and drop
 // duplicates. Folding is what the reader asked for: three separate
 // "- **Antigravity**: ..." lines collapse into one Antigravity heading with the
@@ -479,7 +479,8 @@ export default function ChangelogModal({ isOpen, onClose }) {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{ backgroundColor: "var(--color-scrim)" }}
         onClick={onClose}
       />
       <div

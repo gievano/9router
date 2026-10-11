@@ -1,6 +1,6 @@
 import { GOOGLE_TTS_LANGUAGES } from "./googleTtsLanguages.js";
 
-// ── Voice definitions (DRY — reused across providers) ──────────────────────
+// ── Voice definitions (DRY - reused across providers) ──────────────────────
 const VOICES = {
   alloy:   { id: "alloy",   name: "Alloy" },
   ash:     { id: "ash",     name: "Ash" },
@@ -35,7 +35,7 @@ const GEMINI_VOICES = [
 
 // Xiaomi MiMo preset voices (from https://mimo.mi.com/docs/zh-CN/quick-start/usage-guide/audio/speech-synthesis-v2.5).
 // Voice id is passed via `audio.voice`; `mimo_default` = default (冰糖 on CN cluster, Mia elsewhere).
-// Voices are language-independent — the spoken language is a separate hint, not bound to the voice.
+// Voices are language-independent - the spoken language is a separate hint, not bound to the voice.
 const MIMO_VOICES = [
   { id: "mimo_default", name: "mimo_default" },
   { id: "冰糖",           name: "冰糖" },

@@ -1,4 +1,4 @@
-// #1998 — Headroom compression treated a Codex (openai-responses) body.input
+// #1998 - Headroom compression treated a Codex (openai-responses) body.input
 // array as OpenAI messages: it sent Responses items to /v1/compress and then
 // assigned the returned OpenAI messages back to body.input, violating the
 // Responses format contract. body.input must stay Responses-shaped.

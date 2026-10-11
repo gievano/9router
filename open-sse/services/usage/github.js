@@ -6,7 +6,7 @@ import { proxyAwareFetch } from "../../utils/proxyFetch.js";
 import { PROVIDER_OAUTH } from "../../providers/index.js";
 import { U, parseResetTime } from "./shared.js";
 
-// GitHub API config — single source from registry oauth block
+// GitHub API config - single source from registry oauth block
 const GITHUB_CONFIG = {
   apiVersion: PROVIDER_OAUTH.github?.apiVersion,
   userAgent: PROVIDER_OAUTH.github?.userAgent,

@@ -56,11 +56,11 @@ function nextMonthlyResetFromSignup(createdAt, now = new Date()) {
 
 /**
  * Ollama Cloud Usage
- * GET https://ollama.com/api/usage — `limits.<window>.usage` is a 0..1 ratio
+ * GET https://ollama.com/api/usage - `limits.<window>.usage` is a 0..1 ratio
  *   (1.0 = limit reached). Paid plans report session (5h) + weekly (7d); the
  *   free plan reports a single monthly window. No reset timestamp exposed;
  *   the free monthly reset is derived from the account's signup date.
- * POST https://ollama.com/api/me — plan label + CreatedAt (fail-open).
+ * POST https://ollama.com/api/me - plan label + CreatedAt (fail-open).
  * Auth: Authorization: Bearer <apiKey>
  */
 export async function getOllamaUsage(apiKey, providerSpecificData, proxyOptions = null) {
@@ -109,7 +109,7 @@ export async function getOllamaUsage(apiKey, providerSpecificData, proxyOptions 
     const limits = data?.limits && typeof data.limits === "object" ? data.limits : {};
 
     // Ollama `usage` is a 0..1 ratio (1.0 = limit reached). Convert to a 0..100
-    // bar. Do NOT set absolute `remaining` — QuotaTable reads remainingPercentage.
+    // bar. Do NOT set absolute `remaining` - QuotaTable reads remainingPercentage.
     function ratioQuota(usageRatio, resetAt = null) {
       const ratio = Math.max(0, Math.min(1, Number(usageRatio) || 0));
       const usedPct = Math.round(ratio * 100);
@@ -146,7 +146,7 @@ export async function getOllamaUsage(apiKey, providerSpecificData, proxyOptions 
 
 
 /**
- * Vercel AI Gateway usage — credit balance for the API key
+ * Vercel AI Gateway usage - credit balance for the API key
  *
  * Calls GET /v1/credits which returns:
  *   { "balance": "95.50", "total_used": "4.50" }   (USD as decimal strings)

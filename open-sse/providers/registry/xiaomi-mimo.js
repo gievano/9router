@@ -31,7 +31,7 @@ export default {
   authModes: ["oauth", "apikey"],
   hasOAuth: true,
   // Keys are cluster-specific. MiMo Desktop declares five regions
-  // (CN/SGP/AMS/RU/IN) — host + sid follow mimo-server-<code> / mimo<code>.
+  // (CN/SGP/AMS/RU/IN) - host + sid follow mimo-server-<code> / mimo<code>.
   regions: [
     { id: "cn", label: "China (中国大陆)" },
     { id: "sgp", label: "Singapore (新加坡)" },
@@ -81,7 +81,7 @@ export default {
     usage: true,
     usageApikey: true,
   },
-  // Custom OAuth — non-standard ECDH encrypted-callback flow.
+  // Custom OAuth - non-standard ECDH encrypted-callback flow.
   // Handled by the Xiaomi MiMo OAuth service, not the generic PKCE pipeline.
   oauth: {
     custom: true,

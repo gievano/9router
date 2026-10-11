@@ -173,7 +173,7 @@ const FIELD = {
   THINKING_TEXT: 1
 };
 
-// Known response field numbers — used to detect unknown fields from protocol updates
+// Known response field numbers - used to detect unknown fields from protocol updates
 const KNOWN_RESPONSE_FIELDS = new Set([
   FIELD.TOOL_CALL,
   FIELD.RESPONSE,
@@ -851,7 +851,7 @@ export function extractTextFromResponse(payload) {
   try {
     const fields = decodeMessage(payload);
 
-    // Warn about unknown field numbers — may indicate a Cursor protocol update
+    // Warn about unknown field numbers - may indicate a Cursor protocol update
     for (const fieldNum of fields.keys()) {
       if (!KNOWN_RESPONSE_FIELDS.has(fieldNum)) {
         log(

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 // npm install can legitimately take minutes on a cold cache.
 export const maxDuration = 300;
 
-// Install (or repair — same operation, reinstalls @latest) then re-run the health check.
+// Install (or repair - same operation, reinstalls @latest) then re-run the health check.
 export async function POST() {
   try {
     const info = await installPxpipe();

@@ -67,7 +67,7 @@ function dumpRequest(req, bodyBuffer, tag = "raw") {
   } catch { return null; }
 }
 
-// Buffer-based response dumper — collects chunks then decodes + writes once on end()
+// Buffer-based response dumper - collects chunks then decodes + writes once on end()
 // Trade-off: holds response in RAM, but enables gzip/br decoding for readable output.
 function createResponseDumper(req, tag = "raw") {
   if (isBlacklisted(req.url)) return null;

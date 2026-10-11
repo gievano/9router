@@ -111,7 +111,7 @@ function addMiniMaxQuota(quotas, key, model, getTotal, countSnake, countCamel, p
     // M-series bucket: API only ships *_remaining_percent (count = 0). Normalize
     // to total=100. The downstream buildMiniMaxQuota treats the count as
     // "used" or "remaining" depending on countMeansRemaining, so the synthetic
-    // count has to match that semantic — otherwise the UI flips the percentage.
+    // count has to match that semantic - otherwise the UI flips the percentage.
     effectiveTotal = 100;
     const pct = providedPercent;
     effectiveCount = countMeansRemaining

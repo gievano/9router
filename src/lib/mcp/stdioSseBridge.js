@@ -160,7 +160,7 @@ function unregisterSession(name, sid) {
   }
 }
 
-// Kill all spawned MCP children — called on app shutdown to prevent orphans.
+// Kill all spawned MCP children - called on app shutdown to prevent orphans.
 function killAllBridges() {
   const store = getStore();
   for (const [name, entry] of store) {

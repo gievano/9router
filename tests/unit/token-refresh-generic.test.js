@@ -1,5 +1,5 @@
 /**
- * Generic OAuth2 token refresh — config-driven profiles.
+ * Generic OAuth2 token refresh - config-driven profiles.
  *
  * Verifies refreshAccessToken() handles the 4 foldable providers
  * (iflow, github, kimi, claude) via a REFRESH_PROFILES table,
@@ -21,7 +21,7 @@ function mockFetchOnce(payload, { ok = true, status = 200 } = {}) {
   return fn;
 }
 
-describe("refreshAccessToken — config-driven profiles", () => {
+describe("refreshAccessToken - config-driven profiles", () => {
   beforeEach(() => { vi.clearAllMocks(); vi.resetModules(); global.fetch = originalFetch; });
   afterEach(() => { global.fetch = originalFetch; });
 

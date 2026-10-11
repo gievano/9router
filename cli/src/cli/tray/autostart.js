@@ -10,9 +10,9 @@ const APP_LABEL = "com.9router.autostart";
  * Resolve the absolute path to this package's cli.js.
  *
  * Order of preference:
- *   1. Explicit `cliPath` argument — cleanest, used when called from running
+ *   1. Explicit `cliPath` argument - cleanest, used when called from running
  *      cli.js with `__filename`.
- *   2. `process.argv[1]` if it's our cli.js — true when 9router is currently
+ *   2. `process.argv[1]` if it's our cli.js - true when 9router is currently
  *      running and the tray menu fires this code path.
  *   3. Compute relative to this file's own location. autostart.js lives at
  *      `<pkg>/src/cli/tray/autostart.js`, so cli.js is three levels up.
@@ -20,7 +20,7 @@ const APP_LABEL = "com.9router.autostart";
  *      /usr/local, etc.) without depending on `npm bin -g` (removed in npm 9)
  *      or a hardcoded `/usr/local/...` path.
  *
- * Returns null if no candidate exists — callers should not write an autostart
+ * Returns null if no candidate exists - callers should not write an autostart
  * entry pointing at a non-existent script.
  */
 function getCliJsPath(cliPath) {
@@ -55,7 +55,7 @@ function enableAutoStart(cliPath) {
     if (platform === "win32") return enableWindows(cliPath);
     if (platform === "linux") return enableLinux(cliPath);
   } catch (err) {
-    // Silent fail — autostart is optional
+    // Silent fail - autostart is optional
   }
   return false;
 }
@@ -77,7 +77,7 @@ function disableAutoStart() {
 /**
  * Check if autostart is enabled.
  *
- * On macOS, both the plist file and the launchd registration must be present —
+ * On macOS, both the plist file and the launchd registration must be present -
  * otherwise the tray menu would lie about the state (showing "✓ Enabled" even
  * when launchd has the agent in a failed state or hasn't loaded it).
  */
@@ -119,7 +119,7 @@ function isAutoStartEnabled() {
  * spawned by the autostart launchd agent (i.e. user enabled autostart at
  * some point, then rebooted, then clicked the tray icon's "Disable
  * Auto-start" menu item), an unload would kill the very process executing
- * the click handler — and the tray icon would disappear instead of the menu
+ * the click handler - and the tray icon would disappear instead of the menu
  * label flipping back to "Enable Auto-start". This helper lets the enable
  * and disable paths sidestep that by skipping launchctl when we'd otherwise
  * be killing ourselves.
@@ -151,7 +151,7 @@ function enableMacOS(cliPath) {
   // Don't write a broken plist that references a non-existent script.
   if (!routerScript) return false;
 
-  // Invoke node + cli.js directly with absolute paths — no shell wrapper.
+  // Invoke node + cli.js directly with absolute paths - no shell wrapper.
   // The previous design ran `zsh -l -c "..."` so a login shell would source
   // nvm/.zshrc and set PATH; that's fragile (nvm.sh sourcing varies by user,
   // some setups don't put node on PATH from a non-interactive login shell).
@@ -191,7 +191,7 @@ function enableMacOS(cliPath) {
   fs.writeFileSync(plistPath, plistContent);
 
   // If we're the running agent already, launchctl unload/load would send
-  // ourselves SIGTERM. Skip it — the plist file is updated on disk and
+  // ourselves SIGTERM. Skip it - the plist file is updated on disk and
   // launchd will pick it up at next login. isAutoStartEnabled() will still
   // return true because launchctl already has the agent loaded.
   if (isAgentSelfMacOS()) {
@@ -220,7 +220,7 @@ function disableMacOS() {
   // Don't kill ourselves: when the current process is the running agent,
   // `launchctl unload` would send SIGTERM and the user clicking
   // "Disable Auto-start" from the tray menu would lose their tray icon
-  // instead of just flipping the menu label. Skip the unload — removing the
+  // instead of just flipping the menu label. Skip the unload - removing the
   // plist file is enough to prevent the agent from starting on next login.
   if (!isAgentSelfMacOS()) {
     try {

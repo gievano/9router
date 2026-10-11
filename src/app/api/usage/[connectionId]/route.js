@@ -48,7 +48,7 @@ export async function refreshAndUpdateCredentials(connection, force = false, pro
   const refreshResult = await executor.refreshCredentials(credentials, console, proxyOptions);
 
   if (!refreshResult) {
-    // Refresh failed but we still have an accessToken — try with existing token
+    // Refresh failed but we still have an accessToken - try with existing token
     if (connection.accessToken) {
       return { connection, refreshed: false };
     }
@@ -134,7 +134,7 @@ export async function GET(request, { params }) {
 
     // Allow OAuth connections, plus whitelisted apikey providers (glm/minimax/kiro/...)
     // Kiro's headless api-key flow persists authType "api_key" (underscore) while
-    // generic apikey providers persist "apikey" — accept both spellings here.
+    // generic apikey providers persist "apikey" - accept both spellings here.
     const isOAuth = connection.authType === "oauth";
     const isApikeyAuth =
       connection.authType === "apikey" || connection.authType === "api_key";

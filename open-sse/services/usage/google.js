@@ -7,7 +7,7 @@ import { ANTIGRAVITY_IDE_USER_AGENT, ANTIGRAVITY_IDE_VERSION, ANTIGRAVITY_OAUTH_
 import { U, parseResetTime, normalizeCloudCodeProjectId, fetchWithTimeout } from "./shared.js";
 import { fetchAntigravityWeeklyQuota } from "./antigravity-weekly.js";
 
-// Antigravity API config (from Quotio) — urls from registry, oauth client + dynamic UA kept here
+// Antigravity API config (from Quotio) - urls from registry, oauth client + dynamic UA kept here
 const ANTIGRAVITY_CONFIG = {
   ...U("antigravity"),
   ...ANTIGRAVITY_OAUTH_CLIENT,
@@ -15,7 +15,7 @@ const ANTIGRAVITY_CONFIG = {
 };
 
 /**
- * Gemini CLI Usage — fetch per-model quota via Cloud Code Assist API.
+ * Gemini CLI Usage - fetch per-model quota via Cloud Code Assist API.
  * Uses retrieveUserQuota (same endpoint as `gemini /stats`) returning
  * per-model buckets with remainingFraction + resetTime.
  */
@@ -119,7 +119,7 @@ async function getGeminiSubscriptionInfo(accessToken, proxyOptions = null) {
  */
 export async function getAntigravityUsage(accessToken, providerSpecificData, proxyOptions = null) {
   try {
-    // Fetch subscription info once — reuse for both projectId and plan
+    // Fetch subscription info once - reuse for both projectId and plan
     const subscriptionInfo = await getAntigravitySubscriptionInfo(accessToken, proxyOptions);
     const projectId = subscriptionInfo?.cloudaicompanionProject || null;
 
@@ -165,7 +165,7 @@ export async function getAntigravityUsage(accessToken, providerSpecificData, pro
     const isFreeTier = !paidTierId || paidTierId === "free-tier";
 
     // Parse model quotas only for paid-tier accounts.
-    // Free-tier accounts skip this — their only meaningful quota is the weekly limit.
+    // Free-tier accounts skip this - their only meaningful quota is the weekly limit.
     if (!isFreeTier && data.models) {
       // Filter only recommended/important models (must match PROVIDER_MODELS ag ids)
       const importantModels = [
@@ -220,7 +220,7 @@ export async function getAntigravityUsage(accessToken, providerSpecificData, pro
       }
     }
 
-    // Best-effort weekly quota overlay — never blocks or breaks per-model results
+    // Best-effort weekly quota overlay - never blocks or breaks per-model results
     try {
       const weeklyQuotas = await fetchAntigravityWeeklyQuota(
         accessToken,
@@ -265,7 +265,7 @@ export async function getAntigravityUsage(accessToken, providerSpecificData, pro
 
       Object.assign(quotas, weeklyQuotas);
     } catch {
-      // Silently ignore — weekly is best-effort
+      // Silently ignore - weekly is best-effort
     }
 
     return {

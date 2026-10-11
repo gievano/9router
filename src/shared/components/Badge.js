@@ -43,7 +43,7 @@ export default function Badge({
             variant === "error" && "bg-red-500",
             variant === "info" && "bg-blue-500",
             variant === "primary" && "bg-brand-500",
-            variant === "default" && "bg-gray-400"
+            variant === "default" && "bg-text-muted"
           )}
         />
       )}

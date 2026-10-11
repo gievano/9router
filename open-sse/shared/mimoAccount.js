@@ -9,7 +9,7 @@ import { proxyAwareFetch } from "../utils/proxyFetch.js";
  *
  * The weekly quota endpoint lives on the account service domain and is authorized
  * by an account session cookie, NOT the sk- API key. Acquiring that cookie is a
- * 1:1 port of MiMo Desktop's ServiceTokenManager (app.asar) — the GOLD STANDARD:
+ * 1:1 port of MiMo Desktop's ServiceTokenManager (app.asar) - the GOLD STANDARD:
  *
  *   getServiceToken(sid) / refreshServiceToken(sid):
  *     PHASE 1: GET https://account.xiaomi.com/pass/serviceLogin
@@ -36,7 +36,7 @@ const API_BASE_BY_REGION = {
 };
 const DEFAULT_API_BASE = API_BASE_BY_REGION.sgp;
 
-// Cluster service sid — 1:1 with the host code: mimo<code>.
+// Cluster service sid - 1:1 with the host code: mimo<code>.
 // Unknown/absent region falls back to SGP (the international/open cluster).
 const SID_BY_REGION = { cn: "mimopc", sgp: "mimosgp", ams: "mimoams", ru: "mimoru", in: "mimoin" };
 function sidForRegion(region) {
@@ -102,7 +102,7 @@ async function readDesktopAccountCookies() {
 /**
  * Read just the passToken + identity cookies from Desktop's profile.
  * Exported so the connect flow can persist a per-account passToken into the
- * connection's providerSpecificData — this is what enables multi-account rotation.
+ * connection's providerSpecificData - this is what enables multi-account rotation.
  * @returns {Promise<{passToken:string, userId:string|null, cUserId:string|null}|null>}
  */
 export async function readDesktopPassToken() {
@@ -167,7 +167,7 @@ async function acquireViaDesktopPhases(passJar, proxyOptions, apiBase, sid) {
   const failLog = (reason) => console.log(`[mimoAccount] desktopPhase fail: ${reason}`);
   const jar = { ...passJar };
 
-  // PHASE 1 — single serviceLogin call with the TARGET sid (no passportapi
+  // PHASE 1 - single serviceLogin call with the TARGET sid (no passportapi
   // prelude; ssecurity/nonce come straight from this response).
   // Desktop only sends: userId, passToken, cUserId (no extra cookies)
   const p1Jar = {};
@@ -183,7 +183,7 @@ async function acquireViaDesktopPhases(passJar, proxyOptions, apiBase, sid) {
   );
   const raw = await p1.text();
   const clean = raw.replace(/^&&&START&&&/, "");
-  // Nonce > 2^53 loses precision in JSON.parse — extract raw literal for signing
+  // Nonce > 2^53 loses precision in JSON.parse - extract raw literal for signing
   const rawNonce = clean.match(/"nonce"\s*:\s*(\d+)/)?.[1];
   let j = null;
   try { j = JSON.parse(clean); } catch { /* handled below */ }
@@ -199,7 +199,7 @@ async function acquireViaDesktopPhases(passJar, proxyOptions, apiBase, sid) {
   }
   absorbSetCookie(jar, p1);
 
-  // PHASE 2 — clientSign the redirect, follow the redirect chain server-side.
+  // PHASE 2 - clientSign the redirect, follow the redirect chain server-side.
   // ⚠️ CRITICAL DESKTOP SPEC (app.asar / SSO_curl.cpp line 728: cookies.clear()):
   // Phase 2 MUST NOT send ANY Cookie header! The server returns 200 OK with Set-Cookie: serviceToken!
   const sep = j.location.includes("?") ? "&" : "?";
@@ -248,7 +248,7 @@ async function getServiceCookie(providerSpecificData, proxyOptions) {
     : await readDesktopAccountCookies();
   if (!passJar) return { cookie: null, reason: "no-pass-token" };
 
-  // One cached session per passToken+cluster — accounts/connections rotate
+  // One cached session per passToken+cluster - accounts/connections rotate
   // independently, and the same passToken maps to different sessions per region.
   const key = crypto.createHash("sha256").update(`${apiBase}|${passJar.passToken}`).digest("hex");
 
@@ -270,7 +270,7 @@ async function getServiceCookie(providerSpecificData, proxyOptions) {
       return await acquireServiceCookie(passJar, proxyOptions, apiBase, providerSpecificData?.region);
     } catch (e) {
       console.log(`[mimoAccount] acquire threw: ${e?.message || e} | ${String(e?.stack || "").split("\n").slice(1, 4).join(" <- ")}`);
-      return null; // network/parse failure — callers degrade, never throw
+      return null; // network/parse failure - callers degrade, never throw
     } finally {
       _inflight.delete(key);
     }

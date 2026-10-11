@@ -47,7 +47,7 @@ describe("PR #1175 - DETECT_WINDOW boundary", () => {
     const padding = "x".repeat(DETECT_WINDOW + 100);
     const input = `${padding}\n   Compiling foo v0.1.0\n    Finished release in 1.2s`;
     const filter = autoDetectFilter(input);
-    // Pattern lives past detection window — won't be seen
+    // Pattern lives past detection window - won't be seen
     expect(filter).not.toBe(buildOutput);
   });
 
@@ -95,7 +95,7 @@ describe("PR #1175 - adversarial: user code containing build strings", () => {
       "}"
     ].join("\n");
     const filter = autoDetectFilter(input);
-    // Regex uses `m` flag, so ^ matches line start — these are inside indented code
+    // Regex uses `m` flag, so ^ matches line start - these are inside indented code
     // BUT: regex uses 'i' so case-insensitive, and `^npm warn` requires line to START with it
     console.log("[user-code-npm-warn] detected:", filter?.filterName || "null");
     // Expectation: should NOT detect (lines start with spaces)
@@ -111,7 +111,7 @@ describe("PR #1175 - adversarial: user code containing build strings", () => {
     ].join("\n");
     const filter = autoDetectFilter(input);
     console.log("[file-content-build-success] detected:", filter?.filterName || "null");
-    // Document behavior — buildOutput should preserve non-pattern lines as fallback
+    // Document behavior - buildOutput should preserve non-pattern lines as fallback
     if (filter === buildOutput) {
       const out = buildOutput(input);
       // BUILD SUCCESS preserved
@@ -206,7 +206,7 @@ describe("PR #1175 - corruption safety", () => {
   });
 
   it("safeApply wraps buildOutput against panics", () => {
-    // Pass a non-string input via direct call — safeApply should catch
+    // Pass a non-string input via direct call - safeApply should catch
     const out = safeApply(buildOutput, "npm warn deprecated foo\nadded 1 package\n");
     expect(typeof out).toBe("string");
   });
@@ -327,7 +327,7 @@ describe("PR #1175 - porcelain regression deeper", () => {
       "A  src/added.js"
     ].join("\n");
     const filter = autoDetectFilter(input);
-    // M and A and ?? lines have status code first → 4/4 lines hit? No — " M" has space first
+    // M and A and ?? lines have status code first → 4/4 lines hit? No - " M" has space first
     // isMostlyPorcelain requires >= 60% hit. With new regex, hits = M/?/A = 3, total = 4, 75% ≥ 60%
     expect(filter).toBe(gitStatus);
   });
@@ -386,7 +386,7 @@ describe("PR #1175 - pathological", () => {
   });
 
   it("null/undefined safety via safeApply", () => {
-    // buildOutput would throw on null.split() — safeApply must catch
+    // buildOutput would throw on null.split() - safeApply must catch
     const out = safeApply(buildOutput, null);
     expect(out).toBe(null);
   });

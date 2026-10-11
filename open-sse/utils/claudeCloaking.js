@@ -47,7 +47,7 @@ export function extractClaudeSessionIdFromUserId(userId) {
 /**
  * Cloak tools before sending to Claude provider (anti-ban):
  * - Rename client tools with the CLAUDE_TOOL_SUFFIX ("_ide") in tools[] and messages[]
- * - Skip tools that carry a `type` (server-side built-ins) — sent as-is
+ * - Skip tools that carry a `type` (server-side built-ins) - sent as-is
  * - Inject CC_DECOY_TOOLS after client tools
  * Returns { body, toolNameMap } where toolNameMap maps suffixed → original
  * @param {object} body - Claude API request body
@@ -64,7 +64,7 @@ export function cloakClaudeTools(body) {
 
   // All client tools get renamed with suffix.
   // Built-in server tools (web_search_20250305, etc.) carry a `type` and require
-  // an exact reserved `name` — never suffix those or Claude rejects the request.
+  // an exact reserved `name` - never suffix those or Claude rejects the request.
   for (const tool of tools) {
     if (tool.type) { clientDeclarations.push(tool); continue; }
     const suffixed = suffix(tool.name);
@@ -90,7 +90,7 @@ export function cloakClaudeTools(body) {
   // A forced tool_choice ({ type: "tool", name }) must point at the suffixed
   // tool name, otherwise Claude rejects it: "Tool '<name>' not found in provided tools".
   // Only rewrite when the choice targets one of the client tools we actually
-  // renamed — never a decoy/built-in name (those are sent unsuffixed).
+  // renamed - never a decoy/built-in name (those are sent unsuffixed).
   if (
     body.tool_choice?.type === "tool" &&
     clientToolNames.has(body.tool_choice.name)
@@ -106,7 +106,7 @@ export function cloakClaudeTools(body) {
 
 // Strip a trailing CLAUDE_TOOL_SUFFIX from a cloaked name as a last-resort
 // fallback when the name isn't in toolNameMap (e.g. map lost across a retry/
-// reconnect). Never strips decoy names — those are meant to reach the client
+// reconnect). Never strips decoy names - those are meant to reach the client
 // unresolved so it can see "tool unavailable" instead of silently no-oping.
 function stripCloakSuffix(name) {
   if (typeof name !== "string" || !name.endsWith(CLAUDE_TOOL_SUFFIX)) return null;
@@ -123,7 +123,7 @@ export function decloakToolNames(body, toolNameMap) {
     if (toolNameMap?.has(block.name)) {
       return { ...block, name: toolNameMap.get(block.name) };
     }
-    // toolNameMap missing/stale for this name — fall back to suffix stripping
+    // toolNameMap missing/stale for this name - fall back to suffix stripping
     // rather than forwarding an unresolvable "<tool>_ide" name to the client.
     const fallback = stripCloakSuffix(block.name);
     return fallback ? { ...block, name: fallback } : block;
@@ -138,7 +138,7 @@ export function decloakToolNames(body, toolNameMap) {
  * proxying: translateResponse() returns same-format chunks untouched, so
  * without this the client receives the cloaked ("_ide"-suffixed) tool name
  * and rejects the call as an unknown tool. In a Claude SSE stream a tool
- * name appears exactly once per call — on the content_block_start event of
+ * name appears exactly once per call - on the content_block_start event of
  * a tool_use block; argument deltas carry no name.
  *
  * Falls back to stripping the literal CLAUDE_TOOL_SUFFIX when the name isn't
@@ -160,7 +160,7 @@ export function decloakStreamChunk(chunk, toolNameMap) {
   return { ...chunk, content_block: { ...block, name: original } };
 }
 
-// CC decoy tools — Claude Code native tool names, marked unavailable
+// CC decoy tools - Claude Code native tool names, marked unavailable
 const CC_DECOY_TOOLS = [
   { name: "Task", description: "This tool is currently unavailable.", input_schema: { type: "object", properties: {} } },
   { name: "TaskOutput", description: "This tool is currently unavailable.", input_schema: { type: "object", properties: {} } },

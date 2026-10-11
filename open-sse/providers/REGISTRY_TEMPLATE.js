@@ -1,5 +1,5 @@
 /**
- * REGISTRY ENTRY TEMPLATE — copy into registry/{id}.js when adding a new provider.
+ * REGISTRY ENTRY TEMPLATE - copy into registry/{id}.js when adding a new provider.
  *
  * NOT imported by registry/index.js (lives outside registry/, static-import list ignores it).
  * Delete every block your provider does not need. Only `id` + `category` are required.
@@ -54,7 +54,7 @@ export default {
     // usage: { url: "https://api.example.com/usage" }, // or { urls: [...] } for multi-call.
     // modelsFetcher: { url: "https://api.example.com/models", type: "openai" }, // dynamic model list.
     // regions: { sgp: "https://sgp...", cn: "https://cn..." }, defaultRegion: "sgp",
-    // NOTE: clientId/clientSecret/tokenUrl are injected from `oauth` — do NOT duplicate here.
+    // NOTE: clientId/clientSecret/tokenUrl are injected from `oauth` - do NOT duplicate here.
   },
 
   // ── oauth flow → PROVIDER_OAUTH[id] (omit for pure API-key) ───────────────

@@ -1,4 +1,4 @@
-// MITM Tools — IDE tools intercepted via MITM proxy
+// MITM Tools - IDE tools intercepted via MITM proxy
 export const MITM_TOOLS = {
   antigravity: {
     id: "antigravity",
@@ -41,7 +41,7 @@ export const MITM_TOOLS = {
     defaultModels: [
       // Kiro's agent/"vibe" mode sends modelId "auto" for the main turn and "simple-task"
       // for background sub-tasks (verified via MITM request dump of generateAssistantResponse).
-      // Both need a mappable slot — otherwise getMappedModel returns null and the chat call
+      // Both need a mappable slot - otherwise getMappedModel returns null and the chat call
       // is passed through to AWS instead of being routed to the chosen provider.
       { id: "auto", name: "Auto (Kiro Agent)", alias: "auto" },
       { id: "claude-sonnet-5", name: "Claude Sonnet 5", alias: "claude-sonnet-5" },
@@ -166,7 +166,7 @@ export const CLI_TOOLS = {
     description: "Nous Research self-improving AI agent",
     configType: "custom",
     // Model slots Hermes supports besides the default ("model:" block).
-    // "default" is not listed — the card renders it as the main model picker.
+    // "default" is not listed - the card renders it as the main model picker.
     roles: [
       { id: "delegation", label: "Delegation (subagents)" },
       { id: "vision", label: "Vision" },
@@ -302,13 +302,13 @@ amp --model "{{model}}"
     name: "Qwen Code",
     image: "/providers/qwen.png",
     color: "#10B981",
-    description: "Alibaba Qwen Code CLI — supports OpenAI, Anthropic & Gemini providers via 9Router",
+    description: "Alibaba Qwen Code CLI - supports OpenAI, Anthropic & Gemini providers via 9Router",
     docsUrl: "https://qwenlm.github.io/qwen-code-docs/en/users/configuration/model-providers/",
     configType: "guide",
     defaultCommand: "qwen",
     notes: [
       { type: "info", text: "Qwen Code supports multiple provider types (openai, anthropic, gemini) via modelProviders in settings.json. 9Router works as an OpenAI-compatible endpoint." },
-      { type: "info", text: "Any model available in 9Router can be used — not just Qwen models. Select from Qwen, Claude, Gemini, GPT, and more." },
+      { type: "info", text: "Any model available in 9Router can be used - not just Qwen models. Select from Qwen, Claude, Gemini, GPT, and more." },
       { type: "warning", text: "Config path: Linux/macOS ~/.qwen/settings.json • Windows %USERPROFILE%\\.qwen\\settings.json" },
       { type: "error", text: "Qwen OAuth free tier was discontinued on 2026-04-15. Use 9Router with alicode/openrouter/anthropic/gemini providers instead." },
     ],
@@ -424,17 +424,17 @@ amp --model "{{model}}"
     name: "Devin CLI",
     image: "/providers/devin-cli.png",
     color: "#6366F1",
-    description: "Cognition Devin CLI — local binary called by the Devin CLI provider via ACP/stdio",
+    description: "Cognition Devin CLI - local binary called by the Devin CLI provider via ACP/stdio",
     configType: "guide",
     installUrl: "https://cli.devin.ai",
     notes: [
       { type: "info", text: "This is a local dependency, not a routed CLI. The Devin CLI provider spawns `devin acp --agent-type summarizer` and relays its output." },
-      { type: "warning", text: "Install the Devin CLI and run `devin auth login` — without it, the provider returns a spawn error on first request." },
+      { type: "warning", text: "Install the Devin CLI and run `devin auth login` - without it, the provider returns a spawn error on first request." },
     ],
     guideSteps: [
       { step: 1, title: "Install Devin CLI", desc: "Install via the official installer at cli.devin.ai.", docsUrl: "https://cli.devin.ai" },
       { step: 2, title: "Authenticate", desc: "Log in once so the binary stores its own credentials." },
-      { step: 3, title: "Use the provider", desc: "Pick any Devin CLI model under the Providers tab — no API key field needed." },
+      { step: 3, title: "Use the provider", desc: "Pick any Devin CLI model under the Providers tab - no API key field needed." },
     ],
     codeBlock: {
       language: "bash",
@@ -450,11 +450,11 @@ devin --version`,
     name: "OpenDesign",
     image: "/providers/opendesign.png",
     color: "#7C3AED",
-    description: "OpenDesign — claude.ai/design open-sourced! Agent-native design skills pack",
+    description: "OpenDesign - claude.ai/design open-sourced! Agent-native design skills pack",
     docsUrl: "https://github.com/manalkaff/opendesign",
     configType: "guide",
     notes: [
-      { type: "info", text: "OpenDesign ships as a plugin/skills pack installed into Claude Code, Cursor, OpenAI Codex, Gemini CLI, or OpenCode. It inherits the host agent's model config, so once your host points at 9Router, /opendesign design sessions route through 9Router automatically — no extra env vars needed." },
+      { type: "info", text: "OpenDesign ships as a plugin/skills pack installed into Claude Code, Cursor, OpenAI Codex, Gemini CLI, or OpenCode. It inherits the host agent's model config, so once your host points at 9Router, /opendesign design sessions route through 9Router automatically - no extra env vars needed." },
       { type: "info", text: "Invoke with /opendesign <brief>. Covers decks, wireframes, interactive prototypes, design-system extraction, and brand systems, with a verifier subagent that checks output against the brief." },
     ],
     guideSteps: [
@@ -489,7 +489,7 @@ gemini extensions install https://github.com/manalkaff/opendesign
     name: "Pi (pi-coding-agent)",
     image: "/providers/pi.svg",
     color: "#6366F1",
-    description: "Pi coding agent — minimal, extensible agent harness (pi.dev)",
+    description: "Pi coding agent - minimal, extensible agent harness (pi.dev)",
     configType: "custom",
     docsUrl: "https://pi.dev",
     notes: [

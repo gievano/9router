@@ -101,7 +101,7 @@ export async function POST(request) {
       model: model || "provider/model-id",
     };
 
-    const header = "# CodeWhale config — managed by 9Router\n\n";
+    const header = "# CodeWhale config - managed by 9Router\n\n";
     const content = header + stringifyTOML(existing);
 
     await fs.writeFile(configPath, content, "utf-8");

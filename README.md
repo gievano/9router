@@ -40,11 +40,11 @@ It is not only chat. The same gateway also serves text to image, image to text, 
 
 Everything lives alongside upstream's features. The short version:
 
-- **Per-key control** — every key carries its own token limit, reset interval, expiry and model allow-list, enforced on every endpoint.
-- **Custom models & plugins** — models that answer under your own name (the real target never leaks), per-model plugin badges, a model playground and comparisons.
-- **Operability** — scheduled backups to Telegram or GitHub, proxy pools, a security log of who signed in and from where, a theme that applies to the whole site, and an in-dashboard update banner.
+- **Per-key control** - every key carries its own token limit, reset interval, expiry and model allow-list, enforced on every endpoint.
+- **Custom models & plugins** - models that answer under your own name (the real target never leaks), per-model plugin badges, a model playground and comparisons.
+- **Operability** - scheduled backups to Telegram or GitHub, proxy pools, a security log of who signed in and from where, a theme that applies to the whole site, and an in-dashboard update banner.
 
-The [changelog](./CHANGELOG.md) is the source of truth: it is regenerated on every release, so it always lists what is actually new. Anything not written here yet may already ship in your build — check the changelog rather than this file.
+The [changelog](./CHANGELOG.md) is the source of truth: it is regenerated on every release, so it always lists what is actually new. Anything not written here yet may already ship in your build - check the changelog rather than this file.
 
 ## Getting started
 
@@ -96,7 +96,7 @@ The app reads a few environment variables with sensible defaults; see [.env.exam
 
 ## Credits
 
-- Built on **[Decolua/9router](https://github.com/Decolua/9router)** — full credit to upstream for the router, the providers and the translators.
+- Built on **[Decolua/9router](https://github.com/Decolua/9router)** - full credit to upstream for the router, the providers and the translators.
 - Fork releases are tagged in [CHANGELOG.md](./CHANGELOG.md).
 - License: **MIT**, same as upstream. See [LICENSE](./LICENSE).
 

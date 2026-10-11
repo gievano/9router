@@ -26,7 +26,7 @@ const { handleNonStreamingResponse } = await import("../../open-sse/handlers/cha
 
 // The proxy adds a 2000-token headroom buffer to usage before returning it
 // to the client (addBufferToUsage), so response-body usage is input + 2000.
-// The usage recorded via saveRequestUsage is the unbuffered extraction —
+// The usage recorded via saveRequestUsage is the unbuffered extraction -
 // asserting on it proves the unwrap ran before usage extraction.
 const { saveRequestUsage } = await import("@/lib/usageDb.js");
 
@@ -189,7 +189,7 @@ describe("cline free-models envelope in nonStreamingHandler", () => {
   });
 
   // The unwrap is opt-in via transport.quirks.clineEnvelope so it can never
-  // rewrite another provider's body — including one that happens to return
+  // rewrite another provider's body - including one that happens to return
   // {"success":true,"data":...} for its own reasons.
   it("leaves an enveloped body untouched for a provider that did not opt in", async () => {
     const providerResponse = new Response(

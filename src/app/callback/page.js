@@ -40,7 +40,7 @@ function CallbackContent() {
 
     // Method 1: postMessage to opener (popup mode)
     // Send once per expected origin. The browser delivers the message only
-    // when the opener's origin matches the targetOrigin we pass — using "*"
+    // when the opener's origin matches the targetOrigin we pass - using "*"
     // here would leak the code/state to any opener (e.g. an attacker page
     // that opened this URL in a popup), so iterate over the allowlist.
     if (window.opener) {

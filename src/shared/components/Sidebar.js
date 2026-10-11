@@ -27,7 +27,7 @@ const navItems = [
   { href: "/dashboard/cli-tools", label: "CLI Tools", icon: "terminal" },
 ];
 
-// Custom features added by this fork — open-ended, new tools land here too.
+// Custom features added by this fork - open-ended, new tools land here too.
 const workshopItems = [
   { href: "/dashboard/arena", label: "Compare Models", icon: "swords" },
   { href: "/dashboard/model-editor", label: "Custom Models", icon: "auto_awesome" },
@@ -35,7 +35,7 @@ const workshopItems = [
   { href: "/dashboard/prd-builder", label: "PRD Builder", icon: "description" },
 ];
 
-// Security Log and Inbox Error live in the bell, not the menu — they are
+// Security Log and Inbox Error live in the bell, not the menu - they are
 // conditions to review, not places you visit to work.
 const debugItems = [
   { href: "/dashboard/console-log", label: "Console Log", icon: "monitor" },
@@ -192,7 +192,7 @@ export default function Sidebar({ onClose }) {
             />
           ))}
 
-          {/* FEATURE+ section — custom tools added by this fork */}
+          {/* FEATURE+ section - custom tools added by this fork */}
           {filteredWorkshopItems.length > 0 && (
             <div className="pt-3 mt-2 space-y-0.5">
               <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
@@ -211,7 +211,7 @@ export default function Sidebar({ onClose }) {
             </div>
           )}
 
-          {/* System section — an API key session sees only the parts it may use */}
+          {/* System section - an API key session sees only the parts it may use */}
           {(!isApiKeyUser || canOpenMedia || filteredSystemItems.length > 0 || filteredDebugItems.length > 0) && (
             <div className="pt-3 mt-2 space-y-0.5">
               <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">

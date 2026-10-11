@@ -64,7 +64,7 @@ function isSudoPasswordRequired() {
 
 /**
  * Execute command with sudo password via stdin (macOS/Linux only).
- * Without sudo in PATH (containers), runs via sh — same user, no elevation.
+ * Without sudo in PATH (containers), runs via sh - same user, no elevation.
  */
 function execWithPassword(command, password) {
   return new Promise((resolve, reject) => {
@@ -125,7 +125,7 @@ function checkDNSEntry(host = null) {
 }
 
 /**
- * Check DNS status per tool — returns { [tool]: boolean }
+ * Check DNS status per tool - returns { [tool]: boolean }
  */
 function checkAllDNSStatus() {
   try {
@@ -167,7 +167,7 @@ async function addDNSEntry(tool, sudoPassword) {
       const trimmed = current.replace(/[\r\n\s]+$/g, "");
       const toAppend = entriesToAdd.map(h => `127.0.0.1 ${h}`).join("\n");
       const next = `${trimmed}\n${toAppend}\n`;
-      // Use tee via sudo to overwrite atomically — escape single quotes in content
+      // Use tee via sudo to overwrite atomically - escape single quotes in content
       const escaped = next.replace(/'/g, "'\\''");
       await execWithPassword(`printf '%s' '${escaped}' | tee ${HOSTS_FILE} > /dev/null`, sudoPassword);
       await flushDNS(sudoPassword);
@@ -222,13 +222,13 @@ async function removeAllDNSEntries(sudoPassword) {
     try {
       await removeDNSEntry(tool, sudoPassword);
     } catch (e) {
-      err(`DNS ${tool}: failed to remove — ${e.message}`);
+      err(`DNS ${tool}: failed to remove - ${e.message}`);
     }
   }
 }
 
 /**
- * Sync removal of ALL tool DNS entries — for use during process shutdown
+ * Sync removal of ALL tool DNS entries - for use during process shutdown
  * when async ops aren't safe. Assumes caller already has root/admin rights.
  */
 function removeAllDNSEntriesSync() {

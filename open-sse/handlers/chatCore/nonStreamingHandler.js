@@ -30,12 +30,12 @@ function parseToolArguments(value) {
 
 
 /**
- * OpenAI Tool Bridge — response side, non-streaming.
+ * OpenAI Tool Bridge - response side, non-streaming.
  *
  * A text-only provider (browser-session models with `tools: false`) answers a
  * tool request in prose, so the client receives a plain string and waits for a
  * tool_call that never arrives. The model's own answer is where the invocation
- * is declared — `{"name": ...}`, `<tool_use>`, `to=read_file {...}` — so
+ * is declared - `{"name": ...}`, `<tool_use>`, `to=read_file {...}` - so
  * rewriting it is a FORMAT repair on content the model wrote, never a guess
  * about intent.
  *
@@ -142,7 +142,7 @@ function openAICompletionToClaudeMessage(responseBody) {
 /**
  * Convert an OpenAI Chat Completions non-streaming response body into the
  * OpenAI Responses API shape. Used when a Responses-format client (e.g. Codex)
- * is routed to a Chat Completions upstream and `stream:false` — the streaming
+ * is routed to a Chat Completions upstream and `stream:false` - the streaming
  * path already emits Responses events, but the JSON path returned a raw
  * `chat.completion` body, so tool_calls were invisible to Responses clients.
  */
@@ -222,7 +222,7 @@ function openAICompletionToResponses(responseBody, customToolNames = null) {
 export function translateNonStreamingResponse(responseBody, targetFormat, sourceFormat, customToolNames = null) {
   if (targetFormat === sourceFormat) return responseBody;
   // Provider responded in OpenAI Chat Completions shape but the client speaks
-  // Responses API — convert so tool_calls/text surface as Responses `output`.
+  // Responses API - convert so tool_calls/text surface as Responses `output`.
   if (targetFormat === FORMATS.OPENAI && sourceFormat === FORMATS.OPENAI_RESPONSES) {
     return openAICompletionToResponses(responseBody, customToolNames);
   }
@@ -301,7 +301,7 @@ export function translateNonStreamingResponse(responseBody, targetFormat, source
     // Early return if the response is already in OpenAI format (has choices array)
     // or if it has content as a non-array value (likely a different non-Claude format).
     // Some providers (e.g. xiaomi-tokenplan) return OpenAI-format responses even when
-    // the request was translated to Claude format — the targetFormat is Claude but the
+    // the request was translated to Claude format - the targetFormat is Claude but the
     // actual response is OpenAI-native and needs no further translation.
     if (responseBody.choices || (responseBody.content && !Array.isArray(responseBody.content))) return responseBody;
 
@@ -452,7 +452,7 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
 
   // JSON Guard (opt-in per model): make machine-readable output parseable again.
   // Runs after translation and after the tool rescue, because both rewrite the
-  // tool_calls this reads. Only the non-streaming path reaches here — a streaming
+  // tool_calls this reads. Only the non-streaming path reaches here - a streaming
   // answer's tool arguments arrive as fragments and are forwarded as they land,
   // so there is no complete value to repair without buffering every tool call.
   if (pluginResult?.isJsonGuardActive && translatedResponse && typeof translatedResponse === "object") {

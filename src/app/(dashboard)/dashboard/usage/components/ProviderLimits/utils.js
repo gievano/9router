@@ -554,7 +554,7 @@ export function parseQuotaData(provider, data) {
       case "qoder-cn":
         // Qoder ships a `user` quota and (optionally) an `organization`
         // quota, both with same shape: {total, used, remaining, unit, resetAt}.
-        // Skip an organization bucket when its total is 0 — most personal
+        // Skip an organization bucket when its total is 0 - most personal
         // Qoder accounts won't have one and rendering "0/0" is misleading.
         // Don't forward Qoder's `remaining` field: it's an absolute credit
         // count, but getRemainingPercentage / QuotaTable interpret
@@ -638,7 +638,7 @@ export function parseQuotaData(provider, data) {
 
       case "grok-cli":
         // Grok Build credits (on-demand window + prepaid balance).
-        // Do NOT forward absolute `remaining` — getRemainingPercentage treats
+        // Do NOT forward absolute `remaining` - getRemainingPercentage treats
         // it as a 0–100 percentage (same as Qoder). Use remainingPercentage.
         if (data.quotas) {
           Object.entries(data.quotas).forEach(([name, quota]) => {
@@ -669,7 +669,7 @@ export function parseQuotaData(provider, data) {
         break;
 
       case "deepseek":
-        // Credit balance — remainingPercentage only (no absolute remaining).
+        // Credit balance - remainingPercentage only (no absolute remaining).
         if (data.quotas) {
           Object.entries(data.quotas).forEach(([name, quota]) => {
             normalizedQuotas.push({
@@ -686,7 +686,7 @@ export function parseQuotaData(provider, data) {
         break;
 
       case "groq":
-        // Requests/Tokens rate-limit windows from response headers — absolute
+        // Requests/Tokens rate-limit windows from response headers - absolute
         // used/total (calculatePercentage derives the bar), like Codex/Kiro.
         if (data.quotas) {
           Object.entries(data.quotas).forEach(([name, quota]) => {
@@ -702,7 +702,7 @@ export function parseQuotaData(provider, data) {
 
       case "ollama":
         // Session (5h) / Weekly (7d) / Monthly usage % from ollama.com/api/usage.
-        // remainingPercentage only — no absolute remaining (UI treats remaining as %).
+        // remainingPercentage only - no absolute remaining (UI treats remaining as %).
         if (data.quotas) {
           Object.entries(data.quotas).forEach(([name, quota]) => {
             normalizedQuotas.push({

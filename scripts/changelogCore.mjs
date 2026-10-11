@@ -81,7 +81,7 @@ export function parseConventional(subject) {
     scope: (match[2] || "").trim(),
     breaking,
     // Drop a leading security banner the message repeats in its body.
-    text: rest.replace(/^security\s*[:\-—]\s*/i, ""),
+    text: rest.replace(/^security\s*[:\--]\s*/i, ""),
   };
 }
 

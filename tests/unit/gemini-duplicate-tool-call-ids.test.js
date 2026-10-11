@@ -137,7 +137,7 @@ describe("response CONTENT still resolves correctly", () => {
         if (p.functionResponse) texts.push(JSON.stringify(p.functionResponse.response));
       }
     }
-    // Both results present and distinct — the content lookup keys on the
+    // Both results present and distinct - the content lookup keys on the
     // ORIGINAL id, so uniquifying the emitted id must not change it.
     expect(texts.join(" ")).toContain("FIRST");
     expect(texts.join(" ")).toContain("SECOND");

@@ -103,7 +103,7 @@ function parseTraeCallback(raw) {
   return { refreshToken, loginHost, cloudideToken };
 }
 
-// Allowed API origins for ExchangeToken/GetUserInfo — hardcoded HTTPS allowlist only.
+// Allowed API origins for ExchangeToken/GetUserInfo - hardcoded HTTPS allowlist only.
 // loginHost from the callback is intentionally NOT honored (SSRF guard: a callback
 // attacker could otherwise point this at internal hosts/cloud metadata).
 function traeApiOrigins() {
@@ -195,7 +195,7 @@ function traeScopeForRegion(aiRegion) {
   return "marscode-us";
 }
 
-// Trae — browser OAuth: GetLoginGuidance → verification URL
+// Trae - browser OAuth: GetLoginGuidance → verification URL
 // → local callback (refreshToken+loginHost) → ExchangeToken → GetUserInfo.
 // state === config.loginTraceID so the proxy can match the callback.
 const trae = {
@@ -233,7 +233,7 @@ const trae = {
       || (tokens.expiresAt ? Math.max(60, Number(tokens.expiresAt) - Math.floor(Date.now() / 1000)) : TRAE_CONFIG.tokenLifetimeDays * 24 * 60 * 60);
     const ui = extra?.userInfo || {};
     const aiRegion = ui.aiRegion || "US-East";
-    // SOLO common_params defaults — identity fields web_id/biz_user_id are not
+    // SOLO common_params defaults - identity fields web_id/biz_user_id are not
     // exposed by GetUserInfo; empty strings are accepted upstream (verified).
     return {
       accessToken: tokens.accessToken,

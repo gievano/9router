@@ -1,9 +1,9 @@
 /**
- * HuggingFace image generation — end-to-end through the real core handler.
+ * HuggingFace image generation - end-to-end through the real core handler.
  *
  * The registry/adapter tests pin the URL and payload in isolation. These tests
- * drive `handleImageGenerationCore` — the same function the `/v1/images/generations`
- * route calls — so the whole seam is exercised: adapter selection, buildUrl /
+ * drive `handleImageGenerationCore` - the same function the `/v1/images/generations`
+ * route calls - so the whole seam is exercised: adapter selection, buildUrl /
  * buildBody / buildHeaders, the fetch call, and the binary response parse.
  *
  * The mocked `fetch` asserts on the exact request the router would receive, which
@@ -18,7 +18,7 @@ import { handleImageGenerationCore } from "../../open-sse/handlers/imageGenerati
 const originalFetch = global.fetch;
 const CREDS = { apiKey: "hf_test_token" };
 
-// A 1x1 transparent PNG — enough to prove the bytes survive the round trip.
+// A 1x1 transparent PNG - enough to prove the bytes survive the round trip.
 const PNG_1X1 = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
   "base64"
@@ -41,7 +41,7 @@ async function generate(body, model) {
   });
 }
 
-describe("HuggingFace image generation — end to end", () => {
+describe("HuggingFace image generation - end to end", () => {
   beforeEach(() => {
     global.fetch = vi.fn().mockResolvedValue(mockBinaryResponse());
   });
@@ -84,7 +84,7 @@ describe("HuggingFace image generation — end to end", () => {
 
     const [url, init] = global.fetch.mock.calls[0];
     expect(url).toBe("https://router.huggingface.co/fal-ai/fal-ai/qwen-image-edit");
-    // The router takes raw base64 in inputs and the prompt under parameters —
+    // The router takes raw base64 in inputs and the prompt under parameters -
     // the data-URL prefix must be stripped, not forwarded.
     expect(JSON.parse(init.body)).toEqual({
       inputs: "AAAB",

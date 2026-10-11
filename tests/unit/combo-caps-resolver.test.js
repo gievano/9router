@@ -9,7 +9,7 @@ import { aggregateComboCapabilities, getCapabilitiesForModel } from "../../open-
 // /v1/models and pi-settings (both server-side) said 1M while the badge said 200k.
 //
 // resolveCaps lets a caller hand in the server's answer. It must only override
-// what it carries — the local tables still own tools/pdf/audio/video/thinking*.
+// what it carries - the local tables still own tools/pdf/audio/video/thinking*.
 const GLM53_FED = { vision: true, search: false, reasoning: true, contextWindow: 1_000_000, maxOutput: 131_072 };
 
 describe("aggregateComboCapabilities: resolveCaps override", () => {

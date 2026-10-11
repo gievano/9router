@@ -54,7 +54,7 @@ describe("Gemini Cloud Code endpoint isolation", () => {
 
     await getProjectIdForConnection(connectionId, "token", "antigravity");
 
-    // Discovery (loadCodeAssist) on PROD — daily host rejects auth/onboarding calls.
+    // Discovery (loadCodeAssist) on PROD - daily host rejects auth/onboarding calls.
     expect(fetchMock).toHaveBeenCalledWith(
       "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
       expect.objectContaining({ method: "POST" })

@@ -7,7 +7,7 @@ import { pingModelByKind } from "@/app/api/models/test/ping";
 
 /**
  * POST /api/providers/[id]/test-models
- * id = connectionId — used only to resolve provider + model list.
+ * id = connectionId - used only to resolve provider + model list.
  * Actual requests go through the internal endpoint that matches each model kind.
  */
 export async function POST(request, { params }) {

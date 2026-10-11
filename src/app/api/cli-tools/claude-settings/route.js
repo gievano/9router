@@ -10,7 +10,7 @@ import { DEFAULT_PLUGINS } from "@/shared/constants/coworkPlugins";
 
 const execAsync = promisify(exec);
 
-// Exa MCP def — reuse from coworkPlugins (DRY).
+// Exa MCP def - reuse from coworkPlugins (DRY).
 const EXA_PLUGIN = DEFAULT_PLUGINS.find((p) => p.name === "exa");
 const buildExaMcpEntry = () => ({
   type: EXA_PLUGIN.transport,
@@ -156,7 +156,7 @@ export async function POST(request) {
         : `${env.ANTHROPIC_BASE_URL}/v1`;
     }
 
-    // Keep an existing token (real key or earlier config); only add when absent — Reset clears it.
+    // Keep an existing token (real key or earlier config); only add when absent - Reset clears it.
     if (currentSettings.env?.ANTHROPIC_AUTH_TOKEN) {
       delete env.ANTHROPIC_AUTH_TOKEN;
     }
@@ -171,7 +171,7 @@ export async function POST(request) {
       },
     };
 
-    // CLAUDE_CODE_AUTO_COMPACT_WINDOW — the token threshold that triggers
+    // CLAUDE_CODE_AUTO_COMPACT_WINDOW - the token threshold that triggers
     // auto-compact. Only set when a concrete value is chosen; "Default" removes
     // the key so Claude Code derives the window from the model.
     if (autoCompactWindow) {
@@ -183,7 +183,7 @@ export async function POST(request) {
     // Write new settings
     await fs.writeFile(settingsPath, JSON.stringify(newSettings, null, 2));
 
-    // Exa MCP toggle — write to ~/.claude.json (CLI reads mcpServers from here).
+    // Exa MCP toggle - write to ~/.claude.json (CLI reads mcpServers from here).
     if (EXA_PLUGIN) {
       await writeClaudeJsonMcp(exaMcpEnabled ? { exa: buildExaMcpEntry() } : null);
     }

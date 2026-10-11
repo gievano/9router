@@ -49,8 +49,8 @@ export const FREE_TIER_PROVIDERS = byCategory("freeTier");
 // Thinking config definitions
 // options: list of selectable modes ("auto" = no override from server)
 // defaultMode: fallback when user hasn't configured
-// extended: claude-style thinking (thinking.type + budget_tokens) — used by most providers
-// effort: openai-style reasoning_effort — only openai + codex
+// extended: claude-style thinking (thinking.type + budget_tokens) - used by most providers
+// effort: openai-style reasoning_effort - only openai + codex
 export const THINKING_CONFIG = {
   extended: {
     options: ["auto", "on", "off"],
@@ -69,7 +69,7 @@ export const APIKEY_PROVIDERS = byCategory("apikey");
 // Web Cookie Providers (use browser session cookie instead of API key)
 export const WEB_COOKIE_PROVIDERS = byCategory("webCookie");
 
-// Media provider kinds — each kind maps to a route and endpoint config
+// Media provider kinds - each kind maps to a route and endpoint config
 export const MEDIA_PROVIDER_KINDS = [
   { id: "embedding",   label: "Embedding",      icon: "data_array",        endpoint: { method: "POST", path: "/v1/embeddings" } },
   { id: "image",       label: "Text to Image",  icon: "brush",             endpoint: { method: "POST", path: "/v1/images/generations" } },

@@ -5,7 +5,7 @@
  *   1. GET {mimo-server}/api/user/xiaomi/me            -> 302 account /pass/serviceLogin?sid=mimopc&callback={sts}
  *   2. GET account /pass/serviceLogin                   -> 302 /fe/service/login (the SPA)
  *   3. Browser (via the src/proxy.js reverse proxy) completes login on the REAL
- *      page (password / whatever the page offers) — every account.xiaomi.com
+ *      page (password / whatever the page offers) - every account.xiaomi.com
  *      request passes through the proxy; Set-Cookie lands in OUR jar (which
  *      travels in the httpOnly 9r_mimo_login cookie between hops).
  *   4. SPA navigates to the sts callback -> rewritten to /__mimo_login/mimo/*,
@@ -25,7 +25,7 @@ const SSO_UA = "MiClaw/1.0";
 const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-// Paths that belong to the 9router app itself — never proxy these upstream,
+// Paths that belong to the 9router app itself - never proxy these upstream,
 // even while a login session is active. Everything else is fair game: the
 // login SPA hits evolving endpoints (/pass2/config, /v3/...), so a static
 // allowlist rots fast. (Edge-safe: plain strings only.)
@@ -60,7 +60,7 @@ export function resolveMimoRegionBase(region) {
 }
 
 /**
- * Browser-facing origin for this request. Prefer the Host header — request.url
+ * Browser-facing origin for this request. Prefer the Host header - request.url
  * / nextUrl may carry the bind address (0.0.0.0), which must never leak into
  * rewritten callbacks (start and proxy must agree on the exact same origin,
  * and both see the same Host header).
@@ -73,7 +73,7 @@ export function originOf(request) {
 }
 
 // The session (incl. the accumulated cookie jar) travels in the SESSION_COOKIE
-// itself — Next runs route handlers and the proxy in separate bundles, so a
+// itself - Next runs route handlers and the proxy in separate bundles, so a
 // module-level Map is NOT shared between them. Cookie-carried state works
 // regardless of runtime topology. httpOnly + SameSite=Lax, TTL-bounded.
 
@@ -272,7 +272,7 @@ export function readSessionIdentity(sess) {
 /**
  * Redeem the captured passToken for a mimo-server service session using the
  * BATTLE-TESTED desktop handshake (serviceLogin sid=mimopc + clientSign) that
- * powers every existing CN desktop connection — instead of the interactive
+ * powers every existing CN desktop connection - instead of the interactive
  * /api/sts webview callback, which rejects server-side calls (401).
  * Merges the resulting serviceCookie into sess.jar, then confirms via me.
  * @returns {Promise<boolean>} true when the me probe answers 200 (logged in).
@@ -387,7 +387,7 @@ export function rewriteMimoBases(text, direction, origin, upstreamBase = null) {
   }
 
   // account.xiaomi.com absolute URLs: keep navigation (e.g. identity/authStart
-  // 2FA prompts) on our origin — every path on that host is already proxied
+  // 2FA prompts) on our origin - every path on that host is already proxied
   // natively. Reverse applies to request URLs/bodies before hitting upstream.
   const acctOrigins = ["https://account.xiaomi.com", "http://account.xiaomi.com", "//account.xiaomi.com"];
   if (direction === "toProxy") {
@@ -435,7 +435,7 @@ export function takeoverUpstreamPath(pathname) {
 //
 // The login page's feature set (Google sign-in etc.) is geo-decided by the
 // egress IP of THESE requests. The proxy applies ONLY when the user picked
-// region=sgp — the start route resolves it (via local-port probe) and rides it
+// region=sgp - the start route resolves it (via local-port probe) and rides it
 // on the session cookie as sess.proxyUrl. CN sessions never proxy (null -> direct).
 
 let _pafPromise = null;
@@ -455,7 +455,7 @@ async function socksFetch(url, init, proxyUrl) {
   if (!SocksProxyAgent) throw new Error("socks agent unavailable");
 
   const nodeUrl = new URL(url);
-  // Literal specifiers on both branches — webpack forbids fully dynamic import().
+  // Literal specifiers on both branches - webpack forbids fully dynamic import().
   const protoMod = nodeUrl.protocol === "http:" ? await import("node:http") : await import("node:https");
   const lib = protoMod.default ?? protoMod;
   const { Readable } = await import("node:stream");
@@ -496,7 +496,7 @@ async function socksFetch(url, init, proxyUrl) {
 }
 
 async function loginFetch(url, init, sessionProxyUrl = null) {
-  if (!sessionProxyUrl) return fetch(url, init); // direct — no agent machinery needed
+  if (!sessionProxyUrl) return fetch(url, init); // direct - no agent machinery needed
   const proxyOptions = { enabled: true, url: sessionProxyUrl };
   try {
     if (/^socks/i.test(sessionProxyUrl)) return await socksFetch(url, init, sessionProxyUrl);
@@ -516,7 +516,7 @@ async function loginFetch(url, init, sessionProxyUrl = null) {
   return fetch(url, init);
 }
 
-/** Public alias — start/status routes share the same egress path. */
+/** Public alias - start/status routes share the same egress path. */
 export const loginUpstreamFetch = (url, init, sess = null) => loginFetch(url, init, sess?.proxyUrl || null);
 
 // ---------- upstream proxying ----------
@@ -535,7 +535,7 @@ function browserCookieHeader(req) {
 const STRIP_UPSTREAM_HEADERS = new Set([
   "host", "cookie", "connection", "content-length", "transfer-encoding",
   "keep-alive", "upgrade", "expect", "proxy-connection",
-  // Credentials for 9router itself — must never reach a third-party upstream.
+  // Credentials for 9router itself - must never reach a third-party upstream.
   "authorization", "proxy-authorization",
 ]);
 
@@ -549,7 +549,7 @@ export async function proxyAccountRequest(sess, req, origin) {
   u.searchParams.delete("__9r_sess"); // never forward our session to upstream
   const upstream = new URL(u.pathname + u.search, `https://${ACCOUNT_HOST}`);
 
-  // The SPA's callback params were rewritten to our proxy — undo before upstream
+  // The SPA's callback params were rewritten to our proxy - undo before upstream
   // so signature (_sign) validation on the real callback still passes.
   const upstreamStr = deRewriteUrl(upstream.toString(), origin, sess.upstreamBase);
 
@@ -557,7 +557,7 @@ export async function proxyAccountRequest(sess, req, origin) {
   // Forward EVERYTHING the browser sent (minus hop-by-hop + host/cookie) so no
   // custom SDK header gets silently dropped. Then fix up cross-origin fields:
   // the SPA talks to account.xiaomi.com, so Origin/Referer must be rewritten
-  // from our origin to the account origin — keeping the original path/query
+  // from our origin to the account origin - keeping the original path/query
   // (a wrong Referer path trips Xiaomi's login risk control, error 10025).
   for (const [k, v] of req.headers) {
     if (STRIP_UPSTREAM_HEADERS.has(k.toLowerCase())) continue;
@@ -574,13 +574,13 @@ export async function proxyAccountRequest(sess, req, origin) {
         return u.toString();
       }
       if (u.hostname === ACCOUNT_HOST) return u.toString();
-      return null; // some other origin — let our forced account values win
+      return null; // some other origin - let our forced account values win
     } catch { return null; }
   };
   const rawOrigin = headers.origin || headers.Origin || null;
   delete headers.origin;
   delete headers.Origin;
-  // Real browsers only send Origin on XHR POSTs — preserve that shape, but
+  // Real browsers only send Origin on XHR POSTs - preserve that shape, but
   // point it at the account host (never leak localhost upstream).
   if (rawOrigin) headers.Origin = `https://${ACCOUNT_HOST}`;
   const fixedReferer = fixOriginUrl(headers.referer || headers.Referer);
@@ -593,7 +593,7 @@ export async function proxyAccountRequest(sess, req, origin) {
   if (init.method !== "GET" && init.method !== "HEAD") {
     let buf = Buffer.from(await req.arrayBuffer());
     // The SPA reads callback params from location.search (which we rewrote to
-    // our origin) and can echo them in the POST BODY — reverse that too, or
+    // our origin) and can echo them in the POST BODY - reverse that too, or
     // Xiaomi rejects with 10025 "Callback连接不合法".
     const ctBody = String(headers["Content-Type"] || headers["content-type"] || "");
     if (buf.length && /urlencoded|json|text/i.test(ctBody)) {
@@ -603,7 +603,7 @@ export async function proxyAccountRequest(sess, req, origin) {
         buf = Buffer.from(after, "utf8");
         headers["Content-Length"] = String(buf.length);
       } else if (/__mimo_login|localhost/.test(before)) {
-        // Anomaly: a local callback shape we cannot rewrite — must never reach Xiaomi.
+        // Anomaly: a local callback shape we cannot rewrite - must never reach Xiaomi.
         console.log(`${new Date().toISOString().slice(11, 23)} [mimo-login] body STILL local, not matchable: ${before.slice(0, 200)}`);
       }
     }
@@ -661,7 +661,7 @@ function buildBrowserResponse(sess, res, origin, reqPath = "", upstreamUrl = "")
   if (!isText) return new Response(res.body, { status: res.status, headers: outHeaders });
 
   return res.text().then((rawBody) => {
-    // JSON allows \/ as an escaped slash — Xiaomi backends (PHP-style) emit
+    // JSON allows \/ as an escaped slash - Xiaomi backends (PHP-style) emit
     // "https:\/\/mimo-server..." which defeats scheme-based string matching
     // AND the SPA JSON.parses it back to a real URL (this leaked the sts
     // callback straight to the browser -> cross-origin 401). Unescaping \/ to
@@ -695,7 +695,7 @@ export async function runTakeover(sess, upstreamUrl, origin) {
   const id = readSessionIdentity(sess);
   // AUTHORIZATION COMPLETION = passToken captured (that IS the credential the
   // connection persists for the account route). The serviceToken exchange
-  // (weekly quota) is intentionally NOT part of completion — its API moved;
+  // (weekly quota) is intentionally NOT part of completion - its API moved;
   // ensureServiceSession stays exported for when that gets re-wired.
   if (id) {
     sess.status = "done";

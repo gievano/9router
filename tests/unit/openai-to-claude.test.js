@@ -136,7 +136,7 @@ describe("openaiToClaudeRequest", () => {
       openaiToClaudeRequest("claude-sonnet-4.5", { ...baseBody, tool_choice: tc }, false).tool_choice;
 
     it("converts OpenAI forced tool ({type:'function'}) to Claude {type:'tool'}", () => {
-      // Must NOT leak the OpenAI "function" type — Claude only accepts auto|any|tool|none.
+      // Must NOT leak the OpenAI "function" type - Claude only accepts auto|any|tool|none.
       expect(choiceOf({ type: "function", function: { name: "todo_write" } }))
         .toEqual({ type: "tool", name: "todo_write" });
     });

@@ -3,7 +3,7 @@
 // Ports Kimchi CLI's authenticateViaBrowser (src/cli-auth/index.ts) onto
 // 9Router's shared startLocalServer util (same one xai/antigravity use).
 // Simpler than those: the token arrives directly on the callback query
-// string — no authorization-code exchange, no PKCE.
+// string - no authorization-code exchange, no PKCE.
 //
 // In-flight logins are held in `sessions` keyed by state. The OAuthModal
 // device_code flow starts one via requestDeviceCode(); pollToken() peeks
@@ -46,7 +46,7 @@ export class KimchiService {
     });
 
     const timeout = setTimeout(() => {
-      resolveResult({ error: "Browser login timed out — please try again" });
+      resolveResult({ error: "Browser login timed out - please try again" });
       close();
     }, KIMCHI_CONFIG.callbackTimeoutMs);
 

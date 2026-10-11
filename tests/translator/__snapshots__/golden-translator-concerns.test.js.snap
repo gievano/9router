@@ -101,7 +101,7 @@ exports[`GOLDEN response stream: CommandCode → OpenAI > text + reasoning + too
 ]
 `;
 
-exports[`GOLDEN response stream: Kiro → OpenAI (finish after tool) > toolUse then stop — lock current finish_reason behavior 1`] = `
+exports[`GOLDEN response stream: Kiro → OpenAI (finish after tool) > toolUse then stop - lock current finish_reason behavior 1`] = `
 [
   {
     "choices": [
@@ -165,7 +165,7 @@ exports[`GOLDEN response stream: Kiro → OpenAI (finish after tool) > toolUse t
 ]
 `;
 
-exports[`GOLDEN response stream: Ollama → OpenAI (finish after tool) > tool_calls then done_reason=stop — lock current finish_reason 1`] = `
+exports[`GOLDEN response stream: Ollama → OpenAI (finish after tool) > tool_calls then done_reason=stop - lock current finish_reason 1`] = `
 [
   {
     "choices": [

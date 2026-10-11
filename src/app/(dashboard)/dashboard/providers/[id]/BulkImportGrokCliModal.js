@@ -277,7 +277,7 @@ export default function BulkImportGrokCliModal({ isOpen, onClose, onSuccess }) {
         {result && result.failed > 0 && (
           <div className="flex flex-col gap-2">
             <div className="text-sm font-medium text-yellow-400">
-              ✗ {result.failed} {translate("failed")}
+              {result.failed} {translate("failed")}
             </div>
             {failedItems.length > 0 && (
               <ul className="rounded border border-accent/20 bg-sidebar/50 p-2 text-xs font-mono max-h-40 overflow-y-auto">

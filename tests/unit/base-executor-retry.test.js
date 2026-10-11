@@ -23,7 +23,7 @@ const creds = { apiKey: "k" };
 
 beforeEach(() => fetchMock.mockReset());
 
-describe("BaseExecutor.execute — retry by status (config-driven)", () => {
+describe("BaseExecutor.execute - retry by status (config-driven)", () => {
   it("retries 502 `attempts` times then succeeds", async () => {
     const ex = makeExec({ baseUrl: "https://x/api", retry: { 502: { attempts: 3, delayMs: 0 } } });
     fetchMock
@@ -45,7 +45,7 @@ describe("BaseExecutor.execute — retry by status (config-driven)", () => {
   });
 });
 
-describe("BaseExecutor.execute — baseUrls fallback", () => {
+describe("BaseExecutor.execute - baseUrls fallback", () => {
   it("falls over to the next url on 429 (shouldRetry)", async () => {
     const ex = makeExec({ baseUrls: ["https://a/api", "https://b/api"], retry: { 429: { attempts: 0 } } });
     fetchMock
@@ -58,7 +58,7 @@ describe("BaseExecutor.execute — baseUrls fallback", () => {
   });
 });
 
-describe("BaseExecutor.execute — network error retry/fallback", () => {
+describe("BaseExecutor.execute - network error retry/fallback", () => {
   it("maps network exception to 502 retry config", async () => {
     const ex = makeExec({ baseUrl: "https://x/api", retry: { 502: { attempts: 1, delayMs: 0 } } });
     fetchMock
@@ -84,7 +84,7 @@ describe("BaseExecutor.execute — network error retry/fallback", () => {
   });
 });
 
-describe("BaseExecutor.execute — computeRetryDelay hook veto", () => {
+describe("BaseExecutor.execute - computeRetryDelay hook veto", () => {
   it("only invokes computeRetryDelay when status has retry config", async () => {
     const ex = makeExec({ baseUrl: "https://x/api", retry: { 503: { attempts: 1, delayMs: 0 } } });
     ex.computeRetryDelay = vi.fn().mockResolvedValue(0);

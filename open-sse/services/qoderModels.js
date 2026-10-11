@@ -4,7 +4,7 @@
  * Calls /algo/api/v2/model/list (COSY-signed) on the inference host to get
  * the live catalog for an authenticated Qoder account, then caches the
  * per-model `model_config` blocks by key. Chat requests later look up the
- * exact server-published metadata for the model they want — Qoder's chat
+ * exact server-published metadata for the model they want - Qoder's chat
  * endpoint silently downgrades to a different model when the wrong
  * model_config is sent.
  *
@@ -14,7 +14,7 @@
  * PAT (Personal Access Token, pt-...) connections: a PAT cannot sign COSY
  * requests directly, so we exchange it for a short-lived job token (jt-...)
  * via the region's jobToken/exchange endpoint (plain JSON POST), then use
- * that job token for signing. On intl, job-token traffic must hit api2.qoder.sh —
+ * that job token for signing. On intl, job-token traffic must hit api2.qoder.sh -
  * api3 rejects jt- with "Login expired" (403); CN serves it from the same
  * gateway host.
  *
@@ -65,7 +65,7 @@ const inflight = new Map();
 
 /**
  * Exchange a Qoder PAT (pt-...) for a short-lived job token (jt-...).
- * This endpoint is plain JSON POST — NOT COSY-signed.
+ * This endpoint is plain JSON POST - NOT COSY-signed.
  */
 async function exchangeJobToken(pat, proxyOptions = null, signal = null, region = "intl") {
   const res = await proxyAwareFetch(
@@ -103,7 +103,7 @@ async function exchangeJobToken(pat, proxyOptions = null, signal = null, region 
 
 /**
  * Resolve the Qoder userId for a job token (needed for COSY signing).
- * Returns "" on any failure — callers fall back to the stored userId.
+ * Returns "" on any failure - callers fall back to the stored userId.
  */
 async function fetchUserIdForJobToken(jobToken, proxyOptions = null, signal = null, region = "intl") {
   try {
@@ -205,7 +205,7 @@ async function fetchQoderCatalogRaw(credentials, signal, proxyOptions = null, re
   const creds = cosyCredsFromConnection(credentials);
   if (!creds.userId || !creds.authToken) return null;
 
-  // Intl job-token traffic is rejected by api3 ("Login expired" 403) — the
+  // Intl job-token traffic is rejected by api3 ("Login expired" 403) - the
   // official qodercli serves it from api2 instead; CN uses the single gateway.
   const modelListUrl = `${qoderInferenceBase(credentials, region)}/algo/api/v2/model/list`;
 
@@ -258,7 +258,7 @@ async function fetchQoderCatalogRaw(credentials, signal, proxyOptions = null, re
     const key = entry.key;
     if (!key) continue;
 
-    // Always cache the config — chat needs model_config even for UI-hidden
+    // Always cache the config - chat needs model_config even for UI-hidden
     // models (enable:false). Upstream still accepts chat for these keys.
     rawConfigs.set(key, entry);
     if (entry.enable === false) continue;
@@ -289,7 +289,7 @@ export async function getQoderModelConfig(credentials, modelKey, options = {}) {
   if (!cached) return null;
   const config = cached.rawConfigs.get(modelKey);
   if (!config) return null;
-  // Defensive copy — chat code may mutate `key` to align with the alias path.
+  // Defensive copy - chat code may mutate `key` to align with the alias path.
   return { ...config, key: modelKey };
 }
 
@@ -348,7 +348,7 @@ export async function resolveQoderModels(credentials, options = {}) {
   try {
     return await fetchPromise;
   } finally {
-    // Clear only if this is still the in-flight entry — a forceRefresh
+    // Clear only if this is still the in-flight entry - a forceRefresh
     // call that started later may have replaced it.
     if (inflight.get(key) === fetchPromise) {
       inflight.delete(key);
@@ -359,7 +359,7 @@ export async function resolveQoderModels(credentials, options = {}) {
 /**
  * Every model key the chat endpoint accepts for this credential: the IDE-visible
  * models first, then catalog entries flagged `enable:false` (hidden in the IDE
- * picker, e.g. by an account policy, but still served by agent_chat_generation —
+ * picker, e.g. by an account policy, but still served by agent_chat_generation -
  * see fetchQoderCatalogRaw). /v1/models uses this so the advertised list matches
  * what the router will actually route instead of collapsing to one or two keys.
  */

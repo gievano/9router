@@ -1,7 +1,7 @@
 import { GROK_CLI_CONFIG } from "../constants/oauth.js";
 import { decodeXaiIdTokenEmail, extractEmailFromAccessToken } from "../providerHelpers.js";
 
-// Grok CLI / Grok Build — device code flow to auth.x.ai, inference on cli-chat-proxy.grok.com
+// Grok CLI / Grok Build - device code flow to auth.x.ai, inference on cli-chat-proxy.grok.com
 const grokCli = {
   config: GROK_CLI_CONFIG,
   flowType: "device_code",

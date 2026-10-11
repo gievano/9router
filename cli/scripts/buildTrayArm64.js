@@ -8,7 +8,7 @@
 //
 // Output is NOT reproducible across Go versions even with -s -w, so after a
 // rebuild you must re-upload the asset and update ARM64_TRAY_SHA256 in
-// hooks/trayRuntime.js — this script prints both and fails if they diverge.
+// hooks/trayRuntime.js - this script prints both and fails if they diverge.
 
 const { execFileSync, spawnSync } = require("child_process");
 const crypto = require("crypto");
@@ -98,7 +98,7 @@ const pinMatch = fs.readFileSync(trayRuntimePath, "utf8").match(/ARM64_TRAY_SHA2
 if (!pinMatch) fail(`could not find ARM64_TRAY_SHA256 in ${trayRuntimePath}`);
 const pinned = pinMatch[1];
 if (pinned === sha256) {
-  console.log(`\n   Matches ARM64_TRAY_SHA256 in hooks/trayRuntime.js — no code change needed.`);
+  console.log(`\n   Matches ARM64_TRAY_SHA256 in hooks/trayRuntime.js - no code change needed.`);
 } else {
   console.log(`\n⚠️  Differs from ARM64_TRAY_SHA256 in hooks/trayRuntime.js (${pinned}).`);
   console.log(`   Re-upload the release asset, then update that constant to the sha256 above.`);

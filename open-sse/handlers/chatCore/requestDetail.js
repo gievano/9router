@@ -27,7 +27,7 @@ export function extractUsageFromResponse(responseBody) {
   // Claude format
   // Note: OpenAI Responses usage ({input_tokens, input_tokens_details:{cached_tokens}})
   // also matches this branch. Its prompt is cache-INCLUSIVE and its cache rides in
-  // input_tokens_details, so emit it as cached_tokens — the convention
+  // input_tokens_details, so emit it as cached_tokens - the convention
   // canonicalizeUsage() passes through without folding. Reading it here keeps
   // cache accounting correct for /v1/responses and codex traffic.
   if (responseBody.usage?.input_tokens !== undefined) {

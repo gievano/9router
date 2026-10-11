@@ -1,12 +1,12 @@
-// Universal Canonical Attempt — contract + pure semantics (Phase 2 / Commit A).
+// Universal Canonical Attempt - contract + pure semantics (Phase 2 / Commit A).
 //
 // One provider-agnostic internal result that can represent ANY provider
-// execution path — streaming, forced SSE→JSON, non-streaming JSON, transport
-// failure, cache, bypass — WITHOUT treating transport success, stream
+// execution path - streaming, forced SSE→JSON, non-streaming JSON, transport
+// failure, cache, bypass - WITHOUT treating transport success, stream
 // completion, usage, or HTTP 200 as model success.
 //
 // Axes (deliberately separated, never conflated):
-//   transport  transportOk: boolean|null — HTTP status is 2xx.
+//   transport  transportOk: boolean|null - HTTP status is 2xx.
 //              true  → transport is 2xx (successful).
 //              false → transport is known non-2xx (transport failure).
 //              null  → transport status NOT available / not applicable
@@ -14,9 +14,9 @@
 //                      exchange). null is NEVER coerced to false.
 //   output     hasText/hasReasoning/
 //              hasToolCall/
-//              hasStructuredOutput     — semantic model-output evidence.
-//              hasUsage                 — METADATA only, never output.
-//   completion completionState          — how the provider attempt ended
+//              hasStructuredOutput     - semantic model-output evidence.
+//              hasUsage                 - METADATA only, never output.
+//   completion completionState          - how the provider attempt ended
 //              (universal), vs terminalState (streaming-only evidence).
 //   stream-    streamStarted, eofSeen, terminalType, finishReason
 //   evidence
@@ -45,18 +45,18 @@ const OUTCOMES = Object.freeze(["success", "failure", "incomplete", "cancelled"]
  * HTTP request returned 2xx, not whether bytes arrived, and not whether a
  * usable answer exists:
  *
- *   success     — the attempt completed normally (streaming: a successful
+ *   success     - the attempt completed normally (streaming: a successful
  *                 provider terminal; non-streaming adapters: implicit 2xx
  *                 completion). NOTE: completionState=success does NOT imply a
- *                 model answer exists — usage-only can complete successfully
+ *                 model answer exists - usage-only can complete successfully
  *                 while usableOutput stays false.
- *   failure     — provider-declared failure terminal OR stream-level error.
- *   incomplete  — the attempt ended without success, without declared
+ *   failure     - provider-declared failure terminal OR stream-level error.
+ *   incomplete  - the attempt ended without success, without declared
  *                 failure, and without cancellation (EOF without terminal;
  *                 explicit incomplete terminal like finish_reason=length).
- *   cancelled   — provider cancellation OR client abort (evidence preserved
+ *   cancelled   - provider cancellation OR client abort (evidence preserved
  *                 separately: terminalState='cancelled' vs abortSeen).
- *   unknown     — defensive: no evidence path ran.
+ *   unknown     - defensive: no evidence path ran.
  *
  * Never derived from transportOk alone, hasUsage, or emitted telemetry.
  */
@@ -92,7 +92,7 @@ export function deriveUsableOutput(state) {
  *
  * Explicitly NOT granted by transportOk, streamStarted, emitted>0, usage,
  * or [DONE] alone. abortSeen is kept explicit even though it implies
- * completionState='cancelled' — defensive and self-documenting.
+ * completionState='cancelled' - defensive and self-documenting.
  *
  * NOTE on the relationship between completionState and logicalSuccess:
  * completionState describes how the attempt ENDED; logicalSuccess additionally
@@ -110,7 +110,7 @@ export function deriveLogicalSuccess(state) {
 }
 
 /**
- * Canonical operational summary — always one of the four operational
+ * Canonical operational summary - always one of the four operational
  * outcomes. `unknown` lives on completionState (the defensive no-evidence
  * state), never on outcome: the evidence checks below are exhaustive over
  * the documented states.
@@ -127,14 +127,14 @@ export function deriveOutcome(state) {
 /**
  * Build the UNIVERSAL canonical attempt object. Purely semantic and
  * side-effect free; the only integration inputs are the already-observed
- * state and transport metadata (status number — never clones/consumes a body).
+ * state and transport metadata (status number - never clones/consumes a body).
  *
  * SOURCE-AWARE semantics (explicit evidence → source-specific fallback →
  * defensive incomplete/unknown; never fabricated):
  *
- *   source="provider" — normal streaming evidence path, unchanged.
+ *   source="provider" - normal streaming evidence path, unchanged.
  *
- *   source="cache"    — a semantic-cache hit means a cached Response exists
+ *   source="cache"    - a semantic-cache hit means a cached Response exists
  *                       that was itself a valid (successfully derived) model
  *                       response at store time. The cache lookup returns a
  *                       2xx Response OR a failure-like result; there is NO
@@ -145,11 +145,11 @@ export function deriveOutcome(state) {
  *                       Non-2xx / failed cache result: completionState=failure,
  *                       logicalSuccess=false.
  *                       Output-category evidence (hasText etc.) is NOT
- *                       manufactured — usableOutput=true comes from the cached
+ *                       manufactured - usableOutput=true comes from the cached
  *                       Response being a valid model response, not from
  *                       invented content fields.
  *
- *   source="bypass"   — synthetic gateway response (warmup/skip/title). It is
+ *   source="bypass"   - synthetic gateway response (warmup/skip/title). It is
  *                       a completed, valid response by construction; no stream
  *                       evidence exists. completionState=success with
  *                       completionType="bypass", logicalSuccess=true,
@@ -164,11 +164,11 @@ export function deriveOutcome(state) {
  */
 export function createCanonicalAttempt(state = null, opts = {}) {
   const source = SOURCES.includes(opts.source) ? opts.source : "provider";
-  // transportOk: boolean | null — see the explicit contract. null only when
+  // transportOk: boolean | null - see the explicit contract. null only when
   // status is absent/unknown; never coerced to false.
   const transportOk = opts.status == null ? null : opts.status >= 200 && opts.status < 300;
 
-  // Source-specific completion defaults — applied ONLY when no streaming
+  // Source-specific completion defaults - applied ONLY when no streaming
   // evidence exists (state absent for external sources). Provider semantics
   // are untouched.
   let completionState = deriveCompletionState(state);
@@ -181,7 +181,7 @@ export function createCanonicalAttempt(state = null, opts = {}) {
     completionType = source;
     // A synthetic cached/bypass Response IS usable model output (it was a
     // valid response at construction/store). No content-category fields are
-    // invented — the semantic comes from the Response validity, documented.
+    // invented - the semantic comes from the Response validity, documented.
     usableOutput = okSynthetic;
   }
 

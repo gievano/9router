@@ -3,7 +3,7 @@ name: 9router-embeddings
 description: Generate vector embeddings via 9Router /v1/embeddings using OpenAI / Gemini / Mistral / Voyage / Nvidia / GitHub embedding models for RAG, semantic search, similarity. Use when the user wants embeddings, vectors, RAG, semantic search, or to embed text.
 ---
 
-# 9Router — Embeddings
+# 9Router - Embeddings
 
 Requires `NINEROUTER_URL` (and `NINEROUTER_KEY` if auth enabled). See https://raw.githubusercontent.com/decolua/9router/refs/heads/master/skills/9router/SKILL.md for setup.
 
@@ -62,8 +62,8 @@ console.log(data[0].embedding.length);  // dimension
 
 | Provider | Notes |
 |---|---|
-| `openai`, `openrouter`, `mistral`, `voyage-ai`, `fireworks`, `together`, `nebius`, `github`, `nvidia`, `jina-ai` | Native OpenAI shape — `dimensions` works only on OpenAI v3 (`text-embedding-3-*`) |
-| `gemini`, `google_ai_studio` | Server auto-converts to `embedContent`/`batchEmbedContents` — send OpenAI shape |
+| `openai`, `openrouter`, `mistral`, `voyage-ai`, `fireworks`, `together`, `nebius`, `github`, `nvidia`, `jina-ai` | Native OpenAI shape - `dimensions` works only on OpenAI v3 (`text-embedding-3-*`) |
+| `gemini`, `google_ai_studio` | Server auto-converts to `embedContent`/`batchEmbedContents` - send OpenAI shape |
 | `openai-compatible-*`, `custom-embedding-*` | Custom `baseUrl` from credentials |
 
 Batch (`input` as array) is faster; some providers cap batch size.

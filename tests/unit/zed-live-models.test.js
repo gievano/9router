@@ -107,7 +107,7 @@ async function getModels(connectionId) {
   return GET(req, { params: Promise.resolve({ id: connectionId }) });
 }
 
-describe("criterion 1+2 — active connection + live catalog → models with metadata", () => {
+describe("criterion 1+2 - active connection + live catalog → models with metadata", () => {
   it("returns enabled models with preserved metadata, no secrets", async () => {
     const conn = await seedZed("m1");
     const res = await getModels(conn.id);
@@ -127,7 +127,7 @@ describe("criterion 1+2 — active connection + live catalog → models with met
   });
 });
 
-describe("criterion 4 — disabled models excluded", () => {
+describe("criterion 4 - disabled models excluded", () => {
   it("is_disabled entries never reach the UI", async () => {
     const conn = await seedZed("m2");
     const data = await (await getModels(conn.id)).json();
@@ -135,7 +135,7 @@ describe("criterion 4 — disabled models excluded", () => {
   });
 });
 
-describe("criterion 4b — empty catalog → explicit warning", () => {
+describe("criterion 4b - empty catalog → explicit warning", () => {
   it("returns warning instead of silent zero", async () => {
     stub.mode = "empty";
     const conn = await seedZed("m3");
@@ -147,7 +147,7 @@ describe("criterion 4b — empty catalog → explicit warning", () => {
   });
 });
 
-describe("criterion 5 — resolver failure → useful warning, no crash", () => {
+describe("criterion 5 - resolver failure → useful warning, no crash", () => {
   it("returns 200 with warning text", async () => {
     stub.mode = "error";
     const conn = await seedZed("m4");
@@ -159,14 +159,14 @@ describe("criterion 5 — resolver failure → useful warning, no crash", () => 
   });
 });
 
-describe("criterion 6 (route) — unknown connection → 404", () => {
+describe("criterion 6 (route) - unknown connection → 404", () => {
   it("rejects missing connections", async () => {
     const res = await getModels("00000000-0000-0000-0000-000000000000");
     expect(res.status).toBe(404);
   });
 });
 
-describe("criterion 5 (guard) — unsupported provider unchanged", () => {
+describe("criterion 5 (guard) - unsupported provider unchanged", () => {
   it("still 400s for providers without a models config", async () => {
     const conn = await createProviderConnection({
       provider: "kimchi-nope",

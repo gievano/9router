@@ -1,4 +1,4 @@
-// Windsurf provider registry — Firebase+Codeium+Devin auth chain.
+// Windsurf provider registry - Firebase+Codeium+Devin auth chain.
 // Chat = Codeium gRPC-web protobuf:
 //   POST {base}  Content-Type: application/grpc-web+proto
 //   Service: exa.language_server_pb.LanguageServerService / GetChatMessage
@@ -51,14 +51,14 @@ export default {
 
   // Catalog verified against model_configs_v2.bin from Devin CLI (2026.5.x).
   // Dot-notation ids; the executor MODEL_ALIAS_MAP maps these to Windsurf modelUid.
-  // contextLength dropped — 9router schema uses id+name only.
+  // contextLength dropped - 9router schema uses id+name only.
   models: [
     // Cognition / SWE
     { id: "swe-1.6-fast", name: "SWE-1.6 Fast" },
     { id: "swe-1.6", name: "SWE-1.6" },
     { id: "swe-1.5-fast", name: "SWE-1.5 Fast" },
     { id: "swe-1.5", name: "SWE-1.5" },
-    // Claude Opus 4.7 — effort-tiered
+    // Claude Opus 4.7 - effort-tiered
     { id: "claude-opus-4.7-max", name: "Claude Opus 4.7 Max" },
     { id: "claude-opus-4.7-xhigh", name: "Claude Opus 4.7 XHigh" },
     { id: "claude-opus-4.7-high", name: "Claude Opus 4.7 High" },
@@ -78,7 +78,7 @@ export default {
     { id: "claude-sonnet-4.5-thinking", name: "Claude Sonnet 4.5 Thinking" },
     { id: "claude-sonnet-4.5", name: "Claude Sonnet 4.5" },
     { id: "claude-haiku-4.5", name: "Claude Haiku 4.5" },
-    // GPT-5.5 — effort-tiered
+    // GPT-5.5 - effort-tiered
     { id: "gpt-5.5-xhigh-fast", name: "GPT-5.5 XHigh Fast" },
     { id: "gpt-5.5-xhigh", name: "GPT-5.5 XHigh" },
     { id: "gpt-5.5-high-fast", name: "GPT-5.5 High Fast" },
@@ -89,7 +89,7 @@ export default {
     { id: "gpt-5.5-low", name: "GPT-5.5 Low" },
     { id: "gpt-5.5-none-fast", name: "GPT-5.5 None Fast" },
     { id: "gpt-5.5-none", name: "GPT-5.5 None" },
-    // GPT-5.4 — effort-tiered
+    // GPT-5.4 - effort-tiered
     { id: "gpt-5.4-xhigh-fast", name: "GPT-5.4 XHigh Fast" },
     { id: "gpt-5.4-xhigh", name: "GPT-5.4 XHigh" },
     { id: "gpt-5.4-high-fast", name: "GPT-5.4 High Fast" },

@@ -76,7 +76,7 @@ async function fetchWindsurfUserInfo(apiServerUrl, firebaseIdToken) {
   } catch { return { email: null, name: null }; }
 }
 
-// Windsurf — browser OAuth: windsurf.com/signin →
+// Windsurf - browser OAuth: windsurf.com/signin →
 // local callback (firebase JWT) → RegisterUser → apiKey (used as credential).
 const windsurf = {
   config: WINDSURF_CONFIG,

@@ -2,7 +2,7 @@
 //
 // Why this exists: the import job rewrites the `settings` row, and that row is
 // where the dashboard password hash lives. Re-authenticating each progress
-// poll against the database therefore breaks mid-import — the poll starts
+// poll against the database therefore breaks mid-import - the poll starts
 // 401-ing against a hash that no longer matches the password the user just
 // typed, and the UI reports a failed import over a restore that actually
 // committed. The password is verified once, at the POST that already checked

@@ -12,7 +12,7 @@ function readLocalChangelog() {
     const text = fs.readFileSync(path.join(process.cwd(), "CHANGELOG.md"), "utf8");
     return text.trim() ? text : null;
   } catch {
-    // Missing in bundled/standalone runtimes — not an error, the caller falls back.
+    // Missing in bundled/standalone runtimes - not an error, the caller falls back.
     return null;
   }
 }

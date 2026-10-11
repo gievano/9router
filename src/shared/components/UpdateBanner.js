@@ -9,6 +9,15 @@ import ManualUpdatePanel from "./ManualUpdatePanel";
 import { GITHUB_CONFIG, UPDATER_CONFIG } from "@/shared/constants/config";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
+// updateCheck reads the changelog heading verbatim, so the tag already rides
+// along ("v0.5.165", or "git-abc1234" when there is no release yet). A caller
+// that prints `v${latestVersion}` by hand ends up with "vv0.5.165" - one
+// leading "v", exactly once.
+function formatVersion(version) {
+  if (typeof version !== "string" || !version) return "";
+  return version.startsWith("v") ? version : `v${version}`;
+}
+
 // Ten minutes between checks: fast enough that a release shows up while the tab is
 // open, slow enough that GitHub is not polled on every navigation.
 const POLL_MS = 600000;
@@ -207,7 +216,7 @@ export default function UpdateBanner({ pollMs = POLL_MS }) {
           setIsUpdating(true);
         }}
         title="Update 9Router"
-        message={`Update 9Router to v${info.latestVersion || ""}? The install command is copied and the server shuts down so you can run it in a terminal.`}
+        message={`Update 9Router to ${formatVersion(info.latestVersion)}? The install command is copied and the server shuts down so you can run it in a terminal.`}
         confirmText="Update"
         cancelText="Cancel"
         variant="primary"

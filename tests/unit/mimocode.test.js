@@ -2,7 +2,7 @@
  * Unit tests for the MiMoCode free provider entry.
  *
  * MiMoCode reuses the MiMo free channel (`api.xiaomimimo.com/api/free-ai/*`), so
- * the executor is shared with mimo-free — these tests pin the registry wiring
+ * the executor is shared with mimo-free - these tests pin the registry wiring
  * (aliases, noAuth visibility, model table, executor selection) that would
  * otherwise fail silently in the model picker or at request time.
  */

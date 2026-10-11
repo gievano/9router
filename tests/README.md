@@ -28,8 +28,8 @@ npx vitest run --reporter=verbose --config ./vitest.config.js
 
 | File | What it tests |
 |------|--------------|
-| `unit/embeddingsCore.test.js` | `open-sse/handlers/embeddingsCore.js` — core logic: body builder, URL router, headers, handler flow |
-| `unit/embeddings.cloud.test.js` | `cloud/src/handlers/embeddings.js` — cloud worker handler: auth, validation, rate limits, CORS |
+| `unit/embeddingsCore.test.js` | `open-sse/handlers/embeddingsCore.js` - core logic: body builder, URL router, headers, handler flow |
+| `unit/embeddings.cloud.test.js` | `cloud/src/handlers/embeddings.js` - cloud worker handler: auth, validation, rate limits, CORS |
 
 ## Coverage Summary (59 tests)
 

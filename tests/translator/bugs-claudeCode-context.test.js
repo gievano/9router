@@ -10,7 +10,7 @@ const T = (src, tgt, body, provider = null) =>
   translateRequest(src, tgt, "m", body, true, null, provider);
 
 describe("Claude Code CLI context → OpenAI", () => {
-  // claude-to-openai.js:24-27 — system array only maps .text; cache_control/non-text dropped
+  // claude-to-openai.js:24-27 - system array only maps .text; cache_control/non-text dropped
   it("system array keeps all text parts", () => {
     const out = T(FORMATS.CLAUDE, FORMATS.OPENAI, {
       system: [
@@ -39,7 +39,7 @@ describe("Claude Code CLI context → OpenAI", () => {
     expect(JSON.stringify(out)).toContain("step-by-step plan");
   });
 
-  // claude-to-openai.js:128 — redacted_thinking also dropped
+  // claude-to-openai.js:128 - redacted_thinking also dropped
   // KNOWN BUG
   it.fails("redacted_thinking block is not silently dropped", () => {
     const out = T(FORMATS.CLAUDE, FORMATS.OPENAI, {
@@ -54,7 +54,7 @@ describe("Claude Code CLI context → OpenAI", () => {
     expect(JSON.stringify(out)).toContain("ENCRYPTED_BLOB");
   });
 
-  // claude-to-openai.js:155-173 — tool_result image block stringified into raw JSON
+  // claude-to-openai.js:155-173 - tool_result image block stringified into raw JSON
   // KNOWN BUG
   it.fails("tool_result image block is preserved", () => {
     const out = T(FORMATS.CLAUDE, FORMATS.OPENAI, {

@@ -1,27 +1,27 @@
-/** Long-operation banner with cancel / keep-running controls, themed to the
- * active glass/dark palette.
+/* eslint-disable react/prop-types */
+/**
+ * Long-operation card with cancel / run-in-background controls.
  *
- * Three ways out of a long operation, because a centred modal that only says
- * "please wait" strands the operator on a dead page:
+ * The previous revision decorated every part of this card: a gradient rail
+ * down the left edge, a pulsing ring around a gradient icon tile, a
+ * rounded-2xl frame on an elevated shadow and a blurred scrim. Read against
+ * the rest of the dashboard it announced itself as decoration rather than as
+ * a status readout, which is what "looks generated" means here. Every one of
+ * those choices also carried no information: the rail tracked the same
+ * percent the bar already showed, and the ring pulsed whether or not the
+ * operation was progressing.
  *
- *   cancel   stop waiting; the operation is told to abandon its work
- *   (x)
- *   background  shrink to a corner chip and let the operator keep navigating
- *            - a 10 000-proxy import is not a reason to lose the dashboard
- *   minimize (-)
- *   close      the chip expands again without cancelling anything
+ * What is left is a status panel: a flat surface, a 1px border, the operation
+ * name, its one line of progress, and a 2px bar pinned to the bottom edge
+ * (edge bar rather than a pill inside padding, so the panel keeps a single
+ * rectangle instead of a rectangle containing a smaller rounded rectangle).
+ * The percent is the only accent, and it is type, not fill.
  *
- * The background control is offered on every full-screen banner even when the
- * caller wired no abort handler: hiding the overlay is purely visual, and it
- * beats trapping the operator behind a card with no buttons. Cancel still only
- * appears when the caller can actually cancel.
- *
- * Both swaps are animated: the overlay fades out before the chip slides in, and
- * expanding mounts the panel with its entrance animation, so nothing teleports.
- *
- * `onCancel` and `onBackground` are advisory: the card hides its own overlay
- * immediately so the UI never waits on a slow abort handler, and the caller
- * decides what actually stops.
+ * Grounding: the panel is anchored to the bottom-right of the viewport with a
+ * fixed offset instead of being centred and floating over the page. A status
+ * readout belongs where the eye already goes for transient feedback, and it
+ * leaves the centre of the screen free for the work the operator is trying to
+ * get back to.
  */
 "use client";
 
@@ -29,7 +29,7 @@ import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { cn } from "@/shared/utils/cn";
 
-/** Small spinning glyph; kept local so the card has no icon-font dependency. */
+/** Quarter-turn arc. No trail, no glow, no gradient stroke. */
 function Ring({ className }) {
   return (
     <svg
@@ -38,38 +38,42 @@ function Ring({ className }) {
       className={cn("animate-spin shrink-0", className)}
       fill="none"
     >
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" opacity="0.25" />
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" opacity="0.2" />
       <path
         d="M21 12a9 9 0 0 0-9-9"
         stroke="currentColor"
-        strokeWidth="2.5"
+        strokeWidth="2"
         strokeLinecap="round"
       />
     </svg>
   );
 }
 
-/** Progress bar: determinate when a percent exists, a themed sweep otherwise,
- * so a caller with no progress still renders a bar instead of a bare card. */
+/**
+ * Bottom-edge bar. Determinate when a percent exists, a 40%-wide sweep
+ * otherwise, so a caller that reports no progress still shows activity
+ * instead of a dead panel.
+ */
 function ProgressBar({ percent }) {
-  if (percent !== null) {
-    return (
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2">
+  return (
+    <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-border">
+      {percent === null ? (
+        <div className="progress-indeterminate h-full w-2/5 bg-primary" />
+      ) : (
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+          className="h-full bg-primary transition-[width] duration-300 ease-out"
           style={{ width: `${percent}%` }}
         />
-      </div>
-    );
-  }
-  return (
-    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2">
-      <div className="progress-indeterminate h-full w-full rounded-full bg-primary" />
+      )}
     </div>
   );
 }
 
-/** Square-cornered chip sitting over content: reads as a tool, not a dialog. */
+/**
+ * Icon-button. Borderless and compact: the two controls sit inside an already
+ * bordered card, so giving each its own 1px frame doubles the chrome for no
+ * reason. Tone is text colour only, with a soft hover wash.
+ */
 function IconButton({ label, glyph, onClick, tone = "default", className }) {
   return (
     <button
@@ -78,49 +82,53 @@ function IconButton({ label, glyph, onClick, tone = "default", className }) {
       title={label}
       aria-label={label}
       className={cn(
-        "flex size-8 items-center justify-center rounded-md transition-colors",
+        "flex size-6 items-center justify-center rounded-md transition-colors",
         tone === "danger"
-          ? "text-red-500 hover:bg-red-500/15"
+          ? "text-text-muted hover:bg-danger/10 hover:text-danger"
           : "text-text-muted hover:bg-surface-2 hover:text-text-main",
         className
       )}
     >
-      <span className="material-symbols-outlined text-[17px]">{glyph}</span>
+      <span className="material-symbols-outlined text-[16px] leading-none">{glyph}</span>
     </button>
   );
 }
 
 /**
- * The collapsed chip: title, message, percent and a progress bar - the corner
- * version keeps the information the full card had, it just moves out of the
- * way. Positioned clear of mobile browser chrome (bottom-20 on small screens).
+ * The collapsed card. Same information as the full one, smaller, out of the
+ * way. Fixed clear of mobile browser chrome on small screens.
  */
-function BackgroundChip({ title, message, percent, onExpand, onCancel, canCancel, inline = false }) {
+function BackgroundCard({ title, message, percent, onExpand, onCancel, canCancel, inline = false }) {
   return (
     <div className={inline ? "pointer-events-none" : "pointer-events-none fixed bottom-20 right-4 z-[80] sm:bottom-6"}>
       <div
         role="status"
         aria-live="polite"
         className={cn(
-          "slide-in-right pointer-events-auto flex w-[min(86vw,320px)] flex-col gap-2",
-          "rounded-2xl border border-border-subtle bg-surface/95 px-3.5 py-3",
-          "shadow-[var(--shadow-elev)] backdrop-blur-md"
+          "slide-in-right pointer-events-auto relative w-[min(86vw,320px)] overflow-hidden",
+          "rounded border border-border bg-surface"
         )}
       >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Ring className="size-4.5 text-primary" />
+        <div className="flex items-center gap-2.5 px-3 py-2.5">
+          <Ring className="size-3.5 shrink-0 text-primary" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-text-main">{title || "Working"}</p>
-            {message ? <p className="truncate text-[11px] text-text-muted">{message}</p> : null}
+            <p className="truncate text-[13px] font-medium leading-tight text-text-main">
+              {title || "Working"}
+            </p>
+            {message ? (
+              <p className="mt-0.5 truncate font-mono text-[11px] leading-tight text-text-muted">
+                {message}
+              </p>
+            ) : null}
           </div>
           {percent !== null ? (
-            <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+            <span className="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-primary">
               {percent}%
             </span>
           ) : null}
           <div className="flex shrink-0 items-center gap-1">
             {onExpand ? (
-              <IconButton label="Show full banner" glyph="expand_less" onClick={onExpand} />
+              <IconButton label="Show full banner" glyph="expand_more" onClick={onExpand} />
             ) : null}
             {canCancel ? (
               <button
@@ -128,49 +136,48 @@ function BackgroundChip({ title, message, percent, onExpand, onCancel, canCancel
                 onClick={onCancel}
                 title="Cancel"
                 aria-label="Cancel operation"
-                className="inline-flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/20"
+                className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-[11px] font-medium text-text-muted transition-colors hover:bg-danger/10 hover:text-danger"
               >
-                <span className="material-symbols-outlined text-[14px]">close</span>
+                <span className="material-symbols-outlined text-[13px] leading-none">close</span>
                 Cancel
               </button>
             ) : null}
           </div>
         </div>
-        {/* The corner version keeps the progress the full card showed. */}
         <ProgressBar percent={percent} />
       </div>
     </div>
   );
 }
 
-/** Framed card: accent rail on the left that sweeps with the percent. */
-function Panel({ title, message, section, percent, canCancel, canBackground, onCancel, onBackground }) {
+/**
+ * The full card. One rectangle: title and progress read on the left, the two
+ * controls on the right, and the bar on the bottom edge. No helper copy: the
+ * card reports what is happening (title, message, percent) and nothing else.
+ */
+function Panel({ title, message, percent, canCancel, canBackground, onCancel, onBackground }) {
   return (
-    <div className="modal-in relative w-full max-w-sm overflow-hidden rounded-2xl border border-border-subtle bg-surface/95 shadow-[var(--shadow-elev)] backdrop-blur-md mx-4">
-      {/* Accent rail: a full-height strip on the left that fills with progress. */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-primary/70 via-primary/45 to-primary/20"
-      />
-      <div className="pl-6 pr-4 py-4">
+    <div
+      className={cn(
+        "relative w-full max-w-sm overflow-hidden rounded border border-border bg-surface"
+      )}
+    >
+      <div className="px-4 pb-4 pt-3">
         <div className="flex items-start gap-3">
-          <span className="relative flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <span
-              aria-hidden="true"
-              className="absolute inset-0 rounded-xl ring-1 ring-primary/25 animate-pulse"
-            />
-            <Ring className="size-5" />
+          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded border border-border-subtle text-primary">
+            <Ring className="size-4" />
           </span>
-          <div className="min-w-0 flex-1 pt-1">
-            <p className="truncate text-sm font-semibold text-text-main">{title || "Working"}</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold leading-tight text-text-main">
+              {title || "Working"}
+            </p>
             {message ? (
-              <p className="mt-0.5 truncate text-xs text-text-muted">{message}</p>
+              <p className="mt-1 truncate font-mono text-xs leading-tight text-text-muted">
+                {message}
+              </p>
             ) : null}
           </div>
-          {/* Controls live inside the banner: one compact cluster, so the
-              card stays a single object instead of trailing two text buttons
-              under its own frame. */}
-          <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
+          <div className="flex shrink-0 flex-col items-end gap-2">
             <div className="flex items-center gap-1">
               {canCancel ? (
                 <IconButton
@@ -178,40 +185,30 @@ function Panel({ title, message, section, percent, canCancel, canBackground, onC
                   glyph="close"
                   tone="danger"
                   onClick={onCancel}
-                  className="size-7 border border-red-500/30 bg-red-500/10"
                 />
               ) : null}
               {canBackground ? (
                 <IconButton
                   label="Run in background"
-                  glyph="vertical_align_bottom"
+                  glyph="download"
                   onClick={onBackground}
-                  className="size-7 border border-border-subtle bg-surface"
                 />
               ) : null}
             </div>
             {percent !== null ? (
-              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+              <span className="font-mono text-[11px] font-semibold tabular-nums text-primary">
                 {percent}%
               </span>
             ) : null}
           </div>
         </div>
-
-        {section ? (
-          <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-text-muted">
-            <span className="material-symbols-outlined text-[13px] shrink-0">info</span>
-            <span className="truncate">{section}</span>
-          </p>
-        ) : null}
-
-        <ProgressBar percent={percent} />
       </div>
+      <ProgressBar percent={percent} />
     </div>
   );
 }
 
-/** How long the overlay fades before the chip takes over. Matches the fade. */
+/** How long the overlay fades before the card takes over. Matches the fade. */
 const SWAP_MS = 160;
 
 // Background decision per banner instance. Keyed the same way the callers key
@@ -219,10 +216,21 @@ const SWAP_MS = 160;
 // the operator over at a full-screen overlay.
 const backgroundedKeys = new Set();
 
+/**
+ * Expand every backgrounded banner again.
+ *
+ * The bell lists in-flight server jobs; picking one has to bring its banner
+ * back rather than leave it sitting in the corner, or the click looks like it
+ * did nothing. Only the visual state flips - the task store, and therefore the
+ * actual job, was never paused.
+ */
+export function revealBackgroundedTasks() {
+  backgroundedKeys.clear();
+}
+
 export default function LongTaskBanner({
   title,
   message,
-  section,
   progress = null,
   fixed = true,
   inlineChip = false,
@@ -230,10 +238,10 @@ export default function LongTaskBanner({
   onCancel = null,
   onBackground = null,
   canExpand = false,
-  // Renders only the collapsed corner chip. The TaskDock uses this for every
-  // task already waiting behind the newest one.
+  // Renders only the collapsed card. The TaskDock uses this for every task
+  // already waiting behind the newest one.
   chipOnly = false,
-  // Collapsed-chip reopen hook: the dock owns that state, so it flips back
+  // Collapsed-card reopen hook: the dock owns that state, so it flips back
   // itself instead of expanding inside this component.
   onExpand = null,
 }) {
@@ -250,9 +258,9 @@ export default function LongTaskBanner({
 
   // Backgrounding must survive a remount. ProgressCard is keyed by `title`, so
   // an operation whose card remounts used to come back full-screen even though
-  // the operator had already sent it to the corner -- that is the "stuck"
-  // report: the overlay reappeared and kept covering the page. The decision is
-  // therefore stored per instance key in a module map, not per mount.
+  // the operator had already sent it to the corner: the overlay reappeared and
+  // kept covering the page. The decision is therefore stored per instance key
+  // in a module map, not per mount.
   const setBackgroundedPersisted = (value) => {
     if (value) backgroundedKeys.set(instanceKey, true);
     else backgroundedKeys.delete(instanceKey);
@@ -262,8 +270,8 @@ export default function LongTaskBanner({
   // The swap timer outlives renders that change props mid-transition.
   useEffect(() => () => clearTimeout(swapTimer.current), []);
 
-  // Escape cancels, but only while the banner still covers the page: a chip in the
-  // corner must not swallow a keystroke meant for the form underneath.
+  // Escape cancels, but only while the card still covers the page: a card in
+  // the corner must not swallow a keystroke meant for the form underneath.
   useEffect(() => {
     if (backgrounded || !onCancel) return undefined;
     const onKey = (e) => {
@@ -279,7 +287,7 @@ export default function LongTaskBanner({
     clearTimeout(swapTimer.current);
     onCancel?.();
   };
-  // A chip rendered without the rest of the banner has nothing to expand back
+  // A card rendered without the rest of the banner has nothing to expand back
   // to, so cancelling there only forwards the caller's own onCancel.
   const handleChipCancel = () => {
     onCancel?.();
@@ -298,13 +306,13 @@ export default function LongTaskBanner({
   };
 
   const canCancel = typeof onCancel === "function";
-  // A page-level banner is always escapable, even with no abort hook: hiding
+  // A page-level card is always escapable, even with no abort hook: hiding
   // is visual only and beats a card with no buttons.
   const canBackground = typeof onBackground === "function" || fixed;
 
   if (chipOnly) {
     return (
-      <BackgroundChip
+      <BackgroundCard
         title={title}
         message={message}
         percent={percent}
@@ -319,7 +327,7 @@ export default function LongTaskBanner({
 
   if (backgrounded) {
     return (
-      <BackgroundChip
+      <BackgroundCard
         title={title}
         message={message}
         percent={percent}
@@ -331,29 +339,30 @@ export default function LongTaskBanner({
     );
   }
 
+  // The overlay is a thin scrim, not a blur: the operator is waiting on a
+  // status panel, not a modal, and a blurred full-screen wash reads as
+  // "something is blocking me" when nothing is.
   return (
     <div
       role="status"
       aria-live="polite"
       className={cn(
-        "flex items-center justify-center bg-black/55 backdrop-blur-[3px]",
+        "flex items-end justify-end p-4 sm:p-6",
         exiting ? "opacity-0 transition-opacity duration-150" : "fade-in",
         fixed ? "fixed inset-0 z-[70]" : "absolute inset-0 z-10 rounded-[10px]",
         className
       )}
+      style={{ backgroundColor: "var(--color-scrim)" }}
     >
-      <div className="flex w-full max-w-sm flex-col items-center">
-        <Panel
-          title={title}
-          message={message}
-          section={section}
-          percent={percent}
-          canCancel={canCancel}
-          canBackground={canBackground}
-          onCancel={handleCancel}
-          onBackground={handleBackground}
-        />
-      </div>
+      <Panel
+        title={title}
+        message={message}
+        percent={percent}
+        canCancel={canCancel}
+        canBackground={canBackground}
+        onCancel={handleCancel}
+        onBackground={handleBackground}
+      />
     </div>
   );
 }
@@ -361,19 +370,18 @@ export default function LongTaskBanner({
 LongTaskBanner.propTypes = {
   title: PropTypes.string,
   message: PropTypes.string,
-  section: PropTypes.string,
   progress: PropTypes.number,
   fixed: PropTypes.bool,
-  /** Render the corner chip inside the caller's own positioned column. */
+  /** Render the collapsed card inside the caller's own positioned column. */
   inlineChip: PropTypes.bool,
   className: PropTypes.string,
   onCancel: PropTypes.func,
   onBackground: PropTypes.func,
-  /** Lets the collapsed chip reopen the full banner. */
+  /** Lets the collapsed card reopen the full banner. */
   canExpand: PropTypes.bool,
-  /** Render only the collapsed corner chip. */
+  /** Render only the collapsed card. */
   chipOnly: PropTypes.bool,
-  /** Collapsed-chip reopen hook (chip mode). */
+  /** Collapsed-card reopen hook (card mode). */
   onExpand: PropTypes.func,
 };
 

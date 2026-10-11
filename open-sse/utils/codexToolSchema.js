@@ -16,12 +16,12 @@
 // somewhere that accepts it (#3922).
 //
 // Scope guardrail (#3667): this is NOT a global schema sanitizer. Providers
-// that do support `\p{...}` keep the constraint untouched — the strip runs only
+// that do support `\p{...}` keep the constraint untouched - the strip runs only
 // on the Codex dispatch path, and only on `pattern` strings that actually
 // contain a property escape. Everything else in the schema (including valid
 // patterns) passes through byte-identical.
 
-// `\p{...}` / `\P{...}` with an odd number of preceding backslashes — an even
+// `\p{...}` / `\P{...}` with an odd number of preceding backslashes - an even
 // count means the backslash itself is escaped, so `\\p{Cc}` is a literal "p".
 const UNICODE_PROPERTY_ESCAPE = /(^|[^\\])(\\\\)*\\[pP]\{/;
 

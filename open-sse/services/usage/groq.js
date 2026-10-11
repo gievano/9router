@@ -1,5 +1,5 @@
 /**
- * Groq usage — no dedicated quota endpoint. Rate-limit info instead rides on
+ * Groq usage - no dedicated quota endpoint. Rate-limit info instead rides on
  * every API response as x-ratelimit-* headers (requests + tokens, always
  * included). We piggyback on the models list (already used as
  * transport.validateUrl) so reading usage never costs tokens.
@@ -18,7 +18,7 @@ import { U } from "./shared.js";
 const MODELS_URL = U("groq").url;
 
 // Groq reset headers are Go-style duration strings ("2m59.56s", "7.66s"), not
-// timestamps — parse the h/m/s/ms components and add them to now().
+// timestamps - parse the h/m/s/ms components and add them to now().
 function parseGroqDurationMs(value) {
   if (typeof value !== "string" || !value.trim()) return null;
 
@@ -43,7 +43,7 @@ function resetAtFromDuration(value) {
 
 function buildRateLimitQuota(headers, limitKey, remainingKey, resetKey) {
   // headers.get() returns null when absent, and Number(null) is 0 (a finite
-  // number) — check presence explicitly so a missing header can't masquerade
+  // number) - check presence explicitly so a missing header can't masquerade
   // as a real "0 remaining" quota.
   const limitRaw = headers.get(limitKey);
   const remainingRaw = headers.get(remainingKey);
@@ -95,7 +95,7 @@ export async function getGroqUsage(apiKey, proxyOptions = null) {
       };
     }
 
-    // The quota data lives in headers, not the body — drain it so the
+    // The quota data lives in headers, not the body - drain it so the
     // connection can be released without needing the payload.
     await response.text().catch(() => {});
 
@@ -113,7 +113,7 @@ export async function getGroqUsage(apiKey, proxyOptions = null) {
     );
 
     if (!requests && !tokens) {
-      // Key is valid (request succeeded) but no rate-limit bucket reported —
+      // Key is valid (request succeeded) but no rate-limit bucket reported -
       // distinguish "not tracked yet" from an auth/error state.
       return {
         plan: "Groq",

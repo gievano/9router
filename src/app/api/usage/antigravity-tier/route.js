@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * Claude Opus/Sonnet 5.5 are gated behind Antigravity's `standard-tier`, which
  * is a separate subscription from Google One AI Pro. Google One Pro on a trial
  * leaves the account on `free-tier`, and upstream then answers those model ids
- * with 404 — so the flag has to come from the live tier, never from a hardcoded
+ * with 404 - so the flag has to come from the live tier, never from a hardcoded
  * assumption. Read-only: no tokens are persisted or logged here.
  */
 export async function GET() {

@@ -42,7 +42,8 @@ export default function Drawer({
     <div className="fixed inset-0 z-50">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px] fade-in cursor-pointer"
+        className="absolute inset-0 backdrop-blur-[2px] fade-in cursor-pointer"
+        style={{ backgroundColor: "var(--color-scrim)" }}
         onClick={onClose}
         aria-hidden="true"
       />

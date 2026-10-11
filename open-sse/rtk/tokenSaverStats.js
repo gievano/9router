@@ -5,7 +5,7 @@
  * pruning rewrites messages in place, RTK stats are transient, a semantic-cache
  * hit replays a response and forgets the replay saved anything. This module
  * folds one request's savings into a per-day kv bucket so the Usage tab can
- * show what Token Saver actually avoided — in tokens the provider would have
+ * show what Token Saver actually avoided - in tokens the provider would have
  * billed and in dollars at live model rates.
  *
  * The db handle is injected by the caller (chatCore passes getAdapter(), tests
@@ -14,7 +14,7 @@
  *
  * Savings are tokens, not messages: providers bill per token, so one 8k tool
  * dump pruned away matters more than forty short turns. Each figure comes from
- * the strings the stage actually touched — never from post-mutation bodies,
+ * the strings the stage actually touched - never from post-mutation bodies,
  * where the removed text no longer exists.
  */
 
@@ -81,7 +81,7 @@ export function measureRtkSavings(stats) {
 
 /**
  * Tokens a semantic-cache hit avoided. The replayed payload carries the
- * provider's own billed usage — the honest baseline for what a second
+ * provider's own billed usage - the honest baseline for what a second
  * identical request would have cost.
  */
 export function measureCacheSavings(cachedResponse) {

@@ -135,9 +135,9 @@ function chatCompletionToResponses(responseBody, customToolNames = null) {
  * Parse an SSE-shaped body into a single chat completion. Used when the provider
  * streamed but the client wanted JSON, and whenever an upstream labels a body as
  * `text/event-stream` for a non-streaming request. Real gateways deviate from the
- * spec constantly — no space after `data:`, `event:` field lines, NDJSON rows
+ * spec constantly - no space after `data:`, `event:` field lines, NDJSON rows
  * wearing an SSE content-type, Claude/Responses event frames on an OpenAI route,
- * or a whole JSON document mislabelled as a stream — and every one of those used
+ * or a whole JSON document mislabelled as a stream - and every one of those used
  * to read as "no response" and come back as a 502.
  */
 export function parseSSEToOpenAIResponse(rawSSE, fallbackModel) {
@@ -206,7 +206,7 @@ function translateFramesToChunks(frames, eventFormat, fallbackModel) {
 
 /**
  * Last resort: walk the frames and collect whatever assistant text, reasoning,
- * tool calls and usage they carry, wherever they put it. Deliberately dumb — it
+ * tool calls and usage they carry, wherever they put it. Deliberately dumb - it
  * exists so an unfamiliar provider shape surfaces as a rough answer instead of a
  * blank one.
  */
@@ -411,7 +411,7 @@ export async function handleForcedSSEToJson({ providerResponse, sourceFormat, ta
 
       // Build client-format response.
       // input_tokens EXCLUDES cached tokens on cache-capable upstreams, so summing
-      // only input+output under-reports prompt_tokens — measured: 2012 reported
+      // only input+output under-reports prompt_tokens - measured: 2012 reported
       // where the real prompt was ~5344 with 5332 served from cache. Fold the cache
       // counters in, and keep them visible in prompt_tokens_details so a client can
       // tell a cache hit from a small prompt.
@@ -510,9 +510,9 @@ export async function handleForcedSSEToJson({ providerResponse, sourceFormat, ta
       status: "success"
     }, { endpoint: clientRawRequest?.endpoint || null })).catch(() => {});
 
-    // Re-attach usage explicitly. This handler already HAS the correct usage — it is
+    // Re-attach usage explicitly. This handler already HAS the correct usage - it is
     // the same object written to the usage DB, and for a cached Claude request that DB
-    // row reads cache_read_input_tokens: 11022 — yet the client was observed receiving
+    // row reads cache_read_input_tokens: 11022 - yet the client was observed receiving
     // no usage field at all (verified 2026-08-04 with a fingerprinted payload matched
     // on both sides). Whatever drops it between assembly and serialisation, the client
     // must not be left unable to account for its own token spend: a caller cannot tell

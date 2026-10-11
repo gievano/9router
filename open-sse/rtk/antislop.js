@@ -1,7 +1,7 @@
 // Anti-slop injector: appends the antislop prompt into the system message of the
 // final request body, just before dispatch to the provider executor.
 //
-// Same mechanism as open-sse/rtk/ponytail.js — a text instruction merged into the
+// Same mechanism as open-sse/rtk/ponytail.js - a text instruction merged into the
 // system prompt rather than a provider parameter, because that is what the
 // antislop rules are: instructions, not API fields.
 import { injectSystemPrompt } from "./systemInject.js";

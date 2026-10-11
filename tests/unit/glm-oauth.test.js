@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// proxyAwareFetch captures globalThis.fetch at import time — mock the module
+// proxyAwareFetch captures globalThis.fetch at import time - mock the module
 // (like kimi-usage.test.js) instead of stubbing global fetch for usage tests.
 vi.mock("../../open-sse/utils/proxyFetch.js", () => ({
   proxyAwareFetch: vi.fn(),

@@ -59,7 +59,7 @@ const PAYLOADS = [
 
 function hostileOrdering() {
   const events = PAYLOADS.map((_, i) => added(`fc_${i}`, `call_${i}`, "read_file"));
-  // Interleaved deltas AFTER all addeds — the ordering that used to merge all
+  // Interleaved deltas AFTER all addeds - the ordering that used to merge all
   // four payloads into index 0.
   PAYLOADS.forEach((p, i) => events.push(delta(`fc_${i}`, p.slice(0, 20)), delta(`fc_${i}`, p.slice(20))));
   PAYLOADS.forEach((_, i) => events.push(done(`fc_${i}`, `call_${i}`, "read_file")));

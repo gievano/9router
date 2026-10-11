@@ -8,7 +8,7 @@ import path from "node:path";
 // `open` computes its own directory from `import.meta.url`. When it is bundled, webpack
 // replaces that with the BUILD machine's absolute path as a string literal, so a release
 // built on macOS ships `fileURLToPath("file:///Users/.../open/index.js")`. On Windows that
-// throws ERR_INVALID_FILE_URL_PATH ("File URL path must be absolute" — no drive letter) at
+// throws ERR_INVALID_FILE_URL_PATH ("File URL path must be absolute" - no drive letter) at
 // module scope, which kills every importer. `refreshXaiToken` imports the xAI OAuth
 // service, which imports `open`, so no Grok refresh could ever reach auth.x.ai on Windows.
 //

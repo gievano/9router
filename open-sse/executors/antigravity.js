@@ -80,7 +80,7 @@ function parseImageConfig(model) {
     if (w <= 16 && h <= 16) {
       config.aspectRatio = `${w}:${h}`;
     } else {
-      // Resolution like 1024x768 — derive aspect ratio
+      // Resolution like 1024x768 - derive aspect ratio
       const gcd = (a, b) => b ? gcd(b, a % b) : a;
       const d = gcd(w, h);
       config.aspectRatio = `${w/d}:${h/d}`;
@@ -147,7 +147,7 @@ export class AntigravityExecutor extends BaseExecutor {
       // Strip model name suffixes for the actual API model name
       const cleanModel = model.replace(/-(\d+)x(\d+)$/, "");
 
-      // Build simplified contents — text-only, merge all user messages
+      // Build simplified contents - text-only, merge all user messages
       const contents = [];
       const srcContents = body.request?.contents || body.contents || [];
       for (const c of srcContents) {
@@ -547,7 +547,7 @@ export class AntigravityExecutor extends BaseExecutor {
   }
 }
 
-// AG decoy tools — same names as AG native defaults, redirect to _ide suffixed tools
+// AG decoy tools - same names as AG native defaults, redirect to _ide suffixed tools
 const AG_DECOY_TOOLS = [
   {
     name: "browser_subagent",

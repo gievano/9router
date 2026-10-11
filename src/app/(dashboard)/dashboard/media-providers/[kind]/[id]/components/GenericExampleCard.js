@@ -136,7 +136,7 @@ export function GenericExampleCard({ providerId, kind }) {
     ...(supportsMask && effectiveMaskImage ? { mask_image: effectiveMaskImage } : {}),
   };
 
-  // Streaming supported for codex image (Plus/Pro accounts) — disabled when binary output requested
+  // Streaming supported for codex image (Plus/Pro accounts) - disabled when binary output requested
   const wantBinary = kind === "image" && imageOutputFormat === "binary";
   const useStreaming = kind === "image" && providerId === "codex" && !wantBinary;
   const apiPathWithQuery = `${apiPath}${wantBinary ? "?response_format=binary" : ""}`;
@@ -171,7 +171,7 @@ export function GenericExampleCard({ providerId, kind }) {
         return;
       }
       const ctype = res.headers.get("content-type") || "";
-      // Binary image response — convert to blob URL
+      // Binary image response - convert to blob URL
       if (ctype.startsWith("image/")) {
         const blob = await res.blob();
         const objUrl = URL.createObjectURL(blob);
@@ -243,7 +243,7 @@ export function GenericExampleCard({ providerId, kind }) {
     <Card>
       <h2 className="text-lg font-semibold mb-4">Example</h2>
       <div className="flex flex-col gap-2.5">
-        {/* Model selector — dropdown if presets exist, else manual input for media kinds */}
+        {/* Model selector - dropdown if presets exist, else manual input for media kinds */}
         {kindModels.length > 0 ? (
           <Row label="Model">
             <select
@@ -432,7 +432,7 @@ export function GenericExampleCard({ providerId, kind }) {
           </Row>
         )}
 
-        {/* Extra fields — for kinds without model concept (webSearch/webFetch), show all; otherwise filter by model.params */}
+        {/* Extra fields - for kinds without model concept (webSearch/webFetch), show all; otherwise filter by model.params */}
         {(exConfig.extraFields || [])
           .filter((f) => kindModels.length === 0 || (Array.isArray(selectedModelObj?.params) && selectedModelObj.params.includes(f.key)))
           .map((f) => (
@@ -468,7 +468,7 @@ export function GenericExampleCard({ providerId, kind }) {
           </Row>
         ))}
 
-        {/* Output Format toggle (image only) — last */}
+        {/* Output Format toggle (image only) - last */}
         {kind === "image" && (
           <Row label="Output Format">
             <select

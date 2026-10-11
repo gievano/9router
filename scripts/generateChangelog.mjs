@@ -145,7 +145,7 @@ function main() {
     return 1;
   }
   console.log(
-    `[changelog] ${version} (${date}) — ${commitCount} commit${commitCount === 1 ? "" : "s"}${versionWritten ? `, version ${bumped}` : ""}`,
+    `[changelog] ${version} (${date}) - ${commitCount} commit${commitCount === 1 ? "" : "s"}${versionWritten ? `, version ${bumped}` : ""}`,
   );
   return 0;
 }

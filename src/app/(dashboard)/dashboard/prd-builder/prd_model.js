@@ -2,7 +2,7 @@
  * Pure logic behind the PRD Builder: the one-shot prompt, draft persistence,
  * and shared helpers.
  *
- * Kept out of the JSX component so the test suite can import it directly —
+ * Kept out of the JSX component so the test suite can import it directly -
  * vitest here has no JSX transform.
  */
 
@@ -16,7 +16,7 @@ export const STORAGE_KEY = "prd-builder-draft-v1";
  * complete document.
  *
  * Section titles are requested in the user's own language rather than pinned
- * to English — an Indonesian prompt should yield an Indonesian PRD, matching
+ * to English - an Indonesian prompt should yield an Indonesian PRD, matching
  * how the rest of the dashboard follows whatever language it is given.
  */
 export function buildPrompt(prompt) {
@@ -73,7 +73,7 @@ export function loadDraft(storage) {
 
 /**
  * Persist a draft. Returns false instead of throwing when storage is
- * unavailable (private mode, quota) — losing autosave must not break the page.
+ * unavailable (private mode, quota) - losing autosave must not break the page.
  */
 export function saveDraft(storage, draft) {
   if (!storage) return false;

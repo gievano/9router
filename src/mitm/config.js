@@ -4,7 +4,7 @@ const fs = require("fs");
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
-// Resolve lsof absolute path — packaged apps / sudo secure_path may strip /usr/sbin from PATH
+// Resolve lsof absolute path - packaged apps / sudo secure_path may strip /usr/sbin from PATH
 const LSOF_BIN = (() => {
   if (process.platform === "win32") return null;
   for (const p of ["/usr/sbin/lsof", "/usr/bin/lsof", "/sbin/lsof"]) {
@@ -26,7 +26,7 @@ const TARGET_HOSTS = [
 const URL_PATTERNS = {
   antigravity: [":generateContent", ":streamGenerateContent"],
   copilot: ["/chat/completions", "/v1/messages", "/responses"],
-  // Legacy path form. Kiro IDE 1.0.228+ posts to `/` with x-amz-target instead —
+  // Legacy path form. Kiro IDE 1.0.228+ posts to `/` with x-amz-target instead -
   // see isChatRequest() for the header-based match.
   kiro: ["/generateAssistantResponse"],
   cursor: ["/BidiAppend", "/RunSSE", "/RunPoll", "/Run"],
@@ -83,7 +83,7 @@ const MODEL_PATTERNS = {
   ],
 };
 
-// Models that must NEVER be re-routed — always passthrough to the real upstream, even when
+// Models that must NEVER be re-routed - always passthrough to the real upstream, even when
 // the tool's other models are mapped. Antigravity's tab-autocomplete (`tab_jump_flash_lite_preview`,
 // `tab_flash_lite_preview`, requestType tab/tab_jump) is latency-critical inline completion; routing
 // it through 9Router to an external chat model makes typing laggy and burns provider quota per

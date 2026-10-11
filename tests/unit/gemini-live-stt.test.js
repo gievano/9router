@@ -148,7 +148,7 @@ afterEach(() => {
 describe("Live transport dispatch via caller marker", () => {
   it("T3: transport 'gemini-live' opens a WebSocket, never REST; text = accumulated deltas", async () => {
     // REST-fallback contrast (folded from T1): a live-capability id with no
-    // transport marker falls to REST and fails cleanly — the live path is opt-in.
+    // transport marker falls to REST and fails cleanly - the live path is opt-in.
     stubFetch(() => ({
       ok: false,
       status: 400,
@@ -172,8 +172,8 @@ describe("Live transport dispatch via caller marker", () => {
     await expect(result.response.json()).resolves.toEqual({ text: "hello world" });
     expect(fetchCalls).toHaveLength(0);
 
-    // Registry-marker dispatch: the live entry's transport field alone — no
-    // caller transport param — routes to the WS path; id derived from the
+    // Registry-marker dispatch: the live entry's transport field alone - no
+    // caller transport param - routes to the WS path; id derived from the
     // registry, never a literal.
     const regId = (PROVIDER_MODELS.gemini || []).find(
       (m) => m && m.kind === "stt" && m.transport === "gemini-live",
@@ -223,7 +223,7 @@ describe("Live transport dispatch via caller marker", () => {
     expect(ws.url).toContain(LIVE_ID);
 
     // REST contrast (folded from T2): an ordinary gemini model still transcribes
-    // over REST generateContent — the live path is opt-in, never the default.
+    // over REST generateContent - the live path is opt-in, never the default.
     stubFetch(() => ({
       ok: true,
       status: 200,
@@ -283,7 +283,7 @@ describe("Setup frame knobs", () => {
 
   it("T9: tiny setup_timeout_ms with no server ack errors out within the bound", async () => {
     const { pending } = await liveSession({ formData: mkFormData({ setup_timeout_ms: "5" }) });
-    // deliberately emit nothing — the client knob must end the wait
+    // deliberately emit nothing - the client knob must end the wait
     const result = await pending;
     expect(result.success).toBe(false);
     expect(typeof result.status).toBe("number");
@@ -351,7 +351,7 @@ describe("Custom-model transport persistence via POST /api/models/custom", () =>
   const originalDataDir = process.env.DATA_DIR;
 
   beforeEach(() => {
-    // paths.js freezes DATA_DIR at module load — re-evaluate the db chain per test
+    // paths.js freezes DATA_DIR at module load - re-evaluate the db chain per test
     vi.resetModules();
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "9router-gemini-live-"));
     process.env.DATA_DIR = tempDir;
@@ -391,7 +391,7 @@ describe("Custom-model transport persistence via POST /api/models/custom", () =>
     expect(row.transport).toBe("gemini-live");
   });
 
-  it("T14: unknown transport is silently dropped — prior whitelisted transport survives re-save", { timeout: 30000 }, async () => {
+  it("T14: unknown transport is silently dropped - prior whitelisted transport survives re-save", { timeout: 30000 }, async () => {
     const first = await postCustom({
       providerAlias: "gemini",
       id: "probe-custom-capability-10",
@@ -421,7 +421,7 @@ describe("Custom-model transport persistence via POST /api/models/custom", () =>
 // persisted custom-model transport onto the handleSttCore dispatch; T13/T14
 // stop at repo persistence. Fake model id is absent from the registry, so a
 // WebSocket opening here is observable proof the caller-supplied transport
-// marker was resolved and passed — deleting that resolution fails T15.
+// marker was resolved and passed - deleting that resolution fails T15.
 
 describe("App-layer custom transport resolution (stt.js)", () => {
   it("T15: persisted custom gemini-live transport reaches WS dispatch through real handleStt", async () => {

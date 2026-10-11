@@ -51,7 +51,7 @@ export function EmbeddingExampleCard({ providerId, customAlias }) {
   const endpoint = useTunnel ? tunnelEndpoint : localEndpoint;
   const modelFull = selectedModel ? `${providerAlias}/${selectedModel}` : "";
 
-  // Build request body — include dimensions only if user provided a positive number
+  // Build request body - include dimensions only if user provided a positive number
   const buildBody = () => {
     const body = { model: modelFull, input: input.trim() };
     const dim = Number(dimensions);
@@ -108,7 +108,7 @@ export function EmbeddingExampleCard({ providerId, customAlias }) {
       <h2 className="text-lg font-semibold mb-4">Example</h2>
 
       <div className="flex flex-col gap-2.5">
-        {/* Model — text input for custom node, dropdown otherwise */}
+        {/* Model - text input for custom node, dropdown otherwise */}
         <Row label="Model">
           {isCustom ? (
             <input
@@ -139,7 +139,7 @@ export function EmbeddingExampleCard({ providerId, customAlias }) {
               className="w-full min-w-0 flex-1 px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
               placeholder="http://localhost:3000"
             />
-            {/* Tunnel toggle — only show if tunnel URL is available */}
+            {/* Tunnel toggle - only show if tunnel URL is available */}
             {tunnelEndpoint && (
               <button
                 onClick={() => setUseTunnel((v) => !v)}
@@ -186,7 +186,7 @@ export function EmbeddingExampleCard({ providerId, customAlias }) {
           </div>
         </Row>
 
-        {/* Dimensions (optional) — truncate embedding vector length */}
+        {/* Dimensions (optional) - truncate embedding vector length */}
         <Row label="Dimensions">
           <input
             type="number"
@@ -228,7 +228,7 @@ export function EmbeddingExampleCard({ providerId, customAlias }) {
         {/* Error */}
         {error && <p className="text-xs text-red-500 break-words">{error}</p>}
 
-        {/* Response — default example or real result */}
+        {/* Response - default example or real result */}
         <div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-1.5">
             <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">

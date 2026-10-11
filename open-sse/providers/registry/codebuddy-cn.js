@@ -53,7 +53,7 @@ export default {
     { id: "kimi-k2.6", name: "Kimi-K2.6" },
     // Catalog mirrors the server's product-config payload (the plugin fetches
     // it from copilot.tencent.com). Models the server no longer publishes are
-    // removed even when the chat endpoint still answers them — the published
+    // removed even when the chat endpoint still answers them - the published
     // list is the contract. Drop log: glm-5.0 / glm-4.7 and hy4-preview-x
     // (endpoint returns 11102 "model service info not found"), plus
     // glm-5.0-turbo / minimax-m2.7 / kimi-k2.5 / hy3-preview /

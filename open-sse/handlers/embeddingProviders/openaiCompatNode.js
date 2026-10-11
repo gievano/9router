@@ -1,4 +1,4 @@
-// Custom node providers (openai-compatible-* / custom-embedding-*) — baseUrl from credentials
+// Custom node providers (openai-compatible-* / custom-embedding-*) - baseUrl from credentials
 import createOpenAIEmbeddingAdapter from "./openai.js";
 
 const baseAdapter = createOpenAIEmbeddingAdapter("openai");

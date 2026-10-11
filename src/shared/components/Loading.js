@@ -36,7 +36,7 @@ export function PageLoading({ message = "Loading..." }) {
 }
 
 // Centered busy overlay for long operations (e.g. backup export/import).
-// Same contract as before — message, progress, fixed/absolute — now rendered by
+// Same contract as before - message, progress, fixed/absolute - now rendered by
 // LongTaskBanner so every banner in the app shares one look. Pass onCancel to
 // also offer Cancel and the minimize-to-corner control; without it the overlay
 // is purely informational, exactly as callers have always used it.
@@ -58,16 +58,16 @@ export function CenterLoading({ message, progress = null, fixed = true, classNam
 export const BusyOverlay = CenterLoading;
 
 // Blocking progress card for long operations (backup export/import, bulk
-// imports, bulk adds). Callers keep passing { title, message, section, progress };
+// imports, bulk adds). Callers keep passing { title, message, progress };
 // the presentation lives in LongTaskBanner so every banner shares the same
 // framed, theme-aware look.
 //
 // A caller that passes onCancel also gets Cancel (Esc works too) and a
-// minimize control that shrinks the card to a corner chip without losing it —
+// minimize control that shrinks the card to a corner chip without losing it -
 // both are advisory: the card hides itself at once and the caller decides what
 // actually stops. Callers without onCancel see the same informational card they
 // always had, so no existing flow changed behaviour by upgrading.
-export function ProgressCard({ title, message, section, progress = null, fixed = true, className, onCancel, onBackground }) {
+export function ProgressCard({ title, message, progress = null, fixed = true, className, onCancel, onBackground }) {
   // Keyed by title: a second operation remounts the banner instead of
   // inheriting the previous one's collapsed state.
   return (
@@ -75,7 +75,6 @@ export function ProgressCard({ title, message, section, progress = null, fixed =
       key={title}
       title={title}
       message={message}
-      section={section}
       progress={progress ?? null}
       fixed={fixed}
       className={className}

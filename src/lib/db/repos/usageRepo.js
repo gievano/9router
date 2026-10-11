@@ -146,7 +146,7 @@ async function calculateCost(provider, model, tokens) {
     if (!pricing) return 0;
 
     // Delegate the actual math to the single source of truth (avoids the two
-    // copies drifting apart — see open-sse/providers/pricing.js for the
+    // copies drifting apart - see open-sse/providers/pricing.js for the
     // cache-inclusive prompt_tokens convention this assumes).
     const { calculateCostFromTokens } = await import("open-sse/providers/pricing.js");
     return calculateCostFromTokens(tokens, pricing);
@@ -469,7 +469,7 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
     }
   }
 
-  // last10Minutes — query 10min window
+  // last10Minutes - query 10min window
   const now = new Date();
   const currentMinuteStart = new Date(Math.floor(now.getTime() / 60000) * 60000);
   const tenMinutesAgo = new Date(currentMinuteStart.getTime() - 9 * 60 * 1000);
@@ -815,7 +815,7 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
         const keyName = keyInfo?.name || r.apiKey.slice(0, 8) + "...";
         const apiKeyMasked = maskApiKey(r.apiKey);
         // Key by the FULL api key (same as the daily rollup + lastUsed overlay)
-        // — masking here collided all keys sharing a prefix into one bucket.
+        // - masking here collided all keys sharing a prefix into one bucket.
         const akKey = `${r.apiKey}|${r.model}|${r.provider || "unknown"}`;
         if (!stats.byApiKey[akKey]) {
           stats.byApiKey[akKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel: r.model, provider: providerDisplayName, apiKeyMasked, keyName, apiKeyKey: apiKeyMasked, lastUsed: r.timestamp };
@@ -1016,7 +1016,7 @@ export async function getChartData(period = "7d", filterApiKey = null, allowedMo
  * Compact per-day totals for the Overview sparklines (#16) plus a session-
  * scoped activity pulse for the heatmap (#15).
  *
- * The sparklines read `usageDaily`, so an idle day is a real zero — distinct
+ * The sparklines read `usageDaily`, so an idle day is a real zero - distinct
  * from the chart API, which merges today's live rows. The heatmap buckets the
  * 60 most recent session-scoped requests by local weekday × hour; session
  * scoping matches the rest of the Overview, so a key user sees their own
@@ -1046,7 +1046,7 @@ export async function getSparks(period = "30d", filterApiKey = null, allowedMode
       totals.cost.push(0); totals.cached.push(0);
       continue;
     }
-    // usageDaily has no top-level cachedTokens — it lives per model bucket.
+    // usageDaily has no top-level cachedTokens - it lives per model bucket.
     const dayCached = Object.values(day.byModel || {}).reduce(
       (sum, m) => sum + (Number(m.cachedTokens) || 0), 0,
     );
@@ -1073,7 +1073,7 @@ export async function getSparks(period = "30d", filterApiKey = null, allowedMode
     totals.cost.push(cost); totals.cached.push(cached);
   }
 
-  // Heatmap source: the most recent rows the session may see. Capped — a
+  // Heatmap source: the most recent rows the session may see. Capped - a
   // heat cell is a traffic pattern, not an audit trail.
   const keyRows = filterApiKey
     ? db.all(

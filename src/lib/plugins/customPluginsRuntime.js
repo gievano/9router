@@ -77,7 +77,7 @@ function matchesModel(modelList, modelKey) {
  * what the client asked for, provider/model as routed, the bare model id, and the
  * bare name behind a namespaced call. Shared by the request and response paths so
  * a model picked for a plugin on the dashboard is found by identical rules on
- * both sides — a plugin that silently stopped applying halfway through a request
+ * both sides - a plugin that silently stopped applying halfway through a request
  * would be worse than one that never applied.
  */
 export function modelKeysToTest(requestedModel, provider, model) {
@@ -94,7 +94,7 @@ export function modelKeysToTest(requestedModel, provider, model) {
 }
 
 /**
- * Image Vision plugin — REAL implementation.
+ * Image Vision plugin - REAL implementation.
  *
  * Instead of converting images to fake text strings, we simply signal that
  * the model now supports vision. The chat pipeline (stripUnsupportedModalities)
@@ -102,7 +102,7 @@ export function modelKeysToTest(requestedModel, provider, model) {
  * target provider (base64, URL, etc).
  *
  * For models that truly do not support vision at the provider level, the
- * upstream API may reject the request — but that is transparent and honest
+ * upstream API may reject the request - but that is transparent and honest
  * rather than silently returning garbage extracted from JPEG binary.
  *
  * We add a lightweight system nudge so models that *can* read images know
@@ -146,11 +146,11 @@ export function applyImageVision(body) {
     }
   }
 
-  return true; // always signal vision active — images pass through to translator
+  return true; // always signal vision active - images pass through to translator
 }
 
 /**
- * Think Deeper plugin — REAL implementation.
+ * Think Deeper plugin - REAL implementation.
  *
  * Sets native reasoning parameters so the provider routes to its deepest
  * reasoning tier. Uses the same params the 9Router thinking pipeline reads.
@@ -176,7 +176,7 @@ export function applyThinkDeeper(body, sourceFormat) {
 }
 
 /**
- * Speed Mode plugin — REAL implementation.
+ * Speed Mode plugin - REAL implementation.
  *
  * Uses native reasoning-disable parameters. Skips thinking entirely
  * so responses come back instantly without any chain-of-thought overhead.
@@ -198,7 +198,7 @@ export function applySpeedMode(body, sourceFormat) {
 }
 
 /* ------------------------------------------------------------------ *
- * JSON Guard — request side
+ * JSON Guard - request side
  * ------------------------------------------------------------------ */
 
 /**
@@ -235,10 +235,10 @@ export function applyJsonGuardRequest(body, sourceFormat) {
   if (sourceFormat === FORMATS.CLAUDE) {
     // Claude has no response_format; a system instruction is the honest lever.
     if (typeof body.system === "string" && !body.system.includes("valid JSON")) {
-      body.system = `${body.system}\n\nJSON Guard is active: answer with one valid JSON value and nothing else — no prose, no markdown fence.`;
+      body.system = `${body.system}\n\nJSON Guard is active: answer with one valid JSON value and nothing else - no prose, no markdown fence.`;
     } else {
       const sysIdx = Array.isArray(body.messages) ? body.messages.findIndex((m) => m.role === "system") : -1;
-      const note = "JSON Guard is active: answer with one valid JSON value and nothing else — no prose, no markdown fence.";
+      const note = "JSON Guard is active: answer with one valid JSON value and nothing else - no prose, no markdown fence.";
       if (sysIdx >= 0 && typeof body.messages[sysIdx].content === "string") {
         body.messages[sysIdx].content = `${body.messages[sysIdx].content}\n\n${note}`;
       } else {
@@ -252,7 +252,7 @@ export function applyJsonGuardRequest(body, sourceFormat) {
 }
 
 /* ------------------------------------------------------------------ *
- * Context Squeezer — request side
+ * Context Squeezer - request side
  * ------------------------------------------------------------------ */
 
 /**
@@ -276,7 +276,7 @@ export function applyContextSqueezer(body, provider, model) {
 }
 
 /* ------------------------------------------------------------------ *
- * OpenAI Tool Bridge — request side
+ * OpenAI Tool Bridge - request side
  * ------------------------------------------------------------------ */
 
 /**
@@ -303,8 +303,8 @@ export function applyOpenAIToolBridgeRequest(body, provider, model) {
 
   // Drop the tool list for a backend that cannot take it. Web-cookie providers
   // are text-only (capabilities.js: `tools: false`) and their executors reject
-  // any request carrying tools with a hard 400 — "Gemini Web does not support
-  // OpenAI function tools" — so the model never gets a chance to answer. The
+  // any request carrying tools with a hard 400 - "Gemini Web does not support
+  // OpenAI function tools" - so the model never gets a chance to answer. The
   // catalogue is already snapshotted above; the response side turns the model's
   // answer back into tool_calls from that snapshot.
   //

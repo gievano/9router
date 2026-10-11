@@ -1,4 +1,4 @@
-// UI display config — all providers derive from registry.display.
+// UI display config - all providers derive from registry.display.
 import REGISTRY from "open-sse/providers/registry/index.js";
 
 export const RISK_NOTICE = "⚠️ Risk Notice: This provider uses a subscription/OAuth session not officially licensed for proxy/router use. Account may be restricted or banned. Use at your own risk.";

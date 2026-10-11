@@ -53,7 +53,7 @@ export function createStreamController({ onDisconnect, onError, log, provider, m
       onDisconnect?.({ reason, duration: Date.now() - startTime });
     },
 
-    // Call when stream completes normally (no line here — "📊 done" is authoritative)
+    // Call when stream completes normally (no line here - "📊 done" is authoritative)
     handleComplete: () => {
       if (disconnected) return;
       disconnected = true;
@@ -92,7 +92,7 @@ export function createStreamController({ onDisconnect, onError, log, provider, m
  * Wraps existing transform stream and adds abort capability.
  *
  * Stall detection lives in pipeWithDisconnect (tied to upstream byte
- * activity), not here — output of the transform stream may be silent
+ * activity), not here - output of the transform stream may be silent
  * for long periods while raw bytes still flow (e.g. Kiro EventStream
  * binary frames buffering, Claude reasoning streams).
  *

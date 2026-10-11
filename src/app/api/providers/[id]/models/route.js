@@ -342,7 +342,7 @@ const PROVIDER_MODELS_CONFIG = {
       };
     },
   },
-  // Zed has no static catalog by design (live /models only) — same cursor
+  // Zed has no static catalog by design (live /models only) - same cursor
   // direct pattern: resolve with the connection's own credentials (never
   // exposed to the browser), return rich metadata, drop disabled entries.
   // Empty/failure yields an explicit warning, never a silent zero list.

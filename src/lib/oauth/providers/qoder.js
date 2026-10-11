@@ -4,7 +4,7 @@ import { QODER_CONFIG } from "../constants/oauth.js";
  * Build a Qoder device-code provider for a region. `config` is the registry
  * oauth block (see open-sse/providers/registry/qoder.js / qoder-cn.js), which
  * carries the region's login/deviceToken/userInfo URLs. The device flow is
- * identical across regions — only the hosts differ.
+ * identical across regions - only the hosts differ.
  */
 export function createQoderProvider(config) {
   return {

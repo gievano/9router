@@ -74,7 +74,7 @@ const normalize = (value) => {
 
 /**
  * Extract tokens via better-sqlite3 (bundled dependency).
- * This is the preferred strategy — no external CLI required.
+ * This is the preferred strategy - no external CLI required.
  */
 function extractTokensViaBetterSqlite(dbPath) {
   // Dynamic require so the route stays importable even if native bindings fail
@@ -218,7 +218,7 @@ export async function GET() {
       }
     }
 
-    // Strategy 1: better-sqlite3 (bundled — no external tools required)
+    // Strategy 1: better-sqlite3 (bundled - no external tools required)
     try {
       const tokens = extractTokensViaBetterSqlite(dbPath);
       if (tokens.accessToken && tokens.machineId) {
@@ -229,7 +229,7 @@ export async function GET() {
         });
       }
     } catch {
-      // Native bindings unavailable — try CLI fallback
+      // Native bindings unavailable - try CLI fallback
     }
 
     // Strategy 2: sqlite3 CLI

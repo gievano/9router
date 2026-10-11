@@ -4,7 +4,7 @@ const { fetchRouter, pipeTransformedEventStream } = require("./base");
 const fs = require("fs");
 const path = require("path");
 
-// Debug trace log — written to data/logs/mitm/kiro-debug.log (dev only)
+// Debug trace log - written to data/logs/mitm/kiro-debug.log (dev only)
 const DEBUG_LOG = path.join(__dirname, "../../../data/logs/mitm/kiro-debug.log");
 function dbg(msg) {
   if (!IS_DEV) return;
@@ -13,7 +13,7 @@ function dbg(msg) {
   } catch {}
 }
 
-// ─── CRC32 (standard, polynomial 0xEDB88320 — same as AWS EventStream) ───────
+// ─── CRC32 (standard, polynomial 0xEDB88320 - same as AWS EventStream) ───────
 const CRC32_TABLE = (() => {
   const t = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {
@@ -38,7 +38,7 @@ function crc32(buf) {
 function initKiroState(modelId) {
   return {
     modelId: modelId || null,       // Model name from first chunk
-    toolCallInit: {},               // { [index]: { id, name } } — tracks seen tools
+    toolCallInit: {},               // { [index]: { id, name } } - tracks seen tools
     hasToolCalls: false,           // Whether this response uses tool calls
     finishSent: false,             // Whether termination has been emitted
     usage: null,                   // Accumulated usage from usage-only chunks
@@ -79,7 +79,7 @@ function extractThinking(text, state) {
   const endIdx = working.indexOf(closeTag, startIdx + tag.length);
 
   if (endIdx === -1) {
-    // Opening tag without closing — buffer for next chunk
+    // Opening tag without closing - buffer for next chunk
     state.inThink = true;
     state.thinkBuf = working.slice(startIdx);
     const before = working.slice(0, startIdx).trim();
@@ -394,7 +394,7 @@ function convertOpenAIToKiro(chunk, state) {
     state.usage = chunk.usage;
   }
 
-  // Handle tool calls — stream incrementally, matching real API format
+  // Handle tool calls - stream incrementally, matching real API format
   if (delta.tool_calls) {
     state.hasToolCalls = true;
     for (const tc of delta.tool_calls) {
@@ -431,7 +431,7 @@ function convertOpenAIToKiro(chunk, state) {
     }));
   }
 
-  // Handle text content — extract thinking blocks, emit rest as assistantResponseEvent
+  // Handle text content - extract thinking blocks, emit rest as assistantResponseEvent
   if (delta.content) {
     const { thinking, text } = extractThinking(delta.content, state);
 
@@ -459,7 +459,7 @@ function convertOpenAIToKiro(chunk, state) {
   }
 
   if (frames.length === 0) {
-    // اولین چانک ممکنه فقط role/empty باشه — initial رو همون‌جا بفرست
+    // اولین چانک ممکنه فقط role/empty باشه - initial رو همون‌جا بفرست
     if (!state.initialSent) return withInitialFrame(state, null);
     return null;
   }
@@ -529,7 +529,7 @@ async function intercept(req, res, bodyBuffer, mappedModel) {
     // 1 + 2: CodeWhisperer → OpenAI messages + tools
     const messages = codeWhispererToMessages(body);
     if (messages.length === 0) {
-      throw new Error("codeWhispererToMessages produced 0 messages — check request body");
+      throw new Error("codeWhispererToMessages produced 0 messages - check request body");
     }
 
     const tools = extractTools(body);

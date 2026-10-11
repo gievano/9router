@@ -29,7 +29,7 @@ export function isMuseSparkModel(modelId) {
 }
 
 // Endpoint families for OpenCode models outside the curated registry (modelsFetcher /
-// passthrough ids) — regex keeps auto-fetched models on the right endpoint:
+// passthrough ids) - regex keeps auto-fetched models on the right endpoint:
 // /responses (gpt/grok/muse-spark), /messages (minimax/qwen), /chat/completions (rest).
 // Curated registry entries always win; this is the unknown-id fallback only.
 const OPENCODE_FAMILIES = [

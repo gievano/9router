@@ -48,7 +48,7 @@ function StatusPill({ status }) {
  *
  * A bare model id that only one row carries reads best on its own. The same id
  * reachable through several provider connections would print the same string
- * several times — four rows all saying "minimax-m2" read as a bug (they did).
+ * several times - four rows all saying "minimax-m2" read as a bug (they did).
  * Those ambiguous rows show the provider so each one names the connection it
  * actually calls.
  */
@@ -56,7 +56,7 @@ function labelFor(entry, ambiguous) {
   const bare = String(entry.model || entry.name || "");
   if (!ambiguous) return bare;
   // routedModel is the address a request actually goes to, and it is unique
-  // per connection — including when the model id already carries a vendor
+  // per connection - including when the model id already carries a vendor
   // prefix (`kc/openai/gpt-4.1` vs `openai/gpt-4.1`), which a hand-built
   // `provider/bare` prefix cannot disambiguate.
   const routed = String(entry.routedModel || entry.fullModel || "").trim();

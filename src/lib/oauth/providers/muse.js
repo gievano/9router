@@ -1,6 +1,6 @@
 import { MUSE_CONFIG } from "../constants/oauth.js";
 
-// Muse Code subscription — Meta account device code flow to auth.meta.com,
+// Muse Code subscription - Meta account device code flow to auth.meta.com,
 // then mint the Model API key (LLM|…) the chat transport actually uses.
 const MUSE_KEY_URL = "https://api.meta.ai/muse-code/key";
 const API_VERSION = "1.0.0";
@@ -84,7 +84,7 @@ const muse = {
         const err = JSON.parse(text);
         if (err?.title || err?.detail) {
           msg = [err.title, err.detail].filter(Boolean).join(": ");
-          if (err.action_url) msg += ` — ${err.action_url}`;
+          if (err.action_url) msg += ` - ${err.action_url}`;
         }
       } catch { /* non-JSON error body */ }
       throw new Error(`Muse Code key mint failed: ${msg}`);
@@ -98,7 +98,7 @@ const muse = {
     }
 
     if (payload.is_subs_active === false) {
-      throw new Error("Muse Code subscription is inactive — activate it on muse.ai first");
+      throw new Error("Muse Code subscription is inactive - activate it on muse.ai first");
     }
     const actionUrl = payload.action_url || payload.require_payment_action_url;
     if (!payload.api_key && (payload.require_payment || actionUrl)) {
@@ -113,7 +113,7 @@ const muse = {
   mapTokens: (tokens, extra) => {
     const payload = extra?.key || {};
     // Chat requests carry the minted Model API key, not the Meta account token.
-    // No expiry/refresh from Meta — a dead key means re-login.
+    // No expiry/refresh from Meta - a dead key means re-login.
     return {
       accessToken: payload.api_key,
       refreshToken: null,

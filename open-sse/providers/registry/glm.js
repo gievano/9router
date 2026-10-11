@@ -20,11 +20,11 @@ export default {
   // account to auto-mint a coding-plan key.
   authModes: ["oauth", "apikey"],
   hasOAuth: true,
-  // OAuth = ZCode CLI polling flow (apps/zcode-cli cli-oauth.ts) — no PKCE, no
+  // OAuth = ZCode CLI polling flow (apps/zcode-cli cli-oauth.ts) - no PKCE, no
   // local callback: init mints a one-off poll token, the browser authorize_url
   // is server-generated, and poll/ready carries the tokens. The Z.AI OAuth
   // token is exchanged for a business JWT, then a long-lived coding-plan API
-  // key (no refresh grant — re-login on expiry, same as the official CLI).
+  // key (no refresh grant - re-login on expiry, same as the official CLI).
   oauth: {
     providerId: "zai",
     cliInitUrl: "https://zcode.z.ai/api/v1/oauth/cli/init",

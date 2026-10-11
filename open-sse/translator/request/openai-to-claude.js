@@ -17,7 +17,7 @@ export function openaiToClaudeRequest(model, body, stream) {
   // Tool name mapping for Claude OAuth (capitalizedName → originalName)
   const toolNameMap = new Map();
   // Cap max_tokens at the model's real output ceiling (e.g. Opus 4.8 = 128000),
-  // not the conservative 64000 default — otherwise a high-output model is
+  // not the conservative 64000 default - otherwise a high-output model is
   // pre-clamped here before prepareClaudeRequest's model-aware step runs.
   const modelCeiling = getCapabilitiesForModel(null, model).maxOutput || undefined;
   const result = {
@@ -157,7 +157,7 @@ Respond ONLY with the JSON object, no other text.`);
       //   (a) openai-spec: { type: "function", function: { name, ... } }
       //   (b) legacy/loose: { function: { name, ... } }   (no parent `type`)
       // Both must yield toolData.name = "echo". Treat the bare-function shape
-      // as a function tool too — Anthropic-compatible gateways (notably
+      // as a function tool too - Anthropic-compatible gateways (notably
       // MiniMax M3 at api.minimaxi.com) reject payloads where this branch
       // falls through with `toolData.name === undefined`, returning their
       // upstream code (2013) "invalid tool type". See #2435.
@@ -314,7 +314,7 @@ function convertOpenAIToolChoice(choice) {
     if (choice.function?.name) {
       return { type: "tool", name: choice.function.name };
     }
-    // Already Claude-native — only pass through types Claude actually accepts,
+    // Already Claude-native - only pass through types Claude actually accepts,
     // so a malformed or unknown type can never leak into the upstream request.
     if (CLAUDE_TOOL_CHOICE_TYPES.has(choice.type)) {
       return choice;

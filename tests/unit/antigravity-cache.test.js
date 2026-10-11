@@ -191,7 +191,7 @@ describe.skipIf(!ENABLE)("Antigravity cache behavior (real API)", () => {
 
     randomResults.forEach(r => expect(r.status).toBe(200));
     codexResults.forEach(r => expect(r.status).toBe(200));
-    // No strict comparison — just report. AG cache is session-independent per prior tests.
+    // No strict comparison - just report. AG cache is session-independent per prior tests.
   }, 180000);
 
   it("unique prompt (never seen) → explore when cache starts hitting", async () => {
@@ -209,7 +209,7 @@ describe.skipIf(!ENABLE)("Antigravity cache behavior (real API)", () => {
     }
 
     results.forEach(r => expect(r.status).toBe(200));
-    // Log whether any call ever hits cache — no strict assertion (exploratory)
+    // Log whether any call ever hits cache - no strict assertion (exploratory)
     const anyHit = results.some(r => r.cachedTokens >= MIN_CACHE_TOKENS);
     console.log(`[unique-prompt] any-hit=${anyHit}`);
   }, 90000);

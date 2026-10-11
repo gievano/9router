@@ -6,7 +6,7 @@ import { FORMATS } from "../../open-sse/translator/formats.js";
 // Reverse map must be able to reach "max": LEVEL_TO_BUDGET.max = 128000 and
 // xhigh = 32768, so the xhigh/max threshold is their midpoint (80384).
 // Previously any budget > 28672 collapsed to "xhigh", making "max"
-// unreachable from Claude Code budget_tokens — its default thinking budget
+// unreachable from Claude Code budget_tokens - its default thinking budget
 // (MAX_THINKING_TOKENS) could never produce effort "max".
 describe("budgetToLevel reaches max tier", () => {
   it("budget 98304 → \"max\"", () => {

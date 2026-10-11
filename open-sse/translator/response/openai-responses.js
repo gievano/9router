@@ -158,8 +158,8 @@ export function openaiToOpenAIResponsesResponse(chunk, state) {
     //
     // That only holds on the direct openai:openai-responses route. When this converter
     // runs as the second hop of a pivot (Claude/Gemini/Kiro upstream), translateResponse()
-    // drops the terminal null chunk before reaching us — the first hop returns null for
-    // it, leaving nothing to iterate — so flushEvents() is never called and deferring
+    // drops the terminal null chunk before reaching us - the first hop returns null for
+    // it, leaving nothing to iterate - so flushEvents() is never called and deferring
     // would swallow the terminal event entirely. Keep the old behaviour there.
     const flushReachesUs = state.targetFormat === FORMATS.OPENAI;
     if (state.responsesUsage || !flushReachesUs) sendCompleted(state, emit);
@@ -562,7 +562,7 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
   // Function call started (standard function_call or custom_tool_call).
   // Index is assigned here (not on done): attributing deltas by stream position
   // merges parallel calls into index 0 whenever upstream emits all addeds
-  // before dones — the client then concatenates N JSON payloads into one
+  // before dones - the client then concatenates N JSON payloads into one
   // tool input and fails validation. The server item id is the correlator.
   if (eventType === "response.output_item.added" && (data.item?.type === RESPONSES_ITEM.FUNCTION_CALL || data.item?.type === "custom_tool_call")) {
     const item = data.item;
@@ -571,7 +571,7 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
     const key = item.id || data.item_id || state.currentToolCallId;
     let idx;
     if (key && state.respToolChatIndex.has(key)) {
-      idx = state.respToolChatIndex.get(key); // duplicate added (retry) — reuse
+      idx = state.respToolChatIndex.get(key); // duplicate added (retry) - reuse
     } else {
       idx = state.toolCallIndex++;
       if (key) state.respToolChatIndex.set(key, idx);
@@ -608,7 +608,7 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
 
   // Function call done (standard or custom_tool_call variant).
   // Index was assigned at added-time; nothing to advance. Some upstreams send
-  // complete arguments only here (no deltas) — emit them once in that case.
+  // complete arguments only here (no deltas) - emit them once in that case.
   if (eventType === "response.output_item.done" && (data.item?.type === RESPONSES_ITEM.FUNCTION_CALL || data.item?.type === "custom_tool_call")) {
     const key = data.item?.id || data.item_id;
     const idx = (key && state.respToolChatIndex?.get(key)) ?? Math.max(0, (state.toolCallIndex || 1) - 1);

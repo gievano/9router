@@ -1,4 +1,4 @@
-// HuggingFace Inference Providers router — returns binary image
+// HuggingFace Inference Providers router - returns binary image
 //
 // The router is a switchboard in front of many inference providers and is
 // addressed as `<baseUrl>/<provider>/<providerModelId>`. `providerModelId` is
@@ -31,7 +31,7 @@ function customBaseUrl(creds) {
   return typeof url === "string" && url.trim() ? url.trim().replace(/\/+$/, "") : null;
 }
 
-// The router's image-to-image payload wants raw base64 — not a data URL, not a URL.
+// The router's image-to-image payload wants raw base64 - not a data URL, not a URL.
 // Accept every shape our own callers use (data URL, bare base64, remote URL, array).
 async function sourceImage(body) {
   const raw = body?.image || (Array.isArray(body?.images) ? body.images[0] : null);
@@ -88,7 +88,7 @@ export default {
 
     return { inputs: body.prompt };
   },
-  // HF returns raw image bytes — convert to b64_json
+  // HF returns raw image bytes - convert to b64_json
   async parseResponse(response) {
     const buf = await response.arrayBuffer();
     const base64 = Buffer.from(buf).toString("base64");

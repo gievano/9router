@@ -12,7 +12,7 @@
 #
 # Without scripts/auth-guard-hooks.mjs, getGuardModule() returns null and
 # custom-server.js answers EVERY route with
-# 503 {"error":"Authorization check unavailable"} — which is exactly what a bare
+# 503 {"error":"Authorization check unavailable"} - which is exactly what a bare
 # build produces.
 #
 # Rule learned the hard way: never `cp -a node_modules` into the standalone tree.
@@ -24,7 +24,7 @@ cd /root/9router
 S=.next/standalone
 
 echo "[assembly] verifying build output"
-[ -f "$S/server.js" ] || { echo "FATAL: $S/server.js missing — build first"; exit 1; }
+[ -f "$S/server.js" ] || { echo "FATAL: $S/server.js missing - build first"; exit 1; }
 
 echo "[assembly] runtime-loaded files"
 for d in scripts src open-sse; do

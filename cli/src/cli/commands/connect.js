@@ -1,5 +1,5 @@
 /**
- * `9router connect <server-url>` — point local CLI tools (Claude Code, Codex, …) at a
+ * `9router connect <server-url>` - point local CLI tools (Claude Code, Codex, …) at a
  * REMOTE 9router server. Nothing runs locally: we log in with the dashboard
  * password, reuse/create an API key for this machine, then write the tool's
  * settings files (see connectTools.js). Works via `npx 9router connect …` with no global install.
@@ -26,7 +26,7 @@ Options:
                          in a terminal; default: claude). Supported:
                          ${TOOL_IDS.join(", ")}, all
   --password <pw>        Dashboard password (or env NINE_ROUTER_PASSWORD;
-                         prompted if omitted — preferred, keeps it out of shell history)
+                         prompted if omitted - preferred, keeps it out of shell history)
   --key-name <name>      API key name to reuse/create (default: cli-<hostname>)
   --api-key <key>        Use this API key, skip login + key lookup
   --model <model>        Model for non-Claude tools (default: ${DEFAULT_MODEL})
@@ -102,7 +102,7 @@ async function request(url, { method = "GET", body, cookie, apiKey } = {}) {
   }
   let data = null;
   try { data = await res.json(); } catch { /* non-JSON */ }
-  // Server-controlled strings get printed later — strip control chars (terminal escape injection).
+  // Server-controlled strings get printed later - strip control chars (terminal escape injection).
   if (typeof data?.error === "string") data.error = data.error.replace(/[\x00-\x1f\x7f]/g, "");
   return { status: res.status, headers: res.headers, data };
 }
@@ -128,7 +128,7 @@ async function login(server, password) {
 
 async function getOrCreateApiKey(server, cookie, keyName) {
   const list = await request(`${server}/api/keys`, { cookie });
-  if (list.status === 401) throw new Error("Unauthorized listing API keys — wrong password or session rejected");
+  if (list.status === 401) throw new Error("Unauthorized listing API keys - wrong password or session rejected");
   if (list.status !== 200) throw new Error(`Failed to list API keys (${list.status}): ${list.data?.error || ""}`);
   const keys = (list.data?.keys || []).filter((k) => k.isActive !== false);
   const existing = keys.find((k) => k.name === keyName);
@@ -226,7 +226,7 @@ async function runConnect(argv) {
   const available = await listModels(server, apiKey);
   const warnMissing = (label, model, flag) => {
     if (available && !available.has(model)) {
-      console.log(`\x1b[33m⚠ ${label}: "${model}" not listed by server — override with ${flag} <model>\x1b[0m`);
+      console.log(`\x1b[33m⚠ ${label}: "${model}" not listed by server - override with ${flag} <model>\x1b[0m`);
     }
   };
 

@@ -23,7 +23,7 @@ describe("Antigravity MITM model handling", () => {
     }
   });
 
-  // Tab-autocomplete is latency-critical inline completion — it must passthrough natively,
+  // Tab-autocomplete is latency-critical inline completion - it must passthrough natively,
   // never get re-routed onto a chat-model mapping by the broad `flash` pattern.
   it.each(["tab_jump_flash_lite_preview", "tab_flash_lite_preview"])(
     "excludes tab-autocomplete model '%s' from re-routing",

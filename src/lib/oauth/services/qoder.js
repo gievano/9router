@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from "uuid";
  * Tokens live ~30 days; refresh is a no-op (the upstream refresh endpoint
  * returns 403 for our flow). Users re-run login when expired.
  *
- * Mirrors the structure of KiroService — the COSY signing / WAF-bypass body
+ * Mirrors the structure of KiroService - the COSY signing / WAF-bypass body
  * encoding / chat protocol live separately in src/lib/qoder/ because they're
  * used by every signed request, not just OAuth.
  */
@@ -55,7 +55,7 @@ export class QoderService {
   /**
    * Region-aware device flow. Pass an oauth config block (registry oauth →
    * PROVIDER_OAUTH) to hit the CN site; without one, the intl endpoints are
-   * used. Only the hostnames differ between regions — the flow is identical.
+   * used. Only the hostnames differ between regions - the flow is identical.
    */
   constructor(config = {}) {
     this.config = config;
@@ -109,9 +109,9 @@ export class QoderService {
 
   /**
    * Single poll attempt. Returns one of:
-   *   { status: "pending" }       — keep polling
-   *   { status: "ok", token, ... } — user authorized, tokens captured
-   *   throws Error                 — terminal failure
+   *   { status: "pending" }       - keep polling
+   *   { status: "ok", token, ... } - user authorized, tokens captured
+   *   throws Error                 - terminal failure
    *
    * Upstream returns 202/404 while waiting; 200 with a JSON body when done.
    */
@@ -129,7 +129,7 @@ export class QoderService {
       },
     });
 
-    // Pending — server has registered the device code but the user hasn't
+    // Pending - server has registered the device code but the user hasn't
     // finished the browser flow yet. Both 202 and 404 mean "keep polling".
     if (response.status === 202 || response.status === 404) {
       return { status: "pending" };
@@ -171,7 +171,7 @@ export class QoderService {
   }
 
   /**
-   * Fetch profile info for the freshly-issued token. Best-effort — failures
+   * Fetch profile info for the freshly-issued token. Best-effort - failures
    * shouldn't block login; returning empty strings is fine.
    */
   async fetchUserInfo(accessToken) {

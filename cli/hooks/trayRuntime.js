@@ -11,7 +11,7 @@
 // only an x86_64 `tray_darwin_release`, and picks it by process.platform with no
 // process.arch branch, so there is no native slice to select. On arm64 macOS the
 // tray therefore needs Rosetta 2 and dies with EBADARCH without it. We overlay
-// our own arm64 build of the same upstream source on top — see ensureArm64TrayBin.
+// our own arm64 build of the same upstream source on top - see ensureArm64TrayBin.
 const { spawnSync } = require("child_process");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -142,9 +142,9 @@ function markArm64Attempt() {
 }
 
 // Cleared on success so the cooldown only ever throttles *failures*. Without
-// this, anything that restores systray2's x86_64 binary later — notably a
+// this, anything that restores systray2's x86_64 binary later - notably a
 // globally installed 9router older than this change, which shares the same
-// ~/.9router/runtime — would leave the user waiting out the cooldown.
+// ~/.9router/runtime - would leave the user waiting out the cooldown.
 function clearArm64Attempt() {
   try { fs.rmSync(arm64AttemptMarker(), { force: true }); } catch {}
 }
@@ -203,7 +203,7 @@ function ensureArm64TrayBin() {
     return { native: true, installed: true };
   } catch (e) {
     try { fs.rmSync(tmp, { force: true }); } catch {}
-    console.warn("⚠️  Native tray download failed — falling back to the Intel binary");
+    console.warn("⚠️  Native tray download failed - falling back to the Intel binary");
     console.warn(`   Reason: ${e.message}`);
     console.warn("   The Intel tray needs Rosetta 2: softwareupdate --install-rosetta --agree-to-license");
     return { native: false, error: e.message };
@@ -216,7 +216,7 @@ function npmInstall(pkgs, { silent = false } = {}) {
   const res = runNpmInstall({ cwd, pkgs, extraArgs: ["--no-save"], timeout: 120000 });
   if (!res.ok && !silent) {
     const reason = summarizeNpmError(res.stderr);
-    console.warn("⚠️  System tray install failed — tray disabled");
+    console.warn("⚠️  System tray install failed - tray disabled");
     console.warn(`   Reason: ${reason}`);
     console.warn(`   Retry:  cd "${cwd}" && npm install ${pkgs.join(" ")}`);
   }
@@ -226,7 +226,7 @@ function npmInstall(pkgs, { silent = false } = {}) {
 // Public: ensure systray2 is installed on macOS/Linux only.
 // Windows skips entirely (uses PowerShell tray).
 function ensureTrayRuntime({ silent = false } = {}) {
-  // Always evict the legacy `systray` package — its binary is broken on
+  // Always evict the legacy `systray` package - its binary is broken on
   // modern macOS and an AV false-positive on Windows.
   cleanupLegacySystray({ silent });
 
@@ -244,7 +244,7 @@ function ensureTrayRuntime({ silent = false } = {}) {
   }
 
   // Runs after the ready log so a download failure doesn't read as a broken
-  // tray — the Intel binary still works under Rosetta.
+  // tray - the Intel binary still works under Rosetta.
   const arm64 = ready ? ensureArm64TrayBin() : { skipped: true };
   return { systray: ready, arm64 };
 }

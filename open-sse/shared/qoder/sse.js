@@ -1,6 +1,6 @@
 /**
  * Qoder SSE is OpenAI-shaped inside `{statusCodeValue, body}` envelopes, but
- * usage arrives on a later `choices: []` frame — after finish_reason, which
+ * usage arrives on a later `choices: []` frame - after finish_reason, which
  * itself often lives on `delta.finish_reason` rather than the choice.
  *
  * Downstream (Claude translator, OpenAI clients, Claude Code) look for usage

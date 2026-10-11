@@ -21,7 +21,7 @@ function feed(events) {
   return { state, chunks: all };
 }
 
-describe("commandcode-to-openai — text-delta", () => {
+describe("commandcode-to-openai - text-delta", () => {
   it("emits assistant role on first delta then content-only", () => {
     const { chunks } = feed([
       { type: "text-delta", text: "Hello" },
@@ -34,7 +34,7 @@ describe("commandcode-to-openai — text-delta", () => {
   });
 });
 
-describe("commandcode-to-openai — reasoning-delta", () => {
+describe("commandcode-to-openai - reasoning-delta", () => {
   it("maps reasoning-delta to reasoning_content delta", () => {
     const { chunks } = feed([
       { type: "reasoning-delta", text: "thinking..." },
@@ -43,7 +43,7 @@ describe("commandcode-to-openai — reasoning-delta", () => {
   });
 });
 
-describe("commandcode-to-openai — tool-input-* with id field (live schema)", () => {
+describe("commandcode-to-openai - tool-input-* with id field (live schema)", () => {
   it("registers tool index using event.id (NOT toolCallId)", () => {
     const { chunks } = feed([
       { type: "tool-input-start", id: "call_X", toolName: "Bash" },
@@ -69,7 +69,7 @@ describe("commandcode-to-openai — tool-input-* with id field (live schema)", (
   });
 });
 
-describe("commandcode-to-openai — final tool-call event", () => {
+describe("commandcode-to-openai - final tool-call event", () => {
   it("does NOT re-emit tool_calls when tool-input-* deltas already fired", () => {
     const { chunks } = feed([
       { type: "tool-input-start", id: "call_Y", toolName: "Write" },
@@ -92,7 +92,7 @@ describe("commandcode-to-openai — final tool-call event", () => {
   });
 });
 
-describe("commandcode-to-openai — finish", () => {
+describe("commandcode-to-openai - finish", () => {
   it("emits a final chunk with finish_reason=tool_calls when finishReason is tool-calls", () => {
     const { chunks } = feed([
       { type: "tool-input-start", id: "call_F", toolName: "Bash" },
@@ -115,7 +115,7 @@ describe("commandcode-to-openai — finish", () => {
   });
 });
 
-describe("commandcode-to-openai — error event", () => {
+describe("commandcode-to-openai - error event", () => {
   it("stringifies object errors so client sees readable message", () => {
     const { chunks } = feed([
       { type: "error", error: { type: "server_error", message: "Boom" } },

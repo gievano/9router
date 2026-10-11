@@ -3,14 +3,14 @@ import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { PROVIDERS } from "../config/providers.js";
 import { randomUUID } from "node:crypto";
 
-// WindsurfExecutor — Codeium gRPC-web chat.
+// WindsurfExecutor - Codeium gRPC-web chat.
 //
 // Wire protocol: gRPC-web over HTTPS (Content-Type: application/grpc-web+proto).
 // Service:  exa.language_server_pb.LanguageServerService
 // Method:   GetChatMessage (unary request → streamed CompletionChunk frames)
 //
 // Auth: credentials.accessToken = Codeium apiKey (sk-ws-... or Firebase-derived)
-//       — placed in Metadata.api_key protobuf field of every request + Bearer header.
+//       - placed in Metadata.api_key protobuf field of every request + Bearer header.
 
 const WS_BASE_URL = "https://server.codeium.com";
 const WS_SERVICE = "exa.language_server_pb.LanguageServerService";
@@ -29,7 +29,7 @@ const MODEL_ALIAS_MAP = {
   "swe-1.6": "swe-1-6",
   "swe-1.5-fast": "swe-1-5-fast",
   "swe-1.5": "swe-1-5",
-  // ── Claude Opus 4.7 — effort-tiered ─────────────────────────────────────
+  // ── Claude Opus 4.7 - effort-tiered ─────────────────────────────────────
   "claude-opus-4.7-max": "claude-opus-4-7-max",
   "claude-opus-4.7-xhigh": "claude-opus-4-7-xhigh",
   "claude-opus-4.7-high": "claude-opus-4-7-high",
@@ -332,7 +332,7 @@ export function decodeCompletionChunk(buf) {
         const msg = decodeStringField(payload, 1);
         return { kind: "error", message: msg ?? "unknown windsurf error" };
       }
-      // field 2 = ToolCallChunk — not yet handled; skip
+      // field 2 = ToolCallChunk - not yet handled; skip
     } else if (wireType === 0) {
       let v;
       [v, offset] = readVarint(buf, offset);
@@ -384,14 +384,14 @@ export class WindsurfExecutor extends BaseExecutor {
     return {
       "Content-Type": "application/grpc-web+proto",
       Accept: "application/grpc-web+proto",
-      // Codeium apiKey also goes in Metadata.api_key (protobuf field) — see request body.
+      // Codeium apiKey also goes in Metadata.api_key (protobuf field) - see request body.
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       "User-Agent": `windsurf/${WS_IDE_VERSION}`,
       "X-Grpc-Web": "1",
     };
   }
 
-  // Request body is built manually in execute() — requires model + messages.
+  // Request body is built manually in execute() - requires model + messages.
   transformRequest() {
     return null;
   }
@@ -454,7 +454,7 @@ export class WindsurfExecutor extends BaseExecutor {
 
           const handleFrame = (flag, payload) => {
             if (flag === 0x80) {
-              // Trailer frame — contains grpc-status, grpc-message
+              // Trailer frame - contains grpc-status, grpc-message
               const trailer = TEXT_DEC.decode(payload);
               const statusMatch = /grpc-status:\s*(\d+)/i.exec(trailer);
               if (statusMatch && statusMatch[1] !== "0") {

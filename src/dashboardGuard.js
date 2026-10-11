@@ -20,7 +20,7 @@ async function hasValidCliToken(request) {
   return token === await getCliToken();
 }
 
-// Public API paths — no auth required (LLM API has its own key auth inside handler).
+// Public API paths - no auth required (LLM API has its own key auth inside handler).
 const PUBLIC_API_PATHS = [
   "/api/health",
   "/api/init",
@@ -75,7 +75,7 @@ const PROTECTED_API_PATHS = [
   "/api/tunnel",
 ];
 
-// Routes that spawn child processes or read host secrets — restrict to localhost.
+// Routes that spawn child processes or read host secrets - restrict to localhost.
 const LOCAL_ONLY_PATHS = [
   "/api/cli-tools/cowork-settings",
   "/api/cli-tools/antigravity-mitm",
@@ -212,7 +212,7 @@ function isPublicApi(pathname) {
   return PUBLIC_API_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
-// Shared with src/proxy.js — the mimo login branch must respect dashboard auth.
+// Shared with src/proxy.js - the mimo login branch must respect dashboard auth.
 export { isAuthenticated };
 
 export const __test__ = {
@@ -255,7 +255,7 @@ export async function proxy(request) {
     return NextResponse.json({ error: "API key required for remote API access" }, { status: 401 });
   }
 
-  // Deny-by-default for /api/* — public allow-list bypasses, everything else requires auth.
+  // Deny-by-default for /api/* - public allow-list bypasses, everything else requires auth.
   if (pathname.startsWith("/api/")) {
     if (isPublicApi(pathname)) return NextResponse.next();
     if (await hasValidCliToken(request) || await isAuthenticated(request)) {

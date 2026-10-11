@@ -1,4 +1,4 @@
-// #3795 — a proxy must not dispatch more cache_control blocks than Anthropic
+// #3795 - a proxy must not dispatch more cache_control blocks than Anthropic
 // accepts, and must not lose turns that use single-object content (#3567 interplay).
 import { describe, it, expect } from "vitest";
 import {
@@ -12,7 +12,7 @@ const CC = { type: "ephemeral" };
 const text = (t, extra = {}) => ({ type: "text", text: t, ...extra });
 const tool = (name, extra = {}) => ({ name, description: "d", input_schema: {}, ...extra });
 
-// counts markers incl. single-object content — mirrors the upstream contract
+// counts markers incl. single-object content - mirrors the upstream contract
 function countMarkers(body) {
   let n = 0;
   if (Array.isArray(body.system)) for (const b of body.system) if (b?.cache_control) n++;

@@ -202,7 +202,7 @@ export default function ComboDetailPage() {
         setTestResult({ audioUrl: URL.createObjectURL(blob), latencyMs });
         return;
       }
-      // JSON — could be image (data[0].b64_json/url) or generic
+      // JSON - could be image (data[0].b64_json/url) or generic
       const data = await res.json();
       const first = data?.data?.[0];
       const imageUrl = first?.b64_json

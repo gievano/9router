@@ -244,7 +244,7 @@ async function loadDnsToolState() {
 }
 
 /**
- * Re-apply DNS for tools previously enabled — called on app startup after MITM running.
+ * Re-apply DNS for tools previously enabled - called on app startup after MITM running.
  */
 async function restoreToolDNS(sudoPassword) {
   const state = await loadDnsToolState();
@@ -254,7 +254,7 @@ async function restoreToolDNS(sudoPassword) {
     try {
       await addDNSEntry(tool, password);
     } catch (e) {
-      err(`DNS ${tool}: restore failed — ${e.message}`);
+      err(`DNS ${tool}: restore failed - ${e.message}`);
     }
   }
 }
@@ -539,7 +539,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
   if (!certExists || isCertExpired(rootCACertPath)) {
     if (certExists) {
       // Uninstall expired cert from system store before regenerating
-      log("🔐 Cert expired — uninstalling old cert...");
+      log("🔐 Cert expired - uninstalling old cert...");
       const password = sudoPassword || getCachedPassword() || await loadEncryptedPassword();
       try { await uninstallCert(password, rootCACertPath); } catch { /* best effort */ }
     }
@@ -572,7 +572,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
   }
 
   // Step 2: Spawn server (Root CA already installed in Step 1.5)
-  // Verify server.js exists — recopy if runtime file was deleted (antivirus/cleanup)
+  // Verify server.js exists - recopy if runtime file was deleted (antivirus/cleanup)
   let effectiveServerPath = SERVER_PATH;
   if (!effectiveServerPath || !fs.existsSync(effectiveServerPath)) {
     log(`[MITM] server.js missing at ${effectiveServerPath} → recopying`);
@@ -584,7 +584,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
   const mitmRouterBase = await resolveMitmRouterBaseUrl();
   log(`🚀 Starting server... (router: ${mitmRouterBase})`);
   if (IS_WIN) {
-    // Check port 443 — ask user before killing
+    // Check port 443 - ask user before killing
     const winOwner = await getPort443Owner(sudoPassword);
     if (winOwner) {
       if (forceKillPort443) {
@@ -598,7 +598,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
       }
     }
 
-    // Spawn directly — process already has admin rights
+    // Spawn directly - process already has admin rights
     // cwd=tmpdir so process doesn't lock the install dir on Windows (EBUSY on update)
     serverProcess = spawn(
       process.execPath,
@@ -636,7 +636,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
     serverProcess.stdin.write(`${sudoPassword}\n`);
     serverProcess.stdin.end();
   } else {
-    // Docker/minimal images: no sudo — same as Windows-style direct spawn
+    // Docker/minimal images: no sudo - same as Windows-style direct spawn
     serverProcess = spawn(process.execPath, [effectiveServerPath], {
       detached: false,
       windowsHide: true,
@@ -679,7 +679,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
   let startError = null;
   if (serverProcess) {
     serverProcess.stdout.on("data", (data) => {
-      // server.js already formats its own logs — print as-is
+      // server.js already formats its own logs - print as-is
       process.stdout.write(data);
     });
     serverProcess.stderr.on("data", (data) => {
@@ -689,7 +689,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
         err(msg);
         startError = msg;
       }
-      // Detect wrong/missing password — clear cache and stop retry loop
+      // Detect wrong/missing password - clear cache and stop retry loop
       if (!IS_WIN && (msg.includes("incorrect password") || msg.includes("no password was provided"))) {
         setCachedPassword(null);
         clearEncryptedPassword();
@@ -729,7 +729,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
   await saveMitmSettings(true, sudoPassword);
   if (sudoPassword) setCachedPassword(sudoPassword);
 
-  // Server is healthy — remove lock file (PID file persists as the marker)
+  // Server is healthy - remove lock file (PID file persists as the marker)
   try { fs.unlinkSync(LOCK_FILE); } catch { /* ignore */ }
 
   return { running: true, pid: serverPid };
@@ -741,7 +741,7 @@ async function startServer(apiKey, sudoPassword, forceKillPort443 = false) {
 }
 
 /**
- * Stop MITM server — removes ALL tool DNS entries first, then kills server
+ * Stop MITM server - removes ALL tool DNS entries first, then kills server
  */
 async function stopServer(sudoPassword) {
   // Prevent auto-restart from triggering on intentional stop
@@ -770,7 +770,7 @@ async function stopServer(sudoPassword) {
     try {
       const { isAdmin, runElevatedPowerShell, quotePs } = require("./winElevated.js");
       if (isAdmin()) {
-        // Direct fs write — bypass PowerShell to avoid parser pitfalls
+        // Direct fs write - bypass PowerShell to avoid parser pitfalls
         const content = fs.readFileSync(hostsFile, "utf8");
         const filtered = content.split(/\r?\n/).filter(l => !allHosts.some(h => l.includes(h))).join("\r\n");
         const next = filtered.replace(/[\r\n\s]+$/g, "") + "\r\n";

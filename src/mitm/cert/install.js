@@ -49,12 +49,12 @@ function checkCertInstalledMac(certPath) {
   return new Promise((resolve) => {
     try {
       const fingerprint = getCertFingerprint(certPath).replace(/:/g, "");
-      // Verify exact cert bytes match — same CN with different fingerprint = stale cert
+      // Verify exact cert bytes match - same CN with different fingerprint = stale cert
       exec(`security find-certificate -a -c "${ROOT_CA_CN}" -Z /Library/Keychains/System.keychain 2>/dev/null`, { windowsHide: true }, (error, stdout) => {
         if (error || !stdout) return resolve(false);
         const match = new RegExp(`SHA-1 hash:\\s*${fingerprint}`, "i").test(stdout);
         if (!match) return resolve(false);
-        // Cert exists with matching fingerprint — confirm trust policy
+        // Cert exists with matching fingerprint - confirm trust policy
         exec(`security verify-cert -c "${certPath}" -p ssl -k /Library/Keychains/System.keychain 2>/dev/null`, { windowsHide: true }, (err2) => {
           resolve(!err2);
         });
@@ -67,7 +67,7 @@ function checkCertInstalledMac(certPath) {
 
 function checkCertInstalledWindows(certPath) {
   return new Promise((resolve) => {
-    // Check by SHA1 fingerprint — detects stale cert with same CN but different key
+    // Check by SHA1 fingerprint - detects stale cert with same CN but different key
     let fingerprint;
     try {
       fingerprint = getCertFingerprint(certPath).replace(/:/g, "");
@@ -225,7 +225,7 @@ async function updateNssDatabases(certPath, action = 'add') {
 
 async function installCertLinux(sudoPassword, certPath) {
   if (!isSudoAvailable()) {
-    log(`🔐 Cert: cannot install to system store without sudo — trust this file on clients: ${certPath}`);
+    log(`🔐 Cert: cannot install to system store without sudo - trust this file on clients: ${certPath}`);
     // Still try to update user NSS DBs even if no sudo!
     await updateNssDatabases(certPath, 'add');
     return;

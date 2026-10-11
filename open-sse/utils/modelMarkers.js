@@ -5,12 +5,12 @@
 // carries it dies at model resolution with "Invalid model format".
 //
 // The capability itself travels in the `anthropic-beta: context-1m-2025-08-07`
-// header, which is forwarded untouched — stripping the marker is enough to let
+// header, which is forwarded untouched - stripping the marker is enough to let
 // the request route normally and still reach the upstream as a 1M request.
 
 const CONTEXT_MARKER = /\[1m\]$/i;
 
-// Returns { model, contextMarker } — contextMarker is null when there is none.
+// Returns { model, contextMarker } - contextMarker is null when there is none.
 export function stripModelContextMarker(modelStr) {
   if (typeof modelStr !== "string") return { model: modelStr, contextMarker: null };
   const trimmed = modelStr.trim();

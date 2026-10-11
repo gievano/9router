@@ -105,7 +105,7 @@ export async function GET() {
 
     // Account-session passToken from Desktop's cookie store. Persisting it per
     // connection is what lets multiple Xiaomi accounts rotate independently.
-    // (null while Desktop is running — its cookie DB is exclusively locked.)
+    // (null while Desktop is running - its cookie DB is exclusively locked.)
     let mimoPassToken = null;
     let mimoUserId = null;
     let mimoCUserId = null;

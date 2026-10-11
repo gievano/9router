@@ -5,7 +5,7 @@ import PropTypes from "prop-types";
 import { Card, Badge } from "@/shared/components";
 import { useNotificationStore } from "@/store/notificationStore";
 
-// Mirrors the server-side gate in /api/providers/[id]/overrides — client check is UX only
+// Mirrors the server-side gate in /api/providers/[id]/overrides - client check is UX only
 const BLOCKED_HEADERS = ["host", "content-length", "content-type", "connection", "transfer-encoding", "authorization", "cookie"];
 const HEADER_NAME_RE = /^[A-Za-z0-9-]+$/;
 

@@ -165,7 +165,7 @@ describe("Anthropic streaming usage (message_start carries cache, message_delta 
   });
 
   it("does not let a NaN field poison the running max-merge", () => {
-    // typeof NaN === "number", so a naive Math.max(prev, NaN) is NaN — one
+    // typeof NaN === "number", so a naive Math.max(prev, NaN) is NaN - one
     // malformed chunk must not wipe out an already-accumulated good value.
     const prev = { prompt_tokens: 100, cache_read_input_tokens: 200 };
     const bad = { prompt_tokens: NaN, completion_tokens: 50 };

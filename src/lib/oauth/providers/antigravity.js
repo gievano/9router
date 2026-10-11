@@ -81,7 +81,7 @@ const antigravity = {
       console.log("Failed to load code assist:", e);
     }
 
-    // Fire-and-forget onboarding — does not block DB save
+    // Fire-and-forget onboarding - does not block DB save
     if (projectId) {
       const doOnboard = async () => {
         for (let i = 0; i < 10; i++) {

@@ -110,7 +110,7 @@ function ComboList({ combos }) {
 function Section({ title, icon, kind, providers, connections, combos, onCreateCombo }) {
   return (
     <div>
-      {/* Header — title left, Create Combo right */}
+      {/* Header - title left, Create Combo right */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="material-symbols-outlined text-primary">{icon}</span>
@@ -120,14 +120,14 @@ function Section({ title, icon, kind, providers, connections, combos, onCreateCo
         <Button size="sm" icon="add" onClick={onCreateCombo}>Create Combo</Button>
       </div>
 
-      {/* Combos — top */}
+      {/* Combos - top */}
       {combos.length > 0 && (
         <div className="mb-4">
           <ComboList combos={combos} />
         </div>
       )}
 
-      {/* Providers grid — bottom */}
+      {/* Providers grid - bottom */}
       {providers.length === 0 ? (
         <div className="text-center py-8 border border-dashed border-border rounded-xl text-text-muted text-sm">
           No providers.

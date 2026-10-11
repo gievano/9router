@@ -82,7 +82,7 @@ export const AG_TOOL_SUFFIX = "_ide";
 // Suffix added to client tools when forwarding to Claude provider (anti-ban cloaking)
 export const CLAUDE_TOOL_SUFFIX = "_ide";
 
-// CC native default tools — these are Claude Code's own tools, kept as decoys
+// CC native default tools - these are Claude Code's own tools, kept as decoys
 // Client tools matching these names are skipped (not renamed), others get _cc suffix
 export const CC_DEFAULT_TOOLS = new Set([
   "Task",
@@ -107,7 +107,7 @@ export const CC_DEFAULT_TOOLS = new Set([
   "ExitPlanMode",
 ]);
 
-// AG native default tools — kept as decoys with neutral description/properties
+// AG native default tools - kept as decoys with neutral description/properties
 // These names must match exactly what AG sends in the real request log
 export const AG_DEFAULT_TOOLS = new Set([
   "browser_subagent",
@@ -143,7 +143,7 @@ export const CLOUD_CODE_API = {
     loadCodeAssist: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
     onboardUser: "https://cloudcode-pa.googleapis.com/v1internal:onboardUser",
   },
-  // Project discovery (loadCodeAssist/onboardUser) stays on PROD — the daily host
+  // Project discovery (loadCodeAssist/onboardUser) stays on PROD - the daily host
   // rejects these auth/onboarding calls. Only chat traffic uses the daily host
   // (see transport.apiEndpoint in registry/antigravity.js, set to bypass prod 429).
   antigravity: {
@@ -159,7 +159,7 @@ export const LOAD_CODE_ASSIST_HEADERS = {
   "Client-Metadata": JSON.stringify({ ideType: IDE_TYPE.ANTIGRAVITY, platform: getPlatformEnum(), pluginType: PLUGIN_TYPE.GEMINI }),
 };
 
-// Real Antigravity IDE doesn't send X-Goog-Api-Client/Client-Metadata on loadCodeAssist/onboardUser —
+// Real Antigravity IDE doesn't send X-Goog-Api-Client/Client-Metadata on loadCodeAssist/onboardUser -
 // Google's backend fingerprints those and silently refuses to provision a cloudaicompanionProject.
 export const ANTIGRAVITY_LOAD_CODE_ASSIST_HEADERS = {
   "Content-Type": "application/json",
@@ -197,7 +197,7 @@ export const REFRESH_LEAD_MS = Object.fromEntries(
 export const OAUTH_ENDPOINTS = {
   google:    { token: "https://oauth2.googleapis.com/token", auth: "https://accounts.google.com/o/oauth2/auth" },
   openai:    { token: PROVIDER_OAUTH["codex"]?.tokenUrl, auth: PROVIDER_OAUTH["codex"]?.authorizeUrl },
-  anthropic: { token: PROVIDER_OAUTH["claude"]?.tokenUrl, auth: "https://api.anthropic.com/v1/oauth/authorize" }, // ≠ claude.authorizeUrl (claude.ai login) — keep
+  anthropic: { token: PROVIDER_OAUTH["claude"]?.tokenUrl, auth: "https://api.anthropic.com/v1/oauth/authorize" }, // ≠ claude.authorizeUrl (claude.ai login) - keep
   iflow:     { token: PROVIDER_OAUTH["iflow"]?.tokenUrl, auth: PROVIDER_OAUTH["iflow"]?.authorizeUrl },
   github:    { token: PROVIDER_OAUTH["github"]?.tokenUrl, auth: PROVIDER_OAUTH["github"]?.authorizeUrl, deviceCode: PROVIDER_OAUTH["github"]?.deviceCodeUrl },
 };

@@ -12,7 +12,7 @@
  *   {"type":"finish-step","finishReason","usage": {...}, ...}
  *   {"type":"finish",...}
  *
- * Each upstream "event" arrives as one JSON object per line — we receive it as a string chunk
+ * Each upstream "event" arrives as one JSON object per line - we receive it as a string chunk
  * already split per line by the upstream SSE/JSON-line reader in 9router.
  */
 import { register } from "../index.js";
@@ -131,7 +131,7 @@ export function commandCodeToOpenAIResponse(chunk, state) {
       break;
     }
     case "tool-call": {
-      // Final consolidated tool call — only emit if we never saw tool-input-* deltas.
+      // Final consolidated tool call - only emit if we never saw tool-input-* deltas.
       const id = event.toolCallId;
       if (state.toolIndexById.has(id)) break;
       const idx = state.toolIndex++;

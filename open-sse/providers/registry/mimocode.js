@@ -1,4 +1,4 @@
-// MiMoCode (Xiaomi MiMo Auto free channel) — anonymous JWT, mirrors OpenCode Free.
+// MiMoCode (Xiaomi MiMo Auto free channel) - anonymous JWT, mirrors OpenCode Free.
 // Auth: POST {bootstrap}/free-ai/bootstrap { client: <device fingerprint> } -> { jwt }.
 // Chat: POST {transport.baseUrl} model "mimo-auto" with a MiMo identity system
 // message, header Authorization Bearer <jwt> + X-Mimo-Source: mimocode-cli-free.

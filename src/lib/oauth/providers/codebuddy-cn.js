@@ -37,7 +37,7 @@ const codebuddyCn = {
   },
   pollToken: async (config, deviceCode) => {
     // CodeBuddy polls the token endpoint via GET with the state as a query
-    // param (not POST/body) — matches the official CLI's /v2/plugin/auth/token?state=...
+    // param (not POST/body) - matches the official CLI's /v2/plugin/auth/token?state=...
     const response = await fetch(`${config.tokenUrl}?state=${encodeURIComponent(deviceCode)}`, {
       method: "GET",
       headers: {

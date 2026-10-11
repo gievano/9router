@@ -24,7 +24,7 @@ const AG_MODELS = [
   "ag/gemini-3-flash",
 ];
 
-// Simple text prompt — no tools
+// Simple text prompt - no tools
 const SIMPLE_BODY = (model) => ({
   model,
   stream: false,
@@ -32,7 +32,7 @@ const SIMPLE_BODY = (model) => ({
   messages: [{ role: "user", content: "Reply with the single word: hi" }],
 });
 
-// Tool call with `optional` field in schema — this is the bug scenario
+// Tool call with `optional` field in schema - this is the bug scenario
 const TOOL_BODY = (model) => ({
   model,
   stream: false,
@@ -75,7 +75,7 @@ async function callChat(body) {
   return { status: res.status, text, json };
 }
 
-describe.skipIf(!RUN_REAL).concurrent("antigravity models — real", () => {
+describe.skipIf(!RUN_REAL).concurrent("antigravity models - real", () => {
   for (const model of AG_MODELS) {
     it(`${model}: simple prompt`, async () => {
       const { status, json, text } = await callChat(SIMPLE_BODY(model));
@@ -114,7 +114,7 @@ describe.skipIf(!RUN_REAL).concurrent("antigravity models — real", () => {
       if (status === 400) {
         const errMsg = json?.error?.message || text;
         if (/optional.*Cannot find field|Cannot find field.*optional|Unknown name.*optional/i.test(errMsg)) {
-          throw new Error(`BUG: ${model} — 400 due to optional field: ${errMsg.slice(0, 300)}`);
+          throw new Error(`BUG: ${model} - 400 due to optional field: ${errMsg.slice(0, 300)}`);
         }
         // Other 400 (e.g. model doesn't support tools, stream_options issue) → skip
         console.warn(`[skip] ${model}: 400 non-optional error: ${errMsg.slice(0, 200)}`);

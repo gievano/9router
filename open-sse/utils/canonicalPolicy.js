@@ -1,9 +1,9 @@
 // Canonical Attempt Policy Engine (Phase 2 / G2-A).
 //
 // PURE layer #3 of the post-Canonical-Attempt architecture:
-//   1. canonicalAttempt           — evidence (WHAT happened)        [Commits A–F]
-//   2. classifyCanonicalAttempt   — classification + reason         [G1 / f02aaf7]
-//   3. decideAttemptPolicy        — operational instruction         [THIS FILE]
+//   1. canonicalAttempt           - evidence (WHAT happened)        [Commits A–F]
+//   2. classifyCanonicalAttempt   - classification + reason         [G1 / f02aaf7]
+//   3. decideAttemptPolicy        - operational instruction         [THIS FILE]
 //   4. consumers (Combo/executor/health) execute instructions       [G2-C/D+, later]
 //
 // This module ONLY calculates policy. It MUST NOT:
@@ -22,12 +22,12 @@ export const ATTEMPT_POLICY_FIELDS = Object.freeze([
 
 const HEALTH_NONE = Object.freeze({ sample: "none", availability: "none", reason: null });
 
-// Shared policy atoms — kept as frozen constants so determinism is structural
+// Shared policy atoms - kept as frozen constants so determinism is structural
 // (same object identity for identical rows) and the field bound is enforced by
 // construction. Consumers receive these as instructions; they never mutate.
 
 const POLICY = {
-  // success — provider served a logically successful response.
+  // success - provider served a logically successful response.
   success: Object.freeze({
     fallbackEligible: false,
     retryable: false,
@@ -35,7 +35,7 @@ const POLICY = {
     stopProgression: true,
   }),
 
-  // transport_failure — HTTP transport did not succeed. Sub-cases by reason.
+  // transport_failure - HTTP transport did not succeed. Sub-cases by reason.
   userError: Object.freeze({ // http_400 / http_422 (and the existing non-retryable client set)
     fallbackEligible: false,
     retryable: false,
@@ -66,7 +66,7 @@ const POLICY = {
     healthAction: Object.freeze({ sample: "failure", availability: "unavailable", reason: "transient" }),
     stopProgression: false,
   }),
-  // Unmatched transport failure — conservative default (§7 hardening).
+  // Unmatched transport failure - conservative default (§7 hardening).
   // G1 maps all ≥500 to http_5xx and 429 to http_429, so this only reaches
   // unknown 4xx. isRetryableFailure returns false for those → retryable=false.
   // checkFallbackError default → shouldFallback:true + transient cooldown, and
@@ -80,7 +80,7 @@ const POLICY = {
     stopProgression: false,
   }),
 
-  // provider_failure — transport succeeded but the provider's own response failed.
+  // provider_failure - transport succeeded but the provider's own response failed.
   providerError: Object.freeze({ // provider_error / response.failed
     fallbackEligible: true,
     retryable: false,
@@ -94,7 +94,7 @@ const POLICY = {
     stopProgression: false,
   }),
 
-  // empty_output — 200 with no usable model output. NOT a health signal.
+  // empty_output - 200 with no usable model output. NOT a health signal.
   emptyOutput: Object.freeze({
     fallbackEligible: true,
     retryable: true,
@@ -102,7 +102,7 @@ const POLICY = {
     stopProgression: false,
   }),
 
-  // incomplete — output observed but successful completion not established.
+  // incomplete - output observed but successful completion not established.
   finishReasonLength: Object.freeze({ // user/client output-length boundary
     fallbackEligible: true,
     retryable: false,
@@ -116,7 +116,7 @@ const POLICY = {
     stopProgression: false,
   }),
 
-  // cancelled — client abort OR provider cancellation.
+  // cancelled - client abort OR provider cancellation.
   clientAbort: Object.freeze({
     fallbackEligible: false,
     retryable: false,
@@ -130,7 +130,7 @@ const POLICY = {
     stopProgression: false,
   }),
 
-  // cache / bypass — not provider attempts; never touch health/fallback.
+  // cache / bypass - not provider attempts; never touch health/fallback.
   synthetic: Object.freeze({
     fallbackEligible: false,
     retryable: false,
@@ -138,7 +138,7 @@ const POLICY = {
     stopProgression: true,
   }),
 
-  // Defensive default for an unclassifiable provider attempt — do NOT mark
+  // Defensive default for an unclassifiable provider attempt - do NOT mark
   // unavailable (§16: never turn missing evidence into provider unavailability).
   unknownProvider: Object.freeze({
     fallbackEligible: true,
@@ -160,7 +160,7 @@ const POLICY = {
 export function decideAttemptPolicy(attempt) {
   if (!attempt) return null;
 
-  // §7/§14: source precedence — cache/bypass never touch provider health.
+  // §7/§14: source precedence - cache/bypass never touch provider health.
   if (attempt.source === "cache" || attempt.source === "bypass") {
     return POLICY.synthetic;
   }
@@ -192,7 +192,7 @@ export function decideAttemptPolicy(attempt) {
       return POLICY.noSuccessfulTerminal;
 
     default:
-      // Unknown classification on a provider attempt — safe default (no lock).
+      // Unknown classification on a provider attempt - safe default (no lock).
       return POLICY.unknownProvider;
   }
 }
@@ -220,7 +220,7 @@ function transportPolicy(reason) {
     case "http_5xx":
       return POLICY.http5xx;
     default:
-      // Unknown transport reason — G1 maps all ≥500 to http_5xx and 429 to
+      // Unknown transport reason - G1 maps all ≥500 to http_5xx and 429 to
       // http_429, so this only reaches unknown 4xx (410/418/426/451/…).
       // isRetryableFailure returns false for non-429/non-5xx → retryable=false.
       // checkFallbackError default → shouldFallback:true + transient cooldown.

@@ -1,5 +1,5 @@
 /**
- * Command Code usage — billing credits + 5h/weekly rate windows.
+ * Command Code usage - billing credits + 5h/weekly rate windows.
  * Mirrors ~/cc-usage.mjs: whoami → credits + subscriptions.
  */
 

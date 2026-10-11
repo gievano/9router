@@ -135,8 +135,8 @@ export default function BulkImportCodexModal({ isOpen, onClose, onSuccess }) {
                 result.failed > 0 ? "text-yellow-400" : "text-green-400"
               }`}
             >
-              ✓ {result.success} {translate("added")}
-              {result.failed > 0 ? `, ✗ ${result.failed} ${translate("failed")}` : ""}
+              {result.success} {translate("added")}
+              {result.failed > 0 ? `, ${result.failed} ${translate("failed")}` : ""}
             </div>
             {failedItems.length > 0 && (
               <ul className="rounded border border-accent/20 bg-sidebar/50 p-2 text-xs font-mono max-h-40 overflow-y-auto">

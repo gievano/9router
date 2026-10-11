@@ -1,4 +1,4 @@
-// Context Squeezer — fit a conversation into the model's context window.
+// Context Squeezer - fit a conversation into the model's context window.
 //
 // A gateway sees conversations arrive that no longer fit: the client keeps
 // every turn, the window does not grow. Without help the provider rejects the
@@ -8,19 +8,19 @@
 // What is kept, in order of importance:
 //   - the system prompt (it defines the task)
 //   - the newest turns (they carry the current state)
-//   - everything, when the conversation already fits — trimming is a repair,
+//   - everything, when the conversation already fits - trimming is a repair,
 //     not an optimisation, so a fitting conversation is never touched
 //
 // What is dropped: the oldest turns beyond the budget, replaced by one system
 // line naming what went, so the model knows the history exists but is not here.
-// Long tool output in the turns that survive is shortened first — one pasted
+// Long tool output in the turns that survive is shortened first - one pasted
 // file read can be most of the budget on its own.
 
 // A conversation may fill this much of the window; the rest stays for the answer.
 const DEFAULT_FILL_RATIO = 0.75;
 // Content at least this long is a candidate for shortening inside a kept turn.
 const LONG_CONTENT_CHARS = 4000;
-// Never shorten below this many characters — a stub is worse than an eviction.
+// Never shorten below this many characters - a stub is worse than an eviction.
 const MIN_KEEP_CHARS = 400;
 
 /**
@@ -135,7 +135,7 @@ export function squeezeContext(messages, { contextWindow, fillRatio = DEFAULT_FI
   let firstTurn = 0;
   while (firstTurn < working.length && working[firstTurn].role === "system") firstTurn += 1;
 
-  // Pass 1 — shorten oversized content in the turns we intend to keep, so the
+  // Pass 1 - shorten oversized content in the turns we intend to keep, so the
   // eviction decision below sees the size those turns will actually cost.
   let shortened = 0;
   for (let i = firstTurn; i < working.length; i++) {
@@ -147,7 +147,7 @@ export function squeezeContext(messages, { contextWindow, fillRatio = DEFAULT_FI
     if (cost > cap && shortenMessage(m, (cost - cap) * 4)) shortened += 1;
   }
 
-  // Pass 2 — evict from the oldest turn until the conversation fits, keeping at
+  // Pass 2 - evict from the oldest turn until the conversation fits, keeping at
   // least `minTurns` conversational turns no matter what the budget says.
   let tokens = estimateConversationTokens(working);
   let cut = firstTurn;
@@ -158,7 +158,7 @@ export function squeezeContext(messages, { contextWindow, fillRatio = DEFAULT_FI
   }
 
   if (cut === firstTurn) {
-    // Nothing could be evicted (already at the floor) — pass what we have
+    // Nothing could be evicted (already at the floor) - pass what we have
     // through and let the provider's own limits decide.
     return {
       messages: working,

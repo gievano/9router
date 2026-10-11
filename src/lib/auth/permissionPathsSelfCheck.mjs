@@ -134,6 +134,6 @@ run("firstAllowedPage lands somewhere real for every single permission", () => {
 });
 
 const failed = results.filter(r => !r.ok);
-for (const r of results) console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.n}${r.err ? ` — ${r.err}` : ""}`);
+for (const r of results) console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.n}${r.err ? ` - ${r.err}` : ""}`);
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length ? 1 : 0);

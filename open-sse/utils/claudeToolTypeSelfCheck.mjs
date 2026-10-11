@@ -51,7 +51,7 @@ run("Built-in tool (computer_use) passed through", () => {
   const tools = [{ type: "computer_use", name: "computer", display_width: 1024 }];
   const out = defaultClaudeToolType(tools);
   assert.equal(out[0].type, "computer_use", "built-in type preserved");
-  assert.equal(out[0], tools[0], "same reference — not cloned");
+  assert.equal(out[0], tools[0], "same reference - not cloned");
 });
 
 // 6. Tool already with type:"custom" → passed through untouched
@@ -59,7 +59,7 @@ run("Tool already with type:custom passed through", () => {
   const tools = [{ type: "custom", name: "foo", input_schema: {} }];
   const out = defaultClaudeToolType(tools);
   assert.equal(out[0].type, "custom", "existing custom type preserved");
-  assert.equal(out[0], tools[0], "same reference — not cloned");
+  assert.equal(out[0], tools[0], "same reference - not cloned");
 });
 
 // 7. Mixed: built-in + function tool → only function tool gets default

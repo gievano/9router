@@ -6,7 +6,7 @@
  */
 import { PROVIDERS } from "open-sse/providers/index.js";
 
-// xAI client_id for OAuth (PKCE public client) — single source: registry xai.transport
+// xAI client_id for OAuth (PKCE public client) - single source: registry xai.transport
 export const XAI_CLIENT_ID = PROVIDERS["xai"]?.clientId;
 
 // OAuth issuer + endpoints
@@ -32,11 +32,11 @@ export const XAI_PKCE_VERIFIER_BYTES = 96;
 // Refresh tokens this many seconds before expiry
 export const XAI_REFRESH_LEAD_SECONDS = 5 * 60;
 
-// User-Agent — mirror Go grok-cli UA. Version is best-effort; xAI does not pin a specific version.
+// User-Agent - mirror Go grok-cli UA. Version is best-effort; xAI does not pin a specific version.
 export const XAI_USER_AGENT = "grok-cli/9router";
 
 /**
- * Aggregated config object — mirrors the shape of CLAUDE_CONFIG/CODEX_CONFIG in oauth.js.
+ * Aggregated config object - mirrors the shape of CLAUDE_CONFIG/CODEX_CONFIG in oauth.js.
  * Includes both the discovery-derived defaults and the static fallbacks used when
  * discovery is unavailable. Discovery results override authorizeUrl/tokenUrl at runtime.
  */

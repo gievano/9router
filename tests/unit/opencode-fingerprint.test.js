@@ -13,7 +13,7 @@ const CC_TOOLS = ["Task", "Bash", "Glob", "Grep", "Read", "Edit", "Write", "WebF
 const flat = (names) => names.map((name) => ({ type: "function", name }));
 const chat = (names) => names.map((name) => ({ type: "function", function: { name } }));
 
-describe("opencodeFingerprint — request side", () => {
+describe("opencodeFingerprint - request side", () => {
   it("renames capitalised quartet members to lowercase", () => {
     const body = { tools: flat(CC_TOOLS) };
     const map = applyFingerprintTools(body, true);
@@ -113,7 +113,7 @@ describe("opencodeFingerprint — request side", () => {
   });
 });
 
-describe("opencodeFingerprint — response side", () => {
+describe("opencodeFingerprint - response side", () => {
   const map = new Map([["bash", "Bash"], ["grep", "Grep"], ["read", "Read"]]);
 
   it("restores names in Claude content_block_start chunks", () => {

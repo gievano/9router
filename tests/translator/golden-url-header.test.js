@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 import { PROVIDERS } from "../../open-sse/config/providers.js";
 import { DefaultExecutor } from "../../open-sse/executors/default.js";
 
-// Credentials mẫu cố định (deterministic) — KHÔNG dùng Date.now/random.
+// Credentials mẫu cố định (deterministic) - KHÔNG dùng Date.now/random.
 const API_KEY_CRED = { apiKey: "sk-test-APIKEY", providerSpecificData: {} };
 const OAUTH_CRED = { accessToken: "tok-test-ACCESS", providerSpecificData: {} };
 const SPECIAL_CRED = {

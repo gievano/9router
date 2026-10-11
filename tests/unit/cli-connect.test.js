@@ -1,4 +1,4 @@
-// `9router connect` — arg parsing, URL/cookie helpers and per-tool config writers.
+// `9router connect` - arg parsing, URL/cookie helpers and per-tool config writers.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createRequire } from "node:module";
 import fs from "node:fs";

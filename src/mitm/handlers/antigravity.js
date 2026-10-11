@@ -3,7 +3,7 @@ const { IS_DEV } = require("../config");
 const { fetchRouter, pipeSSE } = require("./base");
 
 /**
- * Intercept Antigravity request — forward Gemini body as-is to /v1/chat/completions.
+ * Intercept Antigravity request - forward Gemini body as-is to /v1/chat/completions.
  * Router auto-detects format via body.userAgent==="antigravity" + body.request.contents,
  * runs antigravity→openai→provider→openai→antigravity translators internally.
  */

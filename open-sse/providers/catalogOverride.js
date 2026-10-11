@@ -51,7 +51,7 @@ function load() {
 }
 
 // Modalities are recorded per gateway upstream, and gateways disagree about the
-// same weights — some do not proxy images at all — so the key is provider +
+// same weights - some do not proxy images at all - so the key is provider +
 // model, in the local provider id space, exactly like the limits below. Keying
 // by model id alone made short ids collide across vendors: "auto", "free" and
 // "efficient" are router modes in one catalog and model names in another, and a
@@ -75,7 +75,7 @@ export function invalidateCatalog() {
 }
 
 // Hand the reader to capabilities.js. That module is bundled into the browser
-// too, so it cannot import this file directly — the server pushes it in.
+// too, so it cannot import this file directly - the server pushes it in.
 export async function installCatalogSource() {
   const { setCatalogSource } = await import("./capabilities.js");
   setCatalogSource({ getModalities: getCatalogModalities, getLimits: getCatalogLimits });

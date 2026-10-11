@@ -4,7 +4,7 @@
  *
  * The repo has no jsdom, so DOM mounting is out of reach. Instead: the pure
  * bucketing helper is exercised directly, and the components are covered by
- * structural assertions that pin the behaviours a regression would break —
+ * structural assertions that pin the behaviours a regression would break -
  * local-time bucketing (a UTC regression would shift every cell), Mon-first
  * row order, graceful degradation on short/flat series, and every data-empty
  * view routing through EmptyWithAction.

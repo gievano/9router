@@ -1,4 +1,4 @@
-// Muse (Meta Model API) — dual auth (same pattern as kimi):
+// Muse (Meta Model API) - dual auth (same pattern as kimi):
 //   oauth  = Muse Code subscription (Meta account device code, mints an LLM|… key)
 //   apikey = pay-as-you-go Model API key from dev.meta.ai
 // Transport is shared; oauth accounts get x-api-version via the museHeaders hook.

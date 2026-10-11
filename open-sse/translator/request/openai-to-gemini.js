@@ -41,7 +41,7 @@ function sanitizeGeminiFunctionName(name) {
  *
  * Gemini validates functionCall id uniqueness across the WHOLE history and
  * answers 400 INVALID_ARGUMENT otherwise, but an OpenAI tool_call_id is only
- * unique within its own assistant turn — a long agent session can replay the
+ * unique within its own assistant turn - a long agent session can replay the
  * same id in a later turn (#4532).
  *
  * Uniqueness is per OCCURRENCE, not per id: two different calls that share an id
@@ -383,7 +383,7 @@ function wrapInCloudCodeEnvelopeForClaude(model, claudeRequest, credentials = nu
     userAgent: "antigravity",
     requestId: `agent-${generateUUID()}`,
     // NOTE: official Antigravity client omits `requestType` on the agent (chat)
-    // path — see the note in wrapInCloudCodeEnvelope() above.
+    // path - see the note in wrapInCloudCodeEnvelope() above.
     request: {
       sessionId: toNumericSessionId(credentials?._clientSessionId) || deriveSessionId(credentials?.email || credentials?.connectionId),
       contents: [],
@@ -439,7 +439,7 @@ function wrapInCloudCodeEnvelopeForClaude(model, claudeRequest, credentials = nu
             if (Array.isArray(content)) {
               content = content.map(c => c.type === CLAUDE_BLOCK.TEXT ? c.text : JSON.stringify(c)).join("\n");
             }
-            // Resolve the original tool name from the id — Gemini requires it to match the functionCall name
+            // Resolve the original tool name from the id - Gemini requires it to match the functionCall name
             const resolvedName = toolUseIdToName[block.tool_use_id]
               ? sanitizeGeminiFunctionName(toolUseIdToName[block.tool_use_id])
               : "tool";
@@ -507,7 +507,7 @@ function wrapInCloudCodeEnvelopeForClaude(model, claudeRequest, credentials = nu
 }
 
 // Detect if model should use Claude backend in Antigravity
-// Claude models have specific ID patterns — more reliable than caps at routing level
+// Claude models have specific ID patterns - more reliable than caps at routing level
 function isClaudeModel(model) {
   return model.toLowerCase().includes("claude");
 }

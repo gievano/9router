@@ -134,7 +134,7 @@ export function formatSSE(data, sourceFormat) {
 // Returns encoded bytes: onAbortTerminal callbacks are enqueued verbatim, same
 // as buildAbortedResponsesTerminalBytes.
 //
-// NOTE: non-SSE client formats (Ollama NDJSON) get an SSE frame here — dead in
+// NOTE: non-SSE client formats (Ollama NDJSON) get an SSE frame here - dead in
 // practice because detectFormatByEndpoint never resolves to OLLAMA.
 export function buildStreamErrorBytes(statusCode, message, clientFormat) {
   const { error } = buildErrorBody(statusCode, message);

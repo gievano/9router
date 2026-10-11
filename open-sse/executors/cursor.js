@@ -221,7 +221,7 @@ function rejectExecRequest(execRequest) {
   const variant = [...(execRequest?.keys?.() || [])].find((field) => field !== 1 && field !== 15);
   const resultField = EXEC_RESULT_FIELD[variant];
   if (!resultField) return null;
-  // Diagnostics has no rejected variant — empty success unblocks the stream.
+  // Diagnostics has no rejected variant - empty success unblocks the stream.
   if (variant === 9) return wrapExecClientMessage(id, execId, 9, new Uint8Array());
   const rejected = agentMessage(2, agentString(2, "Tool not available in this environment. Use the MCP tools provided instead."));
   return wrapExecClientMessage(id, execId, resultField, rejected);
@@ -366,7 +366,7 @@ export class CursorExecutor extends BaseExecutor {
 
   transformRequest(model, body, stream, credentials) {
     // Messages are already translated by chatCore (claude→openai→cursor)
-    // Do NOT call openaiToCursorRequest again — double-translation drops tool_results
+    // Do NOT call openaiToCursorRequest again - double-translation drops tool_results
     const messages = body.messages || [];
     const tools = body.tools || [];
     const reasoningEffort = body.reasoning_effort || null;
@@ -396,7 +396,7 @@ export class CursorExecutor extends BaseExecutor {
       throw new Error("http2 module not available");
     }
 
-    const HTTP2_TIMEOUT_MS = 60000; // 60s max — prevent hung sessions
+    const HTTP2_TIMEOUT_MS = 60000; // 60s max - prevent hung sessions
 
     return new Promise((resolve, reject) => {
       const urlObj = new URL(url);
@@ -452,7 +452,7 @@ export class CursorExecutor extends BaseExecutor {
 
   /**
    * AgentService (agent.api5.cursor.sh) is HTTP/2-only. Node's fetch/undici speaks
-   * HTTP/1.1 and fails with HTTPParserError on the h2 preface — use http2 duplex.
+   * HTTP/1.1 and fails with HTTPParserError on the h2 preface - use http2 duplex.
    */
   openAgentHttp2Stream(url, headers, signal) {
     if (!http2) {

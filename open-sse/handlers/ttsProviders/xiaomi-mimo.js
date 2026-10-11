@@ -1,4 +1,4 @@
-// Xiaomi MiMo TTS — via OpenAI-compatible chat completions (non-streaming).
+// Xiaomi MiMo TTS - via OpenAI-compatible chat completions (non-streaming).
 // Docs: https://mimo.mi.com/docs/zh-CN/quick-start/usage-guide/audio/speech-synthesis-v2.5
 // Message contract: target text in `role: assistant` content, style/voice
 // instructions in `role: user` content. Voice is selected via the top-level

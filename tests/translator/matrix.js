@@ -1,5 +1,5 @@
 // Data-driven test matrix built from PROVIDER_MODELS (single source of truth).
-// Adding a new provider/model to config auto-extends coverage — no test edits needed.
+// Adding a new provider/model to config auto-extends coverage - no test edits needed.
 import {
   PROVIDER_MODELS,
   PROVIDER_ID_TO_ALIAS,

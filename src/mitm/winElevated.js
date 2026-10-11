@@ -26,7 +26,7 @@ function quotePs(value) {
 }
 
 /**
- * Run PowerShell script — escalated via UAC popup if not already admin.
+ * Run PowerShell script - escalated via UAC popup if not already admin.
  * Returns Promise resolving on exit code 0, rejecting otherwise.
  *
  * IMPORTANT: each call triggers ONE UAC popup. Batch multiple admin tasks
@@ -37,7 +37,7 @@ function runElevatedPowerShell(script) {
 
   const encoded = Buffer.from(script, "utf16le").toString("base64");
 
-  // If already admin, run directly — zero popup
+  // If already admin, run directly - zero popup
   if (isAdmin()) {
     return new Promise((resolve, reject) => {
       exec(
@@ -51,7 +51,7 @@ function runElevatedPowerShell(script) {
     });
   }
 
-  // Not admin — wrap with Start-Process -Verb RunAs (UAC popup)
+  // Not admin - wrap with Start-Process -Verb RunAs (UAC popup)
   const wrapper = `
     $proc = Start-Process powershell -ArgumentList @(
       '-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',

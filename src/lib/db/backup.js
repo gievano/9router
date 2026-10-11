@@ -1,4 +1,4 @@
-// DB safety backups — taken ONLY before a schema change (see migrate.js).
+// DB safety backups - taken ONLY before a schema change (see migrate.js).
 //
 // ⚠️ AGENT/DEV NOTES:
 // - Backups are a best-effort safety net before schema migrations. There is NO

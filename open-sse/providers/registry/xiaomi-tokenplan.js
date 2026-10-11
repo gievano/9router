@@ -15,7 +15,7 @@ export default {
     textIcon: "XT",
     website: "https://mimo.xiaomi.com",
     notice: {
-      text: "Xiaomi MiMo Token Plan subscription (API key starts with tp-). Token Plan keys are cluster-specific — select the region matching your subscription.",
+      text: "Xiaomi MiMo Token Plan subscription (API key starts with tp-). Token Plan keys are cluster-specific - select the region matching your subscription.",
       apiKeyUrl: "https://mimo.xiaomi.com",
     },
   },
@@ -37,7 +37,7 @@ export default {
     defaultRegion: "sgp",
   },
   // Multi-endpoint: pick the transport matching client sourceFormat to skip translation.
-  // baseUrl omitted — region-dynamic, resolved in the executor's buildUrl.
+  // baseUrl omitted - region-dynamic, resolved in the executor's buildUrl.
   transports: [
     {
       format: "openai",

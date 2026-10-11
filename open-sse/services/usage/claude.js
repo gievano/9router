@@ -19,7 +19,7 @@ const CLAUDE_CONFIG = {
 };
 
 // OAuth usage endpoint rate-limits (429); cool down per-token to stop hammering it.
-// Only the quota endpoint is affected — chat with the same token still works.
+// Only the quota endpoint is affected - chat with the same token still works.
 const OAUTH_429_COOLDOWN_MS = 180000;
 const oauthCooldown = new Map();
 
@@ -119,7 +119,7 @@ async function fetchClaudeUsageRaw(accessToken, proxyOptions = null) {
       // Model-scoped weekly limits (e.g. Fable) arrive in limits[], not as
       // seven_day_* keys: { kind: "weekly_scoped", percent, resets_at,
       // scope: { model: { display_name: "Fable" } } }. No limits entry means
-      // the account has no such window — omit the row, never fabricate one.
+      // the account has no such window - omit the row, never fabricate one.
       if (Array.isArray(data.limits)) {
         for (const limit of data.limits) {
           if (limit?.kind !== "weekly_scoped") continue;

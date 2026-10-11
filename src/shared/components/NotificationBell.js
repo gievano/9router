@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ChangelogModal from "./ChangelogModal";
 import { useSessionStore } from "@/store/sessionStore";
+import { useTaskStore } from "@/store/taskStore";
+import { revealBackgroundedTasks } from "./LongTaskBanner";
 
 const POLL_MS = 60000;
 
@@ -14,7 +16,7 @@ const SEVERITY_STYLE = {
 
 /**
  * Notification bell: quota pressure, updates and anything the scan route
- * derives. A key-signed session gets nothing — these messages describe this
+ * derives. A key-signed session gets nothing - these messages describe this
  * install, not the caller's own key.
  */
 export default function NotificationBell() {
@@ -24,6 +26,7 @@ export default function NotificationBell() {
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
+  const [jobs, setJobs] = useState([]);
   const ref = useRef(null);
 
   const load = useCallback(async () => {
@@ -67,6 +70,40 @@ export default function NotificationBell() {
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  // Running server-side operations. Listed here so a job that outlived the page
+  // that started it is still reachable: the banner sits collapsed in a corner
+  // with nothing pointing at it, and "where did that import go" has no answer
+  // without this list.
+  const loadJobs = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await fetch("/api/proxy-pools/import-jobs", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const live = (Array.isArray(data.jobs) ? data.jobs : []).filter(
+        (j) => j.status === "queued" || j.status === "running"
+      );
+      setJobs(live);
+    } catch {
+      // A failed poll must not disturb the header.
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    loadJobs();
+    const timer = setInterval(loadJobs, 4000);
+    return () => clearInterval(timer);
+  }, [isAdmin, loadJobs]);
+
+  // The task store holds whatever banner is mounted; when a job is showing there
+  // already the bell only mirrors its state, and clicking must not expand two
+  // cards for one operation. (The selector returns the store array itself, not
+  // a derived .map(): a derived array is a new reference every render, which
+  // re-subscribes the component on every paint and loops the page to death.)
+  const tasks = useTaskStore((state) => state.tasks);
+  const taskTitles = useMemo(() => tasks.map((t) => t.title), [tasks]);
 
   const markAllRead = async () => {
     setUnread(0);
@@ -129,10 +166,68 @@ export default function NotificationBell() {
             )}
           </div>
 
+          {jobs.length > 0 && (
+            <>
+              <div className="px-3.5 pt-3 pb-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                  Running in background
+                </span>
+              </div>
+              {jobs.map((job) => {
+                const pct = Number(job.progress) || 0;
+                const alreadyShown = taskTitles.includes("Importing proxies");
+                return (
+                  <button
+                    key={job.id}
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      // Expand the collapsed corner card instead of rendering a
+                      // second copy of it. Navigation lands where the operator
+                      // started the run, so the task store reconnects and the
+                      // banner reopens on the run itself.
+                      revealBackgroundedTasks();
+                      if (!alreadyShown && typeof window !== "undefined") {
+                        window.location.assign("/dashboard/proxy-pools");
+                      } else if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("9r:reveal-tasks"));
+                      }
+                    }}
+                    className="block w-full text-left border-b border-border-subtle/60 last:border-0"
+                  >
+                    <span className="flex items-start gap-2 px-3.5 py-2.5 transition-colors hover:bg-surface-2">
+                      <span className="material-symbols-outlined text-[16px] mt-0.5 shrink-0 text-primary">
+                        download
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-medium text-text-main">
+                          Importing proxies
+                        </span>
+                        <span className="block text-[11px] text-text-muted mt-0.5 break-words">
+                          {job.message || `${pct}%`}
+                        </span>
+                        <span className="mt-1.5 block h-1 overflow-hidden rounded bg-border">
+                          <span
+                            className="block h-full bg-primary transition-[width] duration-300"
+                            style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
+                          />
+                        </span>
+                      </span>
+                      <span className="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-primary">
+                        {pct}%
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </>
+          )}
           <div className="max-h-[min(380px,60vh)] overflow-y-auto">
             {visible.length === 0 ? (
+              // Only claim "nothing" when the panel really is empty: a running
+              // job listed just above contradicts it.
               <p className="px-4 py-6 text-center text-xs text-text-muted">
-                Nothing to report.
+                {jobs.length > 0 ? "No notifications." : "Nothing to report."}
               </p>
             ) : (
               visible.map((n) => {

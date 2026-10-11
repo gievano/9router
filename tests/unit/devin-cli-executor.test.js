@@ -13,7 +13,7 @@ vi.mock("node:child_process", () => ({
 const { default: DevinCliExecutor } = await import("open-sse/executors/devin-cli.js");
 
 // Fake devin ACP subprocess. Mirrors the real CLI's session/new validation:
-// it requires `mcpServers` to be an array, otherwise returns -32602 — this is
+// it requires `mcpServers` to be an array, otherwise returns -32602 - this is
 // the exact error the dashboard "test" button hit ("Invalid params").
 function makeFakeChild() {
   const child = new EventEmitter();
@@ -358,7 +358,7 @@ describe("DevinCliExecutor ACP session/new", () => {
     expect(child.opts.env.DEVIN_PERMISSION_MODE).toBe("bypass");
   });
 
-  it("does not inject WINDSURF_API_KEY — devin-cli uses stored CLI creds (devin auth login)", async () => {
+  it("does not inject WINDSURF_API_KEY - devin-cli uses stored CLI creds (devin auth login)", async () => {
     // Provider is noAuth; devin must fall back to ~/.local/share/devin/credentials.toml.
     // Injecting a bogus WINDSURF_API_KEY makes devin reject stored creds → -32000.
     const { child } = await runExecute({ accessToken: "bogus-token", apiKey: "bogus-key" });

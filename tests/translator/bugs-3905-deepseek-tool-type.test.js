@@ -1,7 +1,7 @@
 // Regression for #3905: defaultClaudeToolType() (type:"custom") must only run for
 // gateways that declare the requireClaudeToolType quirk (MiniMax). Claude-format
-// endpoints that only accept the legacy typeless tool shape — e.g. DeepSeek's
-// Anthropic-compatible endpoint, which answers HTTP 400 "unknown variant `custom`" —
+// endpoints that only accept the legacy typeless tool shape - e.g. DeepSeek's
+// Anthropic-compatible endpoint, which answers HTTP 400 "unknown variant `custom`" -
 // must never receive tools[].type = "custom".
 import { describe, it, expect } from "vitest";
 import { PROVIDERS } from "../../open-sse/providers/index.js";

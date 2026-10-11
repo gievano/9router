@@ -1,10 +1,10 @@
-// Pricing rates for AI models — all rates in $/1M tokens
+// Pricing rates for AI models - all rates in $/1M tokens
 //
 // Fallback order (first match wins):
-//   1. PROVIDER_PRICING[provider][model]  — provider-specific override
-//   2. FREE_MODEL_NAMESPACES               — upstream bills these at $0
-//   3. MODEL_PRICING[model]               — canonical model price (provider-agnostic)
-//   4. PATTERN_PRICING                    — glob pattern match (e.g. "codex-*")
+//   1. PROVIDER_PRICING[provider][model]  - provider-specific override
+//   2. FREE_MODEL_NAMESPACES               - upstream bills these at $0
+//   3. MODEL_PRICING[model]               - canonical model price (provider-agnostic)
+//   4. PATTERN_PRICING                    - glob pattern match (e.g. "codex-*")
 
 /**
  * Namespaces upstream meters at $0. A free model must never inherit a paid
@@ -26,7 +26,7 @@ export function isFreeModel(model) {
 }
 
 /**
- * Canonical model pricing — provider-agnostic.
+ * Canonical model pricing - provider-agnostic.
  * Cover all known models; deduplicated across providers.
  */
 export const MODEL_PRICING = {
@@ -187,11 +187,11 @@ export const MODEL_PRICING = {
  * Keyed by provider alias (cc, cx, gc, gh, ...) or provider id (openai, anthropic, ...).
  */
 export const PROVIDER_PRICING = {
-  // GitHub Copilot (gh) — explicit override, matches canonical gpt-5.3-codex rate
+  // GitHub Copilot (gh) - explicit override, matches canonical gpt-5.3-codex rate
   gh: {
     "gpt-5.3-codex": { input: 1.75, output: 14.00, cached: 0.175, reasoning: 14.00, cache_creation: 1.75 },
   },
-  // TokenRouter — exact rates from https://api.tokenrouter.com/api/pricing ($1/1M tokens).
+  // TokenRouter - exact rates from https://api.tokenrouter.com/api/pricing ($1/1M tokens).
   // Ratio→USD: input = model_ratio×2, output = model_ratio×completion_ratio×2.
   // These override the canonical MODEL_PRICING/PATTERN_PRICING, whose rates often
   // differ from TokenRouter's reseller pricing.
@@ -311,9 +311,9 @@ export const PROVIDER_PRICING = {
 };
 
 /**
- * Pattern-based pricing fallback — matched when no exact model entry found.
+ * Pattern-based pricing fallback - matched when no exact model entry found.
  * Patterns use simple glob: "*" matches any substring.
- * First match wins — order matters.
+ * First match wins - order matters.
  */
 export const PATTERN_PRICING = [
   // --- Codex variants ---
@@ -433,7 +433,7 @@ export function getPricingForModel(provider, model) {
     }
   }
 
-  // 4. Free-tier / community models — priced at zero so they're distinguishable from unknown
+  // 4. Free-tier / community models - priced at zero so they're distinguishable from unknown
   if (/(^|[-_/])(free|contributor|community|opencode|zen|preview-?free)([-_]|$)/i.test(model)) {
     return { input: 0, output: 0, cached: 0, reasoning: 0, cache_creation: 0 };
   }
@@ -452,7 +452,7 @@ const DEFAULT_PRICING = { input: 0.50, output: 2.00, cached: 0.25, reasoning: 2.
 
 /**
  * Get all provider pricing (for UI / API).
- * Returns PROVIDER_PRICING — consumers should fall back to MODEL_PRICING for unlisted models.
+ * Returns PROVIDER_PRICING - consumers should fall back to MODEL_PRICING for unlisted models.
  */
 export function getDefaultPricing() {
   return PROVIDER_PRICING;

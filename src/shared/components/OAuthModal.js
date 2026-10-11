@@ -52,7 +52,7 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
   const openedRef = useRef(false);
   // Proxy-flow session ledger: which provider's proxy THIS modal session
   // started, and whether its stop was already sent. Every stop-proxy call is
-  // gated on this — parent re-renders can never spam it, and a close stops
+  // gated on this - parent re-renders can never spam it, and a close stops
   // the owned proxy exactly once.
   const flowRef = useRef({ proxyStarted: false, proxyProvider: null, stopSent: false });
   // Parent callbacks are stored in refs so effect/callback identities stay
@@ -268,7 +268,7 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
     try {
       setError(null);
 
-      // Trae/Windsurf: proxy OAuth (browser mode) — handled by dedicated flow.
+      // Trae/Windsurf: proxy OAuth (browser mode) - handled by dedicated flow.
       // Paste-token mode is handled by handleManualSubmit (no /authorize call).
       if (PROXY_OAUTH_PROVIDERS.has(provider) && authMode === "browser") {
         await startProxyFlow(provider);
@@ -314,7 +314,7 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
         if (verifyUrl) window.open(verifyUrl, "_blank", "noopener,noreferrer");
 
         // Pass extraData for Kiro (contains _clientId, _clientSecret) and
-        // Qoder (contains _qoderMachineId / _qoderNonce — needed so mapTokens
+        // Qoder (contains _qoderMachineId / _qoderNonce - needed so mapTokens
         // can persist the machine id alongside the token).
         const extraData = provider === "kiro"
           ? {
@@ -476,7 +476,7 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
     startOAuthFlowRef.current = startOAuthFlow;
   });
 
-  // Reset state and start OAuth when modal opens — exactly once per open.
+  // Reset state and start OAuth when modal opens - exactly once per open.
   // Guarded by openedRef so StrictMode/effect re-runs never open extra tabs.
   useEffect(() => {
     if (!isOpen || !provider) return;
@@ -692,7 +692,7 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
         return;
       }
 
-      // Detect raw JWT access token (starts with eyJ) — skip URL parsing
+      // Detect raw JWT access token (starts with eyJ) - skip URL parsing
       if (input.startsWith("eyJ") && input.includes(".")) {
         await exchangeTokens(input, null);
         return;
@@ -737,7 +737,7 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
 
   // Clear session on modal close + cleanup proxy (idempotent: the owned
   // proxy is stopped at most once across effect-close, button-close, and
-  // Escape/backdrop-close — all funnel through here or the close effect).
+  // Escape/backdrop-close - all funnel through here or the close effect).
   const handleClose = useCallback(() => {
     stopOwnedProxy();
     onCloseRef.current();

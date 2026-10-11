@@ -2,7 +2,7 @@ import { BaseExecutor } from "./base.js";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
 import { PROVIDERS } from "../config/providers.js";
 
-// Trae executor — SOLO remote agent API.
+// Trae executor - SOLO remote agent API.
 //
 // Flow:
 //   1. POST {base}/chat_sessions          → { code:0, data:{ chat_session_id, message_id } }
@@ -99,7 +99,7 @@ export default class TraeExecutor extends BaseExecutor {
     return JSON.stringify(cp);
   }
 
-  // POST /chat_sessions — creates a session and submits the first turn.
+  // POST /chat_sessions - creates a session and submits the first turn.
   async createSession(headers, query, model, psd, signal) {
     const { mode, strategy, modelName } = this.resolveMode(model);
     const body = {
@@ -331,7 +331,7 @@ export default class TraeExecutor extends BaseExecutor {
     };
   }
 
-  // Refresh hook placeholder — Cloud-IDE-JWT is long-lived (~14d); refresh via
+  // Refresh hook placeholder - Cloud-IDE-JWT is long-lived (~14d); refresh via
   // ExchangeToken (refresh→access) is wired in services/tokenRefresh/providers.js.
   async refreshCredentials() {
     return null;

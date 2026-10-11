@@ -7,7 +7,7 @@ import { STORAGE_KEY, buildPrompt, loadDraft, saveDraft } from "./prd_model.js";
 
 /**
  * One textarea, one model, one call. The full PRD streams into a single
- * editable document — the earlier six-question wizard was removed because it
+ * editable document - the earlier six-question wizard was removed because it
  * asked the user to do the structuring the model should be doing.
  */
 export default function PrdBuilderClient() {
@@ -173,7 +173,7 @@ export default function PrdBuilderClient() {
           <div className="min-w-0 flex-1">
             <span className="block text-xs font-semibold text-text-muted uppercase">Model</span>
             <span className={`mt-0.5 block truncate text-sm ${model ? "text-text-main" : "text-text-muted"}`}>
-              {model || "Not selected — pick one first"}
+              {model || "Not selected - pick one first"}
             </span>
           </div>
           <Button variant="secondary" onClick={() => setShowPicker(true)} icon="tune">

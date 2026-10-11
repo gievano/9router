@@ -11,7 +11,7 @@
  * `stripReasoningContent` is intentionally conservative: it only strips
  * `reasoning_content` that is clearly a real thinking block. The 1-char
  * placeholder that `injectReasoningContent` (in `DefaultExecutor`) may
- * insert for upstream validation is preserved — stripping it would
+ * insert for upstream validation is preserved - stripping it would
  * re-trigger upstream complaints about missing reasoning on the next
  * turn.
  */

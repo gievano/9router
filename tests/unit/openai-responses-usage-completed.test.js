@@ -11,7 +11,7 @@ import { createSSETransformStreamWithLogger } from "../../open-sse/utils/stream.
  * reports usage and Responses clients (Codex CLI) keep their context gauge at 0,
  * so they never auto-compact and eventually hit the upstream context limit.
  *
- * Signature is (targetFormat, sourceFormat, ...) — targetFormat is what the
+ * Signature is (targetFormat, sourceFormat, ...) - targetFormat is what the
  * UPSTREAM speaks, sourceFormat is what the CLIENT speaks.
  */
 async function runTransform(chunks, targetFormat = FORMATS.OPENAI) {

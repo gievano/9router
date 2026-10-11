@@ -51,7 +51,7 @@ describe("GOLDEN response stream: CommandCode → OpenAI", () => {
 });
 
 describe("GOLDEN response stream: Kiro → OpenAI (finish after tool)", () => {
-  it("toolUse then stop — lock current finish_reason behavior", () => {
+  it("toolUse then stop - lock current finish_reason behavior", () => {
     const events = [
       { assistantResponseEvent: { content: "Hi" }, _eventType: "assistantResponseEvent" },
       { toolUseEvent: { toolUseId: "tu_1", name: "search", input: { q: "x" } }, _eventType: "toolUseEvent" },
@@ -63,7 +63,7 @@ describe("GOLDEN response stream: Kiro → OpenAI (finish after tool)", () => {
 });
 
 describe("GOLDEN response stream: Ollama → OpenAI (finish after tool)", () => {
-  it("tool_calls then done_reason=stop — lock current finish_reason", () => {
+  it("tool_calls then done_reason=stop - lock current finish_reason", () => {
     const events = [
       { model: "qwen3", message: { role: "assistant", tool_calls: [{ function: { name: "search", arguments: { q: "x" } } }] } },
       { model: "qwen3", done: true, done_reason: "stop", prompt_eval_count: 5, eval_count: 2 },

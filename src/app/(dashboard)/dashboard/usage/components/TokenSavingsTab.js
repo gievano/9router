@@ -30,7 +30,7 @@ function Bars({ daily }) {
       </div>
       <div className="mt-1 flex gap-1.5">
         {daily.map((d) => (
-          <div key={d.date} className="min-w-0 flex-1 text-center text-[10px] text-zinc-500">
+          <div key={d.date} className="min-w-0 flex-1 text-center text-[10px] text-text-muted">
             {d.date.slice(5)}
           </div>
         ))}
@@ -53,9 +53,9 @@ export default function TokenSavingsTab({ period }) {
       .finally(() => setLoading(false));
   }, [period]);
 
-  if (loading) return <div className="text-zinc-500 text-sm">Loading savings...</div>;
+  if (loading) return <div className="text-text-muted text-sm">Loading savings...</div>;
   if (!data || !data.totals) {
-    return <div className="text-zinc-500 text-sm">Couldn't load savings — refresh the page and try again.</div>;
+    return <div className="text-text-muted text-sm">Couldn't load savings - refresh the page and try again.</div>;
   }
 
   const rows = (data.models || []).filter((m) =>
@@ -65,25 +65,25 @@ export default function TokenSavingsTab({ period }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-          <div className="text-xs text-zinc-500">Tokens saved</div>
+        <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+          <div className="text-xs text-text-muted">Tokens saved</div>
           <div className="mt-1 text-2xl font-semibold text-emerald-400">{fmt(data.totals.savedTokens)}</div>
-          <div className="text-xs text-zinc-500">across {fmt(data.totals.requests)} requests</div>
+          <div className="text-xs text-text-muted">across {fmt(data.totals.requests)} requests</div>
         </div>
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-          <div className="text-xs text-zinc-500">Est. cost avoided</div>
+        <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+          <div className="text-xs text-text-muted">Est. cost avoided</div>
           <div className="mt-1 text-2xl font-semibold text-emerald-400">{money(data.totals.savedCost)}</div>
-          <div className="text-xs text-zinc-500">at live model rates</div>
+          <div className="text-xs text-text-muted">at live model rates</div>
         </div>
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-          <div className="text-xs text-zinc-500">Coverage</div>
-          <div className="mt-1 text-2xl font-semibold text-zinc-200">{(data.models || []).length} models</div>
-          <div className="text-xs text-zinc-500">with recorded savings</div>
+        <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+          <div className="text-xs text-text-muted">Coverage</div>
+          <div className="mt-1 text-2xl font-semibold text-text-main">{(data.models || []).length} models</div>
+          <div className="text-xs text-text-muted">with recorded savings</div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-        <div className="mb-2 text-sm font-medium text-zinc-300">Daily savings</div>
+      <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+        <div className="mb-2 text-sm font-medium text-text-main">Daily savings</div>
         {data.daily && data.daily.length > 0 ? (
           <Bars daily={data.daily} />
         ) : (
@@ -97,18 +97,18 @@ export default function TokenSavingsTab({ period }) {
         )}
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+      <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
         <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm font-medium text-zinc-300">Per model</div>
+          <div className="text-sm font-medium text-text-main">Per model</div>
           <input
             value={modelFilter}
             onChange={(e) => setModelFilter(e.target.value)}
             placeholder="Filter models..."
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800/60 px-3 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-500 sm:w-56"
+            className="w-full rounded-lg border border-border bg-zinc-800/60 px-3 py-1.5 text-sm text-text-main placeholder:text-text-muted sm:w-56"
           />
         </div>
         {rows.length === 0 ? (
-          <div className="text-zinc-500 text-sm">
+          <div className="text-text-muted text-sm">
             {(data.models || []).length === 0
               ? "No savings recorded in this period yet."
               : "No models match your filter."}
@@ -117,27 +117,27 @@ export default function TokenSavingsTab({ period }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="px-3 py-2 text-left text-zinc-500 font-medium whitespace-nowrap">Model</th>
-                  <th className="px-3 py-2 text-right text-zinc-500 font-medium whitespace-nowrap">Requests</th>
-                  <th className="px-3 py-2 text-right text-zinc-500 font-medium whitespace-nowrap">Saved tokens</th>
-                  <th className="px-3 py-2 text-right text-zinc-500 font-medium whitespace-nowrap">Est. saved</th>
+                <tr className="border-b border-border">
+                  <th className="px-3 py-2 text-left text-text-muted font-medium whitespace-nowrap">Model</th>
+                  <th className="px-3 py-2 text-right text-text-muted font-medium whitespace-nowrap">Requests</th>
+                  <th className="px-3 py-2 text-right text-text-muted font-medium whitespace-nowrap">Saved tokens</th>
+                  <th className="px-3 py-2 text-right text-text-muted font-medium whitespace-nowrap">Est. saved</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((m) => (
-                  <tr key={m.model} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
-                    <td className="px-3 py-2.5 max-w-[240px] truncate text-zinc-200" title={m.model}>{m.model}</td>
-                    <td className="px-3 py-2.5 text-right text-zinc-300">{fmt(m.requests)}</td>
+                  <tr key={m.model} className="border-b border-border/50 hover:bg-zinc-800/30">
+                    <td className="px-3 py-2.5 max-w-[240px] truncate text-text-main" title={m.model}>{m.model}</td>
+                    <td className="px-3 py-2.5 text-right text-text-main">{fmt(m.requests)}</td>
                     <td className="px-3 py-2.5 text-right text-emerald-400">{fmt(m.savedTokens)}</td>
-                    <td className="px-3 py-2.5 text-right text-zinc-400">{money(m.savedCost)}</td>
+                    <td className="px-3 py-2.5 text-right text-text-muted">{money(m.savedCost)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-        <div className="mt-2 text-xs text-zinc-500">
+        <div className="mt-2 text-xs text-text-muted">
           Cost is an estimate at live per-model rates; free-tier models record $0.
         </div>
       </div>

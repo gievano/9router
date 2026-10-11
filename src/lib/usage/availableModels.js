@@ -10,6 +10,12 @@ import { parseAllowedModels, matchesAllowedModels } from "../db/repos/allowedMod
  * the /v1/models listing both match the key's patterns against the model id
  * the client actually sends, which is usually `provider/model` or a bare combo
  * or studio name, so an entry is shown when ANY of its spellings matches.
+ *
+ * `entry.name` is deliberately NOT a candidate: it is a display label, never a
+ * call path. A provider row named "DeepSeek-V4-Pro" but addressed as
+ * `qd/dmodel` was showing up under a key scoped to `deepseek-v4-pro` - the
+ * label matched, the id never did, and the request gate would have refused the
+ * call. Only ids the client can actually send are admitted.
  */
 export function modelMatchCandidates(entry) {
   const out = [];
@@ -20,7 +26,6 @@ export function modelMatchCandidates(entry) {
   push(entry.routedModel);
   push(entry.fullModel);
   push(entry.model);
-  push(entry.name);
   // A `provider/*` pattern admits every model served under that provider, the
   // same way the key-creation clamp reads it.
   if (entry.provider) push(`${entry.provider}/*`);
@@ -40,6 +45,63 @@ export function filterModelsByAllowedModels(models, allowedModels) {
     if (!entry) return false;
     return modelMatchCandidates(entry).some((id) => matchesAllowedModels(patterns, id));
   });
+}
+
+/** Which spelling of this row the key's patterns admit, best first. */
+function admittedId(entry, patterns) {
+  const bare = String(entry.model || "").trim();
+  if (bare && matchesAllowedModels(patterns, bare)) return bare;
+  const routed = String(entry.routedModel || "").trim();
+  if (routed && matchesAllowedModels(patterns, routed)) return routed;
+  const full = String(entry.fullModel || "").trim();
+  if (full && matchesAllowedModels(patterns, full)) return full;
+  if (entry.provider && matchesAllowedModels(patterns, `${entry.provider}/*`)) {
+    return String(entry.provider);
+  }
+  return "";
+}
+
+const HEALTH = { ready: 3, limited: 2, cooldown: 1, unavailable: 0 };
+
+/** Keep the healthiest row per key: a model served by twenty connections is
+ *  still one model, and the card should say so once. */
+function betterRow(a, b) {
+  const ha = HEALTH[String(a.status || "").toLowerCase()] ?? 3;
+  const hb = HEALTH[String(b.status || "").toLowerCase()] ?? 3;
+  if (ha !== hb) return ha > hb ? a : b;
+  const wa = Number(a.contextWindow) || 0;
+  const wb = Number(b.contextWindow) || 0;
+  return wb > wa ? b : a;
+}
+
+/**
+ * One row per model the key may call.
+ *
+ * The same model is served by many provider connections - deepseek-v4-pro was
+ * reached through 21 of them - and the catalog lists each call path. That is
+ * right for routing and wrong for a list a person reads: the card showed
+ * deepseek-v4-pro twenty-one times and the key looked far less restricted than
+ * the twelve models it was actually given. Group by the id the client sends,
+ * which is what allowedModels is written against, and keep the healthiest row.
+ *
+ * Case is folded on the group key only, so `ark/DeepSeek-V4-Pro` and
+ * `ds/deepseek-v4-pro` land in one row instead of reading as two different
+ * models.
+ */
+export function collapseModelsByAdmittedId(models, allowedModels) {
+  const list = Array.isArray(models) ? models : [];
+  const patterns = parseAllowedModels(allowedModels);
+  if (!patterns) return [...list];
+  const byKey = new Map();
+  for (const entry of list) {
+    if (!entry) continue;
+    const id = admittedId(entry, patterns);
+    if (!id) continue;
+    const key = id.toLowerCase();
+    const prev = byKey.get(key);
+    byKey.set(key, prev ? betterRow(prev, entry) : entry);
+  }
+  return [...byKey.values()];
 }
 
 /**

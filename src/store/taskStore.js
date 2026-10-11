@@ -7,7 +7,7 @@ import { create } from "zustand";
  *
  * A 10 000-proxy import runs as a client-side loop of POSTs; the page component
  * that drives it unmounts when the operator navigates, and with it went the
- * banner — the loop kept running invisibly with nowhere to report progress.
+ * banner - the loop kept running invisibly with nowhere to report progress.
  * Moving the operation's progress into this store lets a banner mounted in the
  * dashboard layout keep reporting it, keep offering cancel, and stay collapsed
  * in a corner while the operator works somewhere else.

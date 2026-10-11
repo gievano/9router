@@ -76,14 +76,14 @@ async function handleSingleModelTts(body, modelStr, responseFormat, language, st
   const { provider, model } = modelInfo;
   log.info("ROUTING", `Provider: ${provider}, Voice: ${model}`);
 
-  // noAuth providers — no credential needed
+  // noAuth providers - no credential needed
   if (!CREDENTIALED_PROVIDERS.has(provider)) {
     const result = await handleTtsCore({ provider, model, input: body.input, responseFormat, language, style });
     if (result.success) return result.response;
     return errorResponse(result.status || HTTP_STATUS.BAD_GATEWAY, result.error || "TTS failed");
   }
 
-  // Credentialed providers — fallback loop (same pattern as embeddings)
+  // Credentialed providers - fallback loop (same pattern as embeddings)
   const excludeConnectionIds = new Set();
   let lastError = null;
   let lastStatus = null;

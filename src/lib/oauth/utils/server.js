@@ -7,7 +7,7 @@ import { CODEX_CONFIG, TRAE_CONFIG, WINDSURF_CONFIG, ZED_HOSTED_CONFIG } from ".
 // page issuing `fetch(..., {mode:"no-cors"})` to scan + hit 127.0.0.1 always sends
 // `Origin: https://attacker`. Reject any non-loopback Origin to block login-CSRF.
 function isLoopbackOrigin(origin) {
-  if (!origin) return true; // navigation redirect — allow
+  if (!origin) return true; // navigation redirect - allow
   return /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin);
 }
 
@@ -132,7 +132,7 @@ let codexProxyTimeout = null;
 const CODEX_PROXY_TIMEOUT_MS = 300000; // 5 minutes
 const CODEX_PORT = CODEX_CONFIG.fixedPort;
 
-// Pending exchange sessions keyed by state — used by server-side exchange mode
+// Pending exchange sessions keyed by state - used by server-side exchange mode
 const pendingExchanges = new Map();
 
 /**
@@ -258,7 +258,7 @@ export function startCodexProxy(appPort) {
         return;
       }
 
-      // Mode B: legacy channel fallback — 302 redirect to app /callback
+      // Mode B: legacy channel fallback - 302 redirect to app /callback
       const redirectUrl = `http://localhost:${appPort}/callback${url.search}`;
       res.writeHead(302, { Location: redirectUrl });
       res.end();
@@ -715,7 +715,7 @@ export function startZedProxy(preferredPort = 0) {
       if (!hasZedParams) {
         console.log(`[Zed proxy] ignoring non-callback ${req.method} ${url.pathname} (session kept, server kept)`);
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-        res.end(renderCodexResultPage(false, "Waiting for Zed sign-in — this request carried no login data."));
+        res.end(renderCodexResultPage(false, "Waiting for Zed sign-in - this request carried no login data."));
         return;
       }
       // Pass raw callback path+query to exchangeTokens → parseZedCallbackPayload.
@@ -879,7 +879,7 @@ export function startXiaomiMimoProxy() {
         return;
       }
 
-      // Try each pending session's private key — the callback URL carries no
+      // Try each pending session's private key - the callback URL carries no
       // state param, so we attempt decryption with every pending key.
       const pendingSessions = [...xiaomiMimoSessions.entries()]
         .filter(([, s]) => s.status === "pending");
@@ -901,7 +901,7 @@ export function startXiaomiMimoProxy() {
             matchedState = state;
             break;
           } catch {
-            // Wrong key for this session — try next
+            // Wrong key for this session - try next
           }
         }
 
@@ -966,7 +966,7 @@ export function stopXiaomiMimoProxy() {
   if (xiaomiMimoProxyServer) { xiaomiMimoProxyServer.close(); xiaomiMimoProxyServer = null; }
   xiaomiMimoProxyPort = null;
   // No callback can arrive once the listener is down, so drop every pending
-  // session — each holds an X25519 private key and they would otherwise
+  // session - each holds an X25519 private key and they would otherwise
   // accumulate for the process lifetime (one per /authorize call).
   xiaomiMimoSessions.clear();
 }
