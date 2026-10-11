@@ -299,7 +299,7 @@ export class KiroExecutor extends BaseExecutor {
   getOrderedBaseUrls(credentials) {
     const baseUrls = this.getBaseUrls();
     const authMethod = credentials?.providerSpecificData?.authMethod;
-    // IAM Identity Center (idc) tokens are AWS SSO access tokens — the same
+    // IAM Identity Center (idc) tokens are AWS SSO access tokens - the same
     // family as external_idp/api_key. The kiro.dev gateway rejects them with
     // 403 "bearer token invalid", so they must hit the CodeWhisperer
     // *.amazonaws.com surface, and in the region the token was minted in
@@ -346,16 +346,16 @@ export class KiroExecutor extends BaseExecutor {
   }
 
   /**
-   * Kiro execute — delegate to BaseExecutor for endpoint fallback + retry, then
+   * Kiro execute - delegate to BaseExecutor for endpoint fallback + retry, then
    * transform the binary AWS EventStream into OpenAI-shaped SSE on success.
    *
    * BaseExecutor.execute() walks config.baseUrls (runtime.us-east-1.kiro.dev →
    * codewhisperer → q) advancing to the next host on 429 (shouldRetry) and on
    * network/5xx errors, while tryRetry handles in-place retries per `retry: {429: 2}`.
    * Note: api-key connections reorder these so the *.amazonaws.com hosts come
-   * first — see getOrderedBaseUrls/buildUrl above.
+   * first - see getOrderedBaseUrls/buildUrl above.
    * Note: the baseUrls are alternate surfaces of one regional service, so rotation
-   * is edge-level failover — it does not grant fresh 429 quota. Per-account 429
+   * is edge-level failover - it does not grant fresh 429 quota. Per-account 429
    * spreading is handled upstream by account rotation in sse/handlers/chat.js.
    *
    * Errors are returned untransformed so the upstream handler can read the body,

@@ -120,13 +120,13 @@ export function TtsExampleCard({ providerId }) {
       setSelectedVoice(voices[0].id);
       setSelectedVoiceName(voices[0].name || voices[0].id);
     } else {
-      // Model has no preset voices (voicedesign/voiceclone) — drop stale voice
+      // Model has no preset voices (voicedesign/voiceclone) - drop stale voice
       setSelectedVoice("");
       setSelectedVoiceName("");
     }
   }, [selectedModel]);
 
-  // Open modal — load language list
+  // Open modal - load language list
   const openModal = async () => {
     setModalOpen(true);
     setModalSearch("");
@@ -281,7 +281,7 @@ export function TtsExampleCard({ providerId }) {
             </span>
           </Row>
 
-          {/* Model selector — prefer PROVIDER_MODELS[kind=tts], else providerModels via modelKey */}
+          {/* Model selector - prefer PROVIDER_MODELS[kind=tts], else providerModels via modelKey */}
           {config.hasModelSelector && (config.modelKey || getModelsByProviderId(providerId).some(m => getModelKind(m) === "tts")) && (
             <Row label="Model">
               <select
@@ -299,7 +299,7 @@ export function TtsExampleCard({ providerId }) {
             </Row>
           )}
 
-          {/* Language hint dropdown (Gemini, Xiaomi MiMo) — sends body.language to guide pronunciation */}
+          {/* Language hint dropdown (Gemini, Xiaomi MiMo) - sends body.language to guide pronunciation */}
           {config.hasLanguageHint && (
             <Row label="Language">
               <select
@@ -340,7 +340,7 @@ export function TtsExampleCard({ providerId }) {
             </Row>
           )}
 
-          {/* Voice chips — shown after language picked (edge-tts, local-device) or always (OpenAI/ElevenLabs/MiMo) */}
+          {/* Voice chips - shown after language picked (edge-tts, local-device) or always (OpenAI/ElevenLabs/MiMo) */}
           {countryVoices.length > 0 && (
             <Row label="Voice">
               <div className="flex flex-wrap gap-1.5">
@@ -373,7 +373,7 @@ export function TtsExampleCard({ providerId }) {
             </Row>
           )}
 
-          {/* Voice ID input (ElevenLabs) — manual entry or auto-fill from chip */}
+          {/* Voice ID input (ElevenLabs) - manual entry or auto-fill from chip */}
           {config.hasVoiceIdInput && (
             <Row label="Voice ID">
               <div className="flex flex-col gap-1">

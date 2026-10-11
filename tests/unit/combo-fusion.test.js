@@ -125,7 +125,7 @@ describe("fusion combo", () => {
       judgeModel: "p/judge",
       tuning: { minPanel: 2, stragglerGraceMs: 50, panelHardTimeoutMs: 5000 },
     });
-    // No judge call — single answer means there is nothing to fuse.
+    // No judge call - single answer means there is nothing to fuse.
     const judged = handleSingleModel.mock.calls.some(([, m]) => m === "p/judge");
     expect(judged).toBe(false);
   });

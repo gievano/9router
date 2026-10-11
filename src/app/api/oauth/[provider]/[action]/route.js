@@ -96,7 +96,7 @@ export async function GET(request, { params }) {
     const { searchParams } = new URL(request.url);
 
     if (action === "authorize") {
-      // Xiaomi Desktop: custom ECDH flow — generate keypair, start proxy, return authorize URL
+      // Xiaomi Desktop: custom ECDH flow - generate keypair, start proxy, return authorize URL
       if (provider === "xiaomi-mimo") {
         const { generateKeyPair, buildAuthorizeUrl, getKeyName } = await import("@/lib/oauth/providers/xiaomi-mimo");
         const { publicKey, privateKeyDer } = generateKeyPair();
@@ -203,7 +203,7 @@ export async function GET(request, { params }) {
         const payload = { ...session };
         if (provider === "xiaomi-mimo") {
           // Unlike the others this does not auto-exchange server-side, so a
-          // finished session must survive until the client POSTs /exchange —
+          // finished session must survive until the client POSTs /exchange -
           // that call clears it. A failed one is cleared here instead.
           if (session.status === "error") {
             clearXiaomiMimoSession(state);
@@ -311,7 +311,7 @@ export async function POST(request, { params }) {
 
     if (action === "register-session") {
       // Register proxy session out of URL query (state) + body (codeVerifier).
-      // Zed's codeVerifier encodes the RSA private key — must stay out of URL/logs.
+      // Zed's codeVerifier encodes the RSA private key - must stay out of URL/logs.
       const searchParams = new URL(request.url).searchParams;
       const state = searchParams.get("state") || body?.state;
       if (!state) return NextResponse.json({ error: "Missing state" }, { status: 400 });
@@ -326,7 +326,7 @@ export async function POST(request, { params }) {
     if (action === "exchange") {
       const { code, redirectUri, codeVerifier, state, meta, systemId } = body;
 
-      // Xiaomi MiMo: no token exchange needed — the callback already decrypted the sk.
+      // Xiaomi MiMo: no token exchange needed - the callback already decrypted the sk.
       // Just read the session result and create the connection.
       if (provider === "xiaomi-mimo") {
         if (!state) {
@@ -342,13 +342,13 @@ export async function POST(request, { params }) {
         const { uid, accessToken, baseUrl } = session.result;
 
         // Desktop-exclusive Preview models authenticate with the account-session
-        // passToken, which only lives in MiMo Desktop's cookie store — attach it
+        // passToken, which only lives in MiMo Desktop's cookie store - attach it
         // to the connection so those models work right after OAuth.
         let passToken = null;
         try {
           passToken = await readDesktopPassToken();
         } catch {
-          // Desktop not installed / cookie DB locked — preview models stay unavailable.
+          // Desktop not installed / cookie DB locked - preview models stay unavailable.
         }
 
         try {
@@ -560,7 +560,7 @@ export async function POST(request, { params }) {
         error: result.error,
         errorDescription: result.errorDescription,
         pending: isPending,
-        // fatal: unrecoverable (e.g. post-exchange failure) — client must stop polling and show it
+        // fatal: unrecoverable (e.g. post-exchange failure) - client must stop polling and show it
         ...(result.fatal ? { fatal: true } : {}),
       });
     }

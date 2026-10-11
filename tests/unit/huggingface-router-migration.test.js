@@ -4,7 +4,7 @@
  * The legacy base URL `https://api-inference.huggingface.co` no longer resolves
  * (DNS ENOTFOUND), so every HuggingFace image/STT request failed at the fetch
  * layer. The replacement is `https://router.huggingface.co`, which routes by
- * `<provider>/<providerResolvedModelId>` — the provider-resolved id is NOT the
+ * `<provider>/<providerResolvedModelId>` - the provider-resolved id is NOT the
  * Hub model id and must be resolved from the Hub API's inferenceProviderMapping.
  *
  * Covers:
@@ -35,7 +35,7 @@ const modelMap = imageConfig.modelMap || {};
 const mappingPath = (value) => (typeof value === "string" ? value : value.path);
 const mappingTask = (value) => (typeof value === "string" ? "text-to-image" : value.task || "text-to-image");
 
-describe("HuggingFace registry — legacy host removal", () => {
+describe("HuggingFace registry - legacy host removal", () => {
   it("does not use the dead api-inference host for images", () => {
     expect(imageConfig.baseUrl).not.toContain(DEAD_HOST);
   });
@@ -102,7 +102,7 @@ describe("HuggingFace image URL builder", () => {
   it("does not apply the router mapping when a custom endpoint is set", () => {
     const creds = { providerSpecificData: { baseUrl: "https://tgi.internal" } };
 
-    // The custom endpoint knows its own model ids — the Hub id passes through verbatim.
+    // The custom endpoint knows its own model ids - the Hub id passes through verbatim.
     expect(imageAdapter.buildUrl("black-forest-labs/FLUX.1-schnell", creds)).toBe(
       "https://tgi.internal/black-forest-labs/FLUX.1-schnell"
     );
@@ -340,7 +340,7 @@ describe("HuggingFace STT model parameters", () => {
 
   it("does not advertise a language parameter the ASR route cannot carry", () => {
     // transcribeHuggingFace posts raw audio bytes and never reads formData, and the
-    // router's ASR payload has no `language` field — so a UI-declared "language"
+    // router's ASR payload has no `language` field - so a UI-declared "language"
     // param is silently dropped. Declaring it lies to the dashboard.
     for (const model of sttModels) {
       expect(model.params, `${model.id} advertises an unusable language param`).toEqual([]);

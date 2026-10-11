@@ -46,7 +46,7 @@ async function normalizeTarget(targetModel) {
  return `${resolveProviderAlias(prefix)}/${rest}`;
 }
 
-// GET /api/model-editor — list virtual (studio) models
+// GET /api/model-editor - list virtual (studio) models
 export async function GET() {
   try {
   const models = await getStudioModels();
@@ -71,7 +71,7 @@ async function validate({ callName, targetModel, previousName }) {
   getModelAliases().catch(() => ({})),
   ]);
   if (callName !== previousName && models.some((m) => m.callName === callName)) {
-  return `"${callName}" already exists — pick another name.`;
+  return `"${callName}" already exists - pick another name.`;
   }
   if (callName !== previousName && combos.some((c) => c.name === callName)) {
   return `"${callName}" is already used by a combo.`;
@@ -96,7 +96,7 @@ async function validate({ callName, targetModel, previousName }) {
   return null;
 }
 
-// POST /api/model-editor — create { callName, targetModel, displayName?, contextWindow?, systemPrompt? }
+// POST /api/model-editor - create { callName, targetModel, displayName?, contextWindow?, systemPrompt? }
 export async function POST(request) {
   try {
   const body = await request.json();
@@ -123,7 +123,7 @@ export async function POST(request) {
   }
 }
 
-// PUT /api/model-editor — update (body: { callName, previousName?, ...fields })
+// PUT /api/model-editor - update (body: { callName, previousName?, ...fields })
 export async function PUT(request) {
   try {
   const body = await request.json();

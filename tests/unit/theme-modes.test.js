@@ -7,7 +7,7 @@
  * defines, which would silently render a broken theme.
  *
  * The suite runs in the node environment, so window/document/localStorage are
- * stubbed before the store module loads — zustand-persist reads localStorage at
+ * stubbed before the store module loads - zustand-persist reads localStorage at
  * import time.
  */
 

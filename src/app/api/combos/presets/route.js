@@ -46,7 +46,7 @@ function parseSource(value) {
   return value;
 }
 
-// GET /api/combos/presets?source=cursor|claude — preview items
+// GET /api/combos/presets?source=cursor|claude - preview items
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -71,7 +71,7 @@ export async function GET(request) {
   }
 }
 
-// POST /api/combos/presets — create missing combos for a source
+// POST /api/combos/presets - create missing combos for a source
 export async function POST(request) {
   try {
     const body = await request.json().catch(() => ({}));

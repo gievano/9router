@@ -1,5 +1,5 @@
 /**
- * OAuth Configuration Constants — static data lives in registry, re-exported here for consumers.
+ * OAuth Configuration Constants - static data lives in registry, re-exported here for consumers.
  */
 import { platform, arch } from "os";
 import { ANTIGRAVITY_OAUTH_CLIENT, GOOGLE_OAUTH_CLIENT } from "open-sse/providers/shared.js";
@@ -25,24 +25,24 @@ export const CLAUDE_CONFIG = { ...PROVIDER_OAUTH["claude"] };
 export const CODEX_CONFIG = { ...PROVIDER_OAUTH["codex"] };
 
 // Gemini (Google) OAuth Configuration (Standard OAuth2)
-// clientId/clientSecret from GOOGLE_OAUTH_CLIENT (shared.js) — not stored in registry
+// clientId/clientSecret from GOOGLE_OAUTH_CLIENT (shared.js) - not stored in registry
 export const GEMINI_CONFIG = { ...GOOGLE_OAUTH_CLIENT, ...PROVIDER_OAUTH["gemini-cli"] };
 
 // Qoder OAuth Configuration (Device Token Flow with PKCE).
 // Device tokens are long-lived (~30 days for access, ~360 for refresh).
 // The upstream refresh endpoint at center.qoder.sh returns 403 for our
-// flow — we accept that and surface it to the user as "re-login" instead
+// flow - we accept that and surface it to the user as "re-login" instead
 // of attempting to silently rotate.
 export const QODER_CONFIG = { ...PROVIDER_OAUTH["qoder"] };
 
-// Qoder CN (qoder.com.cn) — same device flow as intl Qoder, CN endpoints.
+// Qoder CN (qoder.com.cn) - same device flow as intl Qoder, CN endpoints.
 export const QODER_CN_CONFIG = { ...PROVIDER_OAUTH["qoder-cn"] };
 
 // iFlow OAuth Configuration (Authorization Code)
 export const IFLOW_CONFIG = { ...PROVIDER_OAUTH["iflow"] };
 
 // Antigravity OAuth Configuration (Standard OAuth2 with Google)
-// clientId/clientSecret from ANTIGRAVITY_OAUTH_CLIENT (shared.js) — not stored in registry
+// clientId/clientSecret from ANTIGRAVITY_OAUTH_CLIENT (shared.js) - not stored in registry
 // loadCodeAssistClientMetadata is dynamic (runtime platform detection)
 export const ANTIGRAVITY_CONFIG = {
   ...ANTIGRAVITY_OAUTH_CLIENT,
@@ -67,7 +67,7 @@ export const GITHUB_CONFIG = { ...PROVIDER_OAUTH["github"] };
 // Kiro OAuth Configuration (multi-method: AWS Builder ID / IDC / Social / Import Token)
 export const KIRO_CONFIG = { ...PROVIDER_OAUTH["kiro"] };
 
-// AWS region allowlist pattern — prevents SSRF via region injection into upstream URLs (GHSA-6mwv-4mrm-5p3m)
+// AWS region allowlist pattern - prevents SSRF via region injection into upstream URLs (GHSA-6mwv-4mrm-5p3m)
 export const AWS_REGION_PATTERN = /^[a-z]{2}-[a-z]+-\d{1,2}$/;
 
 // Reject any region that is not a valid AWS region before interpolating it into a URL
@@ -89,7 +89,7 @@ export const CURSOR_CONFIG = {
   },
 };
 
-// Kimi Code OAuth (Device Code Flow) — merged into provider id `kimi` (dual auth)
+// Kimi Code OAuth (Device Code Flow) - merged into provider id `kimi` (dual auth)
 // clientId: registry first, env override for forks
 export const KIMI_CONFIG = {
   ...PROVIDER_OAUTH["kimi"],
@@ -117,7 +117,7 @@ export const GITLAB_CONFIG = { ...PROVIDER_OAUTH["gitlab"] };
 // CodeBuddy (Tencent) OAuth Configuration (Browser OAuth Polling Flow)
 export const CODEBUDDY_CONFIG = { ...PROVIDER_OAUTH["codebuddy-cn"] };
 
-// CodeBuddy International — same shape as CN, .ai domain (mirror of codebuddy-cn).
+// CodeBuddy International - same shape as CN, .ai domain (mirror of codebuddy-cn).
 export const CODEBUDDY_INTL_CONFIG = { ...PROVIDER_OAUTH["codebuddy-intl"] };
 
 // Kimchi OAuth Configuration (Browser token callback flow)
@@ -125,20 +125,20 @@ export const KIMCHI_CONFIG = { ...PROVIDER_OAUTH["kimchi"] };
 export const FREEBUFF_CONFIG = { ...PROVIDER_OAUTH["freebuff"] };
 
 // Grok CLI / Grok Build OAuth Configuration (Device Code Flow)
-// Endpoint: cli-chat-proxy.grok.com — same client_id as xai, different flow + scopes
+// Endpoint: cli-chat-proxy.grok.com - same client_id as xai, different flow + scopes
 export const GROK_CLI_CONFIG = { ...PROVIDER_OAUTH["grok-cli"] };
 
-// Muse — subscription device code flow to auth.meta.com, no refresh
+// Muse - subscription device code flow to auth.meta.com, no refresh
 // (Meta rejects refresh_token grants; the minted Model API key never expires).
 export const MUSE_CONFIG = { ...PROVIDER_OAUTH["muse"] };
 
-// Trae (ByteDance marscode) OAuth — authorization_code flow with local callback.
+// Trae (ByteDance marscode) OAuth - authorization_code flow with local callback.
 //   1) POST GetLoginGuidance {loginTraceID} → {Result.LoginHost}
 //   2) Browser opens ${loginHost}/authorization?client_id=...&login_trace_id=...&auth_callback_url=${cb}
 //   3) Redirect → ${cb}?refreshToken=...&loginHost=...&isRedirect=true
 //   4) POST ExchangeToken {ClientID, RefreshToken, ClientSecret:"-"} → {Result.AccessToken, ExpiresAt}
 //   5) POST GetUserInfo (x-cloudide-token) → email/name
-// Xiaomi MiMo Desktop OAuth — custom ECDH encrypted-callback flow (NOT standard OAuth2).
+// Xiaomi MiMo Desktop OAuth - custom ECDH encrypted-callback flow (NOT standard OAuth2).
 //   1) Client generates X25519 keypair
 //   2) Browser opens ${platformUrl}/authorize?pk=<pubkey>&redirect_uri=http://localhost:<port>/&kn=mimocode&key_name=...
 //   3) Redirect → http://localhost:<port>/?u=<base64 encrypted payload>
@@ -184,7 +184,7 @@ export const TRAE_CONFIG = {
   oauthTimeoutMs: 600_000,
 };
 
-// Windsurf / Devin CLI OAuth — authorization_code (implicit) flow with local callback.
+// Windsurf / Devin CLI OAuth - authorization_code (implicit) flow with local callback.
 //   1) Browser opens windsurf.com/windsurf/signin?response_type=token&client_id=...&redirect_uri=${cb}
 //   2) Redirect → ${cb}?access_token=${firebaseJWT}&state=...
 //   3) POST RegisterUser {firebase_id_token} → {apiKey, apiServerUrl, name}
@@ -206,14 +206,14 @@ export const WINDSURF_CONFIG = {
   oauthTimeoutMs: 600_000,
 };
 
-// GLM Coding (Z.ai) OAuth — ZCode CLI polling flow (NOT PKCE): init mints a
+// GLM Coding (Z.ai) OAuth - ZCode CLI polling flow (NOT PKCE): init mints a
 // one-off poll token, the browser opens the server-generated authorize_url,
 // poll/ready returns the tokens. The Z.AI OAuth token is then exchanged for a
 // platform business JWT and finally a long-lived coding-plan API key (no
 // refresh grant).
 export const GLM_OAUTH_CONFIG = { ...PROVIDER_OAUTH["glm"] };
 
-// Zed hosted LLM aggregator — RSA keypair native-app auth (NOT OAuth).
+// Zed hosted LLM aggregator - RSA keypair native-app auth (NOT OAuth).
 // Client generates ephemeral RSA-2048 keypair; user signs in at zed.dev/native_app_signin;
 // Zed redirects to local callback with access_token RSA-encrypted against our public key.
 // See open-sse/shared/zedAuth.js for the keypair/decrypt helpers.

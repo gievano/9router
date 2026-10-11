@@ -5,14 +5,14 @@
 import { proxyAwareFetch } from "../../utils/proxyFetch.js";
 import { U } from "./shared.js";
 
-// GLM quota endpoints (region-aware) — url from registry transport.usage
+// GLM quota endpoints (region-aware) - url from registry transport.usage
 const GLM_QUOTA_URLS = {
   international: U("glm").url,
   china: U("glm-cn").url,
 };
 
 /**
- * Parse the GLM quota API response — shared by pasted API keys and
+ * Parse the GLM quota API response - shared by pasted API keys and
  * OAuth-minted coding-plan keys (both hit the same monitor endpoint).
  * Supports both TOKENS_LIMIT and CREDIT_LIMIT and dynamic intervals (e.g. session 5h, weekly 7d).
  */

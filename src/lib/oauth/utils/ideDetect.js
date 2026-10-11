@@ -6,7 +6,7 @@ import os from "os";
 
 const execAsync = promisify(exec);
 
-// Install paths per provider per platform — Trae and standard Windsurf IDE locations.
+// Install paths per provider per platform - Trae and standard Windsurf IDE locations.
 const IDE_PATHS = {
   trae: {
     darwin: ["/Applications/Trae.app"],

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { aggregateComboCapabilities } from "../../open-sse/providers/capabilities.js";
 
-describe("aggregateComboCapabilities — null / empty", () => {
+describe("aggregateComboCapabilities - null / empty", () => {
   it("returns null for null", () => {
     expect(aggregateComboCapabilities(null)).toBeNull();
   });
@@ -11,7 +11,7 @@ describe("aggregateComboCapabilities — null / empty", () => {
   });
 });
 
-describe("aggregateComboCapabilities — single model passthrough", () => {
+describe("aggregateComboCapabilities - single model passthrough", () => {
   it("single model returns its own capabilities", () => {
     const caps = aggregateComboCapabilities(["opencode-go/mimo-v2.5"]);
     expect(caps.vision).toBe(true);
@@ -23,7 +23,7 @@ describe("aggregateComboCapabilities — single model passthrough", () => {
   });
 });
 
-describe("aggregateComboCapabilities — union fields (vision, audioInput, search)", () => {
+describe("aggregateComboCapabilities - union fields (vision, audioInput, search)", () => {
   it("vision is true if any backend has it", () => {
     // deepseek-v4-pro: no vision; mimo-v2.5: vision
     const caps = aggregateComboCapabilities([
@@ -60,7 +60,7 @@ describe("aggregateComboCapabilities — union fields (vision, audioInput, searc
   });
 });
 
-describe("aggregateComboCapabilities — intersection: tools", () => {
+describe("aggregateComboCapabilities - intersection: tools", () => {
   it("tools is false if any backend lacks it", () => {
     // gpt-image-1: tools:false; gpt-5: tools:true
     const caps = aggregateComboCapabilities([
@@ -79,7 +79,7 @@ describe("aggregateComboCapabilities — intersection: tools", () => {
   });
 });
 
-describe("aggregateComboCapabilities — primary model drives reasoning fields", () => {
+describe("aggregateComboCapabilities - primary model drives reasoning fields", () => {
   it("thinkingFormat comes from the first model", () => {
     // primary: mimo-v2.5 (deepseek); secondary: kimi-k2.5 (kimi)
     const caps = aggregateComboCapabilities([
@@ -99,7 +99,7 @@ describe("aggregateComboCapabilities — primary model drives reasoning fields",
   });
 });
 
-describe("aggregateComboCapabilities — context/output limits", () => {
+describe("aggregateComboCapabilities - context/output limits", () => {
   it("contextWindow is the largest window across all models", () => {
     // mimo-v2.5: 1048576; kimi-k2.5 (*kimi*k2* pattern): 262144.
     // A combo fails over between models, so it can use the biggest window its
@@ -131,7 +131,7 @@ describe("aggregateComboCapabilities — context/output limits", () => {
   });
 });
 
-describe("aggregateComboCapabilities — nested combo resolution via comboLookup", () => {
+describe("aggregateComboCapabilities - nested combo resolution via comboLookup", () => {
   it("resolves nested combo and unions vision from its members", () => {
     const lookup = { "inner-combo": ["opencode-go/deepseek-v4-pro", "opencode-go/mimo-v2.5"] };
     const caps = aggregateComboCapabilities(["inner-combo"], lookup);

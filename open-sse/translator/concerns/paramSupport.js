@@ -53,7 +53,7 @@ export function stripUnsupportedParams(provider, model, body) {
     for (const key of rule.drop || []) {
       if (body[key] !== undefined) delete body[key];
     }
-    // Per-message field drop (assistant turns only — that is where clients replay reasoning).
+    // Per-message field drop (assistant turns only - that is where clients replay reasoning).
     if (Array.isArray(rule.dropMessageFields) && Array.isArray(body.messages)) {
       for (const msg of body.messages) {
         if (!msg || msg.role !== "assistant") continue;

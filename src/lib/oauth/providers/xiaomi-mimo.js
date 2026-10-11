@@ -9,15 +9,15 @@ import { XIAOMI_MIMO_CONFIG } from "../constants/oauth.js";
 /**
  * Generate an X25519 keypair for the OAuth handshake.
  * @returns {{ publicKey: string, privateKeyDer: Buffer }}
- *   publicKey     — base64 SPKI (for the `pk` URL param)
- *   privateKeyDer — PKCS8 DER Buffer (for ECDH later)
+ *   publicKey     - base64 SPKI (for the `pk` URL param)
+ *   privateKeyDer - PKCS8 DER Buffer (for ECDH later)
  */
 export function generateKeyPair() {
   const { publicKey, privateKey } = crypto.generateKeyPairSync("x25519");
 
   const publicKeyDer = publicKey.export({ format: "der", type: "spki" });
   // SPKI for X25519 is 44 bytes; the raw 32-byte key is the last 32 bytes.
-  // But the platform expects the full base64 SPKI — pass as-is.
+  // But the platform expects the full base64 SPKI - pass as-is.
   const publicKeyB64 = publicKeyDer.toString("base64");
 
   const privateKeyDer = privateKey.export({ format: "der", type: "pkcs8" });
@@ -29,15 +29,15 @@ export function generateKeyPair() {
  * Decrypt the `u` query parameter from the Xiaomi OAuth callback.
  *
  * Wire format (base64-decoded):
- *   bytes 0..11   — 12-byte AES-GCM nonce
- *   bytes 12..43  — 32-byte ephemeral public key (raw X25519)
- *   bytes 44..n-16 — ciphertext
- *   last 16 bytes  — GCM auth tag
+ *   bytes 0..11   - 12-byte AES-GCM nonce
+ *   bytes 12..43  - 32-byte ephemeral public key (raw X25519)
+ *   bytes 44..n-16 - ciphertext
+ *   last 16 bytes  - GCM auth tag
  *
  * Key derivation: SHA256(ECDH(clientPrivateKey, ephemeralPublicKey))
  *
- * @param {Buffer} privateKeyDer — PKCS8 DER private key from generateKeyPair()
- * @param {string} encryptedB64  — the `u` query param value (base64)
+ * @param {Buffer} privateKeyDer - PKCS8 DER private key from generateKeyPair()
+ * @param {string} encryptedB64  - the `u` query param value (base64)
  * @returns {{ uid: string, sk: string, url?: string }}
  */
 export function decryptCallback(privateKeyDer, encryptedB64) {
@@ -92,9 +92,9 @@ export function decryptCallback(privateKeyDer, encryptedB64) {
 
 /**
  * Build the browser authorization URL.
- * @param {string} publicKey — base64 SPKI from generateKeyPair()
- * @param {string} redirectUri — e.g. http://localhost:12345/
- * @param {string} [keyName] — optional stable key name
+ * @param {string} publicKey - base64 SPKI from generateKeyPair()
+ * @param {string} redirectUri - e.g. http://localhost:12345/
+ * @param {string} [keyName] - optional stable key name
  * @returns {string}
  */
 export function buildAuthorizeUrl(publicKey, redirectUri, keyName) {
@@ -112,7 +112,7 @@ export function buildAuthorizeUrl(publicKey, redirectUri, keyName) {
  * Stored in the 9Router data dir so re-auth reuses the same name.
  */
 export function getKeyName() {
-  // Use a deterministic name based on machine — avoids needing filesystem writes
+  // Use a deterministic name based on machine - avoids needing filesystem writes
   // in the OAuth provider layer. The platform treats key_name as a label only.
   const machineId = crypto
     .createHash("sha256")

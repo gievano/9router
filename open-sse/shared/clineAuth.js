@@ -9,7 +9,7 @@ export function getClineAccessToken(token) {
   if (trimmed.toLowerCase().startsWith("workos:")) return trimmed;
   // Cline OAuth access tokens are WorkOS JWTs (base64url `eyJ…` header).
   // ClinePass API keys (category "apikey", e.g. `clp_…`) are NOT JWTs and must
-  // be sent verbatim — prefixing them with `workos:` makes the Cline API reject
+  // be sent verbatim - prefixing them with `workos:` makes the Cline API reject
   // the request with HTTP 401 ("Please make sure you're using the latest
   // version of Cline and re-authenticate your Cline account.").
   const isWorkOsJwt = /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(trimmed);

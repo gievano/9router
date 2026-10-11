@@ -127,7 +127,7 @@ async function fetchRemoteRelease() {
   // for the life of the process while every other signal expired on schedule, so
   // a long-running deploy (Railway, a laptop left open) kept comparing against
   // the "latest" version as it stood at boot and never showed the update banner
-  // for anything published afterwards — the classic "my friend's deploy never
+  // for anything published afterwards - the classic "my friend's deploy never
   // tells him there is an update".
   const fresh = cache.remoteReleaseAt && Date.now() - cache.remoteReleaseAt < CHECK_TTL_MS;
   if (cache.remoteRelease !== undefined && fresh) return cache.remoteRelease;

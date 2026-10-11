@@ -27,7 +27,7 @@ export default function ApiKeySelect({ value, onChange, apiKeys = [], cloudEnabl
     [apiKeys, savedKeys]
   );
 
-  // Derive the active option from value — no sync effects needed when the parent updates it
+  // Derive the active option from value - no sync effects needed when the parent updates it
   const matched = value ? options.find((o) => o.value === value || o.url === value) : null;
   const mode = matched ? matched.value : (customMode || value ? CUSTOM_VALUE : (options[0]?.value ?? CUSTOM_VALUE));
   const inputValue = customMode ? customInput : (value || "");

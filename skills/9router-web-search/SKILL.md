@@ -3,7 +3,7 @@ name: 9router-web-search
 description: Web and X search via 9Router /v1/search using Tavily / Exa / Brave / Serper / SearXNG / Google PSE / Linkup / SearchAPI / You.com / Perplexity / Xquik. Use when the user wants to search the web, find articles, or search public X posts.
 ---
 
-# 9Router — Web Search
+# 9Router - Web Search
 
 Requires `NINEROUTER_URL` (and `NINEROUTER_KEY` if auth enabled). See https://raw.githubusercontent.com/decolua/9router/refs/heads/master/skills/9router/SKILL.md for setup.
 
@@ -97,16 +97,16 @@ All accept `query` + `max_results`. Optional fields vary:
 
 | Provider | Supports | Required extras |
 |---|---|---|
-| `tavily` | country, domain_filter, news topic | — |
-| `exa` | domain_filter (incl/excl), news category | — |
-| `brave-search` | country, language | — |
-| `serper` | country, language, news endpoint | — |
-| `perplexity` | country, language, domain_filter | — |
+| `tavily` | country, domain_filter, news topic | - |
+| `exa` | domain_filter (incl/excl), news category | - |
+| `brave-search` | country, language | - |
+| `serper` | country, language, news endpoint | - |
+| `perplexity` | country, language, domain_filter | - |
 | `linkup` | domain_filter, time_range | `depth: fast/standard/deep` (option) |
 | `google-pse` | country, language, time_range, offset | **`cx` required** (providerOptions) |
-| `searchapi` | country, language, pagination | — |
-| `youcom` | country, language, time_range, domain_filter, full_page | — |
+| `searchapi` | country, language, pagination | - |
+| `youcom` | country, language, time_range, domain_filter, full_page | - |
 | `searxng` | language, time_range | Self-hosted, **noAuth** |
 | `xquik` | X/Twitter search operators, language, cursor pagination | `queryType: Latest/Top`, `cursor` (options) |
 
-Provider IS the model — `"provider":"tavily" ≡ "model":"tavily"`.
+Provider IS the model - `"provider":"tavily" ≡ "model":"tavily"`.

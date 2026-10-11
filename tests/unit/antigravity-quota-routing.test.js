@@ -203,7 +203,7 @@ describe("Antigravity quota-aware routing", () => {
       await handleAntigravityQuotaError("ag-window", 429, MODEL, "token", {});
       await vi.advanceTimersByTimeAsync(61_000);
       const result = await handleAntigravityQuotaError("ag-window", 429, MODEL, "token", {});
-      expect(result).toBeNull(); // window lapsed — counter restarted at 1
+      expect(result).toBeNull(); // window lapsed - counter restarted at 1
     } finally {
       vi.useRealTimers();
     }
@@ -238,7 +238,7 @@ describe("Antigravity quota-aware routing", () => {
       await handleAntigravityQuotaError("ag-persist", 429, MODEL, "token", {});
 
       // The synthesized entry must be visible to the auth pre-filter reading
-      // the shared cache — and must survive an optimistic upstream refresh.
+      // the shared cache - and must survive an optimistic upstream refresh.
       const cached = getAntigravityQuotaCache().get("ag-persist")?.[MODEL];
       expect(cached).toMatchObject({ remainingPercentage: 0 });
       expect(Date.parse(cached.resetAt)).toBe(Date.parse("2026-08-26T00:15:00.000Z"));
@@ -266,7 +266,7 @@ describe("Antigravity quota-aware routing", () => {
       expect(getAntigravityQuotaCache().get("ag-clear")?.[MODEL]?.remainingPercentage).toBe(0);
 
       clearAntigravityStrikes("ag-clear", MODEL);
-      // Synthesized entry gone — pair selectable again immediately.
+      // Synthesized entry gone - pair selectable again immediately.
       expect(getAntigravityQuotaCache().get("ag-clear")?.[MODEL]).toBeUndefined();
 
       // Two more 429s do NOT inherit earlier strikes: no block on the third-in-episode.

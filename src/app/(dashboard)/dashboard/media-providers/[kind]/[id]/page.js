@@ -172,7 +172,7 @@ export default function MediaProviderDetailPage() {
         />
       )}
 
-      {/* Provider Info — config-driven, supports searchConfig, fetchConfig, ttsConfig, embeddingConfig, systemoneConfig, searchViaChat */}
+      {/* Provider Info - config-driven, supports searchConfig, fetchConfig, ttsConfig, embeddingConfig, systemoneConfig, searchViaChat */}
       {!isCustom && (provider.searchConfig || provider.fetchConfig || provider.ttsConfig || provider.sttConfig || provider.embeddingConfig || provider.systemoneConfig || provider.searchViaChat) && (
         <ProviderInfoCard
           config={
@@ -188,7 +188,7 @@ export default function MediaProviderDetailPage() {
         />
       )}
 
-      {/* Example — per kind */}
+      {/* Example - per kind */}
       {kind === "embedding" && (
         <EmbeddingExampleCard providerId={id} customAlias={customNode?.prefix} />
       )}

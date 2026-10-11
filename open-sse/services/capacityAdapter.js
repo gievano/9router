@@ -1,11 +1,11 @@
 /**
- * Capacity Adapter — global fallback pools of models per input-modality capability
+ * Capacity Adapter - global fallback pools of models per input-modality capability
  * (vision / pdf / audioInput / videoInput).
  *
  * The pool models are appended as extra fallback candidates behind whatever models
  * were already going to be tried (a combo's members, or a single target model).
  * combo.js's existing reorderByCapabilities then floats a capable pool model to the
- * front only when none of the original models can handle the request — so this
+ * front only when none of the original models can handle the request - so this
  * never overrides a combo that already has a member covering the capability.
  */
 import { getCapabilitiesForModel } from "../providers/capabilities.js";
@@ -132,12 +132,12 @@ export function stripHistoryForContext(body, contextWindow) {
   const isAssistant = (r) => r === "assistant" || r === "model";
   let i = rest.length - 1;
   while (i >= 0 && !isAssistant(rest[i]?.role)) i--;
-  const tail = rest.slice(i + 1);          // current user turn (has media) — always kept
+  const tail = rest.slice(i + 1);          // current user turn (has media) - always kept
   const older = rest.slice(0, i + 1);      // everything before it
   if (older.length === 0) return body;
 
   const contentOf = (m) => m.content ?? m.parts;
-  // Cap at 80% of the adapter model's context window — leaves room for the response.
+  // Cap at 80% of the adapter model's context window - leaves room for the response.
   const budgetChars = (contextWindow || 200000) * 0.8 * CHARS_PER_TOKEN;
 
   // Prefer keeping the first HEAD_KEEP messages (initial instructions/context) verbatim;

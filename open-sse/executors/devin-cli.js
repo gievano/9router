@@ -1,5 +1,5 @@
 /**
- * DevinCliExecutor — routes completions through the official Devin CLI binary
+ * DevinCliExecutor - routes completions through the official Devin CLI binary
  * via the Agent Client Protocol (ACP) JSON-RPC 2.0 over stdio.
  *
  * Protocol flow:
@@ -13,7 +13,7 @@
  *   4. Emit deltas as OpenAI-compatible SSE chunks.
  *   5. Kill subprocess on _cognition.ai/agent_stopped or error.
  *
- * Auth: noAuth — the subprocess inherits the parent env and uses credentials
+ * Auth: noAuth - the subprocess inherits the parent env and uses credentials
  * stored by `devin auth login` (~/.local/share/devin/credentials.toml).
  *
  * Binary discovery: CLI_DEVIN_BIN env → PATH lookup → platform installer paths.
@@ -38,7 +38,7 @@ function resolveDevinBin() {
   // 2. Known installer / package-manager locations. spawn uses shell:false on
   //    macOS/Linux, so process.env.PATH alone may miss ~/.local/bin, Homebrew,
   //    Scoop, etc. when the server runs detached (tray/daemon/launchd) without
-  //    a login shell — probe these explicitly before falling back to PATH.
+  //    a login shell - probe these explicitly before falling back to PATH.
   const candidates = isWin
     ? [
       // Official installer: %LOCALAPPDATA%\devin\cli\bin\devin.exe
@@ -59,7 +59,7 @@ function resolveDevinBin() {
     if (fs.existsSync(candidate)) return candidate;
   }
 
-  // 3. Fallback — rely on process.env.PATH
+  // 3. Fallback - rely on process.env.PATH
   return isWin ? "devin.exe" : "devin";
 }
 
@@ -341,7 +341,7 @@ export class DevinCliExecutor extends BaseExecutor {
     // server so devin can invoke client-defined tools (bridged back in Phase 2).
     // When any are present, a throwaway XDG_CONFIG_HOME holds devin/config.json so
     // the agent auto-connects them (session/new mcpServers alone doesn't spawn
-    // them — see ACP mcp/connect, still unstable). Cleaned up on finish.
+    // them - see ACP mcp/connect, still unstable). Cleaned up on finish.
     // NOTE: this replaces the user's global devin MCP config for the subprocess.
     let mcpConfigDir = null;
     const mcpServers = {};
@@ -404,7 +404,7 @@ export class DevinCliExecutor extends BaseExecutor {
         // Auto-approve tool execution so the agent doesn't block waiting for a
         // session/request_permission response we never send (default mode would
         // hang the stream on the first shell/exec tool call). Override via env.
-        // WARNING: bypass lets the agent run shell/modify FS unattended — local only.
+        // WARNING: bypass lets the agent run shell/modify FS unattended - local only.
         env.DEVIN_PERMISSION_MODE = process.env.DEVIN_PERMISSION_MODE || "bypass";
         if (mcpConfigDir) env.XDG_CONFIG_HOME = mcpConfigDir;
 
@@ -412,7 +412,7 @@ export class DevinCliExecutor extends BaseExecutor {
         // (fs/shell/search) so the model can actually perform tasks. Override to
         // `summarizer` (no tools, text-only) via CLI_DEVIN_AGENT_TYPE for a safer,
         // tool-less mode. WARNING: the default agent can run shell commands and
-        // modify the filesystem on the host running 9router — only expose locally.
+        // modify the filesystem on the host running 9router - only expose locally.
         const agentType = process.env.CLI_DEVIN_AGENT_TYPE?.trim();
         const acpArgs = ["acp"];
         if (agentType) acpArgs.push("--agent-type", agentType);
@@ -638,7 +638,7 @@ export class DevinCliExecutor extends BaseExecutor {
               }
               sessionCreated = true;
               // Send the prompt. devin 3000.2.x expects `prompt` (a sequence),
-              // not `content` — using `content` returns -32602 "missing field prompt".
+              // not `content` - using `content` returns -32602 "missing field prompt".
               promptSent = true;
               sendRpc("session/prompt", {
                 sessionId,
@@ -751,7 +751,7 @@ export class DevinCliExecutor extends BaseExecutor {
               if (type === "agent_message_chunk" || type === "message_delta" || type === "text_delta" || type === "content_delta") {
                 if (deltaText) emitDelta(deltaText);
               } else if (type === "agent_thought_chunk") {
-                // Internal reasoning — not surfaced to the client.
+                // Internal reasoning - not surfaced to the client.
               } else if (type === "message_stop" || type === "stop" || type === "done") {
                 finish();
                 return;

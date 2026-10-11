@@ -39,7 +39,7 @@ export const AI_MODELS = Object.entries(MODELS).flatMap(([alias, models]) =>
 
 export const getModelKind = (m, fallback = null) => m?.kind || m?.type || fallback;
 
-// Capacity metadata for UI badges — icon + label + color per capability.
+// Capacity metadata for UI badges - icon + label + color per capability.
 export const CAPACITY_META = {
   vision: { mark: "vision", label: "Vision", desc: "Supports image input", color: "text-blue-500" },
   // search: temporarily hidden (feature not wired yet)
@@ -50,7 +50,7 @@ export const CAPACITY_META = {
   contextSqueezer: { mark: "contextSqueezer", label: "Squeeze", desc: "Context Squeezer: trims old turns to fit the context window", color: "text-amber-400" },
 };
 
-// Realtime STT transport markers accepted on custom models — single source of
+// Realtime STT transport markers accepted on custom models - single source of
 // truth across layers: the API whitelist (src/app/api/models/custom/route.js
 // sanitizeTransport) and the dashboard transport select
 // (providers/[id]/AddCustomModelModal) both import this map, so one new row
@@ -71,7 +71,7 @@ export function isSttTransport(transport) {
 }
 
 // Keys of the custom plugins, in the order their marks are drawn on a model row.
-// This is the single list every surface reads — the plugin page, the model
+// This is the single list every surface reads - the plugin page, the model
 // picker, the usage view and /v1/models. A plugin missing here is a plugin whose
 // mark can never appear on a model.
 // Imported and re-exported from the leaf so the guard chain never has to import

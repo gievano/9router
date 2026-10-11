@@ -5,7 +5,7 @@ import { PROVIDER_MEDIA } from "../providers/index.js";
 import { getVideoAdapter } from "./videoProviders/index.js";
 
 // Upstream fetch deadline for video job submission/polling (the job itself is
-// async upstream — this only bounds the HTTP round-trip, not video rendering).
+// async upstream - this only bounds the HTTP round-trip, not video rendering).
 const VIDEO_FETCH_TIMEOUT_MS = Number(process.env.VIDEO_FETCH_TIMEOUT_MS || 120000);
 
 // POST /videos/* creates a billable upstream job. A network error after the
@@ -55,7 +55,7 @@ function combineSignals(signal, timeoutMs) {
 /**
  * Transparent proxy for async video jobs (xAI Grok Imagine shape).
  *
- * - Forwards the raw body byte-for-byte (JSON or multipart) — no reshaping.
+ * - Forwards the raw body byte-for-byte (JSON or multipart) - no reshaping.
  * - Passes upstream JSON (request_id, status, video.url, error) back verbatim.
  * - 401/403 with a refresh token: refresh ONCE, retry ONCE. No other retry.
  * - Upstream error text is sanitized before it reaches the client.
@@ -142,7 +142,7 @@ export async function handleVideoProxyCore({
     if (error?.name === "AbortError" || error?.name === "TimeoutError") {
       return createErrorResult(HTTP_STATUS.REQUEST_TIMEOUT, `[${provider}] video ${method} aborted: ${error.message}`);
     }
-    // Never re-send a creation POST on network error — the job may already exist upstream.
+    // Never re-send a creation POST on network error - the job may already exist upstream.
     return createErrorResult(HTTP_STATUS.BAD_GATEWAY, sanitizeSecrets(`[${provider}] video upstream fetch failed: ${error.message}`, credentials));
   }
 
@@ -172,7 +172,7 @@ export async function handleVideoProxyCore({
         return createErrorResult(HTTP_STATUS.BAD_GATEWAY, sanitizeSecrets(`[${provider}] video retry after refresh failed: ${error.message}`, credentials));
       }
     } else {
-      log?.warn?.("TOKEN", `${provider.toUpperCase()} | video refresh failed — account needs re-auth`);
+      log?.warn?.("TOKEN", `${provider.toUpperCase()} | video refresh failed - account needs re-auth`);
     }
   }
 
@@ -192,7 +192,7 @@ export async function handleVideoProxyCore({
       outBody = JSON.stringify(adapter.transformResponse(JSON.parse(bodyText)));
       outType = "application/json";
     } catch {
-      // Non-JSON or unexpected shape — fall back to the raw upstream body.
+      // Non-JSON or unexpected shape - fall back to the raw upstream body.
     }
   }
 

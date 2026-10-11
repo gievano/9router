@@ -30,7 +30,7 @@ import {
 } from "../../open-sse/shared/qoder/attachments.js";
 import { qoderInferenceBase } from "../../open-sse/shared/qoder/constants.js";
 
-// Convenience aliases — tests were originally written against module-level
+// Convenience aliases - tests were originally written against module-level
 // helpers; the QoderService class wraps them so each test creates its own
 // instance to avoid hidden state.
 const generatePkcePair = () => new QoderService().generatePkcePair();
@@ -254,7 +254,7 @@ describe("buildCosyHeaders", () => {
   it("two calls with identical inputs differ only in fields that include fresh randomness", () => {
     // The signature fingerprints a fresh AES key + UUID per call, so the
     // signature, Cosy-Key, X-Request-Id, and Cosy-Date (1s resolution)
-    // can differ — but Cosy-User, Cosy-Bodyhash, Cosy-Bodylength,
+    // can differ - but Cosy-User, Cosy-Bodyhash, Cosy-Bodylength,
     // Cosy-Sigpath, and the machineId-derived headers must be stable.
     const a = buildCosyHeaders(Buffer.from("payload", "utf8"), QODER_CHAT_URL_ENCODED, creds);
     const b = buildCosyHeaders(Buffer.from("payload", "utf8"), QODER_CHAT_URL_ENCODED, creds);
@@ -292,7 +292,7 @@ describe("parseExpiry", () => {
   it("does not interpret short numeric strings as a year", () => {
     // "1700000000" (Unix seconds) should NOT come out as Date.parse("1700000000")
     const result = parseExpiry("1700000000", undefined);
-    // 1.7e9 ms = 1970-01-20 — the function's contract is ms, so we expect
+    // 1.7e9 ms = 1970-01-20 - the function's contract is ms, so we expect
     // exactly that value, not a year interpretation.
     expect(result).toBe(1_700_000_000);
   });

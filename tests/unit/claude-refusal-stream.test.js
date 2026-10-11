@@ -1,6 +1,6 @@
 // A refusal from the Anthropic API (stop_reason "refusal", zero output tokens, no
 // content blocks) must reach an OpenAI-format client as finish_reason
-// "content_filter" carrying Anthropic's explanation — not as a clean, empty "stop".
+// "content_filter" carrying Anthropic's explanation - not as a clean, empty "stop".
 // Captured live on 2026-09-20 against claude-opus-5 via a Claude Code OAuth
 // connection: 9Router logged "Model succeeded · OUT 0" and the client saw nothing.
 import { describe, it, expect } from "vitest";

@@ -1,7 +1,7 @@
 /**
  * CodeBuddy CN usage handler
  *
- * Scoped to the "codebuddy-cn" provider specifically — a future "codebuddy-intl"
+ * Scoped to the "codebuddy-cn" provider specifically - a future "codebuddy-intl"
  * variant would get its own handler/endpoint, so keep this CN-only.
  *
  * Quota lives behind a Tencent billing endpoint (POST, payload wrapped twice
@@ -15,7 +15,7 @@
  *    expire for good (CycleEndTime == DeductionEndTime). Numbers live in the
  *    plain Capacity fields.
  *
- * We surface one quota row per package — a cadence label (Monthly/Weekly/Daily)
+ * We surface one quota row per package - a cadence label (Monthly/Weekly/Daily)
  * for refill packs, "Bonus Pack N" for bonus packs (soonest-expiring first).
  */
 
@@ -116,7 +116,7 @@ async function getCodeBuddyUsage(providerId, accessToken, apiKey, providerSpecif
     });
     // Bonus packs: use the lifetime Capacity balance; resetAt is the expiry.
     // These are one-shot credits (CycleEndTime == DeductionEndTime), so they
-    // never replenish — mark recurring:false so the UI shows "Expires in"
+    // never replenish - mark recurring:false so the UI shows "Expires in"
     // instead of implying a monthly refill.
     bonuses.forEach((acc, i) => {
       quotas[`Bonus Pack ${i + 1}`] = {

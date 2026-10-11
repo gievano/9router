@@ -7,7 +7,7 @@ const https = require("https");
 const net = require("net");
 const os = require("os");
 
-// Poll until the server accepts TCP connections on port, or timeout — avoids blind fixed waits.
+// Poll until the server accepts TCP connections on port, or timeout - avoids blind fixed waits.
 function waitServerReady(port, { timeoutMs = 15000, intervalMs = 150 } = {}) {
   const deadline = Date.now() + timeoutMs;
   return new Promise((resolve) => {
@@ -80,7 +80,7 @@ if (args[0] === "xai" && args[1] === "video") {
   return;
 }
 
-// `9router connect <url>` configures local CLI tools against a remote server —
+// `9router connect <url>` configures local CLI tools against a remote server -
 // no local server, no runtime deps. Usable via `npx 9router connect …`.
 if (args[0] === "connect") {
   const { run } = require("./src/cli/commands/connect");
@@ -94,7 +94,7 @@ if (args[0] === "connect") {
 }
 
 // Self-heal SQLite runtime deps (sql.js + better-sqlite3) into ~/.9router/runtime
-// so the server can resolve them via NODE_PATH. Best-effort — sql.js is required,
+// so the server can resolve them via NODE_PATH. Best-effort - sql.js is required,
 // better-sqlite3 is optional. Logs to stderr only on failure.
 try { ensureSqliteRuntime({ silent: true }); } catch {}
 
@@ -108,7 +108,7 @@ const INSTALL_CMD_LATEST = `npm i -g ${APP_NAME}@latest --prefer-online`;
 const DEFAULT_PORT = 20128;
 const DEFAULT_HOST = "0.0.0.0";
 
-// First non-internal IPv4 — the address remote peers actually reach when bound to 0.0.0.0.
+// First non-internal IPv4 - the address remote peers actually reach when bound to 0.0.0.0.
 function getLanIp() {
   for (const ifaces of Object.values(os.networkInterfaces())) {
     for (const i of ifaces || []) {
@@ -168,7 +168,7 @@ Options:
 
 Commands:
   connect <server-url> Configure Claude Code for a remote 9router server
-                      (npx 9router connect http://host:20128 — no install needed)
+                      (npx 9router connect http://host:20128 - no install needed)
   xai video --prompt "..." --output video.mp4
                       Generate a Grok Imagine video via the running gateway
                       (see: ${APP_NAME} xai video --help)
@@ -265,7 +265,7 @@ function killCloudflaredByAppPort(appPort) {
 function killAllAppProcesses(appPort) {
   return new Promise((resolve) => {
     try {
-      // Background: MITM + tunnel/cloudflared run on separate ports/processes —
+      // Background: MITM + tunnel/cloudflared run on separate ports/processes -
       // killing them doesn't free the app port, so don't block the critical path.
       // Server-side MITM manager has stale-lock recovery and starts deferred (~3s).
       setImmediate(() => {
@@ -783,7 +783,7 @@ function startServer(updatePromise) {
           } catch (e) { }
 
           if (process.platform === "darwin") {
-            // macOS: keep current process alive — spawning a detached child puts
+            // macOS: keep current process alive - spawning a detached child puts
             // it outside the login session so NSStatusItem silently fails.
             process.removeAllListeners("SIGHUP");
             process.on("SIGHUP", () => {});
@@ -793,7 +793,7 @@ function startServer(updatePromise) {
             console.log(`   Server: http://${displayHost}:${port}`);
             console.log(`\n💡 You can close this terminal. Right-click tray icon to quit.\n`);
 
-            // Tray already init'd at startup — just keep event loop alive.
+            // Tray already init'd at startup - just keep event loop alive.
             return;
           }
 

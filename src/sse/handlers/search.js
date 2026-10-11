@@ -168,7 +168,7 @@ async function handleSingleProviderSearch(body, providerInput, request, apiKey, 
   const searchLockKey = `websearch:${providerId}`;
 
   while (true) {
-    // Provider that actually owns the connection in use — differs from
+    // Provider that actually owns the connection in use - differs from
     // providerId once we fall back, and error locks must be attributed to it.
     let credentialProviderId = providerId;
     let credentials = await getProviderCredentials(providerId, excludeConnectionIds, searchLockKey);

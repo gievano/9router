@@ -7,7 +7,7 @@ import { cn } from "@/shared/utils/cn";
 /**
  * Settings history: the last mutations with who changed what, and revert.
  *
- * Password and token fields never enter the history — only the restorable
+ * Password and token fields never enter the history - only the restorable
  * surface is listed, and a rollback of an accidental rollback is itself a
  * history entry, so undoing cannot strand the install.
  */

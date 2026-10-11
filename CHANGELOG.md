@@ -1,8 +1,48 @@
-# v0.5.163-Custom (sync upstream v0.5.163)
+# v0.5.166-Custom (sync upstream v0.5.166)
+
+# v0.5.165 (2026-10-11) · 14 commits
 
 ## Features
-- **Plugins**: add OpenAI Tool Bridge — recovers tool calls from a text-only provider's answer instead of failing the request
-- **Plugins**: restyle every custom plugin mark — two-layer tile with a docked badge and an enabled ring
+- **Proxy Pools**: Delete All button, plus Select all now spans the whole filtered list instead of the 20 visible rows
+- **Proxy Pools**: bulk delete runs as one transaction on `/api/proxy-pools/bulk` instead of one request per pool
+
+## Fixes
+- **Theme**: glass and dark draw every surface from the theme tokens; leftover solid slabs (white OpenAI button, opaque black log viewport, zinc-bordered usage cards, gray tooltip, gray badge dot, chat bubble hex, console-log line numbers, unknown-tool badge, native checkbox borders, manual-update dialog, footer icons) now follow the active theme, verified by screenshot in both themes
+- **Models**: hide orphan compatible groups from the model picker, so a deleted OpenAI/Anthropic Compatible node no longer opens a raw `OpenAI Compatible (xxxxxxxx)` heading full of dead rows
+- **Models**: import progress card stays inside its own section instead of dimming the whole dashboard
+- **Proxy Pools**: backgrounded dock chip no longer leaves an invisible overlay that swallows every click; import and relay deploy dialogs close on start so the page stays clickable
+- **Proxy Pools**: relay deploy dialogs no longer refuse to close after a successful deploy
+- **Proxy Pools**: bulk delete ignores a non-array id payload instead of throwing
+- **Update**: fix the doubled v in the update banner (vv0.5.165 to v0.5.165)
+- **Models**: an API-key session no longer lists models outside its allowedModels; the filter matched a key scope against a model's display name, so a row labelled `DeepSeek-V4-Pro` but addressed as `qd/dmodel` appeared under a key scoped to `deepseek-v4-pro` and 403'd when called
+- **Models**: the available-models card lists one row per model a key may call instead of one row per provider connection, so a key scoped to twelve models shows twelve rows rather than 43 (deepseek-v4-pro alone was reached through 21 connections)
+- **Dashboard**: the welcome dialog no longer shows the traffic-light close dots; Get started is the only way out
+- **Proxy Pools**: batch import runs as a server-side job, so closing the browser no longer kills the run halfway; /api/proxy-pools/import-jobs accepts the parsed list, runs it in-process, and the page polls for progress (reloads reattach to the same job instead of starting over)
+- **Dashboard**: the notification bell lists running server-side imports with live progress, and opening one takes you back to the run so the collapsed banner reopens
+- **Loader**: the long-task banner carries no helper copy and its cancel/background controls are small borderless glyph buttons instead of boxed clusters
+# v0.5.164 (2026-10-10) · 11 commits
+
+## Features
+- **Dashboard**: cost mode in the provider chart, hardened tool bridge, cleaner welcome banner
+- **Welcome**: show the running version and a fuller orientation line
+
+## Fixes
+- **Marks**: stop old ligatures on model rows; one-surface welcome dialog
+- **Plugins**: neutral tiles with saturated glyph marks
+- **Plugins**: one mark per card, redrawn as a single family
+- **Welcome**: changelog button now opens the changelog
+- **Welcome**: make Star on GitHub a visible ghost button
+
+## Internal
+- **Auth**: drop mandatory 2FA, back to password-only login
+- **Copy**: replace em dashes with plain punctuation across the UI
+
+# v0.5.163 (2026-10-09) · 1 commit
+>>>>>>> upstream/master
+
+## Features
+- **Plugins**: add OpenAI Tool Bridge - recovers tool calls from a text-only provider's answer instead of failing the request
+- **Plugins**: restyle every custom plugin mark - two-layer tile with a docked badge and an enabled ring
 
 ## Fixes
 - **Changelog**: stop the merge of two same-day releases from printing one bullet twice, and fold repeated scope prefixes into a single heading
@@ -169,11 +209,6 @@
 
 ## Features
 - **Dashboard**: add PRD Builder to FEATURE+
-- **Theme**: add a glassmorphism mode alongside dark
-- **Theme**: dedicated theme button next to the grid menu
-- **Theme**: glass becomes the default theme, listed above dark
-- **Theme**: theme picker lives under Change Log in the grid menu
-- **Theme**: theme picker opens as a modal, matching Change Log
 - **Token saver**: level presets for pruning and a measurable response cache
 - **Usage**: add activity heatmap, card sparklines, and smart empty states
 - **Usage**: remove the live request inspector tab
@@ -753,7 +788,7 @@
 # v0.5.91-Custom (2026-09-16)
 
 ## Custom Features & Enhancements
-- **A custom (studio) model now hides the model behind it**: the moment a base model gets a studio name, that base model disappears from every place a client or a picker reads — `GET /v1/models` and its per-kind variants answer with the studio name only, the model pickers (API key allowed models, combos, CLI tool mappings, arena) offer the studio name only, and the provider page Models tab lists the studio name only. So with `qwen-3.8` pointed at `neko/qwen3.8-flash`, nothing shows `neko/qwen3.8-flash` anymore. The raw model is still routable and the Model Studio editor still sees it, because that is exactly where you pick the model a new name should call. The rule is shared in one helper (`buildStudioTargetIndex`) keyed by provider id plus model id, case-insensitive, so the same model name under another provider stays visible.
+- **A custom (studio) model now hides the model behind it**: the moment a base model gets a studio name, that base model disappears from every place a client or a picker reads - `GET /v1/models` and its per-kind variants answer with the studio name only, the model pickers (API key allowed models, combos, CLI tool mappings, arena) offer the studio name only, and the provider page Models tab lists the studio name only. So with `qwen-3.8` pointed at `neko/qwen3.8-flash`, nothing shows `neko/qwen3.8-flash` anymore. The raw model is still routable and the Model Studio editor still sees it, because that is exactly where you pick the model a new name should call. The rule is shared in one helper (`buildStudioTargetIndex`) keyed by provider id plus model id, case-insensitive, so the same model name under another provider stays visible.
 
 ## Fixes
 - **The x on an allowed-model chip now removes that model**: in the API key forms the chips called a handler that branched on which picker modal was last opened, so with a freshly opened form (or before ever pressing Select Models) clicking x did nothing. Removing and adding models now state plainly which field they edit, and the chip lists in both the create-key and edit-key forms work on their own.
@@ -784,12 +819,12 @@
 # v0.5.87-Custom (2026-09-14)
 
 ## Custom Features & Enhancements
-- **Automatic Backup moved into its own dialog and learned GitHub**: instead of a full card on the settings page, a single **Automatic Backup** button now sits right above Download Backup — it opens a modal where you pick the channel (Telegram bot or GitHub repository with a write-scoped token, committing to `9router-backups/` plus a `latest.json` pointer on a chosen branch), set the interval, then press **Save Configuration** to store everything and arm the schedule in one click; **Send Test Backup** delivers one backup immediately (password-confirmed) so the whole path can be verified on the spot. Both bot and GitHub tokens are now encrypted at rest with a machine-bound key, so no plaintext credential is ever written to the database or echoed back to the browser.
+- **Automatic Backup moved into its own dialog and learned GitHub**: instead of a full card on the settings page, a single **Automatic Backup** button now sits right above Download Backup - it opens a modal where you pick the channel (Telegram bot or GitHub repository with a write-scoped token, committing to `9router-backups/` plus a `latest.json` pointer on a chosen branch), set the interval, then press **Save Configuration** to store everything and arm the schedule in one click; **Send Test Backup** delivers one backup immediately (password-confirmed) so the whole path can be verified on the spot. Both bot and GitHub tokens are now encrypted at rest with a machine-bound key, so no plaintext credential is ever written to the database or echoed back to the browser.
 
 # v0.5.86-Custom (2026-09-14)
 
 ## Custom Features & Enhancements
-- **Backups now deliver themselves to Telegram**: a new Auto Backup (Telegram) card sits above Download Backup in the profile page — set a bot token and owner chat id, pick the interval (every 24 hours, 7 days, 30 days, or custom hours), and the scheduler exports the exact same database backup the manual button downloads and sends it to your chat as a `9router-backup-*.json` file, importable with Import Backup unchanged. The token is stored write-only (never echoed back to the browser, kept out of the settings blob), the schedule survives restarts through the persisted last-sent stamp, sends follow the outbound proxy, oversized backups beyond the bot's upload cap are refused with a clear status instead of a silent stall, and a Send Test Backup button (password-confirmed like the other backup actions) verifies the whole path on demand. The configuration also travels inside every backup, so a restored instance resumes sending on its own schedule.
+- **Backups now deliver themselves to Telegram**: a new Auto Backup (Telegram) card sits above Download Backup in the profile page - set a bot token and owner chat id, pick the interval (every 24 hours, 7 days, 30 days, or custom hours), and the scheduler exports the exact same database backup the manual button downloads and sends it to your chat as a `9router-backup-*.json` file, importable with Import Backup unchanged. The token is stored write-only (never echoed back to the browser, kept out of the settings blob), the schedule survives restarts through the persisted last-sent stamp, sends follow the outbound proxy, oversized backups beyond the bot's upload cap are refused with a clear status instead of a silent stall, and a Send Test Backup button (password-confirmed like the other backup actions) verifies the whole path on demand. The configuration also travels inside every backup, so a restored instance resumes sending on its own schedule.
 
 # v0.5.85-Custom (2026-09-13)
 
@@ -797,13 +832,13 @@
 - **A key's allowed models now also decide what it can see**: `GET /v1/models` (and `/v1/models/{kind}`, `/v1/models/{provider}/{model}`) answers through the same patterns the request gate uses, so a key limited to `claude-fable-5.1` lists exactly that one model instead of advertising names it would refuse with `403`.
 
 ## Fixes
-- **Two custom models on the same base model stop trading places**: older builds stored a display alias for every Model Studio name, and with two names aimed at one target the alias lookup answered whichever matched first — so calling `gpt-5.6-sol` could show up as `claude-haiku-5`, or as the bare base model. Studio names are now cleaned of any leftover alias, whatever value it held, and an alias that carries a studio name can no longer add a second entry for the same model to the listing.
+- **Two custom models on the same base model stop trading places**: older builds stored a display alias for every Model Studio name, and with two names aimed at one target the alias lookup answered whichever matched first - so calling `gpt-5.6-sol` could show up as `claude-haiku-5`, or as the bare base model. Studio names are now cleaned of any leftover alias, whatever value it held, and an alias that carries a studio name can no longer add a second entry for the same model to the listing.
 - **A model name that is not a string is refused instead of crashing**: an array or object in `model` reached SQL as a bound value and died with `Unknown named parameter '0'` inside a 500; it now returns a plain `400 Missing model`.
 
 # v0.5.84-Custom (2026-09-13)
 
 ## Fixes
-- **A custom model typed with its provider prefix now resolves**: a Model Studio target saved as `kr/gpt-oss-120b` was read with a bare parse, which handed the prefix back as the provider, matched no credentials, and left the usage row named after the base model — the target is now resolved the same way any other call is, so the studio name is what answers and what Usage bills, while `resolvedModel` still records the base model beside it.
+- **A custom model typed with its provider prefix now resolves**: a Model Studio target saved as `kr/gpt-oss-120b` was read with a bare parse, which handed the prefix back as the provider, matched no credentials, and left the usage row named after the base model - the target is now resolved the same way any other call is, so the studio name is what answers and what Usage bills, while `resolvedModel` still records the base model beside it.
 - **A per-model override may name another provider**: an override whose target carries a prefix is resolved first instead of pasting `prefix/model` onto the current provider, which produced a doubled path upstream.
 
 # v0.5.83-Custom (2026-09-13)
@@ -819,9 +854,9 @@
 # v0.5.82-Custom (2026-09-13)
 
 ## Custom Features & Enhancements
-- **A Model Studio name now answers as the model it is**: every outbound payload — non-streaming completions, streamed chunks, Claude `message_start`, Responses events and semantic-cache hits — reports the name the caller spoke, so `claude-opus-5` never answers `qwen3.8-flash` while the console, the request detail and the usage `resolvedModel` still record the real target for debugging.
+- **A Model Studio name now answers as the model it is**: every outbound payload - non-streaming completions, streamed chunks, Claude `message_start`, Responses events and semantic-cache hits - reports the name the caller spoke, so `claude-opus-5` never answers `qwen3.8-flash` while the console, the request detail and the usage `resolvedModel` still record the real target for debugging.
 - **Failure text keeps the route private too**: the "all accounts unavailable" and "no credentials" replies name the model that was called instead of printing the provider connection id and the model behind it.
-- **Every API key has an on/off switch**: the toggle sits on the left of each key row, is stored through the existing key update endpoint, and a switched-off key is refused with `403 API key is disabled` on chat, embeddings, images, video, speech, transcription, search and web fetch — including while the gateway runs without required keys.
+- **Every API key has an on/off switch**: the toggle sits on the left of each key row, is stored through the existing key update endpoint, and a switched-off key is refused with `403 API key is disabled` on chat, embeddings, images, video, speech, transcription, search and web fetch - including while the gateway runs without required keys.
 - **FEATURE+ is the section title again** for the tools this fork adds, with Model Battle Arena and Custom Model Editor inside it.
 
 ## Fixes
@@ -836,7 +871,7 @@
 
 ## Improvements
 - **Workshop menu names now say what the tool does**: the three custom tools are **Model Battle Arena**, **Custom Model Editor** and **PRD Document Writer** in the sidebar, in each page header and in the model picker group, so nothing has to be guessed from a one-word nickname.
-- **Icons finally respect their own size**: the Material Symbols defaults were an unlayered vendor stylesheet, so every icon rendered at a fixed 24px no matter what was written on it — they now live in Tailwind's base layer and the icon font is declared in `globals.css`, so a `text-[14px]` icon is 14px.
+- **Icons finally respect their own size**: the Material Symbols defaults were an unlayered vendor stylesheet, so every icon rendered at a fixed 24px no matter what was written on it - they now live in Tailwind's base layer and the icon font is declared in `globals.css`, so a `text-[14px]` icon is 14px.
 - **Icon and label share one centre line**: each sidebar and page-title icon is a fixed square flex box that a long label can no longer squash, which is what made rows look crooked.
 - **Model picker group renamed**: the studio group in the model picker is **Custom Models** and its chips carry a `custom` tag instead of the old tool name.
 
@@ -866,7 +901,7 @@
 - **A rejected request no longer grounds an account**: 400, 406 and 422 from a provider are now classified as caller mistakes, so they surface immediately instead of cooling the credential for 30 seconds and dragging every other account through the same failure.
 
 ## Custom Features & Enhancements
-- **PRD Writer document profiles**: four new profiles — RFC / Tech Spec, Release Notes, Competitive Analysis and Bug Report → Fix Plan — each with its own section outline built from 25 freshly written section briefs.
+- **PRD Writer document profiles**: four new profiles - RFC / Tech Spec, Release Notes, Competitive Analysis and Bug Report → Fix Plan - each with its own section outline built from 25 freshly written section briefs.
 - **PRD task list**: one button turns a finished PRD into an ordered `- [ ]` checklist, either parsed straight from the plan section (dependency order, owners, estimates, follow-ups) or extracted by the model when the plan is prose, with copy and `.md` download.
 - **Provider Health board**: a new page that rolls the request log into per-account and per-model success rate, p50/p95 latency, spend, last error and a live cooldown countdown, with test-now and pause/resume wired to the existing endpoints.
 - **Provider Health stays private**: the bare `GET /api/health` probe still answers `{"ok":true}` for tunnels and uptime checks, while `?window=` board data requires a dashboard session and never leaves request or response bodies on the server.
@@ -887,7 +922,7 @@
 - **PRD controls**: choose the document profile, depth, language, output-token cap and the exact sections to write, then watch the document stream in live.
 - **PRD review pass**: an optional second model red-teams the draft, lists up to 12 defects, and rewrites the whole document with the missing sections filled in.
 - **PRD proof and storage**: a section checklist reports which required headings actually arrived, and every document can be saved, reopened, copied, downloaded as `.md`, or inspected through the exact prompt that produced it.
-- **Workshop menu names**: the custom-tools group is now the single word **Workshop**, and its tools no longer share the word "Model" — **Showdown** (was Model Battle) and **Forge** (was Model Studio).
+- **Workshop menu names**: the custom-tools group is now the single word **Workshop**, and its tools no longer share the word "Model" - **Showdown** (was Model Battle) and **Forge** (was Model Studio).
 - **Distinct menu icons**: Console Log now uses a monitor icon and its log card a list icon, so it no longer looks identical to CLI Tools.
 
 # v0.5.74-Custom (2026-09-11)
@@ -910,21 +945,21 @@
 - **Duplicate API key names on rename**: renaming an existing key to a name already in use is now rejected (HTTP 409) with the reason shown in the UI, matching how key creation behaves.
 
 ## Custom Features & Enhancements
-- **No password nagging**: the tunnel/endpoint page no longer warns about the default dashboard password or blocks activation over it — the tunnel turns on as-is.
+- **No password nagging**: the tunnel/endpoint page no longer warns about the default dashboard password or blocks activation over it - the tunnel turns on as-is.
 - **Models are picked, never typed**: the allowed-models field in the API key dialogs is read-only; models come from the picker only (chips + Select Models), so a typo can no longer lock a key out of a model.
 - **Changelog works offline**: a local `/api/changelog` route serves this fork's changelog from disk, falling back to raw GitHub only for what it cannot resolve; the custom section is labelled **Contributed by Serenhope**.
 - **CLI default password**: the terminal settings menu now reports `seren123` as the default dashboard password instead of the old upstream value.
 - **UI polish**: long sidebar labels, provider/model ids, tool titles, badges and the header search now ellipsize instead of pushing buttons out of place, with the full text available on hover.
-- **Sidebar group renamed**: `Model Lab` is now **Custom Suite** — it holds every feature added by this fork, not only the model tools, so future additions have an obvious home.
+- **Sidebar group renamed**: `Model Lab` is now **Custom Suite** - it holds every feature added by this fork, not only the model tools, so future additions have an obvious home.
 
 # v0.5.72-Custom (2026-09-10)
 
 ## Custom Features & Enhancements
 - **Model Studio (was Model Editor)**: pick any connected model (built-in, custom provider or compatible) and give it your own callable name, display name, context window and injected system prompt, which then resolves in chat, `/v1/models`, and every model picker.
-- **Model Battle (was Model Arena)**: Side-by-side comparison now supports up to 4 contenders, estimated cost per run, and a **Final Result** board — fastest / cheapest / longest badges, plus a manual "My pick" so quality is decided by you, not a judge model.
+- **Model Battle (was Model Arena)**: Side-by-side comparison now supports up to 4 contenders, estimated cost per run, and a **Final Result** board - fastest / cheapest / longest badges, plus a manual "My pick" so quality is decided by you, not a judge model.
 - **Menu Renames**: The `Feature+` group is now **Model Lab** containing **Model Battle** and **Model Studio**.
 - **MoonshotAI Logo**: MoonshotAI compatible providers now use the uploaded `moonshot-ai.png` brand image on cards and detail pages.
-- **Provider Prefixes**: Kept in Model Studio — one editable prefix per custom provider (`prefix/model-id`).
+- **Provider Prefixes**: Kept in Model Studio - one editable prefix per custom provider (`prefix/model-id`).
 
 # v0.5.71-Custom (2026-09-10)
 
@@ -932,14 +967,14 @@
 - **Model Editor**: Edit per-model overrides (rename, target model, context window, system prompt) and manage custom provider prefixes from a dedicated Model Editor page under Feature+.
 - **MoonshotAI Provider**: Added MoonshotAI (Kimi) compatible provider option alongside OpenAI/Anthropic compatible providers.
 - **Extra Combo Strategies**: New combo routing strategies beyond Fallback / Round Robin / Fusion.
-- **Changelog View**: Combined changelog modal — custom contributions shown in a highlighted "Contributed by Seren" section above the official Decolua release notes.
+- **Changelog View**: Combined changelog modal - custom contributions shown in a highlighted "Contributed by Seren" section above the official Decolua release notes.
 - **UI Cleanup**: Refined dashboard layout, tidied console log view, and removed the Live Feed page and related controls for a cleaner sidebar.
 - **Backup Fix**: Fixed API key settings and usage statistics being reset on backup import (column/placeholder mismatch).
 
 ## Fixes
 - **API Key Creation Bug**: Fixed `createApiKey` INSERT placeholder mismatch (16 columns vs 15 `?`) that made creating any API key silently fail.
 - **API Key Expiry**: Expiry date set during creation is now persisted (was silently dropped).
-- **Unique Key Names**: API key names are enforced unique — server rejects duplicates and the client shows a clear message; no overwriting.
+- **Unique Key Names**: API key names are enforced unique - server rejects duplicates and the client shows a clear message; no overwriting.
 - **Duplicate API Key**: Added a Duplicate button per key that copies all settings into a new key with an auto-suggested unique name (`X (copy)`, `X (copy 2)`, …); a fresh key value is generated.
 
 # v0.5.70-Custom (2026-09-07)
@@ -1022,8 +1057,8 @@
 - **i18n**: integrate Persian (fa) translation
 
 ## Fixes
-- **Cursor**: stop AgentService empty turns (`OUT 0`) and silent hangs — fold system prompts instead of `custom_system_prompt`, send `ModelDetails`, read Composer/Grok `thinking_delta`, ack request-context without echoing MCP tools, and reject IDE execs so the model can continue
-- **RTK**: for Cursor, compress source-format `tool_result` / `role:tool` **before** translation — its translator rewrites those shapes, so post-translate compression missed them. Other providers keep the post-translate pass unchanged
+- **Cursor**: stop AgentService empty turns (`OUT 0`) and silent hangs - fold system prompts instead of `custom_system_prompt`, send `ModelDetails`, read Composer/Grok `thinking_delta`, ack request-context without echoing MCP tools, and reject IDE execs so the model can continue
+- **RTK**: for Cursor, compress source-format `tool_result` / `role:tool` **before** translation - its translator rewrites those shapes, so post-translate compression missed them. Other providers keep the post-translate pass unchanged
 - **OpenCode / OpenCode Go**: resolve 403 `FreeTierError` and 429 rate limits with canonical session format, valid User-Agent, and stable upstream session reuse; force stream and declare `forceStream` for free-tier SSE aggregation; cloak decoy tools, normalize Muse Free tool choice, and strip prior reasoning items on Responses models; route Union Alpha via Messages API
 - **Kiro**: preserve underscores in tool names (`mcp__server__tool`) and restore client tool names in responses; use neutral placeholder for tool-result-only turns; forward tool-result images
 - **Stream**: report aborts after HTTP 200 in-band (per-format error frames) instead of closing silently
@@ -1041,13 +1076,13 @@
 - **Video**: add OpenRouter and Vertex AI (Veo) video generation on `/v1/videos/*` via a provider adapter layer; poll requests resolve their provider from `x-connection-id` or `?provider=`
 - **Antigravity**: add weekly quota tracking (Gemini weekly / Claude & GPT weekly) and free-tier handling from `retrieveUserQuotaSummary` (#3892)
 - **Codex**: add GPT Image 2.5, Flare and Sunburst image models with multi-image support; add the same ids to the OpenAI catalog
-- **Qoder**: surface usage to all clients and stop inlining large attachments — images upload through `/api/v2/image/upload` like qodercli, oversized file blocks become stubs, context tier auto-escalates
+- **Qoder**: surface usage to all clients and stop inlining large attachments - images upload through `/api/v2/image/upload` like qodercli, oversized file blocks become stubs, context tier auto-escalates
 - **OpenCode Go**: add newly published models (glm-5.3, kimi-k3, deepseek-flash, longcat-2.0, hy4-preview, hy3 on chat/completions; qwen3.8-max, qwen3.8-flash on `/messages`; grok-4.6, gpt-5.6-luna on Responses) and list `deepseek-v4.1-flash` first in the catalog
 - **CLI tools**: group the model selector by provider with full-text search and manual custom model ID entry
 - **CodeBuddy-CN**: replace `deepseek-v4-flash` with `deepseek-v4.1-flash`
 
 ## Fixes
-- **Tools**: scope Claude tool type defaulting to gateways declaring `requireClaudeToolType` — the global default broke Anthropic-compatible endpoints that only accept the legacy typeless tool shape (#3905)
+- **Tools**: scope Claude tool type defaulting to gateways declaring `requireClaudeToolType` - the global default broke Anthropic-compatible endpoints that only accept the legacy typeless tool shape (#3905)
 - **Claude**: cap re-anchored `cache_control` at the 4-marker budget so a spent budget no longer 400s and triggers a full combo failover; wrap bare single-object content turns before the mid-conversation-system fold
 - **Cline / Airforce**: unwrap the `{"success":true,"data":…}` envelope on non-stream chat completions (#3644); add the live Cline/ClinePass model catalog and refresh Airforce free models
 - **Cline**: stop `workos:`-prefixing ClinePass API keys (401 on every request, #2333) and add clinepass token refresh
@@ -1113,7 +1148,7 @@
 # v0.5.59 (2026-08-29)
 
 ## Features
-- **Search**: new web search providers — Antigravity (Google Search grounding
+- **Search**: new web search providers - Antigravity (Google Search grounding
   on the existing OAuth account pool, citations keyed and merged by URL) and
   Xquik (X search with `x-api-key` auth, cursor pagination, credit-based
   usage), both on `POST /v1/search`. Based on #3437 by @Nautilaceae
@@ -1121,7 +1156,7 @@
   instead of requiring their own connection, driven by a new
   `credentialFallback` registry field. zai-search later folded into the `glm`
   provider itself so the web search page shows the shared connection
-- **Models**: daily background sync of model capabilities from models.dev —
+- **Models**: daily background sync of model capabilities from models.dev -
   modalities keyed by model id (majority of sources must declare one),
   context/output limits keyed by provider + model, strictly additive and
   sitting below the hand-written tables. ETag + mtime cache, 60s startup
@@ -1129,24 +1164,24 @@
 - **Models**: add GLM-5.3-Flash (1M context, natively multimodal), DeepSeek
   V4 Vision, Grok 4.5/4.6 (500k context); correct glm-4.6v/4.5v video input
   and output limits, backfill glm-4.6v on glm-cn
-- **Usage**: show the Zed plan quota on the dashboard — plan, edit
+- **Usage**: show the Zed plan quota on the dashboard - plan, edit
   predictions, hosted model requests and billing-cycle reset; unlimited rows
   render as "N used · Unlimited"
 - **Usage**: track GPT-5.3-Codex-Spark quota windows (spark_session /
   spark_weekly) from the Codex usage response (#3431)
-- **Antigravity**: quota-aware routing — on 409/429 fetch live quota for the
+- **Antigravity**: quota-aware routing - on 409/429 fetch live quota for the
   exact per-model resetAt and skip only the exhausted account/model pair;
   report the earliest reset when every account is blocked (#3561)
 - **Antigravity**: map image `size` to the aspect-ratio model suffix (-WxH);
   add the Gemini 3.7 Flash tiers to MITM defaultModels so they show up in
   the dashboard model-mapping table
-- **Dashboard**: bulk import Grok CLI accounts from JSON — paste an array or
+- **Dashboard**: bulk import Grok CLI accounts from JSON - paste an array or
   drag-drop multiple .json files, all OAuth connections created in a single
   call, mirroring the codex flow
 - **CLI tools**: endpoint presets shared across every tool card through one
   live-resyncing store, instead of per-card localStorage copies that never
   saw each other's saved endpoints
-- **Token Saver**: configurable compression timeout (`headroomTimeoutMs`) —
+- **Token Saver**: configurable compression timeout (`headroomTimeoutMs`) -
   the fixed 3000 ms made busy machines time out and send inconsistently
   compressed bodies, hurting prompt caching
 - **i18n**: pt-BR expanded to 1132 terms
@@ -1155,33 +1190,33 @@
 - **Claude Code**: add Claude Fable 5.1 and advertise Claude Code 2.1.258 in
   both the request header and billing identity; use its permanent adaptive-thinking
   mode with `output_config.effort`
-- **Stream**: record usage when a client closes on the terminal event — the
+- **Stream**: record usage when a client closes on the terminal event - the
   Responses API has no [DONE] sentinel, so codex closed the socket on
   `response.completed` and cancelled the reader before flush() ran its usage
   side effects; the tail now lives in a once-guarded finalizeStream(). Also
   stop logging a disconnect for every completed Responses call
 - **Stream**: parse the trailing NDJSON line an Ollama stream leaves behind
-  without a closing newline — the final chunk carrying `done_reason` and the
+  without a closing newline - the final chunk carrying `done_reason` and the
   token counts was dropped
 - **Session**: read the Claude Code session id from the
-  `x-claude-code-session-id` header — `metadata.user_id` is dropped by
+  `x-claude-code-session-id` header - `metadata.user_id` is dropped by
   Responses translation, splitting one conversation across several
   `prompt_cache_key` values and missing the upstream prefix cache
-- **Usage**: preserve nested `cached_tokens` — the top-level-only read
+- **Usage**: preserve nested `cached_tokens` - the top-level-only read
   persisted `cached_tokens: 0` for every Responses-format provider (codex,
   grok-cli, …), billing cache hits at the full input rate
 - **Usage**: GLM quotas accept CREDIT_LIMIT plans and multi-interval windows
   (5h session / 7d weekly) instead of overwriting a single "session" key
-- **Models**: the catalog sync no longer erases its own output — deltas were
+- **Models**: the catalog sync no longer erases its own output - deltas were
   measured against the previous run's writes (the second run cut `providers`
   from 20 entries to 5); one vote per provider in the modality tally, ETag
   restored from file on startup, and the worker thread dropped after the
   bundler rewrote its path into a module-not-found error
 - **Executor**: CommandCode returns errors as a `type:"error"` event inside
-  an HTTP 200 NDJSON stream — peek the first events before committing, abort
+  an HTTP 200 NDJSON stream - peek the first events before committing, abort
   and return a real 4xx/5xx so combo/account fallback triggers instead of
   streaming the error text as content
-- **Search**: scope failure locks on the credential-fallback path — a failing
+- **Search**: scope failure locks on the credential-fallback path - a failing
   search locked `modelLock___all` and took the shared glm key offline for
   chat as well; locks are now attributed to the connection's owner and
   scoped to `websearch:<provider>`
@@ -1189,20 +1224,20 @@
   hanging and exhausting the browser socket pool; guard undefined provider
   names on the providers page
 - **Antigravity**: sanitize competing-client branding via a config-driven
-  rule table (Zed's Claude-agent prompt, opencode → antigravity) — upstream
+  rule table (Zed's Claude-agent prompt, opencode → antigravity) - upstream
   answers 429 Quota Exhausted. Applied in the executor so the shared
   openai-to-gemini translator leaves gemini/vertex/zed untouched
 - **MiniMax**: preserve images on the sourceFormat-matched OpenAI transport
-  — MiniMax-M3 resolved a Claude-shaped body posted to the OpenAI endpoint,
+  - MiniMax-M3 resolved a Claude-shaped body posted to the OpenAI endpoint,
   silently dropping `image_url` blocks (#3418)
-- **Claude**: decloak tool names in same-format streaming passthrough —
+- **Claude**: decloak tool names in same-format streaming passthrough -
   OAuth-cloaked names (CLAUDE_TOOL_SUFFIX) leaked to the client and every
   tool call was rejected as unknown
 - **Tools**: default a missing `tools[].type` to "custom" on Claude-format
-  requests — strict Anthropic-compatible gateways (MiniMax) reject the
+  requests - strict Anthropic-compatible gateways (MiniMax) reject the
   request with 400 otherwise
 - **Translator**: zai thinkingFormat sends the top-level `reasoning_effort`
-  object GLM-5.2+ requires — every GLM-5.x request ran at the model default
+  object GLM-5.2+ requires - every GLM-5.x request ran at the model default
   (max); gated on GLM-5.2+ since older GLM does not read it (#2721)
 - **RTK**: system prompt injection matches each target wire format
   (Chat/Responses/Claude/Gemini/Kiro) and is exact-idempotent across retries,
@@ -1215,34 +1250,34 @@
 - **CLI**: install better-sqlite3 without build tools on Node 22+ (N-API
   13.0.3 ships per-platform prebuilds, `--ignore-scripts` skips the implicit
   node-gyp build); Node < 22 stays on 12.6.2, working installs untouched
-- **CLI tools**: send the API key Codex actually reads —
+- **CLI tools**: send the API key Codex actually reads -
   `[model_providers.9router.http_headers]` instead of auth.json (which left
   every request 401 and clobbered an existing ChatGPT login); subagent model
   moved to `agents.default_subagent_model`
 - **OAuth**: refresh Cline tokens with the extension JSON contract
-- **Dashboard**: clamp the API key mask length — keys shorter than 8 chars
+- **Dashboard**: clamp the API key mask length - keys shorter than 8 chars
   threw RangeError and crashed the media-provider detail page
-- **UI**: wait for the Material Symbols font itself before revealing icons —
+- **UI**: wait for the Material Symbols font itself before revealing icons -
   `document.fonts.ready` resolved before the 4MB woff2 even started loading,
   leaving icons blank until a second load
 
 # v0.5.55 (2026-08-14)
 
 ## Features
-- **Auth**: native SAML 2.0 SSO alongside OIDC — AuthnRequest generation, ACS
+- **Auth**: native SAML 2.0 SSO alongside OIDC - AuthnRequest generation, ACS
   assertion handling, SP metadata export, admin config test, replay-protected
   via a `saml_state` cookie matched against `InResponseTo`
-- **Providers**: add Alibaba Token Plan (`token-plan.ap-southeast-1`) — the
+- **Providers**: add Alibaba Token Plan (`token-plan.ap-southeast-1`) - the
   fourth Alibaba key type, Singapore-only and OpenAI-compatible transport only
 - **Providers**: add `glm-5.3` to GLM Coding and GLM (China)
 - **Providers**: Kimchi accepts API keys as well as OAuth (dual auth), with a
   working Test Connection for both modes
 - **Antigravity**: add Gemini 3.7 Flash and its tiered high/medium/low variants
   (also in the Gemini registry) with pricing and quota tracking
-- **TTS**: add Fish Audio — model id travels in an HTTP `model` header, voice
+- **TTS**: add Fish Audio - model id travels in an HTTP `model` header, voice
   is a `reference_id` (preset or cloned voice model)
 - **OpenCode-Go**: route by request format via declared transports instead of
-  forcing every client into `/messages` — Codex/OpenAI clients no longer pay a
+  forcing every client into `/messages` - Codex/OpenAI clients no longer pay a
   lossy Responses→OpenAI→Claude double translation. Per-model `supportedFormats`
   guard; the bespoke executor is gone (its shared `_lastModel` cache could cross
   auth headers between concurrent requests)
@@ -1251,14 +1286,14 @@
   tabs tripping 429; manual refresh (↻) sends `force=1` to bypass the cache
 
 ## Fixes
-- **Docker**: ship `sql.js` in the image so the pure-JS DB fallback can start —
+- **Docker**: ship `sql.js` in the image so the pure-JS DB fallback can start -
   file tracing carried the package's JS without `dist/sql-wasm.wasm`, so a
   container with no native driver aborted with ENOENT and never got a database
   (#3248)
 - **Usage**: read Gemini `usageMetadata` out of the antigravity `{ response }`
-  envelope — every non-streaming antigravity request logged `IN 0 | OUT 0`
+  envelope - every non-streaming antigravity request logged `IN 0 | OUT 0`
   (#3260)
-- **Claude**: re-anchor passthrough cache breakpoints — the client's own
+- **Claude**: re-anchor passthrough cache breakpoints - the client's own
   `cache_control` markers point at pre-normalization offsets, so the tail was
   re-cached every request. Last system block and last tool pinned at 1h TTL,
   last assistant turn at 5m, mid-conversation system messages folded into the
@@ -1267,7 +1302,7 @@
   `experimental_attachments`, message-level `image_url`/`audio_url`, inline
   `data:` URIs) so the Vision Adapter auto-switch fires for Hermes/Ollama/
   Vercel AI SDK shapes
-- **Kiro**: intercept chat via `x-amz-target` — Kiro IDE 1.0.228+ moved
+- **Kiro**: intercept chat via `x-amz-target` - Kiro IDE 1.0.228+ moved
   `GenerateAssistantResponse` to `POST /` + header, bypassing MITM. Also emit
   the now-mandatory initial-response frame and map the `auto` model slot
 - **Kiro**: report real output tokens and stop discarding usable turns
@@ -1278,7 +1313,7 @@
 - **OpenCode**: send the official client fingerprint on free-tier requests so
   the Console stops classifying traffic as unidentified and rate-limiting it;
   session id resolves conversation-stable to preserve prompt caching
-- **Responses**: don't close the message on an empty `tool_calls` array — some
+- **Responses**: don't close the message on an empty `tool_calls` array - some
   providers attach one to every chunk, and the truthy check ended the message
   on the first content token (#3234)
 - **Translator**: preserve `prompt_cache_key` when converting chat to responses
@@ -1287,7 +1322,7 @@
   DeepSeek 400 (#3024); raise the dashboard model-test probe budget to 1024 and
   soft-pass reasoning-only responses (#3010)
 - **Headroom**: the toggle reflects the `headroomEnabled` setting even when the
-  proxy is down — it previously showed OFF while the engine kept calling
+  proxy is down - it previously showed OFF while the engine kept calling
   `/v1/compress`; proxy status stays visible via the status chip
 - **Hermes**: add the `api_key` parameter to the model block in YAML config
 - **Providers**: add llm7 to provider test support
@@ -1302,7 +1337,7 @@
   skip API key auth and reach `LOCAL_ONLY_PATHS` (`/api/mcp/*`,
   `/api/tunnel/enable`, `/api/auth/reset-password`). The server now stamps a
   per-process `x-9r-peer-token` on every request it sanitizes and only trusts
-  `x-9r-real-ip` behind it — falling back to Host in development and failing
+  `x-9r-real-ip` behind it - falling back to Host in development and failing
   closed in production (GHSA-pjm4-8fpg-f9p6). Also fixes IPv6 loopback
   detection (`::1`, `::ffff:127.0.0.1`) and routes `npm run start` /
   `start:bun` through `custom-server.js`
@@ -1317,7 +1352,7 @@
 ## Features
 - **Providers**: add TokenRouter (300+ models via OpenAI-compatible gateway) with
   exact per-model pricing for 110 models and `reasoning_effort` thinking config
-- **Providers**: add Self-hosted STT / TTS / Embedding — point 9Router at your own
+- **Providers**: add Self-hosted STT / TTS / Embedding - point 9Router at your own
   OpenAI-compatible speech and embedding servers (whisper.cpp, faster-whisper,
   Kokoro-FastAPI, llama-server, vLLM, Infinity). Unlike the named cloud providers
   these read `baseUrl` per connection, so one provider can front several machines
@@ -1337,7 +1372,7 @@
 
 ## Fixes
 - **Providers**: remove Qwen (OAuth flow stopped working reliably)
-- **Passthrough**: detect codex-tui/Codex Desktop as native Codex client — they
+- **Passthrough**: detect codex-tui/Codex Desktop as native Codex client - they
   were falling through to the translator and losing fields like `reasoning.summary`
 - **OAuth**: scope antigravity header fixes to loadCodeAssist/onboardUser only
 - **OAuth**: keep `open` external in the build so xAI/Grok token refresh works on
@@ -1376,15 +1411,15 @@
 - **CLI tools**: enable Apply button for dynamic OpenAI/Anthropic-compatible
   provider connections
 - **CLI**: include complete API artifacts in the CLI package
-- **TTS**: a bare self-hosted model name is the MODEL, not the voice — `kokoro`
+- **TTS**: a bare self-hosted model name is the MODEL, not the voice - `kokoro`
   was parsed as a voice against a default model, 404ing or synthesising with the
   wrong one
 - **Embeddings**: self-hosted embeddings no longer fall back to `api.openai.com`
-  when a connection has no `baseUrl` — that silently sent the input text and API
+  when a connection has no `baseUrl` - that silently sent the input text and API
   key to OpenAI under a provider named "Self-hosted"
 - **Embeddings**: an adapter that rejects a misconfigured connection now returns
   400 with the reason instead of escaping the handler uncaught
-- **Embeddings**: bound the upstream fetch with `FETCH_CONNECT_TIMEOUT_MS` — an
+- **Embeddings**: bound the upstream fetch with `FETCH_CONNECT_TIMEOUT_MS` - an
   endpoint that drops packets never returns headers, so the request previously
   hung indefinitely
 
@@ -1447,7 +1482,7 @@
 
 ## Features
 - **xAI**: Grok Imagine video generation (`/v1/videos`) + CLI
-- **CLI tools**: Grok Build setup — choose separate main/general-purpose/explore/plan models and preserve each model's context window
+- **CLI tools**: Grok Build setup - choose separate main/general-purpose/explore/plan models and preserve each model's context window
 - **GitHub Copilot**: route Claude models through Copilot's native `/v1/messages`
 - **Kiro**: add GPT-5.6 model family (#2596)
 - **RTK**: `X-9Router-Token-Saver` header to bypass token savers per request
@@ -1483,7 +1518,7 @@
 - **Providers**: add max thinking level for gpt-5.6-sol (#2500)
 - **Headroom**: add extras detection and install UI (#2403)
 - **Headroom**: activate/uninstall extras + fix interpreter detection
-- **PXPipe**: PXPIPE token saver — multimodal prompt compression (#2465)
+- **PXPipe**: PXPIPE token saver - multimodal prompt compression (#2465)
 - **Proxy-Pools**: auto-rotate strategy for no-auth providers (#2409)
 
 ## Fixes
@@ -1510,7 +1545,7 @@
 # v0.5.20 (2026-07-07)
 
 ## Features
-- **Thinking**: per-model thinking level picker on provider page — appends `(level)` suffix to copied model names for forced reasoning effort across all formats (openai, claude, gemini, deepseek, kimi, qwen, zai, minimax, hunyuan, step)
+- **Thinking**: per-model thinking level picker on provider page - appends `(level)` suffix to copied model names for forced reasoning effort across all formats (openai, claude, gemini, deepseek, kimi, qwen, zai, minimax, hunyuan, step)
 - **RTK**: add JS-native git-log filter (#2423)
 - **Caveman**: add targeted upstream-aligned style rules (#2424)
 - **i18n**: add Farsi (fa) language support (#2385)
@@ -1529,81 +1564,81 @@
 # v0.5.18 (2026-07-03)
 
 ## Features
-- **Usage**: track cached tokens + correct input/output/cache cost (#2209) — hodtien
-- **Codex**: show reset credit expiry details (#2290) — Rafli Ahmad Zulfikar
-- **NVIDIA**: add new models and capabilities — decolua
-- **ClinePass**: add provider support — sternelee
+- **Usage**: track cached tokens + correct input/output/cache cost (#2209) - hodtien
+- **Codex**: show reset credit expiry details (#2290) - Rafli Ahmad Zulfikar
+- **NVIDIA**: add new models and capabilities - decolua
+- **ClinePass**: add provider support - sternelee
 
 ## Fixes
-- **Usage**: dedupe streaming request-details log entries — Qin Li
-- **Claude**: drop foreign thinking signatures in passthrough — decolua
-- Prevent non-SSE stream pipe crash and cross-IdP account overwrites (#2244) — KunN-21
-- **Kiro**: route IdC auth to regional CodeWhisperer surface (#2297) — Volodymyr Saakian
-- **Kiro**: add Claude Sonnet 5 model support (#2264) — Edison42
-- **Xiaomi-tokenplan**: region selector, key validation, multi-connection (#2251) — MiQieR
-- **Translator**: strict Anthropic content block compliance (#2225) — Sahrul Ramadhan Hardiansyah
-- **Kimchi**: strip reasoning_content echo to bound multi-turn input tokens — KunN-21
-- **Kimchi**: bump User-Agent to kimchi/0.1.40 (#2256) — Ansh7473
-- **Codebuddy-cn**: strip empty tool_calls arrays to preserve reasoning — zmf
-- **Antigravity**: preserve Claude tool delta index (#2223) — Sutarto Jordan Chrisfivo
-- **MITM**: generate root CA on server startup (#2228) — Sutarto Jordan Chrisfivo
+- **Usage**: dedupe streaming request-details log entries - Qin Li
+- **Claude**: drop foreign thinking signatures in passthrough - decolua
+- Prevent non-SSE stream pipe crash and cross-IdP account overwrites (#2244) - KunN-21
+- **Kiro**: route IdC auth to regional CodeWhisperer surface (#2297) - Volodymyr Saakian
+- **Kiro**: add Claude Sonnet 5 model support (#2264) - Edison42
+- **Xiaomi-tokenplan**: region selector, key validation, multi-connection (#2251) - MiQieR
+- **Translator**: strict Anthropic content block compliance (#2225) - Sahrul Ramadhan Hardiansyah
+- **Kimchi**: strip reasoning_content echo to bound multi-turn input tokens - KunN-21
+- **Kimchi**: bump User-Agent to kimchi/0.1.40 (#2256) - Ansh7473
+- **Codebuddy-cn**: strip empty tool_calls arrays to preserve reasoning - zmf
+- **Antigravity**: preserve Claude tool delta index (#2223) - Sutarto Jordan Chrisfivo
+- **MITM**: generate root CA on server startup (#2228) - Sutarto Jordan Chrisfivo
 
 # v0.5.15 (2026-06-29)
 
 ## Features
-- Add Kimchi OAuth provider — Nant361
-- Refine Qwen vision/video + thinking model patterns — decolua
-- Opt-in Codex auto-ping quota keep-alive — Emirhan
+- Add Kimchi OAuth provider - Nant361
+- Refine Qwen vision/video + thinking model patterns - decolua
+- Opt-in Codex auto-ping quota keep-alive - Emirhan
 
 ## Fixes
-- **Responses**: handle response.done terminal events (#2142) — rifuki
-- **Headroom**: skip unsafe responses tool history (#2132) — Sutarto Jordan Chrisfivo
-- **Translator**: map mid-conversation system message to user (claude→openai) — decolua
-- **Gemini**: normalize contents to prevent 400 invalid_argument (#2192) — warelik
-- **Gemini**: backfill thoughtSignature + suppress stream done sentinel — WARELIK
-- **Alicode**: preserve cache_control for DashScope providers (#2069) — Rex
-- **Antigravity**: strip deprecated/readOnly/writeOnly from tool schemas — iletai, Yudhistira-Official
-- **CodeBuddy CN**: show bonus packs as one-time, not monthly-replenishing — whale9820
-- **Kiro**: strip leaked <thinking> tags from content stream (#2158) — hamsa0x7
-- **Tray**: make Windows context menu DPI-aware — Emirhan
-- **Kilocode**: expose full gateway catalog in combo model picker — jellylarper
-- **OpenCode**: fix Go GLM — decolua
+- **Responses**: handle response.done terminal events (#2142) - rifuki
+- **Headroom**: skip unsafe responses tool history (#2132) - Sutarto Jordan Chrisfivo
+- **Translator**: map mid-conversation system message to user (claude→openai) - decolua
+- **Gemini**: normalize contents to prevent 400 invalid_argument (#2192) - warelik
+- **Gemini**: backfill thoughtSignature + suppress stream done sentinel - WARELIK
+- **Alicode**: preserve cache_control for DashScope providers (#2069) - Rex
+- **Antigravity**: strip deprecated/readOnly/writeOnly from tool schemas - iletai, Yudhistira-Official
+- **CodeBuddy CN**: show bonus packs as one-time, not monthly-replenishing - whale9820
+- **Kiro**: strip leaked <thinking> tags from content stream (#2158) - hamsa0x7
+- **Tray**: make Windows context menu DPI-aware - Emirhan
+- **Kilocode**: expose full gateway catalog in combo model picker - jellylarper
+- **OpenCode**: fix Go GLM - decolua
 
 # v0.5.12 (2026-06-26)
 
 ## Features
-- Add token-saver dashboard page — decolua
-- Add bulk delete for provider connections — teddytkz
-- Resolve GitHub Copilot model catalog from upstream — caiqinzhou
-- Add Venice AI provider — Brokenc0de
-- Add Kiro external_idp import for Microsoft SSO (CLIProxyAPI) — Stevanus Pangau
-- Overhaul Blackbox provider catalog + WebUI test support — suryacagur
+- Add token-saver dashboard page - decolua
+- Add bulk delete for provider connections - teddytkz
+- Resolve GitHub Copilot model catalog from upstream - caiqinzhou
+- Add Venice AI provider - Brokenc0de
+- Add Kiro external_idp import for Microsoft SSO (CLIProxyAPI) - Stevanus Pangau
+- Overhaul Blackbox provider catalog + WebUI test support - suryacagur
 
 ## Fixes
-- Provider thinking compatibility (DeepSeek/Gemini) — Mink Nguyen
-- Stop double-counting streaming usage at source — decolua
-- Usage logging dedupe to reduce stats churn — Mink Nguyen
-- Prevent non-JSON SSE lines / duplicate [DONE] from breaking clients (PR #2046) — qianze
-- Resolve Gemini TTS models from catalog — nguyenha935
-- Support Kiro IDC (organization) token import — quanturbo
-- Preserve forced streaming for JSON clients (#2031) — Joseph Yaksich
-- Preserve Responses text format (Codex) — tenglong
-- Support Gemini native TTS generateContent endpoint — nguyenha935
-- Add missing zh-CN endpoint key label (i18n) — weimaozhen
-- CodeBuddy: only send reasoning params when client requests reasoning (#2071) — Rex
+- Provider thinking compatibility (DeepSeek/Gemini) - Mink Nguyen
+- Stop double-counting streaming usage at source - decolua
+- Usage logging dedupe to reduce stats churn - Mink Nguyen
+- Prevent non-JSON SSE lines / duplicate [DONE] from breaking clients (PR #2046) - qianze
+- Resolve Gemini TTS models from catalog - nguyenha935
+- Support Kiro IDC (organization) token import - quanturbo
+- Preserve forced streaming for JSON clients (#2031) - Joseph Yaksich
+- Preserve Responses text format (Codex) - tenglong
+- Support Gemini native TTS generateContent endpoint - nguyenha935
+- Add missing zh-CN endpoint key label (i18n) - weimaozhen
+- CodeBuddy: only send reasoning params when client requests reasoning (#2071) - Rex
 - CodeBuddy CN: show one-shot bonus packs as expiring, not monthly-replenishing
-- Show custom provider models in combo picker — Sapto
-- Docker: add docker-compose.yml with headroom enabled by default — nitsuahlabs
-- Clarify token diagnostics vs provider billing (headroom, #1998) — Sutarto Jordan Chrisfivo
-- Translate openai-responses input through OpenAI for compression (#1998) — Ankit
-- Kiro: report 1M context window for claude-opus-4.8 — EdisonPVE
-- Avoid stale redirects after auth changes (#2100) — Emirhan
-- Mark Claude Opus 4.7 (dashed id) as 1M context — Brokenc0de
-- Preserve reasoning effort through Codex translations — ntdung6868
-- Token-saver: full width card layout — decolua
-- Antigravity: retry transient upstream failures — Sutarto Jordan Chrisfivo
-- Param-support: handle strip rules without match/drop (#1960) — Joseph Yaksich
-- Translator: resolve custom provider prefix in debug endpoint (#1083) — hamsa0x7
+- Show custom provider models in combo picker - Sapto
+- Docker: add docker-compose.yml with headroom enabled by default - nitsuahlabs
+- Clarify token diagnostics vs provider billing (headroom, #1998) - Sutarto Jordan Chrisfivo
+- Translate openai-responses input through OpenAI for compression (#1998) - Ankit
+- Kiro: report 1M context window for claude-opus-4.8 - EdisonPVE
+- Avoid stale redirects after auth changes (#2100) - Emirhan
+- Mark Claude Opus 4.7 (dashed id) as 1M context - Brokenc0de
+- Preserve reasoning effort through Codex translations - ntdung6868
+- Token-saver: full width card layout - decolua
+- Antigravity: retry transient upstream failures - Sutarto Jordan Chrisfivo
+- Param-support: handle strip rules without match/drop (#1960) - Joseph Yaksich
+- Translator: resolve custom provider prefix in debug endpoint (#1083) - hamsa0x7
 
 # v0.5.8 (2026-06-21)
 
@@ -1628,7 +1663,7 @@
 ## Features
 - **Ponytail**: minimalist code generation feature
 - **Headroom**: proxy lifecycle management + dashboard UI (one-click start/stop, install detection, status probing, token saver, claude↔openai shape conversion)
-- **CodeBuddy CN**: new OAuth provider (copilot.tencent.com) — 15-model catalog, /v2 inference, forced streaming, OpenAI-style reasoning
+- **CodeBuddy CN**: new OAuth provider (copilot.tencent.com) - 15-model catalog, /v2 inference, forced streaming, OpenAI-style reasoning
 - **OpenCode-Go**: align models with official endpoints; route Qwen 3.7 MiniMax via /v1/messages, GLM/Kimi/DeepSeek/MiMo via /chat/completions
 
 ## Fixes
@@ -1651,14 +1686,14 @@
 # v0.5.2 (2026-06-17)
 
 ## Features
-- **Combo Fusion strategy** — fans the prompt out to all member models in parallel, then a configurable judge model synthesizes one final answer (quorum-grace, anonymized sources, graceful degradation)
-- **Per-combo strategy selector** — pick `fallback` / `round-robin` / `fusion` / `capacity` per combo (replaces the old round-robin toggle), with a judge picker for fusion
-- **Capacity auto-switch** — reorders models per request so images/PDFs route to capable models first
+- **Combo Fusion strategy** - fans the prompt out to all member models in parallel, then a configurable judge model synthesizes one final answer (quorum-grace, anonymized sources, graceful degradation)
+- **Per-combo strategy selector** - pick `fallback` / `round-robin` / `fusion` / `capacity` per combo (replaces the old round-robin toggle), with a judge picker for fusion
+- **Capacity auto-switch** - reorders models per request so images/PDFs route to capable models first
 - **Kiro headless API-key auth** (`ksk_`) + direct `claude↔kiro` route that avoids the lossy OpenAI two-hop pivot
-- **Claude auto-ping** — warms the 5h quota window right after reset so a fresh window starts immediately (per-connection toggle)
+- **Claude auto-ping** - warms the 5h quota window right after reset so a fresh window starts immediately (per-connection toggle)
 
 ## Fixes
-- **Claude 429**: stop hammering the OAuth usage endpoint — cache resetAt, throttle quota refresh to 3 min, cool down after a 429 (chat unaffected)
+- **Claude 429**: stop hammering the OAuth usage endpoint - cache resetAt, throttle quota refresh to 3 min, cool down after a 429 (chat unaffected)
 - **Usage logs always empty**: missing `await` on `getAdapter()` in `getRecentLogs` made `/api/usage/logs` & `/api/usage/request-logs` return nothing
 - **Executors**: strip params unsupported by the provider/model (drops deprecated `temperature` for claude-opus-4 → Anthropic 400)
 - **Translator**: derive deterministic tool_call ids for gemini/antigravity → OpenAI so function call/response pair correctly (fixes tool-pairing 400s)
@@ -1713,7 +1748,7 @@
 - MiniMax: add MiniMax-M3 + update Quota Tracker coding/CN (#1631)
 
 ## Fixes
-- Codex: harden streaming timeouts (stall/connect raised to 60s, configurable per-provider), accept `response.done` event, and always emit a terminal `response.failed` + `[DONE]` for Responses passthrough when a stream closes, stalls, or aborts before a terminal event — prevents codex clients from hanging (#1648, #1680, #1688, #1618)
+- Codex: harden streaming timeouts (stall/connect raised to 60s, configurable per-provider), accept `response.done` event, and always emit a terminal `response.failed` + `[DONE]` for Responses passthrough when a stream closes, stalls, or aborts before a terminal event - prevents codex clients from hanging (#1648, #1680, #1688, #1618)
 - Codex: durable OAuth refresh lifecycle (#1664)
 - Tunnel: skip virtual interfaces to prevent false netchange watchdog
 - Claude: fix forced tool_choice 400 on cc/ OAuth route (#1592)
@@ -1794,7 +1829,7 @@
 # v0.4.55 (2026-05-18)
 
 ## Features
-- Xiaomi MiMo Token Plan: region selector (Singapore / China / Europe) — keys are cluster-specific
+- Xiaomi MiMo Token Plan: region selector (Singapore / China / Europe) - keys are cluster-specific
 - Antigravity: risk confirmation dialog before first connection
 - Gemini CLI: surface upstream retry delay on 429 errors
 
@@ -1814,7 +1849,7 @@
 
 ## Features
 - Add Vercel AI Gateway provider support (#1183)
-- rtk: Kiro format tool result compression — handle conversationState.history & currentMessage, preserve error results, ~13.6% savings (#1194)
+- rtk: Kiro format tool result compression - handle conversationState.history & currentMessage, preserve error results, ~13.6% savings (#1194)
 
 ## Fixes
 - openclaw: normalize agent.model object form `{primary, fallbacks}` before .startsWith → fix TypeError & 'not configured' status (#1216)
@@ -1852,4 +1887,4 @@
 # v0.4.46 (2026-05-15)
 
 ## Breaking Changes
-- Tunnel public URL changed — old tunnel links no longer work, please reconnect to get the new URL
+- Tunnel public URL changed - old tunnel links no longer work, please reconnect to get the new URL

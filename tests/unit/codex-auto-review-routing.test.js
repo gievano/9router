@@ -37,7 +37,7 @@ describe("codex auto-review routing (#1398)", () => {
     );
   });
 
-  // Registering it must not push it to the front of the cx list — getDefaultModel takes models[0].
+  // Registering it must not push it to the front of the cx list - getDefaultModel takes models[0].
   it("does not become the default Codex model", () => {
     expect(getDefaultModel("cx")).not.toBe("codex-auto-review");
   });

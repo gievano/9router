@@ -157,7 +157,7 @@ describe("applyThinking per provider format", () => {
     const out = apply("openai", "glm-5.2", { reasoning_effort: "low" }, "glm-cn");
     expect(out.reasoning_effort).toBe("low");
   });
-  it("GLM-4.7 (pre-5.2) does not get reasoning_effort — z.ai ignores it", () => {
+  it("GLM-4.7 (pre-5.2) does not get reasoning_effort - z.ai ignores it", () => {
     const out = apply("openai", "glm-4.7", { reasoning_effort: "low" }, "glm-cn");
     expect(out.thinking).toEqual({ type: "enabled" });
     expect(out.reasoning_effort).toBeUndefined();

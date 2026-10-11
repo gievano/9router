@@ -22,7 +22,7 @@ function isAnthropicCompatible(provider) {
 // Resolve the API type (chat vs responses) for an openai-compatible node.
 // The stored apiType on the connection's providerSpecificData (kept in sync with
 // the node on create/update) is authoritative. Falls back to the node ID
-// substring for legacy nodes created before apiType was persisted — their IDs
+// substring for legacy nodes created before apiType was persisted - their IDs
 // embed the type: openai-compatible-<chat|responses>-<uuid>.
 export function resolveOpenAICompatibleApiType(provider, credentials = null) {
   const stored = credentials?.providerSpecificData?.apiType;
@@ -110,7 +110,7 @@ export function detectFormat(body) {
   return "openai";
 }
 
-// Get provider config (internal — no external runtime consumer)
+// Get provider config (internal - no external runtime consumer)
 function getProviderConfig(provider, credentials = null) {
   if (isOpenAICompatible(provider)) {
     const apiType = resolveOpenAICompatibleApiType(provider, credentials);

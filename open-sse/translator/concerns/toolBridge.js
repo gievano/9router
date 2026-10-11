@@ -1,4 +1,4 @@
-// OpenAI Tool Bridge — the response-side repair that lets a model with no
+// OpenAI Tool Bridge - the response-side repair that lets a model with no
 // native function calling still run a client's tools.
 //
 // WHY THIS EXISTS
@@ -345,7 +345,7 @@ export function applyOpenAIToolBridge(response, body) {
       for (const [k, v] of Object.entries(args || {})) {
         if (declared.has(k)) filtered[k] = v;
       }
-      // Keep every argument when the schema declares no properties at all —
+      // Keep every argument when the schema declares no properties at all -
       // that is a permissive schema, not a real clash.
       args = Object.keys(filtered).length ? filtered : args;
     }

@@ -4,7 +4,7 @@ const CLINEPASS_MODELS_ENDPOINT = "https://api.cline.bot/api/v1/models";
 // Cline's free tier is published here, not in /api/v1/models: the catalog
 // endpoint carries no `cline-free/*` ids at all. Cline's own SDK calls this
 // feed unauthenticated (sdk/packages/core/src/services/llms/cline-recommended-models.ts),
-// so no Authorization header is sent — adding one would only make the request
+// so no Authorization header is sent - adding one would only make the request
 // fail on a header the endpoint ignores.
 const CLINE_RECOMMENDED_MODELS_ENDPOINT = "https://api.cline.bot/api/v1/ai/cline/recommended-models";
 const FETCH_TIMEOUT_MS = 5000;
@@ -80,7 +80,7 @@ export async function resolveClinepassModels(credentials) {
 
 /**
  * Fetch Cline's recommended-models feed and return only its `free[]` tier.
- * Returns null on any failure — the free tier is additive, so a dead feed must
+ * Returns null on any failure - the free tier is additive, so a dead feed must
  * never take the /api/v1/models catalog down with it.
  * @param {{accessToken?: string, apiKey?: string}} credentials
  * @returns {Promise<{id: string, name: string}[] | null>}

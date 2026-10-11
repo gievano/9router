@@ -216,7 +216,7 @@ describe("gitLog filter", () => {
   });
 
   it("preserves input when compressed output inflates", () => {
-    // Input shorter than output would be — e.g. tiny log
+    // Input shorter than output would be - e.g. tiny log
     const input = "abc\ndef";
     const out = gitLog(input, 10);
     expect(out).toBe(input);

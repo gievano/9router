@@ -53,10 +53,10 @@ export default {
   ],
   serviceKinds: ["image", "stt"],
   // Inference Providers router. The router is addressed as
-  // `<baseUrl>/<provider>/<providerModelId>` — see open-sse/handlers/imageProviders/huggingface.js.
+  // `<baseUrl>/<provider>/<providerModelId>` - see open-sse/handlers/imageProviders/huggingface.js.
   // `modelMap` resolves a Hub model id to the provider-resolved id the router expects.
   // A plain string value is the provider path. Image-to-image models use
-  // `{ path, task: "image-to-image" }`: their payload differs — the source image goes in
+  // `{ path, task: "image-to-image" }`: their payload differs - the source image goes in
   // `inputs` and the prompt under `parameters.prompt`. See
   // https://huggingface.co/docs/inference-providers/tasks/image-to-image
   // Only providers the router actually forwards to are listed: replicate, wavespeed and
@@ -93,7 +93,7 @@ export default {
   // Speech-to-text goes through the hf-inference provider, which keeps the Hub
   // model id as its provider-resolved id (`/hf-inference/models/<hubId>`).
   // No `params` are declared: the router's ASR payload carries only `inputs` and
-  // `parameters.return_timestamps` / `parameters.generation_parameters` — it has no
+  // `parameters.return_timestamps` / `parameters.generation_parameters` - it has no
   // language field, so a UI-declared "language" would be silently dropped.
   sttConfig: {
     baseUrl: "https://router.huggingface.co/hf-inference/models",

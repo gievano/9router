@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { GLM_OAUTH_CONFIG } from "../constants/oauth.js";
 
-// Zai GLM Coding OAuth — CLI polling flow (mirrors the official
+// Zai GLM Coding OAuth - CLI polling flow (mirrors the official
 // ZCode CLI, apps/zcode-cli packages/adapters/src/auth/cli-oauth.ts +
 // coding-plan-api-key.ts). No PKCE and no local callback server:
 //
@@ -61,7 +61,7 @@ const glm = {
         ok: true,
         data: {
           error: "access_denied",
-          error_description: "Missing ZCode poll token — restart the login flow",
+          error_description: "Missing ZCode poll token - restart the login flow",
         },
       };
     }
@@ -127,7 +127,7 @@ const glm = {
       };
     }
 
-    // ready.accessToken is the Z.AI OAuth token — derive the coding-plan API key
+    // ready.accessToken is the Z.AI OAuth token - derive the coding-plan API key
     const { planApiKey, businessToken } = await resolveCodingPlanApiKey(config, zaiAccessToken);
 
     return {

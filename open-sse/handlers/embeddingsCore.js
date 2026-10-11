@@ -5,7 +5,7 @@ import { refreshWithRetry } from "../services/tokenRefresh.js";
 import { getEmbeddingAdapter } from "./embeddingProviders/index.js";
 
 /**
- * Core embeddings handler — orchestrator only. Provider-specific URL/headers/body/normalize
+ * Core embeddings handler - orchestrator only. Provider-specific URL/headers/body/normalize
  * live in `./embeddingProviders/{id}.js`.
  *
  * @returns {Promise<{ success: boolean, response: Response, status?: number, error?: string }>}
@@ -39,8 +39,8 @@ export async function handleEmbeddingsCore({
 
   const ctx = { input };
   // buildUrl/buildHeaders/buildBody were called bare. An adapter that rejects a
-  // misconfigured connection — selfhosted-embedding throws when no baseUrl is set
-  // rather than silently falling back to api.openai.com — would have escaped this
+  // misconfigured connection - selfhosted-embedding throws when no baseUrl is set
+  // rather than silently falling back to api.openai.com - would have escaped this
   // function uncaught, surfacing as a 500 or a request that never settles. A
   // configuration mistake is a 400 with the reason in it.
   let url, headers, requestBody;
@@ -75,7 +75,7 @@ export async function handleEmbeddingsCore({
     return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg);
   }
 
-  // Handle 401/403 — try token refresh (skip for noAuth providers)
+  // Handle 401/403 - try token refresh (skip for noAuth providers)
   const executor = getExecutor(provider);
   if (
     !executor?.noAuth &&

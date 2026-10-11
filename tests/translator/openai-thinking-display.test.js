@@ -1,7 +1,7 @@
 // OpenAI-format clients asking for reasoning get Claude's thinking text back.
 //
 // Claude only returns thinking text when the request sets thinking.display to
-// "summarized" — otherwise the redact-thinking beta is sent and every thinking
+// "summarized" - otherwise the redact-thinking beta is sent and every thinking
 // block comes back signature-only. That field has no OpenAI equivalent, so an
 // OpenAI-format client (opencode, DeepSeek Harness, Cherry Studio, ...) could never
 // see its reasoning: reasoning_content stayed empty however high the effort was.
@@ -9,7 +9,7 @@
 // The client's intent is read from the pre-translation body:
 // - Chat Completions: setting reasoning_effort is the request for reasoning.
 // - Responses API: reasoning.summary is OpenAI's explicit ask for summaries.
-// Claude-format clients are untouched — they set display themselves.
+// Claude-format clients are untouched - they set display themselves.
 import { describe, it, expect } from "vitest";
 import "./registerAll.js";
 import { translateRequest } from "../../open-sse/translator/index.js";

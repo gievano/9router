@@ -110,7 +110,7 @@ const parseDelegationBlock = (yaml) => {
 
 const removeModelBlock = (yaml) => yaml.replace(MODEL_BLOCK_RE, "").replace(/^\n+/, "");
 
-// .env helpers — upsert/remove single KEY=VALUE line
+// .env helpers - upsert/remove single KEY=VALUE line
 const upsertEnvVar = (envText, key, value) => {
   const re = new RegExp(`^${key}=.*$`, "m");
   const line = `${key}=${value}`;
@@ -188,7 +188,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const { baseUrl, apiKey, model, selections } = await request.json();
-    // selections: [{role, model}] — "default" plus any auxiliary/delegation slots.
+    // selections: [{role, model}] - "default" plus any auxiliary/delegation slots.
     // Legacy callers (CLI quick setup) send a bare `model` → treat as default role.
     const sel = Array.isArray(selections) && selections.some((s) => s?.role && s?.model)
       ? selections.filter((s) => s?.role && s?.model)
@@ -203,7 +203,7 @@ export async function POST(request) {
 
     const normalizedBaseUrl = baseUrl.endsWith("/v1") ? baseUrl : `${baseUrl}/v1`;
 
-    // Update config.yaml — upsert each role block, keep everything else
+    // Update config.yaml - upsert each role block, keep everything else
     let newYaml = await readConfigYaml();
     for (const { role, model: roleModel } of sel) {
       if (role === "default") {
@@ -216,7 +216,7 @@ export async function POST(request) {
     }
     await fs.writeFile(getHermesConfigPath(), newYaml);
 
-    // Update .env — upsert OPENAI_API_KEY only when caller provides one
+    // Update .env - upsert OPENAI_API_KEY only when caller provides one
     if (apiKey) {
       const existingEnv = await readEnvFile();
       const newEnv = upsertEnvVar(existingEnv, API_KEY_ENV, apiKey);
@@ -248,7 +248,7 @@ export async function DELETE() {
     }
     let newYaml = removeModelBlock(yaml);
     newYaml = removeDelegationBlock(newYaml);
-    // Only drop auxiliary entries we manage (custom provider, any base URL — covers tunnels)
+    // Only drop auxiliary entries we manage (custom provider, any base URL - covers tunnels)
     for (const [role, cfg] of Object.entries(parseAuxRoles(yaml))) {
       if (cfg?.provider === "custom") newYaml = removeAuxRole(newYaml, role);
     }

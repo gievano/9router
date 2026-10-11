@@ -3,13 +3,13 @@
  *
  * Pins the unified loading style: every long operation (backup export/import,
  * bulk imports, bulk adds) renders the same centered card over a dark blurred
- * backdrop — title, message, optional percent, optional section line, and an
+ * backdrop - title, message, optional percent, optional section line, and an
  * optional progress bar. No operation may fall back to a different look.
  *
  * Render smoke-check on purpose: esbuild only proves a file parses. The card
  * is a pile of conditional classNames and conditional blocks, so a renamed
  * prop or a dropped branch parses fine and shows up only when the operation
- * runs — with no other place that would surface it.
+ * runs - with no other place that would surface it.
  *
  * Run with: node src/shared/components/progressCardRenderSelfCheck.mjs
  */
@@ -164,7 +164,7 @@ run("fixed={false} renders an in-modal fill, not a fullscreen takeover", () => {
 
 const failed = results.filter((r) => !r.ok);
 for (const r of results) {
-  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` — ${r.err}` : ""}`);
+  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` - ${r.err}` : ""}`);
 }
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length === 0 ? 0 : 1);

@@ -2,7 +2,7 @@
 //
 // Why this exists: esbuild only proves a file parses. It happily accepts a JSX
 // expression that names a variable nobody ever declared, because that is
-// syntactically fine — the ReferenceError only fires when the component renders.
+// syntactically fine - the ReferenceError only fires when the component renders.
 // `resetWord` shipped that way once and took down /dashboard/quota, which has no
 // error boundary. These components are pure functions of their props, so calling
 // them with real-shaped data catches that whole class of bug for a few
@@ -192,7 +192,7 @@ run("ProviderLimitCard renders with no quotas and no props at all", () => {
 
 const failed = results.filter((r) => !r.ok);
 for (const r of results) {
-  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` — ${r.err}` : ""}`);
+  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` - ${r.err}` : ""}`);
 }
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length === 0 ? 0 : 1);

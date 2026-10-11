@@ -1,4 +1,4 @@
-// Background proactive OAuth token refresh — independent of inbound requests.
+// Background proactive OAuth token refresh - independent of inbound requests.
 // Fail-open everywhere: tick errors and per-connection failures never kill the interval.
 
 import * as log from "../utils/logger.js";

@@ -6,7 +6,7 @@ let trayInstance = null;
 let isWinTray = false;
 
 /**
- * Get icon base64 from file — used for systray (mac/linux)
+ * Get icon base64 from file - used for systray (mac/linux)
  */
 function getIconBase64() {
   const isWin = process.platform === "win32";

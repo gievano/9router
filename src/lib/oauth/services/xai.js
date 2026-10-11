@@ -76,7 +76,7 @@ export async function discoverEndpoints() {
 }
 
 /**
- * Decode the `email` claim from an id_token JWT. No signature verification —
+ * Decode the `email` claim from an id_token JWT. No signature verification -
  * mirrors CLIProxyAPI Go behavior. Returns undefined if not parseable.
  */
 export function decodeIdTokenEmail(idToken) {
@@ -124,7 +124,7 @@ export class XaiService extends OAuthService {
 
   /**
    * Exchange authorization code for tokens.
-   * xAI is a public PKCE client — no client_secret.
+   * xAI is a public PKCE client - no client_secret.
    */
   async exchangeXaiCode({ tokenUrl, code, redirectUri, codeVerifier }) {
     const res = await fetch(tokenUrl, {

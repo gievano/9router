@@ -5,7 +5,7 @@ import { CAPACITY_META, isSttTransport } from "@/shared/constants/models";
 
 export const dynamic = "force-dynamic";
 
-// Whitelist capability keys to boolean values — ignore anything else
+// Whitelist capability keys to boolean values - ignore anything else
 function sanitizeCaps(caps) {
   if (!caps || typeof caps !== "object") return null;
   const clean = {};
@@ -16,7 +16,7 @@ function sanitizeCaps(caps) {
 }
 
 // Accepted STT transport markers live in the shared whitelist
-// (src/shared/constants/models STT_TRANSPORT_META) — the dashboard transport
+// (src/shared/constants/models STT_TRANSPORT_META) - the dashboard transport
 // select and this validator must agree on one set, so neither owns a copy.
 // Unknown or mistyped values are silently dropped, the same policy
 // sanitizeCaps applies to capability keys.

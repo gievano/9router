@@ -569,7 +569,7 @@ const scopedModelPatterns =
   };
 
   // u2500u2500u2500 Cloudflare Tunnel handlers
-  // Ping tunnel health until reachable. Race multiple URLs (shortlink + direct) — 1 OK is enough.
+  // Ping tunnel health until reachable. Race multiple URLs (shortlink + direct) - 1 OK is enough.
   const pingTunnelHealth = async (...urls) => {
     setTunnelLoading(true);
     setTunnelProgress("Waiting for tunnel ready...");
@@ -800,7 +800,7 @@ const scopedModelPatterns =
 
       if (data.needsLogin && data.authUrl) {
         requestUserAuth(data.authUrl, "Open Login Page");
-        setTsProgress("Login required — click \"Open Login Page\" to continue");
+        setTsProgress("Login required - click \"Open Login Page\" to continue");
         for (let i = 0; i < 40; i++) {
           await new Promise((r) => setTimeout(r, 3000));
           try {
@@ -1398,7 +1398,7 @@ const scopedModelPatterns =
           <div className="mt-4 flex flex-col gap-2">
             {!requireApiKey && (
               <SecurityWarning
-                message="Require API key is disabled — your endpoint is publicly accessible without authentication."
+                message="Require API key is disabled - your endpoint is publicly accessible without authentication."
                 action={{ label: "Enable", href: "#require-api-key" }}
               />
             )}

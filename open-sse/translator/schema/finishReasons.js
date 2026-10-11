@@ -1,4 +1,4 @@
-// Finish/stop reason enums. Pure data — mapping LOGIC lives in concerns/finishReason.js.
+// Finish/stop reason enums. Pure data - mapping LOGIC lives in concerns/finishReason.js.
 
 // OpenAI finish_reason values (the hub format; shared across all response translators).
 export const OPENAI_FINISH = {

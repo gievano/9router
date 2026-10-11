@@ -8,7 +8,7 @@
  *   api3.qoder.sh      gateway.qoder.com.cn   - inference (chat) + model list, requires COSY signing
  *   qoder.com/device   qoder.com.cn/device    - browser landing page for device authorization
  *
- * All path suffixes are identical between regions — only the hosts differ.
+ * All path suffixes are identical between regions - only the hosts differ.
  * Region-aware consumers call qoder*Url(region) / qoderInferenceBase(creds, region)
  * and derive the region from the provider id via qoderRegionOf(). The named
  * QODER_* constants below keep the intl defaults for backward compatibility.
@@ -18,7 +18,7 @@ export const QODER_REGION_INTL = "intl";
 export const QODER_REGION_CN = "cn";
 
 // Per-region base URLs. CN serves job tokens (jt-...) from the same gateway
-// host — there is no api2-style split like intl's api2.qoder.sh.
+// host - there is no api2-style split like intl's api2.qoder.sh.
 const QODER_REGION_BASES = {
   [QODER_REGION_INTL]: {
     chat: "https://api3.qoder.sh",
@@ -43,7 +43,7 @@ export function qoderRegionBases(region) {
   return QODER_REGION_BASES[region] || QODER_REGION_BASES[QODER_REGION_INTL];
 }
 
-/** Region for a provider id — "cn" for qoder-cn, "intl" otherwise. */
+/** Region for a provider id - "cn" for qoder-cn, "intl" otherwise. */
 export function qoderRegionOf(providerId) {
   return providerId === "qoder-cn" ? QODER_REGION_CN : QODER_REGION_INTL;
 }
@@ -86,7 +86,7 @@ export const QODER_QUOTA_USAGE_URL = qoderQuotaUsageUrl(QODER_REGION_INTL);
 export const QODER_REFRESH_TOKEN_URL = qoderRefreshTokenUrl(QODER_REGION_INTL);
 
 // PAT (Personal Access Token, pt-...) → short-lived job token (jt-...) exchange.
-// PATs cannot sign COSY requests directly — they must be exchanged first.
+// PATs cannot sign COSY requests directly - they must be exchanged first.
 // This endpoint is NOT COSY-signed (plain JSON POST).
 export function qoderJobTokenExchangeUrl(region) {
   return `${qoderOpenApiBase(region)}/api/v1/jobToken/exchange`;
@@ -119,7 +119,7 @@ export const QODER_CONTEXT_TIER_ENV = "QODER_CONTEXT_TIER";
 export const QODER_CONTEXT_TIER_MODES = Object.freeze({ AUTO: "auto", MAX: "max", DEFAULT: "default" });
 
 /**
- * Job-token (jt-...) traffic must hit api2.qoder.sh — api3 rejects jt- with
+ * Job-token (jt-...) traffic must hit api2.qoder.sh - api3 rejects jt- with
  * "Login expired" (403). Device tokens (dt-...) stay on api3. PATs (pt-...)
  * are exchanged for jt- before this is consulted.
  */
@@ -137,7 +137,7 @@ export function qoderInferenceBase(credentials, region = QODER_REGION_INTL) {
   return QODER_CHAT_BASE;
 }
 
-// COSY header constants. These are not arbitrary — the upstream signature
+// COSY header constants. These are not arbitrary - the upstream signature
 // validation matches them against the values used at signing time.
 export const QODER_IDE_VERSION = "1.0.0";
 export const QODER_CLIENT_TYPE = "5";
@@ -146,7 +146,7 @@ export const QODER_LOGIN_VERSION = "v2";
 export const QODER_MACHINE_OS = "x86_64_windows";
 export const QODER_MACHINE_TYPE = "5";
 
-// Canonical model identifiers. Identity map — keep as a map so callers can
+// Canonical model identifiers. Identity map - keep as a map so callers can
 // cheaply test "is this a known qoder model?" before sending the request.
 export const QODER_MODEL_MAP = {
   // Tier models

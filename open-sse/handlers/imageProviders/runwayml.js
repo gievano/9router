@@ -1,4 +1,4 @@
-// Runway ML — async submit + /tasks/{id} polling
+// Runway ML - async submit + /tasks/{id} polling
 import { sleep, nowSec, sizeToAspectRatio, POLL_INTERVAL_MS, POLL_TIMEOUT_MS } from "./_base.js";
 import { PROVIDER_MEDIA } from "../../providers/index.js";
 

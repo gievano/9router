@@ -1,4 +1,4 @@
-// ElevenLabs TTS — voice id with optional model_id prefix
+// ElevenLabs TTS - voice id with optional model_id prefix
 import { Buffer } from "node:buffer";
 
 const VOICES_TTL = 24 * 60 * 60 * 1000;

@@ -165,7 +165,7 @@ export default function PluginsPage() {
   );
 
   // Level lives on the plugin entry, so it saves through the same path as the
-  // toggle — no second settings key that could disagree with it.
+  // toggle - no second settings key that could disagree with it.
   const handleLevelChange = useCallback(
     (pluginKey, level) => {
       setCustomPlugins((prev) => {
@@ -303,7 +303,7 @@ export default function PluginsPage() {
                 {plugin.description}
               </p>
 
-              {/* Intensity, shown only while the plugin is on — same shape as the
+              {/* Intensity, shown only while the plugin is on - same shape as the
                   Ponytail level picker on the Token Saver page. */}
               {plugin.levelled && isEnabled && (
                 <div className="mb-4 space-y-1.5">

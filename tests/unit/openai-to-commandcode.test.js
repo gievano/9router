@@ -13,7 +13,7 @@ import { openaiToCommandCodeRequest } from "../../open-sse/translator/request/op
 
 const MODEL = "moonshotai/Kimi-K2.6";
 
-describe("openaiToCommandCodeRequest — basic envelope", () => {
+describe("openaiToCommandCodeRequest - basic envelope", () => {
   it("returns the expected top-level envelope shape", () => {
     const out = openaiToCommandCodeRequest(MODEL, {
       messages: [{ role: "user", content: "hi" }],
@@ -28,7 +28,7 @@ describe("openaiToCommandCodeRequest — basic envelope", () => {
   });
 });
 
-describe("openaiToCommandCodeRequest — system handling", () => {
+describe("openaiToCommandCodeRequest - system handling", () => {
   it("hoists system messages to params.system (string), not messages[]", () => {
     const out = openaiToCommandCodeRequest(MODEL, {
       messages: [
@@ -63,7 +63,7 @@ describe("openaiToCommandCodeRequest — system handling", () => {
   });
 });
 
-describe("openaiToCommandCodeRequest — content shape", () => {
+describe("openaiToCommandCodeRequest - content shape", () => {
   it("MUST always emit content as Array (never string) for user", () => {
     const out = openaiToCommandCodeRequest(MODEL, {
       messages: [{ role: "user", content: "hello" }],
@@ -87,7 +87,7 @@ describe("openaiToCommandCodeRequest — content shape", () => {
   });
 });
 
-describe("openaiToCommandCodeRequest — tool role / tool-result (AI SDK)", () => {
+describe("openaiToCommandCodeRequest - tool role / tool-result (AI SDK)", () => {
   it("converts role:\"tool\" to role:\"tool\" with tool-result block; output is {type:\"text\",value}", () => {
     const out = openaiToCommandCodeRequest(MODEL, {
       messages: [
@@ -113,7 +113,7 @@ describe("openaiToCommandCodeRequest — tool role / tool-result (AI SDK)", () =
   });
 });
 
-describe("openaiToCommandCodeRequest — assistant tool_calls / tool-call", () => {
+describe("openaiToCommandCodeRequest - assistant tool_calls / tool-call", () => {
   it("converts assistant.tool_calls[] into content blocks of type tool-call", () => {
     const out = openaiToCommandCodeRequest(MODEL, {
       messages: [
@@ -138,7 +138,7 @@ describe("openaiToCommandCodeRequest — assistant tool_calls / tool-call", () =
   });
 });
 
-describe("openaiToCommandCodeRequest — tools schema conversion", () => {
+describe("openaiToCommandCodeRequest - tools schema conversion", () => {
   it("converts OpenAI {type:\"function\", function:{...}} to Anthropic plain {name, input_schema}", () => {
     const out = openaiToCommandCodeRequest(MODEL, {
       messages: [{ role: "user", content: "hi" }],
@@ -180,7 +180,7 @@ describe("openaiToCommandCodeRequest — tools schema conversion", () => {
   });
 });
 
-describe("openaiToCommandCodeRequest — native image blocks", () => {
+describe("openaiToCommandCodeRequest - native image blocks", () => {
   const PNG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
   const DATA_URI = `data:image/png;base64,${PNG_B64}`;
 

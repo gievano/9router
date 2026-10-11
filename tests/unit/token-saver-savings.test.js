@@ -4,7 +4,7 @@
  * Measurement runs against plain request bodies (no DB): pruning counts only
  * the turns that would be dropped, RTK converts byte savings with the shared
  * /4 rule, a cache hit replays the provider's own billed usage. Recording and
- * reporting run against an injected fake adapter — kv schema drift must not
+ * reporting run against an injected fake adapter - kv schema drift must not
  * break unit coverage, and the recorder must not reach for the real driver.
  */
 import { describe, expect, it } from "vitest";

@@ -1,11 +1,11 @@
-// Resolve valid thinking levels per model — drives UI level picker (suffix "model(level)").
+// Resolve valid thinking levels per model - drives UI level picker (suffix "model(level)").
 // Reuses capabilities.js (thinkingFormat/canDisable) so this file only maps format→levels (DRY).
 import { getCapabilitiesForModel } from "./capabilities.js";
 import { matchPattern } from "./pricing.js";
 import { resolveKiroEffortPath } from "../config/kiroConstants.js";
 import { getProviderModels } from "../config/providerModels.js";
 
-// Shared level sets (deduped) — verified against provider docs + wire in thinkingUnified.applyFormat.
+// Shared level sets (deduped) - verified against provider docs + wire in thinkingUnified.applyFormat.
 const L = {
   base: ["none", "low", "medium", "high"],                          // qwen, step, hunyuan, gemini-budget
   onOff: ["none", "thinking"],                                      // zai (binary), minimax (adaptive)
@@ -35,7 +35,7 @@ const FORMAT_LEVELS = {
 
 const CODEX_GPT_5_6_LEVELS = ["none", "minimal", "low", "medium", "high", "xhigh", "max"];
 
-// Model-name pattern overrides (glob, first match wins) — more precise than format default.
+// Model-name pattern overrides (glob, first match wins) - more precise than format default.
 const PATTERN_THINKING = [
   { provider: "codex", pattern: "*gpt-6*", levels: CODEX_GPT_5_6_LEVELS },
   { provider: "codex", pattern: "*gpt-5.6-sol*", levels: [...CODEX_GPT_5_6_LEVELS, "ultra"] },
@@ -49,7 +49,7 @@ const PATTERN_THINKING = [
   // all 200 via output_config.effort; "none" is a 400 on the anthropic route
   // (disable thinking instead). none kept for the picker = disable.
   { pattern: "*deepseek-v4.*", levels: ["none", "low", "medium", "high", "xhigh", "max"] },
-  // codebuddy-cn per-model effort sets — the server's product-config payload
+  // codebuddy-cn per-model effort sets - the server's product-config payload
   // publishes `reasoning.supportedEfforts` per model. NOTE: the chat endpoint
   // accepts any level you send (probed none/minimal/low/medium/high/xhigh/max
   // → all 200), but values outside a model's supportedEfforts are silently

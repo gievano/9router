@@ -1,4 +1,4 @@
-// Stability AI v2 — sync, returns { image: "<b64>" }
+// Stability AI v2 - sync, returns { image: "<b64>" }
 import { nowSec, sizeToAspectRatio } from "./_base.js";
 import { PROVIDER_MEDIA } from "../../providers/index.js";
 

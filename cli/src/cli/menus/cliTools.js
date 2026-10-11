@@ -72,7 +72,7 @@ async function getClaudeModel(envKey) {
 }
 
 /**
- * Quick setup for Claude Code — sets endpoint, key, and all default models
+ * Quick setup for Claude Code - sets endpoint, key, and all default models
  * @param {number} port
  */
 async function claudeQuickSetup(port) {

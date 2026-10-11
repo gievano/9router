@@ -19,7 +19,7 @@ const TYPE_PREFIX_ALIASES = {
   "custom-embedding-": "selfhosted-embedding",
 };
 
-// Runtime only — first 404 remembers id for the whole session
+// Runtime only - first 404 remembers id for the whole session
 const failedIds = new Set();
 
 function normalizeId(providerId) {

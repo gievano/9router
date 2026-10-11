@@ -56,7 +56,7 @@ export async function fetchSuggestedModels(fetcher) {
   } catch {
     const stale = staleCache.get(fetcher.url);
     if (stale && Array.isArray(stale.data) && stale.data.length > 0 && Date.now() - stale.at < STALE_TTL_MS) {
-      return { data: stale.data, error: "Could not refresh — showing the last known list.", stale: true };
+      return { data: stale.data, error: "Could not refresh - showing the last known list.", stale: true };
     }
     return { data: [], error: "Could not load suggested models." };
   }

@@ -1,4 +1,4 @@
-// JSON cache for mitmAlias — read by standalone MITM server (no SQLite native binding).
+// JSON cache for mitmAlias - read by standalone MITM server (no SQLite native binding).
 // Source of truth = SQLite kv['mitmAlias']. JSON is a read-replica synced on app start
 // and after every UI write.
 import fs from "fs";

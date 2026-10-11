@@ -182,7 +182,7 @@ function convertEnumValuesToStrings(obj) {
 
   if (obj.enum && Array.isArray(obj.enum)) {
     obj.enum = obj.enum.map(v => String(v));
-    // Gemini API requires type:"string" when enum is present — without it returns 400
+    // Gemini API requires type:"string" when enum is present - without it returns 400
     if (!obj.type) {
       obj.type = "string";
     }
@@ -317,7 +317,7 @@ function ensureObjectType(obj) {
   }
 }
 
-// Convert prefixItems (tuple validation) to items — Gemini cannot express tuples,
+// Convert prefixItems (tuple validation) to items - Gemini cannot express tuples,
 // and a type:"array" schema without items is rejected with "missing field"
 function convertPrefixItems(obj) {
   if (!obj || typeof obj !== "object") return;
@@ -339,7 +339,7 @@ function convertPrefixItems(obj) {
   }
 }
 
-// Gemini requires items on every type:"array" schema — fill a permissive placeholder
+// Gemini requires items on every type:"array" schema - fill a permissive placeholder
 function ensureArrayItems(obj) {
   if (!obj || typeof obj !== "object") return;
   if (obj.type === "array" && !obj.items) {
@@ -401,7 +401,7 @@ export function cleanJSONSchemaForAntigravity(schema) {
   function addPlaceholders(obj) {
     if (!obj || typeof obj !== "object") return;
 
-    // Empty schema {} (no type, no properties) after $ref removal — treat as object with placeholder
+    // Empty schema {} (no type, no properties) after $ref removal - treat as object with placeholder
     if (Object.keys(obj).length === 0) {
       obj.type = "object";
       obj.properties = {

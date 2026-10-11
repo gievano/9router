@@ -1,5 +1,5 @@
 /**
- * DeepSeek usage — GET https://api.deepseek.com/user/balance
+ * DeepSeek usage - GET https://api.deepseek.com/user/balance
  * Auth: Bearer <apiKey>
  */
 

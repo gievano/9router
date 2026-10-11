@@ -1,5 +1,5 @@
 /**
- * Search Dispatcher — routes /v1/search requests to dedicated search APIs
+ * Search Dispatcher - routes /v1/search requests to dedicated search APIs
  * or chat-based LLM search wrappers, with retry-friendly error envelope.
  *
  * Dependency map:

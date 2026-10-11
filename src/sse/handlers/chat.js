@@ -194,7 +194,7 @@ export async function handleChat(request, clientRawRequest = null) {
     });
   }
 
-  // Single model request — may still switch to a capacity-adapter model if the
+  // Single model request - may still switch to a capacity-adapter model if the
   // target lacks a capability the request needs (e.g. no vision, request has an image).
   const soloAugmented = augmentModelsWithCapacityAdapter([modelStr], requiredCapabilities, settings);
   if (soloAugmented.length > 1) {

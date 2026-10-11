@@ -9,7 +9,7 @@ import {
 
 // #4311: POST /api/providers was O(pool) per insert. Inside one transaction it
 // read the whole pool AND renumbered every row's priority, so a 5k-key import
-// was O(n*m) — ~25M statements at a 5k pool — and every parallel writer
+// was O(n*m) - ~25M statements at a 5k pool - and every parallel writer
 // serialized on the same transaction. On top of that, an apikey name collision
 // silently overwrote the stored key with no 409.
 //

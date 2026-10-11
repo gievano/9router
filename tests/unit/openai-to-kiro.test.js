@@ -142,7 +142,7 @@ describe("openaiToKiroRequest", () => {
       const result = openaiToKiroRequest("claude-sonnet-4.6", body, true, {});
 
       const currentMsg = result.conversationState.currentMessage;
-      // HTTP URLs are not supported by Kiro — converted to text placeholder
+      // HTTP URLs are not supported by Kiro - converted to text placeholder
       expect(currentMsg.userInputMessage.images).toBeUndefined();
       expect(currentMsg.userInputMessage.content).toContain("[Image: https://example.com/photo.jpg]");
     });
@@ -180,7 +180,7 @@ describe("openaiToKiroRequest", () => {
       expect(allJson).not.toContain("toolResults");
 
       // Tool call + result preserved as readable text (call lands in history,
-      // result merges into the final currentMessage — assert across both)
+      // result merges into the final currentMessage - assert across both)
       expect(allJson).toContain("[Tool call: read_file(");
       expect(allJson).toContain("[Tool result: file contents here]");
     });

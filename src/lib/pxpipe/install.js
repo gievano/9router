@@ -45,7 +45,7 @@ export function findNpm() {
   }
 }
 
-// { installed, version, path } — installed means the library entry exists on disk.
+// { installed, version, path } - installed means the library entry exists on disk.
 export function getInstallInfo() {
   try {
     const pkgJson = path.join(packageRoot(), "package.json");
@@ -74,7 +74,7 @@ export function installPxpipe() {
 async function runInstall() {
   const npm = findNpm();
   if (!npm) {
-    const err = new Error("npm not found on PATH — Node.js/npm is required to install PXPIPE");
+    const err = new Error("npm not found on PATH - Node.js/npm is required to install PXPIPE");
     err.code = "NPM_NOT_FOUND";
     throw err;
   }
@@ -97,18 +97,18 @@ async function runInstall() {
     });
     const timer = setTimeout(() => {
       child.kill("SIGKILL");
-      reject(new Error("npm install timed out after 5 minutes — see install.log"));
+      reject(new Error("npm install timed out after 5 minutes - see install.log"));
     }, INSTALL_TIMEOUT_MS);
     child.once("error", (e) => { clearTimeout(timer); reject(e); });
     child.once("exit", (code) => {
       clearTimeout(timer);
       if (code === 0) resolve();
-      else reject(new Error(`npm install exited with code ${code} — see install.log`));
+      else reject(new Error(`npm install exited with code ${code} - see install.log`));
     });
   }).finally(() => fs.closeSync(outFd));
 
   const info = getInstallInfo();
-  if (!info.installed) throw new Error("install finished but package is missing — see install.log");
+  if (!info.installed) throw new Error("install finished but package is missing - see install.log");
   return info;
 }
 

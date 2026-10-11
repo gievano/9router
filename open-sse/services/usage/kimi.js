@@ -1,12 +1,12 @@
 /**
- * Kimi Coding usage — GET /v1/usages
+ * Kimi Coding usage - GET /v1/usages
  *
  * Dual auth (single provider id `kimi`):
  *   - apiKey present → x-api-key only (platform / coding API key)
  *   - else accessToken → Bearer + X-Msh-* (device-code OAuth)
  *
  * Note: chat messages use combined x-api-key; /usages OAuth is Bearer.
- * 403 permission_denied is NOT auth-expired — account lacks usage feature / sub.
+ * 403 permission_denied is NOT auth-expired - account lacks usage feature / sub.
  */
 
 import { proxyAwareFetch } from "../../utils/proxyFetch.js";
@@ -52,7 +52,7 @@ export function formatKimiUsageError(status, responseText) {
   }
 
   // Live OAuth token without Kimi Code usage entitlement returns 403
-  // REASON_FEATURE_NO_PERMISSION — not an expired session.
+  // REASON_FEATURE_NO_PERMISSION - not an expired session.
   if (
     status === 403 &&
     (reason === "REASON_FEATURE_NO_PERMISSION" ||
@@ -76,7 +76,7 @@ function makeQuota({ used, total, remaining, resetAt }) {
   const safeTotal = Math.max(0, toFiniteNumber(total, 0));
   const safeUsed = Math.max(0, toFiniteNumber(used, 0));
   // Prefer provider remaining when present; never set absolute `remaining`
-  // on the quota object — QuotaTable treats it as a 0–100 percentage.
+  // on the quota object - QuotaTable treats it as a 0–100 percentage.
   let remainingPct;
   if (safeTotal > 0 && remaining != null && Number.isFinite(Number(remaining))) {
     remainingPct = (Math.max(0, Number(remaining)) / safeTotal) * 100;

@@ -14,7 +14,7 @@ const LOG_LEVEL_COLORS = {
 
 function colorLine(line, index) {
   // Detect log level from tags like [LOG], [INFO], [WARN], [ERROR], [DEBUG]
-  let levelColor = "text-gray-300";
+  let levelColor = "text-text-main";
   if (line.includes("[ERROR]") || line.includes("✗")) levelColor = "text-red-400";
   else if (line.includes("[WARN]")) levelColor = "text-yellow-400";
   else if (line.includes("[INFO]") || line.includes("▶")) levelColor = "text-blue-400";
@@ -23,7 +23,7 @@ function colorLine(line, index) {
 
   return (
     <div className="flex gap-2 hover:bg-white/5 px-1 rounded">
-      <span className="text-gray-600 select-none shrink-0 w-8 text-right">{index + 1}</span>
+      <span className="text-text-muted select-none shrink-0 w-8 text-right">{index + 1}</span>
       <span className={levelColor}>{line}</span>
     </div>
   );
@@ -173,7 +173,7 @@ export default function ConsoleLogClient() {
         </div>
         <div
           ref={logRef}
-          className="bg-black rounded-b-lg p-4 text-xs font-mono h-[calc(100vh-220px)] overflow-y-auto"
+          className="rounded-b-lg p-4 text-xs font-mono h-[calc(100vh-220px)] overflow-y-auto bg-bg"
         >
           {logs.length === 0 ? (
             <span className="text-text-muted">No console logs yet.</span>

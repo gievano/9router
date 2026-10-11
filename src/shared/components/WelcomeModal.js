@@ -9,8 +9,8 @@ import { GITHUB_CONFIG } from "@/shared/constants/config";
 // Post-login welcome dialog.
 //
 // One surface, not a banner inside a banner. Earlier versions nested a rounded
-// panel (surface-2, border, dot-grid) inside the Modal — which is itself a
-// rounded bordered panel — and put three more mini-cards inside that. Three
+// panel (surface-2, border, dot-grid) inside the Modal - which is itself a
+// rounded bordered panel - and put three more mini-cards inside that. Three
 // layers of the same container reads as decoration, and the middle layer was
 // carrying no information the surrounding dialog did not already carry.
 //
@@ -18,17 +18,21 @@ import { GITHUB_CONFIG } from "@/shared/constants/config";
 // the product mark and wordmark as the header (replacing the generic Modal
 // title, so the brand is stated once), one specific line of what it is, three
 // plain facts as a list, then the actions. Colour comes from the theme tokens
-// alone — text-primary on the wordmark is the only accent.
+// alone - text-primary on the wordmark is the only accent.
 //
 // Every control works: Get started dismisses, View changelog closes this dialog
 // and mounts the same ChangelogModal the header menu uses (as a sibling, so two
 // overlays never stack) and Star on GitHub opens the repo. There is no opt-out:
 // the dialog only appears right after a login. Modal renders its X on mobile
 // only and this dialog sets
-// closeOnOverlay={false}, so Get started is the desktop exit — it must stay.
+// closeOnOverlay={false}, so Get started is the desktop exit - it must stay.
+// The header traffic lights are hidden too (showTrafficLights={false}): three
+// dots whose first one closes a tour the user has not finished reading is a
+// worse exit than the button that actually says what it does.
 export default function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
+  const [version, setVersion] = useState(null);
 
   useEffect(() => {
     if (localStorage.getItem("9router:welcomeNeverShow") === "true") {
@@ -44,6 +48,18 @@ export default function WelcomeModal() {
     }
   }, []);
 
+
+  // Same endpoint the sidebar reads. Quiet failure: no chip is better than a
+  // chip showing the wrong build.
+  useEffect(() => {
+    if (!isOpen) return;
+    fetch("/api/version", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.currentVersion) setVersion(String(data.currentVersion));
+      })
+      .catch(() => {});
+  }, [isOpen]);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -67,6 +83,7 @@ export default function WelcomeModal() {
         isOpen={isOpen}
         onClose={handleClose}
         closeOnOverlay={false}
+        showTrafficLights={false}
         size="md"
         footer={null}
       >
@@ -81,27 +98,31 @@ export default function WelcomeModal() {
             className="size-11 rounded-xl border border-border-subtle"
           />
           <div>
-            <p className="text-lg font-bold tracking-tight leading-tight text-primary">
+            <p className="flex items-center gap-2 text-lg font-bold tracking-tight leading-tight text-primary">
               9Router
+              {version && (
+                <span className="rounded-md border border-border bg-bg-subtle px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-normal text-text-muted">
+                  v{version}
+                </span>
+              )}
             </p>
-            <p className="text-xs text-text-muted">Welcome back — here is the quick tour</p>
+            <p className="text-xs text-text-muted">
+              Welcome back. Here&apos;s a quick tour of what this dashboard can do:
+            </p>
           </div>
         </div>
 
         <p className="mt-4 text-sm text-text-muted leading-relaxed">
-          An OpenAI-compatible gateway in front of the models you connect — built-in
+          One OpenAI-compatible gateway for every model you connect. Use built-in
           providers, your own endpoints, or a combo of both.
         </p>
 
         {/* Plain facts, no cards: the dialog is the container, so the list does
             not need its own. */}
-        <ul className="mt-4 space-y-2 text-sm text-text-main">
+        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-text-main marker:text-text-muted">
           {facts.map((fact) => (
-            <li key={fact} className="flex gap-2 leading-relaxed">
-              <span className="text-text-muted select-none" aria-hidden="true">
-                —
-              </span>
-              <span>{fact}</span>
+            <li key={fact} className="leading-relaxed">
+              {fact}
             </li>
           ))}
         </ul>
@@ -125,18 +146,18 @@ export default function WelcomeModal() {
           >
             View changelog
           </Button>
-        </div>
-
-        <p className="mt-4 text-[11px] text-text-muted">
           <a
             href={GITHUB_CONFIG.repoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline-offset-2 transition-colors hover:text-text-main hover:underline"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-main transition-colors hover:border-primary hover:text-primary sm:w-auto"
           >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
             Star on GitHub
           </a>
-        </p>
+        </div>
       </Modal>
       <ChangelogModal isOpen={changelogOpen} onClose={() => setChangelogOpen(false)} />
     </>

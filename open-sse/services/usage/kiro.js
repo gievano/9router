@@ -59,7 +59,7 @@ export async function getKiroUsage(accessToken, providerSpecificData, proxyOptio
   const apiKeyHeaders = isApiKey ? { tokentype: "API_KEY" } : {};
   const externalIdpHeaders = isExternalIdp ? { TokenType: "EXTERNAL_IDP" } : {};
 
-  // For api-key auth, never inject the shared default placeholder profileArn —
+  // For api-key auth, never inject the shared default placeholder profileArn -
   // CodeWhisperer 403s a request whose profileArn isn't owned by the key's
   // account. Only send a profileArn actually resolved for this connection.
   const profileArn = isApiKey

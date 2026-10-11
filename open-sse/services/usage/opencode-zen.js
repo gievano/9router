@@ -1,5 +1,5 @@
 /**
- * OpenCode Zen usage — GET https://opencode.ai/zen/v1/usage
+ * OpenCode Zen usage - GET https://opencode.ai/zen/v1/usage
  * Auth: Bearer <apiKey>
  */
 

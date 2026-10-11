@@ -5,7 +5,7 @@ import { Card } from "@/shared/components";
 import Image from "next/image";
 
 /**
- * Clickable card for MITM tools — navigates to /dashboard/mitm on click.
+ * Clickable card for MITM tools - navigates to /dashboard/mitm on click.
  */
 export default function MitmLinkCard({ tool }) {
   return (

@@ -17,7 +17,7 @@ export default {
   authModes: ["apikey"],
   serviceKinds: ["webSearch"],
   // Credential fallback: reuses the API key registered under the `ollama`
-  // chat provider — one key, chat + search.
+  // chat provider - one key, chat + search.
   credentialFallback: "ollama",
   searchConfig: {
     baseUrl: "https://ollama.com/api/web_search",

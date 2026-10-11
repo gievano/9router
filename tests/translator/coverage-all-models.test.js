@@ -1,4 +1,4 @@
-// Tier 1 — Structural coverage: every model in PROVIDER_MODELS must translate
+// Tier 1 - Structural coverage: every model in PROVIDER_MODELS must translate
 // without throwing, correct upstreamId, strip applied. Data-driven → new providers auto-covered.
 import { describe, it, expect } from "vitest";
 import "./registerAll.js";

@@ -2,7 +2,7 @@
  * Regression: the poll-status/exchange session lifecycle for xiaomi-mimo.
  *
  * The original PR cleared the session inside poll-status, so the client's
- * following POST /exchange always saw a missing session and returned 400 —
+ * following POST /exchange always saw a missing session and returned 400 -
  * the whole browser-OAuth fallback was dead. These tests pin the contract:
  *   - a finished session survives /poll-status until /exchange consumes it
  *   - a failed session is cleaned up by /poll-status itself

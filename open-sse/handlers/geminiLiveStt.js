@@ -6,7 +6,7 @@ import { Buffer } from "node:buffer";
 // whole files inline. The Live API's `:bidiGenerateContent` WebSocket is the
 // streaming counterpart: audio goes up as realtimeInput mediaChunks and the
 // server pushes incremental `serverContent.inputTranscription` events back.
-// This module owns the socket lifecycle only — envelope/response shaping
+// This module owns the socket lifecycle only - envelope/response shaping
 // stays in sttCore so the engine's single STT exit shape is preserved.
 //
 // Marker contract: dispatched from sttCore's format-switch when the model
@@ -79,7 +79,7 @@ function firstStringField(formData, key) {
 
 // Lifecycle knobs the live registry entry advertises in params[]
 // (setup/turn timeouts). They ride the same formData pass-through sttCore
-// gives every transport — no sttCore change needed to reach this leaf.
+// gives every transport - no sttCore change needed to reach this leaf.
 function firstNumberField(formData, key, fallback) {
   const n = Number(firstStringField(formData, key));
   return Number.isFinite(n) && n > 0 ? Math.min(n, MAX_TIMEOUT_MS) : fallback;
@@ -128,11 +128,11 @@ export async function transcribeGeminiLive({ cfg, file, model, token, formData, 
       if (timer) { clearTimeout(timer); timer = null; }
       if (goAwayTimer) { clearTimeout(goAwayTimer); goAwayTimer = null; }
       // ws is null until the first open() dials (and stays null when the
-      // constructor throws) — fail() runs shutdown() on that path.
+      // constructor throws) - fail() runs shutdown() on that path.
       if (!ws) return;
       try {
         if (ws.readyState === WS.OPEN || ws.readyState === WS.CONNECTING) ws.close(1000);
-      } catch { /* socket already dead — outcome is already settled */ }
+      } catch { /* socket already dead - outcome is already settled */ }
     };
     const succeed = () => {
       if (settled) return;
@@ -151,13 +151,13 @@ export async function transcribeGeminiLive({ cfg, file, model, token, formData, 
       try {
         ws.send(JSON.stringify(frame));
       } catch {
-        return false; // socket died mid-send — streamAudioAndPrompt maps this to a 502
+        return false; // socket died mid-send - streamAudioAndPrompt maps this to a 502
       }
       return true;
     };
 
     // Streams every byte not yet sent, then the flushing text turn. After a
-    // goAway rotation this resumes from sentBytes — no audio re-upload.
+    // goAway rotation this resumes from sentBytes - no audio re-upload.
     const streamAudioAndPrompt = () => {
       for (let off = sentBytes; off < buf.length; off += CHUNK_BYTES) {
         const mediaChunk = buf.subarray(off, off + CHUNK_BYTES).toString("base64");
@@ -173,7 +173,7 @@ export async function transcribeGeminiLive({ cfg, file, model, token, formData, 
 
     // goAway: the server names the instant it will force-close this socket.
     // Graceful play = rotate BEFORE the deadline: retire the live socket,
-    // dial a fresh one, replay setup, resume audio from sentBytes — text and
+    // dial a fresh one, replay setup, resume audio from sentBytes - text and
     // chunks survive the hop. Once the advisory budget is spent a later
     // goAway is left to the close path, which settles on partial transcript.
     const scheduleGoAwayReconnect = (goAway) => {
@@ -187,7 +187,7 @@ export async function transcribeGeminiLive({ cfg, file, model, token, formData, 
         if (settled) return;
         goAwayReconnects--;
         generation++;
-        try { ws?.close(1000); } catch { /* deadline crossed mid-flight — re-dial anyway */ }
+        try { ws?.close(1000); } catch { /* deadline crossed mid-flight - re-dial anyway */ }
         open();
       }, delay);
     };

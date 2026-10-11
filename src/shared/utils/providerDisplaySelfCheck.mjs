@@ -156,7 +156,7 @@ run("an empty node name does not win over the family label", () => {
   assert.ok(name.startsWith("OpenAI Compatible"), "family prefix present");
 });
 
-// Two compat nodes must not collide on one heading — they are different providers.
+// Two compat nodes must not collide on one heading - they are different providers.
 run("N compat nodes get N distinct labels for distinct uuids", () => {
   const nodes = [
     "openai-compatible-chat-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
@@ -245,7 +245,7 @@ run("the picker no longer matches an owning group by alias alone", () => {
 
 const failed = results.filter((r) => !r.ok);
 for (const r of results) {
-  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` — ${r.err}` : ""}`);
+  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` - ${r.err}` : ""}`);
 }
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length === 0 ? 0 : 1);

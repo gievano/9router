@@ -1,4 +1,4 @@
-// Built-in node:sqlite adapter — available in Node >= 22.5.0.
+// Built-in node:sqlite adapter - available in Node >= 22.5.0.
 // No native build, no npm install. API mirrors betterSqliteAdapter.
 import { PRAGMA_SQL } from "../schema.js";
 
@@ -15,7 +15,7 @@ export async function createNodeSqliteAdapter(filePath) {
     return origEmit.call(process, name, data, ...rest);
   };
 
-  // Dynamic import — fails on Node < 22.5 → driver.js falls back to sql.js
+  // Dynamic import - fails on Node < 22.5 → driver.js falls back to sql.js
   const sqlite = await import("node:sqlite");
   const Database = sqlite.DatabaseSync;
   const db = new Database(filePath);

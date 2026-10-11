@@ -56,7 +56,7 @@ export function findHeadroomBinary() {
       windowsHide: true,
       env: { ...process.env, PATH: EXTENDED_PATH },
     }).toString().trim();
-    // Windows `where` may return multiple lines — take the first.
+    // Windows `where` may return multiple lines - take the first.
     return out ? out.split(/\r?\n/)[0].trim() : null;
   } catch {
     return null;

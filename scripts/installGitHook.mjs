@@ -12,7 +12,7 @@
  *                `git log` at this point, so its subject needs no special
  *                --msg-file handling), stages the output and amends it into
  *                the commit that just landed. Amending is the only moment the
- *                generated content can join that commit — staging from
+ *                generated content can join that commit - staging from
  *                prepare-commit-msg is too early, because git snapshots the
  *                index before that hook's output could be staged. --no-verify
  *                keeps prepare-commit-msg (if a leftover copy exists) from

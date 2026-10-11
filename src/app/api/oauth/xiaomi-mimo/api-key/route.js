@@ -24,7 +24,7 @@ export async function POST(request) {
 
     if (key && !key.startsWith("sk-")) {
       return NextResponse.json(
-        { error: "Invalid key format — expected sk- prefix" },
+        { error: "Invalid key format - expected sk- prefix" },
         { status: 400 },
       );
     }
@@ -50,7 +50,7 @@ export async function POST(request) {
           validated = true;
         }
       } catch {
-        // Network error — still allow import (key may be valid but network blocked)
+        // Network error - still allow import (key may be valid but network blocked)
       }
     }
 
@@ -80,7 +80,7 @@ export async function POST(request) {
           baseUrl: key ? effectiveBaseUrl : (existing.providerSpecificData?.baseUrl || effectiveBaseUrl),
           region: normRegion || existing.providerSpecificData?.region || "cn",
           authMethod: sessionOnly ? "session" : (existing.providerSpecificData?.authMethod || "api_key"),
-          // Per-account session credential — enables multi-account rotation.
+          // Per-account session credential - enables multi-account rotation.
           mimoPassToken: mimoPassToken || existing.providerSpecificData?.mimoPassToken || null,
           mimoUserId: mimoUserId || existing.providerSpecificData?.mimoUserId || null,
           mimoCUserId: mimoCUserId || existing.providerSpecificData?.mimoCUserId || null,
@@ -105,7 +105,7 @@ export async function POST(request) {
     const connection = await createProviderConnection({
       provider: "xiaomi-mimo",
       // "oauth" is the official authType for imported credential connections
-      // ([action]/route.js) — the list card and filters key off it; never
+      // ([action]/route.js) - the list card and filters key off it; never
       // invent new values ("session" hid the row from the provider card).
       authType: sessionOnly ? "oauth" : "api_key",
       accessToken: key || null,
@@ -121,7 +121,7 @@ export async function POST(request) {
         provider: sessionOnly ? "Session Login" : "API Key",
         region: normRegion || "cn",
         modelCount,
-        // Per-account session credential — enables multi-account rotation.
+        // Per-account session credential - enables multi-account rotation.
         mimoPassToken: mimoPassToken || null,
         mimoUserId: mimoUserId || null,
         mimoCUserId: mimoCUserId || null,

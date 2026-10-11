@@ -133,7 +133,7 @@ function tolerantJsonParse(text) {
 
 // Detect a tool call in model output. Returns { content, calls } where content
 // is the visible text (marker lines stripped) and calls is an array of
-// { name, arguments } — empty when the reply carries no call.
+// { name, arguments } - empty when the reply carries no call.
 export function parseToolCallReply(text) {
   const raw = String(text || "");
   const candidates = jsonCandidates(raw);

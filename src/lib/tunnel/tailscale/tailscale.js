@@ -20,7 +20,7 @@ const TAILSCALE_DIR = path.join(DATA_DIR, "tailscale");
 export const TAILSCALE_SOCKET = path.join(TAILSCALE_DIR, "tailscaled.sock");
 const SOCKET_FLAG = IS_WINDOWS ? [] : ["--socket", TAILSCALE_SOCKET];
 
-// System daemon socket (sudo install: apt/snap/systemd) — read-only status detection
+// System daemon socket (sudo install: apt/snap/systemd) - read-only status detection
 const SYSTEM_TAILSCALE_SOCKET = IS_WINDOWS ? null : "/var/run/tailscale/tailscaled.sock";
 const SYSTEM_SOCKET_FLAG = SYSTEM_TAILSCALE_SOCKET ? ["--socket", SYSTEM_TAILSCALE_SOCKET] : [];
 
@@ -238,7 +238,7 @@ function bgRefreshFunnelUrl(port) {
     });
 }
 
-/** Get actual funnel URL from Self.DNSName (sync, authoritative — avoids hostname-conflict suffix). */
+/** Get actual funnel URL from Self.DNSName (sync, authoritative - avoids hostname-conflict suffix). */
 function getActualFunnelUrl() {
   const bin = getTailscaleBin();
   if (!bin) return null;
@@ -421,7 +421,7 @@ async function installTailscaleWindows(log) {
   const msiUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi";
   const msiPath = path.join(os.tmpdir(), "tailscale-setup.msi");
 
-  // Download MSI via curl.exe (built-in on Win10+) — no PowerShell window, streams progress
+  // Download MSI via curl.exe (built-in on Win10+) - no PowerShell window, streams progress
   log("Downloading Tailscale installer...");
   await new Promise((resolve, reject) => {
     const child = spawn("curl.exe", ["-L", "-#", "-o", msiPath, msiUrl], {
@@ -519,7 +519,7 @@ function isDaemonTunMode() {
   } catch { return null; }
 }
 
-/** Daemon process alive (independent of funnel state) — mirrors cloudflared PID check semantic. */
+/** Daemon process alive (independent of funnel state) - mirrors cloudflared PID check semantic. */
 export function isDaemonAlive() {
   return isDaemonTunMode() !== null;
 }
@@ -637,7 +637,7 @@ function getAuthUrlFromStatus() {
 /**
  * Run `tailscale up` and capture the auth URL for browser login.
  * Resolves with { authUrl } or { alreadyLoggedIn: true }.
- * On Windows, AuthURL comes from `status --json` (not stdout) — must poll status.
+ * On Windows, AuthURL comes from `status --json` (not stdout) - must poll status.
  */
 export function startLogin(hostname) {
   const bin = getTailscaleBin();
@@ -679,7 +679,7 @@ export function startLogin(hostname) {
       resolve({ authUrl: url });
     };
 
-    // Poll status --json every 500ms — Windows exposes AuthURL only there
+    // Poll status --json every 500ms - Windows exposes AuthURL only there
     const statusPoll = setInterval(() => {
       if (resolved) return;
       const url = getAuthUrlFromStatus();
@@ -717,7 +717,7 @@ export function startLogin(hostname) {
     child.on("exit", (code) => {
       if (resolved) return;
       console.log(`[Tailscale] login exit code=${code}`);
-      // Don't trust exit code alone — Win `tailscale up` exits 0 even when not logged in.
+      // Don't trust exit code alone - Win `tailscale up` exits 0 even when not logged in.
       // Let status poll continue until AuthURL appears or timeout.
       const url = parseAuthUrl(output) || getAuthUrlFromStatus();
       if (url) {
@@ -732,7 +732,7 @@ export function startLogin(hostname) {
         resolve({ alreadyLoggedIn: true });
         return;
       }
-      // Otherwise keep polling — daemon may publish AuthURL shortly after exit
+      // Otherwise keep polling - daemon may publish AuthURL shortly after exit
     });
   });
 }

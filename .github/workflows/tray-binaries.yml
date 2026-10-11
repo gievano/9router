@@ -97,7 +97,7 @@ jobs:
             echo '```'
             echo ""
             if [ "${{ steps.sha.outputs.match }}" = "true" ]; then
-              echo "Pin already matches — safe to re-run with \`publish=true\`."
+              echo "Pin already matches - safe to re-run with \`publish=true\`."
             else
               echo "⚠️ Pin does **not** match. To publish this build, set \`ARM64_TRAY_SHA256\`"
               echo "in \`cli/hooks/trayRuntime.js\` to the built sha256 above and land that"
@@ -107,7 +107,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       # Uploaded before the mismatch gate below, so a publish run that fails on a
-      # checksum mismatch still leaves the bytes downloadable — that is exactly
+      # checksum mismatch still leaves the bytes downloadable - that is exactly
       # the run where a maintainer needs them to verify the new sha256.
       - uses: actions/upload-artifact@v4
         with:
@@ -148,7 +148,7 @@ jobs:
           # gh release upload does not create the release, so bootstrap it on the
           # first publish run rather than failing with "release not found".
           if ! gh release view tray-binaries >/dev/null 2>&1; then
-            echo "Release 'tray-binaries' does not exist yet — creating it"
+            echo "Release 'tray-binaries' does not exist yet - creating it"
             gh release create tray-binaries --latest=false \
               --title "Native macOS tray binaries" \
               --notes "Built by .github/workflows/tray-binaries.yml. Provenance and the pinned sha256 live in that workflow and in cli/hooks/trayRuntime.js (ARM64_TRAY_SHA256)."
@@ -165,7 +165,7 @@ jobs:
               if [ "$GOT" = "${{ steps.sha.outputs.built }}" ]; then break; fi
             fi
             # A just-uploaded asset can 404 or serve stale bytes until the CDN catches up.
-            echo "attempt $attempt: got '${GOT:-<download failed>}' — retrying in 15s"
+            echo "attempt $attempt: got '${GOT:-<download failed>}' - retrying in 15s"
             sleep 15
           done
           if [ "$GOT" != "${{ steps.sha.outputs.built }}" ]; then

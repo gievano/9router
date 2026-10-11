@@ -163,7 +163,7 @@ export async function POST(request) {
         // to be changed first.
         //
         // NOTE: this intentionally leaves no remote self-service password-change
-        // path — the change-password flow (PATCH /api/settings) requires a JWT,
+        // path - the change-password flow (PATCH /api/settings) requires a JWT,
         // which we deliberately withhold. A remote fresh-install user must either
         // change the password from the local machine or set INITIAL_PASSWORD
         // before first launch. This is a deliberate security trade-off, not an

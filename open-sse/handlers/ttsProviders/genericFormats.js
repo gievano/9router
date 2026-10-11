@@ -1,4 +1,4 @@
-// Generic config-driven TTS handlers — dispatched by ttsConfig.format.
+// Generic config-driven TTS handlers - dispatched by ttsConfig.format.
 // Each handler accepts { baseUrl, apiKey, text, modelId, voiceId } and returns { base64, format }.
 import { responseToBase64, throwUpstreamError } from "./_base.js";
 import minimaxTts from "./minimax.js";

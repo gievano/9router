@@ -6,7 +6,7 @@ import { TOOL_HOSTS } from "@/shared/constants/mitmToolHosts";
 import Image from "next/image";
 
 /**
- * Per-tool MITM card — shows DNS status + model mappings.
+ * Per-tool MITM card - shows DNS status + model mappings.
  * - Auto-saves model mapping on blur or modal select
  * - Skips sudo modal if password is already cached
  * - Model mappings can only be edited when DNS is active

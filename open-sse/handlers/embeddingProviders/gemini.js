@@ -1,4 +1,4 @@
-// Google Gemini embeddings — embedContent / batchEmbedContents
+// Google Gemini embeddings - embedContent / batchEmbedContents
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
 
 function modelPath(model) {

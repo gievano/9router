@@ -8,7 +8,7 @@ import ProviderIcon from "@/shared/components/ProviderIcon";
 import { getCustomLogo } from "@/shared/utils/providerLogo";
 import { MEDIA_PROVIDER_KINDS, AI_PROVIDERS, getProvidersByKind } from "@/shared/constants/providers";
 
-// Kinds that support combos (currently disabled for image/tts — temporarily hidden).
+// Kinds that support combos (currently disabled for image/tts - temporarily hidden).
 // webSearch/webFetch handled by /web page.
 const COMBO_KINDS = new Set([]);
 const COMBO_BASE_NAMES = { image: "image-combo", tts: "tts-combo" };

@@ -131,7 +131,7 @@ export async function POST(request) {
         if (modelsRes.status === 401 || modelsRes.status === 403) {
           return NextResponse.json({ valid: false, error: "Invalid API key" });
         }
-        // Fallback: probe /embeddings with a common test model — many providers lack /models
+        // Fallback: probe /embeddings with a common test model - many providers lack /models
         const embedRes = await fetch(`${baseUrl}/embeddings`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -376,7 +376,7 @@ export async function POST(request) {
             ...Object.fromEntries(
               Object.entries(PROVIDERS).filter(([, t]) => t.validateUrl).map(([id, t]) => [id, t.validateUrl])
             ),
-            // dynamic URLs (depend on providerSpecificData) — kept inline
+            // dynamic URLs (depend on providerSpecificData) - kept inline
             "ollama-local": `${resolveOllamaLocalHost({ providerSpecificData })}/api/tags`,
             "xiaomi-tokenplan": `${resolveXiaomiTokenplanBaseUrl({ providerSpecificData })}/models`,
           };
@@ -466,7 +466,7 @@ export async function POST(request) {
             // Validate SA JSON has required fields
             isValid = !!(saJson.client_email && saJson.private_key && saJson.project_id);
           } else {
-            // Raw key: probe Vertex — 404 means key is valid (model just doesn't exist), 401 means invalid key
+            // Raw key: probe Vertex - 404 means key is valid (model just doesn't exist), 401 means invalid key
             const probeRes = await fetch(
               `https://aiplatform.googleapis.com/v1/publishers/google/models/__probe__:generateContent?key=${apiKey}`,
               { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }
@@ -634,7 +634,7 @@ export async function POST(request) {
         case "qoder":
         case "qoder-cn": {
           // PAT (pt-...) needs the job-token exchange before it can sign
-          // anything — the generic OpenAI-compat probe below can't validate it.
+          // anything - the generic OpenAI-compat probe below can't validate it.
           try {
             const resolved = await resolveQoderCredentials({ provider, apiKey, providerSpecificData }, null, AbortSignal.timeout(8000));
             const result = await resolveQoderModels(resolved, { forceRefresh: true });

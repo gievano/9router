@@ -5,7 +5,7 @@ import { commandCodeToOpenAIResponse } from "../translator/response/commandcode-
 import { SSE_DONE } from "../utils/sseConstants.js";
 
 /**
- * CommandCodeExecutor — talks to https://api.commandcode.ai/alpha/generate
+ * CommandCodeExecutor - talks to https://api.commandcode.ai/alpha/generate
  *
  * Auth: Bearer <user_xxx> API key (stored as the connection's apiKey).
  * Adds the per-request `x-session-id` header expected by CommandCode upstream.

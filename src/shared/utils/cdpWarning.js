@@ -29,6 +29,6 @@ export function buildCdpWarning(cdpUpSinceMs, nowMs = Date.now()) {
   return {
     stale,
     minutes,
-    text: `${staleLead}While it runs with the debug port, any local process can read its cookies — close it (or restart it without the debug port) when done capturing.`,
+    text: `${staleLead}While it runs with the debug port, any local process can read its cookies - close it (or restart it without the debug port) when done capturing.`,
   };
 }

@@ -3,9 +3,9 @@
  * (grok_api_v2.GrokBuildBilling/GetGrokCreditsConfig).
  *
  * Real response shape (live capture 2026-07-20):
- *   top-level field 1 (length-delimited) — nested credits info
- *     subfield 1  (fixed32 float)            — usage ratio 0..1
- *     subfield 5  (Timestamp{seconds,nanos}) — credit-pool reset time
+ *   top-level field 1 (length-delimited) - nested credits info
+ *     subfield 1  (fixed32 float)            - usage ratio 0..1
+ *     subfield 5  (Timestamp{seconds,nanos}) - credit-pool reset time
  *
  * Fail-open: any malformed buffer returns null, never throws.
  */

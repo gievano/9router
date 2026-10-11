@@ -385,7 +385,7 @@ export default function HermesToolCard({
           selectedModel={modalTarget === "default" ? selectedModel : roleModels[modalTarget] || ""}
           activeProviders={activeProviders}
           modelAliases={modelAliases}
-          title={`Select Model for Hermes Agent${modalTarget !== "default" ? ` — ${HERMES_ROLES.find((r) => r.id === modalTarget)?.label || modalTarget}` : ""}`}
+          title={`Select Model for Hermes Agent${modalTarget !== "default" ? ` - ${HERMES_ROLES.find((r) => r.id === modalTarget)?.label || modalTarget}` : ""}`}
         />
       )}
 

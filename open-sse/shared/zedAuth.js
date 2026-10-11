@@ -1,4 +1,4 @@
-// Zed hosted LLM aggregator — auth + model-catalog helpers.
+// Zed hosted LLM aggregator - auth + model-catalog helpers.
 //
 // Zed's cloud (cloud.zed.dev) authenticates native apps with a self-generated RSA
 // keypair instead of a registered OAuth client_id/secret:
@@ -7,7 +7,7 @@
 //   3. User signs in via browser; Zed redirects to a local callback with the
 //      access token RSA-encrypted against the public key.
 //   4. Client decrypts locally with the private key that never left the host.
-// No embedded client_id/secret — the credential is a per-login keypair.
+// No embedded client_id/secret - the credential is a per-login keypair.
 
 import crypto from "node:crypto";
 import { proxyAwareFetch } from "../utils/proxyFetch.js";
@@ -114,7 +114,7 @@ export function parseZedCallbackPayload(input) {
       try {
         // Accept pathname+query (what the local proxy forwards, e.g.
         // "/?user_id=..&access_token=.." or "/callback?.."), a bare query,
-        // or a lone query string. Only the query part is parsed — a leading
+        // or a lone query string. Only the query part is parsed - a leading
         // path must never become part of the first parameter name.
         const query = raw.includes("?")
           ? raw.slice(raw.indexOf("?") + 1)
@@ -162,7 +162,7 @@ export function decryptZedAccessToken(encryptedAccessToken, privateKeyVerifier) 
         .toString("utf8");
       // PKCS#1 v1.5 unpadding is not integrity-checked: a wrong-key decrypt
       // can "succeed" with garbage bytes instead of throwing. Replacement
-      // characters prove the output is not the real UTF-8 token — fail loudly
+      // characters prove the output is not the real UTF-8 token - fail loudly
       // rather than storing garbage as a credential.
       if (text.includes("�")) fail(oaepError);
       return text;
@@ -371,7 +371,7 @@ export function mapZedModel(model) {
   };
 }
 
-/** Resolve (and cache) the live Zed model catalog. Never hardcoded — always a live fetch. */
+/** Resolve (and cache) the live Zed model catalog. Never hardcoded - always a live fetch. */
 export async function resolveZedModels(credentials, options = {}) {
   if (!credentials?.accessToken) return null;
   const key = zedModelCacheKey(credentials);

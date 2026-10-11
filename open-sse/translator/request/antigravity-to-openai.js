@@ -96,7 +96,7 @@ function normalizeSchemaTypes(schema) {
     result.type = result.type.toLowerCase();
   }
 
-  // Strip enumDescriptions — not supported by upstream APIs
+  // Strip enumDescriptions - not supported by upstream APIs
   delete result.enumDescriptions;
 
 
@@ -182,7 +182,7 @@ function convertContent(content) {
     }
   }
 
-  // Content with functionResponses — return array of tool result messages,
+  // Content with functionResponses - return array of tool result messages,
   // plus an assistant message for any co-located tool calls / text.
   if (toolResults.length > 0) {
     if (toolCalls.length > 0 || textParts.length > 0 || reasoningContent) {

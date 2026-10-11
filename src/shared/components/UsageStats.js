@@ -433,7 +433,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
           emptyMessage: "No usage recorded yet.",
           renderSummaryCells: (group) => (
             <>
-              <td className="px-6 py-3 text-text-muted">—</td>
+              <td className="px-6 py-3 text-text-muted">-</td>
               <td className="px-6 py-3 text-right">{fmt(group.summary.requests)}</td>
               <td className="px-6 py-3 text-right text-text-muted whitespace-nowrap">{fmtTime(group.summary.lastUsed)}</td>
             </>
@@ -469,8 +469,8 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
           emptyMessage: "No account-specific usage recorded yet.",
           renderSummaryCells: (group) => (
             <>
-              <td className="px-6 py-3 text-text-muted">—</td>
-              <td className="px-6 py-3 text-text-muted">—</td>
+              <td className="px-6 py-3 text-text-muted">-</td>
+              <td className="px-6 py-3 text-text-muted">-</td>
               <td className="px-6 py-3 text-right">{fmt(group.summary.requests)}</td>
               <td className="px-6 py-3 text-right text-text-muted whitespace-nowrap">{fmtTime(group.summary.lastUsed)}</td>
             </>
@@ -497,8 +497,8 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
           emptyMessage: "No API key usage recorded yet.",
           renderSummaryCells: (group) => (
             <>
-              <td className="px-6 py-3 text-text-muted">—</td>
-              <td className="px-6 py-3 text-text-muted">—</td>
+              <td className="px-6 py-3 text-text-muted">-</td>
+              <td className="px-6 py-3 text-text-muted">-</td>
               <td className="px-6 py-3 text-right">{fmt(group.summary.requests)}</td>
               <td className="px-6 py-3 text-right text-text-muted whitespace-nowrap">{fmtTime(group.summary.lastUsed)}</td>
             </>
@@ -526,8 +526,8 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
           emptyMessage: "No endpoint usage recorded yet.",
           renderSummaryCells: (group) => (
             <>
-              <td className="px-6 py-3 text-text-muted">—</td>
-              <td className="px-6 py-3 text-text-muted">—</td>
+              <td className="px-6 py-3 text-text-muted">-</td>
+              <td className="px-6 py-3 text-text-muted">-</td>
               <td className="px-6 py-3 text-right">{fmt(group.summary.requests)}</td>
               <td className="px-6 py-3 text-right text-text-muted whitespace-nowrap">{fmtTime(group.summary.lastUsed)}</td>
             </>
@@ -628,7 +628,13 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
             </Card>
           )}
 
-          {(stats.byProvider || stats.byModel) && (
+          {/* By Provider + Top Models. Both charts group the shared catalog by
+              provider and by model. A key session is one customer's slice of
+              that catalog, so the two read as if the key had traffic everywhere
+              and had used nothing at all - which is exactly what an empty
+              "No provider usage yet" looked like. The usage chart and heatmap
+              above stay: those are this key's own requests over time. */}
+          {!isApiKeyUser && (stats.byProvider || stats.byModel) && (
             <div className="grid min-w-0 grid-cols-1 gap-2 lg:grid-cols-2">
               <ProviderBarChart byProvider={stats.byProvider} />
               <TopModelsChart byModel={stats.byModel} />
@@ -637,7 +643,12 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
         </>
       )}
 
-      {/* Table with dropdown selector */}
+      {/* Breakdown table (by model / account / key / endpoint). All four views
+          group the shared catalog, so for a key session they read the same way
+          the charts did: an empty "No usage recorded yet" where the key
+          expected its own numbers. Hidden for key sessions; their history is
+          already above in the usage chart, heatmap and recent requests. */}
+      {!isApiKeyUser && (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <select
@@ -682,6 +693,7 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
           />
         )}
       </div>
+      )}
     </div>
   );
 }

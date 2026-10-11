@@ -1,4 +1,4 @@
-// Cookie auto-capture metadata — generalizes the Felo capture system to every
+// Cookie auto-capture metadata - generalizes the Felo capture system to every
 // webCookie provider whose auth is a browser session.
 //
 // The capture button reads the user's logged-in session straight from their
@@ -8,16 +8,16 @@
 // executor accepts.
 //
 // Fields:
-//   label             — button label ("Capture from …")
-//   domains           — origins to open + read cookies from
-//   cookies           — named cookies to include (default output: `name=value; …`)
-//   fullCookieHeader  — include the ENTIRE cookie jar for the domain instead
-//   localStorage      — localStorage keys to read (e.g. deepseek userToken)
-//   authorization     — capture the `Authorization` header from API requests
-//   mode: "bare"      — output just the primary value instead of `name=value`
+//   label             - button label ("Capture from …")
+//   domains           - origins to open + read cookies from
+//   cookies           - named cookies to include (default output: `name=value; …`)
+//   fullCookieHeader  - include the ENTIRE cookie jar for the domain instead
+//   localStorage      - localStorage keys to read (e.g. deepseek userToken)
+//   authorization     - capture the `Authorization` header from API requests
+//   mode: "bare"      - output just the primary value instead of `name=value`
 //
 // Note: felo-web intentionally keeps its own dedicated capture (route +
-// profile badge) — do not add it here.
+// profile badge) - do not add it here.
 
 export const COOKIE_CAPTURE = {
   "chatgpt-web": {

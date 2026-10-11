@@ -1,4 +1,4 @@
-// Tier 2 — Format-pair: for each CLI source format, translate to openai and verify
+// Tier 2 - Format-pair: for each CLI source format, translate to openai and verify
 // core parts (text, tool, system) survive. Exposes bridge data loss.
 import { describe, it, expect } from "vitest";
 import "./registerAll.js";

@@ -103,9 +103,9 @@ const CHAT_SEARCH_CONFIG = {
 
   antigravity: {
     endpoint: () => searchEndpoint("antigravity"),
-    // Upstream 403s on a missing or fabricated project — surface the real cause
+    // Upstream 403s on a missing or fabricated project - surface the real cause
     requireCredentials: (credentials) =>
-      credentials?.projectId ? null : "Antigravity account has no projectId — reconnect the account",
+      credentials?.projectId ? null : "Antigravity account has no projectId - reconnect the account",
     buildBody: (query, model, credentials) => ({
       project: credentials.projectId,
       model,
@@ -132,7 +132,7 @@ const CHAT_SEARCH_CONFIG = {
       const chunks = grounding.groundingChunks || [];
       const supports = grounding.groundingSupports || [];
 
-      // Upstream repeats the same source across chunks — key by URL so it stays one citation.
+      // Upstream repeats the same source across chunks - key by URL so it stays one citation.
       // Map, not a plain object: both the index and the URL come from upstream.
       const sources = new Map();
       const byIndex = chunks.map((ch) => {

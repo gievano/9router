@@ -28,7 +28,7 @@ export const MIMO_SYSTEM_MARKER =
 let cachedJwt = null;
 let jwtExpiresAt = 0;
 
-// Device fingerprint reused as the bootstrap "client" — stable per machine
+// Device fingerprint reused as the bootstrap "client" - stable per machine
 function generateFingerprint() {
   let username = "unknown-user";
   try {

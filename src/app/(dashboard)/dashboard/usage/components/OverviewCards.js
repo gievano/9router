@@ -14,7 +14,7 @@ const fmtCost = (n) => `$${(n || 0).toFixed(2)}`;
  * Every card reserves the same vertical space for its label and its footnote
  * slot. Without that, a label that wraps to two lines ("Total Input Tokens" on
  * a narrow screen) pushes its number below the other four, and the cache-hit
- * badge appearing or disappearing changes card height mid-render — the row
+ * badge appearing or disappearing changes card height mid-render - the row
  * visibly jumps. Fixed slots keep all five numbers on one baseline whatever
  * the label length or period.
  */
@@ -56,7 +56,7 @@ export default function OverviewCards({ stats, trends }) {
     ? ((stats.totalCachedTokens || 0) / stats.totalPromptTokens) * 100
     : 0;
 
-  // `trends` is the /api/usage/sparks payload — series live under `totals`.
+  // `trends` is the /api/usage/sparks payload - series live under `totals`.
   // It is absent while the first fetch is in flight, in which case the cards
   // render exactly as before, so this stays an additive change.
   const t = trends?.totals || {};

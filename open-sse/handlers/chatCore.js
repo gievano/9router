@@ -109,7 +109,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     const cachedResponse = checkSemanticCache(body, `${provider}/${model}`);
     if (cachedResponse) {
       log?.info?.("CACHE", `⚡ Instant semantic cache hit for ${provider}/${model}`);
-      // A hit replays the provider's own billed usage — that is exactly what
+      // A hit replays the provider's own billed usage - that is exactly what
       // the second identical request would have cost.
       recordTokenSavings(getAdapter(), { provider, model, cache: measureCacheSavings(cachedResponse) });
       // A cache hit must not name the model that originally served it either.
@@ -127,14 +127,14 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   const modelTargetFormat = getModelTargetFormat(alias, model);
   // Multi-endpoint providers: pick transport matching sourceFormat → zero translation.
   // Per-model guard: only use the transport when the model declares support for that
-  // sourceFormat — opencode-go models differ in endpoint support (kimi/glm only do
+  // sourceFormat - opencode-go models differ in endpoint support (kimi/glm only do
   // /chat/completions), so without this guard a claude-format request would wrongly
   // route kimi to /messages.
   const modelSupportedFormats = getModelSupportedFormats(alias, model);
   const runtimeTransport = resolveTransport(provider, sourceFormat);
   // Per-model guard: when a model declares supportedFormats, only use the
   // sourceFormat-matched transport if that format is declared (opencode-go models
-  // differ — kimi/glm only do /chat/completions). Undeclared models keep the
+  // differ - kimi/glm only do /chat/completions). Undeclared models keep the
   // upstream default (use the transport), preserving behavior for glm/deepseek/...
   const useTransport = (!modelSupportedFormats || modelSupportedFormats.includes(sourceFormat)) ? runtimeTransport : null;
   // A source-format-matched endpoint keeps the request lossless. Prefer it
@@ -166,7 +166,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
 
   // Cursor's translator rewrites tool_result into user text, so RTK must run on
   // the source body before translation. Every other pair translates the tool
-  // shapes 1:1 — keep the post-translate pass there so those providers are
+  // shapes 1:1 - keep the post-translate pass there so those providers are
   // untouched (and a retry never re-compresses an already-compressed body).
   const preTranslateRtk = provider === "cursor"
     ? compressMessages(body, tokenSaverEnabled && rtkEnabled)
@@ -206,7 +206,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   log?.debug?.("FORMAT", `${sourceFormat} → ${targetFormat} | stream=${stream}`);
 
   // Native passthrough: CLI tool and provider are the same ecosystem
-  // Skip all translation/normalization — only model and Bearer are swapped
+  // Skip all translation/normalization - only model and Bearer are swapped
   const clientTool = detectClientTool(clientRawRequest?.headers || {}, body);
   const passthrough = isNativePassthrough(clientTool, provider);
 
@@ -318,7 +318,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   // reject legacy payloads that omit it with HTTP 400. Default to "custom" when missing.
   // Provider-scoped via quirks (shouldDefaultClaudeToolType): only gateways that declare
   // requireClaudeToolType get the explicit type. Applying it unconditionally breaks
-  // Claude-format endpoints that only accept the legacy typeless tool shape — DeepSeek's
+  // Claude-format endpoints that only accept the legacy typeless tool shape - DeepSeek's
   // Anthropic-compatible endpoint 400s with "unknown variant `custom`" (#3905).
   if (shouldDefaultClaudeToolType(provider, finalFormat, translatedBody.tools, PROVIDERS)) {
     translatedBody.tools = defaultClaudeToolType(translatedBody.tools);
@@ -327,7 +327,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   // Repair malformed tool payloads before dispatch: truncated JSON arguments, tool
   // results nothing asked for, a tool_choice naming a tool that is not in the array.
   // Any of those is a deterministic 400, and inside a combo it would burn every
-  // member before the first one could answer. Fail-open — unchanged body on error.
+  // member before the first one could answer. Fail-open - unchanged body on error.
   if (toolCallFallbackEnabled && Array.isArray(translatedBody.tools) && translatedBody.tools.length > 0) {
     repairToolPayload(translatedBody);
     // A call the client already rejected stays in the history it sends back on
@@ -406,7 +406,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
 
   if (xf.length && log?.line) log.line(reqTag, "⚙", xf.join(" · "));
 
-  // Pin cache breakpoints to the final body — every saver above can reshape
+  // Pin cache breakpoints to the final body - every saver above can reshape
   // system/tools/messages, and a stale anchor costs a full prefix rewrite.
   if (passthrough && clientTool === "claude") anchorClaudeCache(translatedBody);
 
@@ -570,7 +570,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     // otherwise hand the caller a tool error, and inside a combo it would spend
     // the whole chain on the same malformed shape. Re-dispatch with the tool
     // machinery relaxed one step at a time, stopping at the first level the
-    // provider accepts. Only for rejections that actually name tools — a context
+    // provider accepts. Only for rejections that actually name tools - a context
     // overflow or a policy refusal must still reach the caller untouched.
     if (toolCallFallbackEnabled && Array.isArray(translatedBody.tools) && translatedBody.tools.length > 0
         && isToolCallRejection(firstFailure.statusCode, firstFailure.message)) {
@@ -641,8 +641,8 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   // Upstream shape mismatch: a provider can answer with a finished JSON document
   // even though we asked it to stream (it ignores the flag, or the client omitted
   // `stream` so the flag never left). Piping that body through the SSE parser
-  // emits zero frames — the client hangs on an empty stream and usage bills 0
-  // tokens — so branch on what actually arrived, not on what we asked for.
+  // emits zero frames - the client hangs on an empty stream and usage bills 0
+  // tokens - so branch on what actually arrived, not on what we asked for.
   if (stream && !isEventStreamResponse(providerResponse)) {
     const mismatchedBody = await readJsonBody(providerResponse);
     if (mismatchedBody === null) {

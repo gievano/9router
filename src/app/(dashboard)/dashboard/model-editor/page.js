@@ -17,7 +17,7 @@ function formatTokens(n) {
 
 // BazaarLink Probe judges behaviour, not spelling: it never trusts a
 // self-claim. So these checks cannot pass a model, they only catch metadata
-// that would READ as masked — which is the part a custom model controls.
+// that would READ as masked - which is the part a custom model controls.
 //
 // Vendor families, used to compare a claim against the resolved target. A
 // prefix or an owned_by naming a different vendor than the target's own is the
@@ -57,7 +57,7 @@ function targetVendor(target) {
 
 /**
  * Concrete, fixable inconsistencies between what a custom model claims and the
- * model it points at. Returns [] when nothing is off — which is NOT a pass
+ * model it points at. Returns [] when nothing is off - which is NOT a pass
  * mark, only the absence of an obvious self-contradiction.
  */
 function antiMaskFindings({ callName, ownedBy, targetModel }) {
@@ -356,7 +356,7 @@ function StudioFormModal({
   );
   const nameError = useMemo(() => {
     if (!callName) return "";
-    if (callName.includes("/")) return "Use a name without \"/\" — it is the model ID clients send.";
+    if (callName.includes("/")) return "Use a name without \"/\" - it is the model ID clients send.";
     if (!NAME_RE.test(callName)) return "Letters, numbers, dot, dash and underscore only (max 64).";
     return "";
   }, [callName]);
@@ -481,7 +481,7 @@ function StudioFormModal({
               </span>
             </button>
             <p className="text-[11px] text-text-muted">
-              Any model you have connected — built-in, custom provider or combo.
+              Any model you have connected - built-in, custom provider or combo.
             </p>
             {cycleError && (
               <p className="text-[11px] text-red-500 mt-1">{cycleError}</p>
@@ -577,7 +577,7 @@ function StudioFormModal({
 
             <p className="text-[10px] text-text-muted leading-relaxed border-t border-border pt-2">
               BazaarLink&apos;s probe sends behavioural checks and compares how the
-              endpoint answers against known baselines — it never trusts the name
+              endpoint answers against known baselines - it never trusts the name
               a model calls itself. This panel only catches metadata that would
               <em> read</em> as masked (a vendor claim your target does not
               match); an honest endpoint passes on behaviour alone, and no
@@ -718,7 +718,7 @@ function PrefixCard({ nodes, onSaved }) {
         <div>
           <h3 className="text-sm font-semibold text-text-main">Provider prefixes</h3>
           <p className="text-[11px] text-text-muted mt-0.5">
-            One prefix per custom provider — clients call{" "}
+            One prefix per custom provider - clients call{" "}
             <code className="font-mono">prefix/model-id</code>.
           </p>
         </div>

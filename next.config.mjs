@@ -38,9 +38,9 @@ const nextConfig = {
   // `open` must stay external. It derives its own directory from `import.meta.url`, and
   // webpack replaces that with the absolute path of the BUILD machine as a string literal.
   // A release built on macOS therefore ships `file:///Users/.../open/index.js`, which
-  // `fileURLToPath` rejects on Windows ("File URL path must be absolute" — no drive
+  // `fileURLToPath` rejects on Windows ("File URL path must be absolute" - no drive
   // letter). That throw happens at module scope, so every consumer of `open` dies on
-  // import — including xAI/Grok token refresh, which loads the OAuth service that imports
+  // import - including xAI/Grok token refresh, which loads the OAuth service that imports
   // it. Keeping it external preserves the real `import.meta.url` at runtime.
   serverExternalPackages: ["better-sqlite3", "sql.js", "node:sqlite", "bun:sqlite", "open"],
   turbopack: {
@@ -96,7 +96,7 @@ const nextConfig = {
       ignored: /[\\/](node_modules|\.git|logs|\.next|\.next-cli-build|gitbook|cli|open-sse\.old|tests|docs)[\\/]/,
     };
     // Defense in depth: bun:sqlite is never used on Node 22 runners, and the
-    // runtime import is already guarded + dynamic — keep it out of the bundle.
+    // runtime import is already guarded + dynamic - keep it out of the bundle.
     if (isServer) {
       config.externals = config.externals || [];
       if (!config.externals.includes("bun:sqlite")) config.externals.push("bun:sqlite");

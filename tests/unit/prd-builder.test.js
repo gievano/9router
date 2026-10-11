@@ -2,7 +2,7 @@
  * PRD Builder contracts.
  *
  * Pure logic lives in prd_model.js precisely so this suite can pin it without
- * a JSX runtime — vitest here has no JSX transform. The component contracts
+ * a JSX runtime - vitest here has no JSX transform. The component contracts
  * are enforced structurally, like the usage charts suite does.
  */
 import { describe, expect, it } from "vitest";
@@ -141,7 +141,7 @@ describe("component contracts", () => {
     expect(component).toContain("activeProviders={activeProviders}");
   });
 
-  it("is one prompt in, one document out — no wizard left", () => {
+  it("is one prompt in, one document out - no wizard left", () => {
     // The six-question wizard asked the user to structure the PRD by hand.
     expect(component).not.toContain("QUESTIONS");
     expect(component).not.toContain("SECTIONS");

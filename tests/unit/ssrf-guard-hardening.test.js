@@ -21,7 +21,7 @@ describe("assertPublicUrl: literal hostname/IP bypasses from #3714", () => {
   });
 
   it("blocks IPv4-mapped IPv6 loopback regardless of which textual form the URL parser picks", () => {
-    // WHATWG URL parsing normalizes dotted-decimal IPv4-in-IPv6 to hex form —
+    // WHATWG URL parsing normalizes dotted-decimal IPv4-in-IPv6 to hex form -
     // the original regex only matched the dotted form.
     expect(() => assertPublicUrl("http://[::ffff:127.0.0.1]/")).toThrow();
     expect(() => assertPublicUrl("http://[::ffff:7f00:1]/")).toThrow(); // hex form directly
@@ -83,7 +83,7 @@ describe("assertPublicUrlResolved: DNS-resolving hostname bypass from #3714", ()
   });
 
   // Note: "fails open when the DNS lookup itself rejects" is deliberately not
-  // covered here as a vitest case — a mocked node:dns rejection in this file
+  // covered here as a vitest case - a mocked node:dns rejection in this file
   // trips what looks like a vitest 4 / rolldown-transform source-map bug
   // (the same rejection pattern passes in an isolated single-function probe
   // module; only reproduces once mocked against this larger file). Verified
@@ -102,7 +102,7 @@ describe("fetchPublic: redirect-target re-validation from #3714", () => {
   afterEach(() => { global.fetch = originalFetch; });
   beforeEach(() => {
     lookupMock.mockReset();
-    // These tests exercise redirect-chasing, not DNS behavior — give every
+    // These tests exercise redirect-chasing, not DNS behavior - give every
     // synthetic *.example.test hostname a default public resolution so it
     // doesn't get blocked (or throw on an unmocked undefined return) before
     // reaching the redirect logic under test.

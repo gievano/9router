@@ -8,7 +8,7 @@
  *
  * Each case builds a throwaway git repo under the OS temp dir with today's
  * commits, copies the real scripts in, and runs the real generator against
- * it — no mocks, no network, plain node. The git history is the fixture.
+ * it - no mocks, no network, plain node. The git history is the fixture.
  *
  * Run with: node scripts/changelogGeneratorSelfCheck.mjs
  */
@@ -212,7 +212,7 @@ run("entries land under Features / Fixes, not bare fix: bullets", () => {
 
 const failed = results.filter((r) => !r.ok);
 for (const r of results) {
-  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` — ${r.err}` : ""}`);
+  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` - ${r.err}` : ""}`);
 }
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length === 0 ? 0 : 1);

@@ -89,7 +89,7 @@ export default {
   searchViaChat: {
     defaultModel: "gemini-2.5-flash",
     endpoint: `${ANTIGRAVITY_IDE_BASE_URL}/v1internal:generateContent`,
-    freeTier: "Free — Google Search grounding through an Antigravity OAuth account.",
+    freeTier: "Free - Google Search grounding through an Antigravity OAuth account.",
   },
   features: {
     usage: true,

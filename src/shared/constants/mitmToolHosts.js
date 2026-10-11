@@ -1,5 +1,5 @@
 /**
- * Per-tool DNS hosts — written to hosts file as 127.0.0.1 when MITM DNS is enabled.
+ * Per-tool DNS hosts - written to hosts file as 127.0.0.1 when MITM DNS is enabled.
  * Kept in sync with MITM routing; shared by Node (dnsConfig) and dashboard UI.
  */
 const TOOL_HOSTS = {

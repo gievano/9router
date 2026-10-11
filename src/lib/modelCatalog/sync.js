@@ -95,7 +95,7 @@ export function build(catalog, entries) {
   // modalities each gateway declares for it.
   const byProvider = {};
   // Modalities are recorded per gateway upstream and gateways disagree about the
-  // same weights — some do not proxy images at all — so the key is provider +
+  // same weights - some do not proxy images at all - so the key is provider +
   // model. Keying by model id alone let short ids collide across vendors: "auto",
   // "free" and "efficient" are router modes in one catalog and model names in
   // another, so a router mode inherited a stranger's vision.
@@ -129,7 +129,7 @@ export function build(catalog, entries) {
     byProvider[providerId] = modelsById;
   }
 
-  // Limits belong to the gateway — each truncates differently — so only the
+  // Limits belong to the gateway - each truncates differently - so only the
   // matching provider's own numbers are used, keyed by provider + model.
   const providers = {};
   for (const { provider, model, contextLength, current } of entries) {
@@ -159,7 +159,7 @@ export function build(catalog, entries) {
 //
 // The previous catalog MUST be detached first. Leaving it installed makes each
 // delta relative to the last one, so a value that still agrees with upstream
-// looks like "no change" and is dropped — the file erases itself over two runs.
+// looks like "no change" and is dropped - the file erases itself over two runs.
 async function collectEntries() {
   const [{ default: registry }, { getCapabilitiesForModel, setCatalogSource }] = await Promise.all([
     import("open-sse/providers/registry/index.js"),
@@ -199,7 +199,7 @@ export async function syncModelCatalog() {
       throw new Error(`HTTP ${response.status}`);
     } else {
       // ~23ms to parse, once a day, on a server that is otherwise idle at this
-      // point — not worth a worker thread.
+      // point - not worth a worker thread.
       const catalog = await response.json();
       const etag = response.headers.get("etag") || null;
       const entries = await collectEntries();

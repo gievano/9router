@@ -1,6 +1,6 @@
 // Node loader hooks so custom-server.js can import the Next.js source tree
 // (src/* uses "@/..." aliases, plus a few CJS packages with named exports).
-// Only used by the auth guard — Next.js itself bundles normally via webpack.
+// Only used by the auth guard - Next.js itself bundles normally via webpack.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";

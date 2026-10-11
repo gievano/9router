@@ -69,9 +69,9 @@ export default {
     { id: "hy4-preview", name: "Hy4 Preview", supportedFormats: ["openai"] },
     { id: "hy3", name: "Hy3", supportedFormats: ["openai"] },
     { id: "hy3-preview", name: "Hy3 Preview", supportedFormats: ["openai"] },
-    // In /zen/go/v1/models but absent from the docs endpoint table — chat lane is the fallback guess
+    // In /zen/go/v1/models but absent from the docs endpoint table - chat lane is the fallback guess
     { id: "omen-alpha", name: "Omen Alpha", supportedFormats: ["openai"] },
-    // Served by /zen/go/v1/responses only — the responses-only entry forces chatCore
+    // Served by /zen/go/v1/responses only - the responses-only entry forces chatCore
     // past the sourceFormat-matched transports into translation (see chatCore guard).
     { id: "grok-4.7", name: "Grok 4.7", targetFormat: "openai-responses", supportedFormats: ["openai-responses"] },
     { id: "grok-4.6", name: "Grok 4.6", targetFormat: "openai-responses", supportedFormats: ["openai-responses"] },

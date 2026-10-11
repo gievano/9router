@@ -5,7 +5,7 @@ import {
 } from "./tokenRefresh.js";
 import { PROVIDER_OAUTH } from "../providers/index.js";
 
-// Single source: codex.oauth.maxRefreshAgeMs (8 days) — proactive refresh window
+// Single source: codex.oauth.maxRefreshAgeMs (8 days) - proactive refresh window
 export const CODEX_MAX_REFRESH_AGE_MS = PROVIDER_OAUTH["codex"]?.maxRefreshAgeMs;
 
 const refreshLocks = new Map();

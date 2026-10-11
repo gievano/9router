@@ -103,7 +103,7 @@ export async function getStudioModels() {
         if (m.callName in aliases) await deleteModelAlias(m.callName);
       }
     } catch {
-      /* fail open — the studio list is still returned */
+      /* fail open - the studio list is still returned */
     }
   }
 

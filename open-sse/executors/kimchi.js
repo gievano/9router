@@ -67,7 +67,7 @@ function stripToolArtifacts(body) {
   });
 }
 
-// Strip `reasoning_content` echoed by clients on assistant messages — but
+// Strip `reasoning_content` echoed by clients on assistant messages - but
 // only when it's a real thinking block. `DefaultExecutor.transformRequest`
 // runs `injectReasoningContent` first and may inject a 1-char placeholder
 // (" ") for upstream validation; the placeholder is small (no token cost

@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // ─── DefaultExecutor.buildHeaders() ──────────────────────────────────────────
 
-describe("DefaultExecutor.buildHeaders() — claude provider", () => {
+describe("DefaultExecutor.buildHeaders() - claude provider", () => {
   let DefaultExecutor;
 
   beforeEach(async () => {
@@ -131,7 +131,7 @@ describe("DefaultExecutor.buildHeaders() — claude provider", () => {
 
 // ─── anthropic-compatible header stripping ────────────────────────────────────
 
-describe("DefaultExecutor.buildHeaders() — anthropic-compatible stripping", () => {
+describe("DefaultExecutor.buildHeaders() - anthropic-compatible stripping", () => {
   let DefaultExecutor;
 
   beforeEach(async () => {
@@ -173,7 +173,7 @@ describe("DefaultExecutor.buildHeaders() — anthropic-compatible stripping", ()
   it("keeps other beta flags intact after stripping", () => {
     const executor = new DefaultExecutor("anthropic-compatible-custom");
     // The static CLAUDE_API_HEADERS used by anthropic-compatible providers include
-    // 'interleaved-thinking-2025-05-14' — check it survives stripping
+    // 'interleaved-thinking-2025-05-14' - check it survives stripping
     const headers = executor.buildHeaders(
       {
         apiKey: "key",
@@ -199,7 +199,7 @@ describe("DefaultExecutor.buildHeaders() — anthropic-compatible stripping", ()
       true
     );
 
-    // No stripping — anthropic-version should survive
+    // No stripping - anthropic-version should survive
     const hasVersion =
       headers["Anthropic-Version"] || headers["anthropic-version"];
     expect(hasVersion).toBeDefined();
@@ -263,7 +263,7 @@ describe("DefaultExecutor.buildHeaders() — anthropic-compatible stripping", ()
 
 // ─── proxyFetch anthropicFetch routing ────────────────────────────────────────
 
-describe("proxyAwareFetch — api.anthropic.com routing", () => {
+describe("proxyAwareFetch - api.anthropic.com routing", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });

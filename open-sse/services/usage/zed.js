@@ -1,5 +1,5 @@
 /**
- * Zed usage — GET https://cloud.zed.dev/client/users/me
+ * Zed usage - GET https://cloud.zed.dev/client/users/me
  * Auth: Authorization: {user_id} {access_token}
  *
  * Quota rows are derived from plan.usage (edit_predictions, optional model_requests)
@@ -142,7 +142,7 @@ export function parseZedAuthenticatedUserUsage(userInfo) {
         ? modelRequests.limit
         : usageBucketLimit(modelRequests)?.limit;
     const limitInfo = parseZedUsageLimit(limitRaw);
-    // Token-billed plans report model_requests.limit=0 — not a request quota.
+    // Token-billed plans report model_requests.limit=0 - not a request quota.
     if (limitInfo.unlimited || limitInfo.total > 0) {
       quotas["Hosted Model Requests"] = makeZedQuotaRow(
         "Hosted Model Requests",

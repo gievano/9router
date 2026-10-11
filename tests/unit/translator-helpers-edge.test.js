@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { normalizeClaudePassthrough } from "../../open-sse/translator/formats/claude.js";
 import { parseDataUri, encodeDataUri } from "../../open-sse/translator/concerns/image.js";
 
-describe("normalizeClaudePassthrough — haiku adaptive thinking (docs 11 §1)", () => {
+describe("normalizeClaudePassthrough - haiku adaptive thinking (docs 11 §1)", () => {
   it("downgrades adaptive thinking to enabled+budget for haiku models", () => {
     const out = normalizeClaudePassthrough({ thinking: { type: "adaptive" } }, "claude-haiku-4-5");
     expect(out.thinking).toEqual({ type: "enabled", budget_tokens: 10000 });

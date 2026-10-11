@@ -290,7 +290,7 @@ export async function runMigrationOnce(adapter) {
   }
 
   // Track app version for informational purposes only. App version bumps no
-  // longer trigger a DB backup — only real schema changes (SCHEMA_VERSION) do.
+  // longer trigger a DB backup - only real schema changes (SCHEMA_VERSION) do.
   const newVer = getAppVersion();
   const oldVer = getMetaSync(adapter, "appVersion", null);
   if (oldVer !== newVer) setMetaSync(adapter, "appVersion", newVer);

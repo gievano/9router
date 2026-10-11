@@ -2031,7 +2031,6 @@ export default function ProfilePage() {
         <ProgressCard
           title={busy.title}
           message={busy.message}
-          section={busy.section}
           progress={busy.progress}
         />
       ) : null}

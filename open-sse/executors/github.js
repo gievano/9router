@@ -20,7 +20,7 @@ export class GithubExecutor extends BaseExecutor {
   }
 
   // Claude models get routed to Copilot's Anthropic-native /v1/messages shim (see
-  // executeWithMessagesEndpoint below) — the only Copilot endpoint that surfaces
+  // executeWithMessagesEndpoint below) - the only Copilot endpoint that surfaces
   // prompt-cache token counts. gpt/gemini/grok models stay on /chat/completions
   // (or /responses). Name-pattern check, not a registry field: Copilot's live model
   // catalog (services/copilotModels.js) regularly exposes claude-* variants ahead
@@ -53,7 +53,7 @@ export class GithubExecutor extends BaseExecutor {
     };
   }
 
-  // Sanitize messages for GitHub Copilot /chat/completions endpoint (gpt/gemini/grok models —
+  // Sanitize messages for GitHub Copilot /chat/completions endpoint (gpt/gemini/grok models -
   // claude models never reach this, see execute() below).
   // The endpoint only accepts 'text' and 'image_url' content part types.
   // Tool-related content (tool_use, tool_result, thinking) must be serialized as text.
@@ -62,7 +62,7 @@ export class GithubExecutor extends BaseExecutor {
 
     const sanitized = { ...body };
     sanitized.messages = body.messages.map(msg => {
-      // assistant messages with only tool_calls have content: null — leave as-is
+      // assistant messages with only tool_calls have content: null - leave as-is
       if (!msg.content) return msg;
 
       // String content is always fine
@@ -101,7 +101,7 @@ export class GithubExecutor extends BaseExecutor {
       transformed.max_completion_tokens = transformed.max_tokens;
       delete transformed.max_tokens;
     }
-    // "none" means no thinking — strip it so models that don't support "none" don't 400
+    // "none" means no thinking - strip it so models that don't support "none" don't 400
     if (transformed.reasoning_effort === "none") {
       delete transformed.reasoning_effort;
     }
@@ -123,7 +123,7 @@ export class GithubExecutor extends BaseExecutor {
   async execute(options) {
     const { model, log } = options;
 
-    // Claude models: route to Copilot's Anthropic-native /v1/messages shim — the only
+    // Claude models: route to Copilot's Anthropic-native /v1/messages shim - the only
     // Copilot endpoint that surfaces prompt-cache token counts for Claude. Detected by
     // model NAME (not a registry field): Copilot's live model catalog regularly exposes
     // claude-* variants the static registry hasn't caught up with yet (see registry/github.js).
@@ -139,7 +139,7 @@ export class GithubExecutor extends BaseExecutor {
       return this.executeWithResponsesEndpoint(options);
     }
 
-    // Sanitize messages before sending to /chat/completions (gpt/gemini/grok — the
+    // Sanitize messages before sending to /chat/completions (gpt/gemini/grok - the
     // endpoint rejects non-text/image_url content parts).
     const sanitizedOptions = {
       ...options,
@@ -245,20 +245,20 @@ export class GithubExecutor extends BaseExecutor {
     };
   }
 
-  // Claude models arrive here OpenAI-shape (chatCore.js targets "openai" for github —
+  // Claude models arrive here OpenAI-shape (chatCore.js targets "openai" for github -
   // see the note in execute() above), so we translate to Anthropic-native ourselves.
   // This is what makes prepareClaudeRequest() (translator/formats/claude.js) inject
-  // cache_control — /chat/completions never gets there, so it never sees cache tokens.
+  // cache_control - /chat/completions never gets there, so it never sees cache tokens.
   async executeWithMessagesEndpoint({ model, body, stream, credentials, signal, log, proxyOptions = null }) {
     const url = this.config.messagesUrl;
     const headers = this.buildHeaders(credentials, stream);
 
     // Force stream:true upstream regardless of client preference, same as
-    // executeWithResponsesEndpoint below — chatCore.js's non-streaming handler already
+    // executeWithResponsesEndpoint below - chatCore.js's non-streaming handler already
     // knows how to buffer an SSE response into a single JSON reply when the client
     // asked for stream:false.
     const transformedBody = translateRequest(FORMATS.OPENAI, FORMATS.CLAUDE, model, body, true, credentials, "github");
-    // _toolNameMap is internal bookkeeping (see openai-to-claude.js) — chatCore.js
+    // _toolNameMap is internal bookkeeping (see openai-to-claude.js) - chatCore.js
     // normally strips it before dispatch and threads it into the response state to
     // restore original tool names; we must do the same here, or Anthropic's strict
     // schema rejects the extra field with a 400.

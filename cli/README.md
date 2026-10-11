@@ -37,7 +37,7 @@
 
 ## ⚡ Quick Start
 
-**Option 1 — npm (recommended for desktop):**
+**Option 1 - npm (recommended for desktop):**
 
 ```bash
 npm install -g 9router
@@ -47,7 +47,7 @@ npm install -g 9router
 npx 9router
 ```
 
-**Option 2 — Docker (server/VPS):**
+**Option 2 - Docker (server/VPS):**
 
 ```bash
 docker run -d --name 9router -p 20128:20128 \
@@ -92,7 +92,7 @@ That's it! Start coding with FREE AI models.
 
 ## 🔌 Connect to a Remote 9Router
 
-Already running 9Router on another machine (e.g. a team server on your LAN)? Point this machine's CLI tools at it — no local server is started:
+Already running 9Router on another machine (e.g. a team server on your LAN)? Point this machine's CLI tools at it - no local server is started:
 
 ```bash
 npx 9router connect http://<server-host>:20128                       # pick tools interactively
@@ -104,7 +104,7 @@ It logs in with the dashboard password (hidden prompt), reuses or creates an API
 
 Supported: `claude`, `codex`, `opencode`, `droid`, `crush`, `kilo`, `cline`, or `all`. Other options: `--model`, `--opus/--sonnet/--haiku/--fable`, `--api-key`, `--key-name`, `--print-env`. See `9router connect --help`.
 
-> ⚠️ Over plain `http://` the password and API key are sent unencrypted — use a trusted LAN/VPN or put HTTPS in front. The API key is stored in each tool's config file.
+> ⚠️ Over plain `http://` the password and API key are sent unencrypted - use a trusted LAN/VPN or put HTTPS in front. The API key is stored in each tool's config file.
 
 ---
 

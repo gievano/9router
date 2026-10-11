@@ -49,7 +49,7 @@ export function openaiToAntigravityResponse(chunk, state) {
       if (tc.function?.name) accum.name += tc.function.name;
       if (tc.function?.arguments) accum.arguments += tc.function.arguments;
     }
-    // Skip emit — wait for finish_reason
+    // Skip emit - wait for finish_reason
     if (parts.length === 0 && !finishReason) return null;
   }
 

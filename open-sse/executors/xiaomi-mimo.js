@@ -12,7 +12,7 @@ const ACCOUNT_MODELS = new Set([
 ]);
 
 // Session cookie resolved in execute() (async) and read back by buildHeaders()
-// (sync — BaseExecutor.execute does not await it). Carried on the per-request
+// (sync - BaseExecutor.execute does not await it). Carried on the per-request
 // credentials object, same as runtimeTransport.
 const COOKIE_KEY = "__mimoAccountCookie";
 
@@ -43,7 +43,7 @@ export class XiaomiMimoExecutor extends DefaultExecutor {
 
   buildUrl(model, stream, urlIndex = 0, credentials = null) {
     // Account route models live on the account-service route, which is not one of the
-    // declared transports — resolve it before the default runtimeTransport path.
+    // declared transports - resolve it before the default runtimeTransport path.
     if (this.isAccountRoute(model, credentials)) {
       return `${resolveMimoServerBase(credentials?.providerSpecificData)}/api/route/chat/completions`;
     }
@@ -98,7 +98,7 @@ export class XiaomiMimoExecutor extends DefaultExecutor {
     credentials[COOKIE_KEY] = cookie;
     const result = await super.execute(args);
 
-    // A cached session can expire early — drop it and retry once with a fresh one.
+    // A cached session can expire early - drop it and retry once with a fresh one.
     if (result.response.status === 401) {
       invalidateMimoAccountCookieCache();
       const fresh = await getMimoAccountCookie(credentials?.providerSpecificData, proxyOptions).catch(() => null);

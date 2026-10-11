@@ -2,7 +2,7 @@
 //
 // Three consumers must agree on what a key's allowedModels list admits: the
 // request gate, the /v1/models listing, and the usage dashboards. Kept free of
-// imports so every one of them — and the self-check — can use it without
+// imports so every one of them - and the self-check - can use it without
 // dragging in the database driver.
 
 /**

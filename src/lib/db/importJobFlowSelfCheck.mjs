@@ -3,7 +3,7 @@
  *
  * Reproduces the reported symptom against the real job store: a job is
  * created, its poll token is used to read status, and the token is refused
- * once the job finishes. Also proves the old failure mode is gone — polling
+ * once the job finishes. Also proves the old failure mode is gone - polling
  * with the token keeps working even though the password hash it was issued
  * against has been replaced by the import.
  *
@@ -71,7 +71,7 @@ run("the token is not stored on the job in recoverable form", () => {
 
 const failed = results.filter((r) => !r.ok);
 for (const r of results) {
-  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` — ${r.err}` : ""}`);
+  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` - ${r.err}` : ""}`);
 }
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length === 0 ? 0 : 1);

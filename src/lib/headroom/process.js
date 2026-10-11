@@ -31,7 +31,7 @@ function clearPid() {
   try { if (fs.existsSync(PID_FILE)) fs.unlinkSync(PID_FILE); } catch { /* ignore */ }
 }
 
-// process.kill throws if pid is dead — use this to probe.
+// process.kill throws if pid is dead - use this to probe.
 export function isPidAlive(pid) {
   if (!pid || typeof pid !== "number") return false;
   try { process.kill(pid, 0); return true; } catch { return false; }
@@ -90,14 +90,14 @@ export async function startHeadroomProxy({ port = DEFAULT_PORT, codeAware = fals
   await new Promise((resolve, reject) => {
     const startupTimer = setTimeout(() => {
       if (isPidAlive(child.pid)) resolve();
-      else reject(new Error("headroom proxy exited during startup — see proxy.log"));
+      else reject(new Error("headroom proxy exited during startup - see proxy.log"));
     }, STARTUP_TIMEOUT_MS);
 
     child.once("exit", (code) => {
       clearTimeout(startupTimer);
       clearPid();
       fs.closeSync(outFd);
-      const e = new Error(`headroom proxy exited early (code=${code}) — see proxy.log`);
+      const e = new Error(`headroom proxy exited early (code=${code}) - see proxy.log`);
       e.code = "EARLY_EXIT";
       reject(e);
     });
@@ -159,7 +159,7 @@ export function getHeadroomLogTail(maxLines = 200) {
 }
 
 // Install (or upgrade) headroom-ai with the requested compression extras.
-// `extras` is a whitelist from HEADROOM_COMPRESSION_EXTRAS — anything else
+// `extras` is a whitelist from HEADROOM_COMPRESSION_EXTRAS - anything else
 // is rejected to keep the install surface predictable. Always installs the
 // `proxy` base + whatever extras the user picked, regardless of what is
 // already present.
@@ -177,7 +177,7 @@ export async function installHeadroomExtras(extras = []) {
     throw err;
   }
   // pip install string is built from a closed set (HEADROOM_COMPRESSION_EXTRAS),
-  // so it cannot be poisoned by caller input — the comma-list is a fixed
+  // so it cannot be poisoned by caller input - the comma-list is a fixed
   // ['proxy', ...requested]. No shell interpolation.
   const extrasList = ["proxy", ...requested].join(",");
   const spec = `headroom-ai[${extrasList}]`;
@@ -200,7 +200,7 @@ export async function installHeadroomExtras(extras = []) {
         const status = getInstalledHeadroomExtras(py);
         resolve({ success: true, code, spec, extras: requested, ...status });
       } else {
-        const err = new Error(`pip install exited with code=${code} — see headroom/install.log`);
+        const err = new Error(`pip install exited with code=${code} - see headroom/install.log`);
         err.code = "INSTALL_FAILED";
         reject(err);
       }
@@ -242,7 +242,7 @@ export async function uninstallHeadroomExtras(extras = []) {
         const status = getInstalledHeadroomExtras(py);
         resolve({ success: true, code, removed: pkgs, extras: requested, ...status });
       } else {
-        const err = new Error(`pip uninstall exited with code=${code} — see headroom/install.log`);
+        const err = new Error(`pip uninstall exited with code=${code} - see headroom/install.log`);
         err.code = "UNINSTALL_FAILED";
         reject(err);
       }

@@ -121,7 +121,7 @@ export async function POST(request) {
             : "Password user",
         method: "POST",
         path: "/api/keys",
-        detail: `Created API key "${trimmedName}" — permissions: ${JSON.stringify(finalPermissions || {})}`,
+        detail: `Created API key "${trimmedName}" - permissions: ${JSON.stringify(finalPermissions || {})}`,
       });
     } catch {
       // Auditing is best effort.

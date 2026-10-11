@@ -49,7 +49,7 @@ describe("jsonGuard: coerceJsonOutput", () => {
   });
 
   it("keeps a complete trailing value when closing", () => {
-    // The 3 is a finished value, not a torn one — closing must keep it.
+    // The 3 is a finished value, not a torn one - closing must keep it.
     expect(coerceJsonOutput('{"outer":{"inner":[1,2,3').value).toEqual({ outer: { inner: [1, 2, 3] } });
   });
 

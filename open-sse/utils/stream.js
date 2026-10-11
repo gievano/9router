@@ -13,7 +13,7 @@ import { SSE_DONE, SSE_HEADERS, SSE_HEADERS_NO_BUFFER, SSE_DATA_PREFIX, SSE_DONE
 export { COLORS, formatSSE };
 export { SSE_DONE, SSE_HEADERS, SSE_HEADERS_NO_BUFFER };
 
-// sharedEncoder is stateless — safe to share across streams
+// sharedEncoder is stateless - safe to share across streams
 const sharedEncoder = new TextEncoder();
 
 /**
@@ -27,7 +27,7 @@ const STREAM_MODE = {
 /**
  * Frame payload carried by one upstream line, or null when the line carries none.
  * Spec-shaped upstreams prefix every frame with "data:", but an upstream streaming
- * NDJSON under a text/event-stream label puts a bare object on the line — dropping
+ * NDJSON under a text/event-stream label puts a bare object on the line - dropping
  * those makes the whole stream parse to zero frames.
  * @param {string} line
  * @returns {string|null}
@@ -43,7 +43,7 @@ export function framePayload(line) {
 /**
  * Parse one line of an upstream body into a chunk. parseSSELine only accepts a
  * bare object for Ollama, so whatever it rejected for want of a prefix is retried
- * with one — Ollama's own path stays as it was.
+ * with one - Ollama's own path stays as it was.
  * @param {string} line
  * @param {string} targetFormat
  * @returns {object|null}
@@ -114,7 +114,7 @@ export function createSSEStream(options = {}) {
     ? { ...initState(sourceFormat), provider, toolNameMap, customToolNames: new Set(customToolNames || []), model, sessionId: credentials?._clientSessionId || null,
         // Which upstream format this stream came from. A response translator can be
         // reached either directly (target === its registered source) or as the second
-        // hop of a pivot, and on the terminal null chunk the pivot drops it — so a
+        // hop of a pivot, and on the terminal null chunk the pivot drops it - so a
         // translator that defers closing events until flush needs to know which case
         // it is in. Absent/undefined means "unknown", i.e. do not defer.
         targetFormat }
@@ -228,7 +228,7 @@ export function createSSEStream(options = {}) {
               // Strip empty tool_calls arrays that break AI SDK reasoning tracking.
               // Some providers (e.g. CodeBuddy CN) include `"tool_calls": []` in
               // every streaming delta. @ai-sdk/openai-compatible checks
-              // `delta.tool_calls != null` — an empty array passes this check,
+              // `delta.tool_calls != null` - an empty array passes this check,
               // causing premature `reasoning-end` on every chunk.
               if (parsed?.choices) {
                 for (const choice of parsed.choices) {
@@ -279,7 +279,7 @@ export function createSSEStream(options = {}) {
                 injectedUsage = true;
               }
             } catch {
-              // Skip non-JSON data lines silently — don't forward garbage to clients.
+              // Skip non-JSON data lines silently - don't forward garbage to clients.
               // Upstream providers sometimes return plain-text errors (HTML, rate-limit
               // messages) in the SSE stream that would break downstream JSON decoders.
               continue;
@@ -488,8 +488,8 @@ export function createSSEStream(options = {}) {
           const parsed = parseFrameLine(buffer.trim(), targetFormat);
           // parseSSELine turns the SSE sentinel "data: [DONE]" into { done: true },
           // which must not be translated. An Ollama chunk also carries done:true,
-          // but it is the real final chunk — it holds finish_reason and the token
-          // counts — so it has to go through.
+          // but it is the real final chunk - it holds finish_reason and the token
+          // counts - so it has to go through.
           const isDoneSentinel = parsed?.done && targetFormat !== FORMATS.OLLAMA;
           if (parsed && !isDoneSentinel) {
             // Same accumulation the transform loop does, so finalizeStream() can

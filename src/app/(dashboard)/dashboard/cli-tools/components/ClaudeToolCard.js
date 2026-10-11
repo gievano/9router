@@ -62,7 +62,7 @@ export default function ClaudeToolCard({
   const hasInitializedModels = useRef(false);
 
   // Claude Code only string-matches the marker against the model name, so it
-  // applies to any id — the user decides which models are worth declaring as 1M.
+  // applies to any id - the user decides which models are worth declaring as 1M.
   // Stripping first keeps repeated toggles from stacking `[1m][1m]`.
   const withContextMarker = (value, enabled) => {
     const { model } = stripModelContextMarker(value);
@@ -213,7 +213,7 @@ export default function ClaudeToolCard({
 
       tool.defaultModels.forEach((model) => {
         const targetModel = modelMappings[model.alias];
-        // Written verbatim — the input may hold a marker typed by hand, and the
+        // Written verbatim - the input may hold a marker typed by hand, and the
         // toggle already decided the marker when it was flipped.
         if (targetModel && model.envKey) env[model.envKey] = targetModel;
       });
@@ -428,7 +428,7 @@ export default function ClaudeToolCard({
                   <label className="flex items-center gap-1.5 cursor-pointer select-none">
                     <input type="checkbox" checked={oneMContext} onChange={(e) => handleOneMContextToggle(e.target.checked)} className="w-3.5 h-3.5 accent-primary cursor-pointer" />
                     <span className="text-xs text-text-muted">Append [1m] to the model name</span>
-                    <Tooltip text="Claude Code otherwise assumes a 200K window, which clamps the auto-compact window above. Applied to every mapped model — only enable it for models that really accept 1M.">
+                    <Tooltip text="Claude Code otherwise assumes a 200K window, which clamps the auto-compact window above. Applied to every mapped model - only enable it for models that really accept 1M.">
                       <span className="material-symbols-outlined text-text-muted text-[14px] cursor-help">info</span>
                     </Tooltip>
                   </label>
@@ -447,7 +447,7 @@ export default function ClaudeToolCard({
                   </label>
                 </div>
 
-                {/* Exa MCP — ~/.claude.json mcpServers (not settings.json) */}
+                {/* Exa MCP - ~/.claude.json mcpServers (not settings.json) */}
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-[8rem_auto_1fr_auto] sm:items-center sm:gap-2">
                   <span className="text-xs font-semibold text-text-main sm:text-right sm:text-sm">Web Search</span>
                   <span className="material-symbols-outlined hidden text-text-muted text-[14px] sm:inline">arrow_forward</span>

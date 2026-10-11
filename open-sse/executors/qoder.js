@@ -1,5 +1,5 @@
 /**
- * QoderExecutor — sends OpenAI-format chat requests to Qoder's COSY-signed
+ * QoderExecutor - sends OpenAI-format chat requests to Qoder's COSY-signed
  * inference endpoint at api3.qoder.sh, then unwraps Qoder's `{statusCodeValue,
  * body}` SSE envelope back into plain OpenAI SSE for the rest of the pipeline.
  *
@@ -44,7 +44,7 @@ import { resolveQoderContextTier, applyQoderContextTier } from "../shared/qoder/
 
 /**
  * Hoist role:"system" messages out of the messages array (Qoder rejects
- * system in messages) and flatten multipart content arrays — EXCEPT image
+ * system in messages) and flatten multipart content arrays - EXCEPT image
  * blocks, which are preserved (see normalizeContent).
  */
 function normalizeMessages(messages) {
@@ -74,9 +74,9 @@ function normalizeMessages(messages) {
  * shape). When images are present the content stays an array and image
  * blocks are kept as OpenAI-style `image_url` parts. Native qodercli
  * uploads inlined bytes to `/api/v2/image/upload` first and then sends
- * the OSS URL — `buildQoderRequestBody` does that rewrite before this
+ * the OSS URL - `buildQoderRequestBody` does that rewrite before this
  * runs. Tiny leftover data URIs are still accepted. The legacy
- * top-level `image_urls` / `chat_context.imageUrls` slots stay null —
+ * top-level `image_urls` / `chat_context.imageUrls` slots stay null -
  * qodercli leaves them null too.
  *
  * Claude-style `{type:"image", source:{...}}` blocks are converted to
@@ -122,10 +122,10 @@ function normalizeContent(content) {
       }
     } else if (item.type === OPENAI_BLOCK.FILE) {
       const name = item.file?.filename || item.file?.name || "file";
-      pushText(`[file omitted: ${name} — Qoder reads documents via its file API, not inlined bytes]`);
+      pushText(`[file omitted: ${name} - Qoder reads documents via its file API, not inlined bytes]`);
     } else if (item.type === CLAUDE_BLOCK.DOCUMENT) {
       const name = item.title || "document";
-      pushText(`[file omitted: ${name} — Qoder reads documents via its file API, not inlined bytes]`);
+      pushText(`[file omitted: ${name} - Qoder reads documents via its file API, not inlined bytes]`);
     } else if (typeof item.text === "string" && item.text) {
       pushText(item.text);
     }
@@ -214,7 +214,7 @@ async function buildQoderRequestBody({ model, body, credentials, log, proxyOptio
   // This allows support for new Qoder models (e.g., qmodel_latest) without code changes.
   let modelConfig = await getQoderModelConfig(credentials, qoderKey, { log, proxyOptions, signal, region });
   if (!modelConfig) {
-    // Try a forced refresh once before giving up — the cache may simply
+    // Try a forced refresh once before giving up - the cache may simply
     // not be populated yet on first ever call for this credential.
     const refreshed = await resolveQoderModels(credentials, { forceRefresh: true, log, proxyOptions, signal, region });
     const retried = refreshed?.rawConfigs.get(qoderKey);
@@ -348,14 +348,14 @@ function isBillingBlock(inner) {
     const parsed = JSON.parse(inner);
     const code = String(parsed?.code ?? "");
     if (code === "110" || code === "112" || code === "10605") return true;
-  } catch { /* not JSON — fall through to legacy shape match */ }
+  } catch { /* not JSON - fall through to legacy shape match */ }
   // Match legacy exact shapes: {"code":"112",...}, {"code":"10605",...}.
   return /"code"\s*:\s*"(112|10605)"/.test(inner);
 }
 
 /**
  * Peek the first SSE data line to detect upstream errors before piping.
- * Returns { isError, isBilling, statusVal, message, consumed } — `consumed` is every
+ * Returns { isError, isBilling, statusVal, message, consumed } - `consumed` is every
  * byte read so far (including the peeked line) so the caller can re-process
  * it and nothing is dropped from the stream.
  */
@@ -410,7 +410,7 @@ async function peekFirstQoderFrame(reader, decoder) {
  *
  * Critical: Qoder's SSE often keeps the socket open after the terminal
  * [DONE]/error frame (agent keepalive). Non-streaming clients drain via
- * response.text() which hangs until the socket closes — so on terminal
+ * response.text() which hangs until the socket closes - so on terminal
  * events we cancel the upstream reader and close our stream immediately.
  *
  * Usage: Qoder puts finish_reason on `delta` and sends token counts on a
@@ -561,7 +561,7 @@ async function wrapQoderSSE(response, model, log = null) {
             buffer = buffer.slice(nl + 1);
             processLine(line, controller);
             if (doneEmitted) {
-              // Terminal frame received — drop upstream keepalive and end.
+              // Terminal frame received - drop upstream keepalive and end.
               await reader.cancel().catch(() => {});
               controller.close();
               return;
@@ -606,7 +606,7 @@ export class QoderExecutor extends BaseExecutor {
     return `${qoderInferenceBase(credentials, this.region)}/algo${QODER_CHAT_SIG_PATH}?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1`;
   }
 
-  // Override execute entirely — Qoder needs:
+  // Override execute entirely - Qoder needs:
   //   - body built from translated chat completion payload
   //   - body encoded with QoderEncodeBody before signing
   //   - COSY headers built from the *encoded* body bytes
@@ -641,7 +641,7 @@ export class QoderExecutor extends BaseExecutor {
       return { response: fakeResp, url, headers: {}, transformedBody: body };
     }
     if (!credentials?.accessToken) {
-      // Same shape as the userId guard — clean 401 so chatCore reports
+      // Same shape as the userId guard - clean 401 so chatCore reports
       // "reconnect" rather than bubbling cosy.js's synchronous throw as 500.
       const fakeResp = new Response(
         JSON.stringify({ error: { message: "qoder credential is missing accessToken; reconnect the account" } }),
@@ -680,7 +680,7 @@ export class QoderExecutor extends BaseExecutor {
         },
       );
     } catch (err) {
-      // cosy.js throws synchronously on missing userId/authToken — surface
+      // cosy.js throws synchronously on missing userId/authToken - surface
       // as 401 so chatCore prompts re-auth instead of returning a 500.
       const fakeResp = new Response(
         JSON.stringify({ error: { message: `qoder cosy signing failed: ${err.message}` } }),
@@ -734,7 +734,7 @@ export class QoderExecutor extends BaseExecutor {
     return { response: wrapped, url, headers, transformedBody: payload };
   }
 
-  // Qoder device tokens don't refresh through OAuth — the upstream returns
+  // Qoder device tokens don't refresh through OAuth - the upstream returns
   // 403 for our flow. Surfacing failure via 401-on-chat is enough; the
   // dashboard tells users to re-login when their token expires (~30 days).
   async refreshCredentials() {
@@ -748,7 +748,7 @@ export class QoderExecutor extends BaseExecutor {
 
 export default QoderExecutor;
 
-// Internals exposed for unit tests. Not part of the public API — callers
+// Internals exposed for unit tests. Not part of the public API - callers
 // should import QoderExecutor and use its public methods.
 export const __test__ = {
   normalizeMessages,

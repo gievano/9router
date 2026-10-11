@@ -111,7 +111,7 @@ export function resolveGrokCliTurnIdx(sessionId, input, requestKey = null) {
   return turn;
 }
 
-/** Test helper — clear in-memory turn counters */
+/** Test helper - clear in-memory turn counters */
 export function _resetGrokCliTurnStore() {
   sessionTurnStore.clear();
   requestTurnStore = new WeakMap();
@@ -334,7 +334,7 @@ function resolveEffortFromModel(modelId) {
 }
 
 /**
- * Grok CLI Executor — OpenAI Responses API on cli-chat-proxy.grok.com
+ * Grok CLI Executor - OpenAI Responses API on cli-chat-proxy.grok.com
  * Auth: OAuth device-code access token (xai-grok-cli).
  */
 export class GrokCliExecutor extends BaseExecutor {
@@ -417,7 +417,7 @@ export class GrokCliExecutor extends BaseExecutor {
   }
 
   transformRequest(model, body, stream, credentials) {
-    // Session / request ids for headers — stable per client conversation when possible
+    // Session / request ids for headers - stable per client conversation when possible
     const requestKey = body;
     this._currentSessionId = resolveGrokCliSessionId(credentials, body);
     this._currentReqId = crypto.randomUUID();
@@ -430,7 +430,7 @@ export class GrokCliExecutor extends BaseExecutor {
     const normalized = normalizeResponsesInput(body.input);
     if (normalized) body.input = normalized;
 
-    // Chat Completions clients arrive with messages[] — translator should have
+    // Chat Completions clients arrive with messages[] - translator should have
     // converted already, but guard empty input.
     if (!body.input || (Array.isArray(body.input) && body.input.length === 0)) {
       if (Array.isArray(body.messages) && body.messages.length > 0) {
@@ -446,7 +446,7 @@ export class GrokCliExecutor extends BaseExecutor {
       }
     }
 
-    // Keep role:"system" as-is — official grok-pager HAR sends system, not developer
+    // Keep role:"system" as-is - official grok-pager HAR sends system, not developer
     // (Codex converts system→developer; Grok CLI does not).
     normalizeGrokCliInput(body);
     stripStoredItemReferences(body);

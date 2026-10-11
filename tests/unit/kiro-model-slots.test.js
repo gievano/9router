@@ -15,7 +15,7 @@ describe("Kiro MITM model slots", () => {
   });
 
   it("offers a mappable slot for the agent default model id 'auto'", () => {
-    // اسلات auto برای vibe mode لازمه — وگرنه درخواست میره AWS
+    // اسلات auto برای vibe mode لازمه - وگرنه درخواست میره AWS
     const auto = kiro.defaultModels.find((m) => m.id === "auto");
     expect(auto).toBeTruthy();
     expect(auto.alias).toBe("auto");

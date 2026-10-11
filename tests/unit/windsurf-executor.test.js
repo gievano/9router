@@ -74,7 +74,7 @@ describe("buildGetChatMessageRequest", () => {
 
   it("embeds the apiKey inside the metadata sub-message", () => {
     const payload = buildGetChatMessageRequest("sk-ws-secret", "gpt-5", []);
-    // The metadata bytes are the first length-delimited field — should contain the key.
+    // The metadata bytes are the first length-delimited field - should contain the key.
     const asString = new TextDecoder().decode(payload);
     expect(asString).toContain("sk-ws-secret");
     // And the IDE identification fields.

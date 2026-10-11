@@ -23,7 +23,7 @@ const PROVIDER_FILTER = (process.env.REAL_PROVIDERS || "")
 
 // Valid 16x16 red PNG (1x1 is rejected as malformed by some strict providers).
 const PNG_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGO4I2JDEmIY1TCqYfhqAAAeBCwQ8YdREQAAAABJRU5ErkJggg==";
-// Tiny silent WAV (44-byte header, no samples) — enough to probe audioInput acceptance.
+// Tiny silent WAV (44-byte header, no samples) - enough to probe audioInput acceptance.
 const WAV_B64 = "UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 // Stable public image URL (probe remote-URL handling vs base64).
 const IMAGE_REMOTE_URL = "https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png";

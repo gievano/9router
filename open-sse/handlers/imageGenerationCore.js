@@ -12,7 +12,7 @@ function serializeRequestBody(requestBody) {
 }
 
 /**
- * Core image generation handler — orchestrator only.
+ * Core image generation handler - orchestrator only.
  * Provider-specific URL/headers/body/parse/normalize live in `./imageProviders/{id}.js`.
  *
  * @param {object} options
@@ -118,7 +118,7 @@ export async function handleImageGenerationCore({
     return createErrorResult(HTTP_STATUS.BAD_GATEWAY, errMsg);
   }
 
-  // Handle 401/403 — try token refresh (skipped for noAuth providers)
+  // Handle 401/403 - try token refresh (skipped for noAuth providers)
   const executor = getExecutor(provider);
   if (
     !executor?.noAuth &&
@@ -161,7 +161,7 @@ export async function handleImageGenerationCore({
     return createErrorResult(statusCode, errMsg);
   }
 
-  // Parse provider response — adapter may override (codex SSE / async polling / binary)
+  // Parse provider response - adapter may override (codex SSE / async polling / binary)
   let parsed;
   try {
     if (adapter.parseResponse) {

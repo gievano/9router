@@ -21,7 +21,7 @@ export default {
     notice: { signupUrl: "https://www.trae.ai" },
   },
   transport: {
-    // SOLO remote agent base — verified working chat endpoint.
+    // SOLO remote agent base - verified working chat endpoint.
     baseUrl: "https://core-normal.trae.ai/api/remote/v1",
     format: "openai",
     headers: {
@@ -29,7 +29,7 @@ export default {
       "X-Preferenced-Language": "en",
       "Referer": "https://solo.trae.ai/",
     },
-    // Auth: Cloud-IDE-JWT scheme on Authorization — injected by executor buildHeaders.
+    // Auth: Cloud-IDE-JWT scheme on Authorization - injected by executor buildHeaders.
     auth: {
       combined: true,
       header: "Authorization",
@@ -57,7 +57,7 @@ export default {
     exchangeTokenUrl: "https://api.marscode.com/cloudide/api/v3/trae/oauth/ExchangeToken",
     refreshUrl: "https://api.marscode.com/cloudide/api/v3/trae/oauth/ExchangeToken",
     userInfoUrl: "https://api.marscode.com/cloudide/api/v3/trae/GetUserInfo",
-    // Trae refresh uses custom JSON body, not OAuth form — handled by refresh.js, not config-driven.
+    // Trae refresh uses custom JSON body, not OAuth form - handled by refresh.js, not config-driven.
     refresh: { encoding: "json" },
   },
   // Model catalog (IDE flow, core-normal.trae.ai).

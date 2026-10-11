@@ -97,7 +97,7 @@ export function classify(event) {
   const isAuthFlow = /^(login|apikey_login|apikey_logout|logout)/.test(type);
 
   // Probe signatures describe request traffic. An auth line is allowed to
-  // mention a password — that is what sign-ins are about — so the signature
+  // mention a password - that is what sign-ins are about - so the signature
   // match runs against the path only there. Testing the detail as well turned
   // every default-password sign-in into a bogus "Auth material probe".
   const probeScope = isAuthFlow ? path : haystack;

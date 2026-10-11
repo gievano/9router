@@ -223,20 +223,26 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
       )}
 
       {importing && (
-        <ProgressCard
-          fixed={false}
-          title="Importing models"
-          message={
-            importTotals && importTotals.total > 0
-              ? `${importTotals.done}/${importTotals.total} models`
-              : "Fetching model list"
-          }
-          progress={
-            importTotals && importTotals.total > 0
-              ? Math.round((importTotals.done / importTotals.total) * 100)
-              : null
-          }
-        />
+        // Wrapped in a positioned box. `fixed={false}` renders the card as
+        // `absolute inset-0`, and without a positioned ancestor that resolves
+        // against the whole page - so the scrim covered the dashboard for the
+        // whole import while only this section's progress needed showing.
+        <div className="relative">
+          <ProgressCard
+            fixed={false}
+            title="Importing models"
+            message={
+              importTotals && importTotals.total > 0
+                ? `${importTotals.done}/${importTotals.total} models`
+                : "Fetching model list"
+            }
+            progress={
+              importTotals && importTotals.total > 0
+                ? Math.round((importTotals.done / importTotals.total) * 100)
+                : null
+            }
+          />
+        </div>
       )}
     </div>
   );

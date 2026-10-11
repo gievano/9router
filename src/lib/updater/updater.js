@@ -132,7 +132,11 @@ function runInstall() {
   state.attempt += 1;
   setPhase("installing");
   const forkScript = process.env.UPDATER_INSTALL_SCRIPT || "";
-  if (forkScript) pushLog(`[updater] attempt ${state.attempt}/${maxRetries} — node ${forkScript}`);
+  if (forkScript) {
+    pushLog(`[updater] attempt ${state.attempt}/${maxRetries} — node ${forkScript}`);
+  } else {
+    pushLog(`[updater] attempt ${state.attempt}/${maxRetries} - npm i -g ${packageName} --prefer-online`);
+  }
 
   const isWin = process.platform === "win32";
   const cmd = isWin ? "npm.cmd" : "npm";

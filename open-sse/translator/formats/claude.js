@@ -59,7 +59,7 @@ function normalizeMessageContent(msg) {
   return msg;
 }
 
-// Total blocks carrying cache_control across system, tools, and messages — the
+// Total blocks carrying cache_control across system, tools, and messages - the
 // upstream Messages API allows at most 4 markers per request.
 function countCacheControlBlocks(body) {
   let n = 0;
@@ -77,7 +77,7 @@ function countCacheControlBlocks(body) {
 // Trim every marker past the 4-marker budget. The head anchors (last system
 // block, last cacheable tool) are held; the remaining slots go to the tail-most
 // of the other markers in document order. A plain "keep the last 4 in document
-// order" rule would drop the head anchors first — they lead document order, yet
+// order" rule would drop the head anchors first - they lead document order, yet
 // they are exactly what re-anchoring exists to pin.
 function capCacheControlBlocks(body) {
   const isHead = (b) => {
@@ -218,7 +218,7 @@ export function normalizeClaudePassthrough(body, model = "") {
   // 3. Wrap bare content-block objects as one-element arrays before folding.
   // Some clients send content: {block} instead of content: [{block}]; the
   // mid-conversation-system fold below assumes the array shape, so it must
-  // run first — a bare-object neighbor would otherwise be zeroed to [].
+  // run first - a bare-object neighbor would otherwise be zeroed to [].
   if (Array.isArray(body.messages)) {
     for (const msg of body.messages) normalizeMessageContent(msg);
   }
@@ -339,7 +339,7 @@ function markLastCacheableBlock(msg) {
 // prepareClaudeRequest): last tool + last system block at 1h, last assistant at 5m.
 // The client's own markers point at pre-normalization offsets, so they are dropped.
 // Must run LAST, after every step that can reshape system/tools/messages
-// (normalize, tool dedupe, token savers) — otherwise the anchor drifts off the tail.
+// (normalize, tool dedupe, token savers) - otherwise the anchor drifts off the tail.
 export function anchorClaudeCache(body) {
   if (!body || typeof body !== "object") return body;
   if (Array.isArray(body.messages)) {
@@ -378,7 +378,7 @@ export function anchorClaudeCache(body) {
   // Budget guard AFTER the head anchors: with the last system block and last
   // tool pinned, at most 2 slots remain. At >= 4 markers the client has spent
   // the rest of the budget and every remaining marker is itself a valid
-  // breakpoint — re-anchoring the tail could only exceed 4, so trim instead.
+  // breakpoint - re-anchoring the tail could only exceed 4, so trim instead.
   if (countCacheControlBlocks(body) >= 4) {
     capCacheControlBlocks(body);
     return body;
@@ -397,7 +397,7 @@ export function anchorClaudeCache(body) {
       anchored = markLastCacheableBlock(msg);
     }
 
-    // First turn of a conversation has no assistant yet — anchor the final
+    // First turn of a conversation has no assistant yet - anchor the final
     // message instead, so the opening prompt is cached rather than paid twice.
     if (!anchored) {
       for (let i = body.messages.length - 1; i >= 0 && !anchored; i--) {
@@ -468,7 +468,7 @@ export function prepareClaudeRequest(body, provider = null, apiKey = null, conne
 
     // Reconcile against thinking budget. applyThinking (thinkingUnified.js) runs
     // AFTER adjustMaxTokens capped max_tokens, and the claude-budget format maps
-    // max effort → budget_tokens 128000 — larger than the clamped max_tokens.
+    // max effort → budget_tokens 128000 - larger than the clamped max_tokens.
     // Anthropic requires max_tokens strictly greater than budget_tokens (else 400).
     // Prefer raising max_tokens to preserve the requested thinking depth; if the
     // budget alone meets/exceeds the ceiling, cap output and shrink the budget so
@@ -596,7 +596,7 @@ export function prepareClaudeRequest(body, provider = null, apiKey = null, conne
     if (provider !== "claude") {
       // Provider-specific whitelist of Anthropic tool `type` values that the
       // upstream actually accepts. When the provider declares it
-      // (e.g. DeepSeek — only web_search_*), keep only listed types; otherwise
+      // (e.g. DeepSeek - only web_search_*), keep only listed types; otherwise
       // keep the prior behaviour of dropping every non-function tool, which is
       // correct for OpenAI-compatible targets reached through this Claude-format
       // pass (their tools get normalized below to function-style).
@@ -622,7 +622,7 @@ export function prepareClaudeRequest(body, provider = null, apiKey = null, conne
             };
           }
           // When the provider declared a supportedToolTypes whitelist, keep
-          // the surviving tools' `type` field intact — the upstream
+          // the surviving tools' `type` field intact - the upstream
           // Anthropic-compatible endpoint (e.g. DeepSeek) requires it to
           // route built-ins like web_search_* correctly. Without a
           // whitelist, preserve prior behaviour and strip `type` so the

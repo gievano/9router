@@ -1,7 +1,7 @@
 /**
  * Regression test: prepareClaudeRequest() must strip client-defined `custom`
  * tools when forwarding to a provider whose Anthropic-compatible endpoint
- * does not accept them (DeepSeek — accepts only web_search_*).
+ * does not accept them (DeepSeek - accepts only web_search_*).
  *
  * Background:
  *   When Claude Code talks to a DeepSeek route via /v1/messages, 9router
@@ -28,7 +28,7 @@ function makeBody(tools) {
   };
 }
 
-describe("prepareClaudeRequest — provider: deepseek", () => {
+describe("prepareClaudeRequest - provider: deepseek", () => {
   it("declares the supportedTypes quirk on the provider transport", () => {
     expect(PROVIDERS.deepseek).toBeDefined();
     expect(PROVIDERS.deepseek.quirks).toBeDefined();
@@ -68,7 +68,7 @@ describe("prepareClaudeRequest — provider: deepseek", () => {
 
   it("preserves the `type` field on web_search_* tools (DeepSeek requires it)", () => {
     // The .map below the filter must NOT strip `type` when the provider
-    // declared a whitelist — DeepSeek would reject a tool object missing
+    // declared a whitelist - DeepSeek would reject a tool object missing
     // its discriminator field with the same unknown-variant error.
     const out = prepareClaudeRequest(
       makeBody([{ type: "web_search_20250305", name: "web_search" }]),
@@ -108,7 +108,7 @@ describe("prepareClaudeRequest — provider: deepseek", () => {
   });
 });
 
-describe("prepareClaudeRequest — backward compat: providers without the quirk", () => {
+describe("prepareClaudeRequest - backward compat: providers without the quirk", () => {
   // Pick any non-Claude provider that has a Claude-format transport and has
   // NOT been migrated to the new quirk. This protects GLM / Kimi / future
   // Anthropic-compatible providers from unintended changes.
@@ -121,7 +121,7 @@ describe("prepareClaudeRequest — backward compat: providers without the quirk"
     );
 
     if (!candidate) {
-      // Every Claude-format provider has been migrated — nothing to verify.
+      // Every Claude-format provider has been migrated - nothing to verify.
       return;
     }
 

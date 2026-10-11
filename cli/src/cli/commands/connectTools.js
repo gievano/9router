@@ -105,7 +105,7 @@ const codex = {
     cfg.model = model;
     cfg.model_provider = "9router";
     cfg.model_providers = cfg.model_providers || {};
-    // Custom providers ignore auth.json — key must travel as a static header.
+    // Custom providers ignore auth.json - key must travel as a static header.
     cfg.model_providers["9router"] = {
       name: "9Router",
       base_url: v1(baseUrl),

@@ -1,4 +1,4 @@
-// JSON Guard — repair a model answer so a caller can parse it.
+// JSON Guard - repair a model answer so a caller can parse it.
 //
 // Free and small models are unreliable at machine-readable output: they wrap
 // JSON in prose, fence it, emit Python literals, leave a trailing comma, or get
@@ -98,7 +98,7 @@ function mapOutsideStrings(text, fn) {
 /**
  * Fix the coding slips that make an otherwise-complete payload invalid.
  *
- * Python/JS literals, single-quoted strings, and trailing commas — in that order,
+ * Python/JS literals, single-quoted strings, and trailing commas - in that order,
  * because a single-quoted payload cannot be rewritten after double quotes exist.
  */
 export function repairJsonText(text) {
@@ -126,7 +126,7 @@ export function repairJsonText(text) {
  *
  * Three candidates, tried in order, first that parses wins:
  *
- *   1. append the missing closers to the whole text — only legal when the cut
+ *   1. append the missing closers to the whole text - only legal when the cut
  *      did not land inside a string literal, because a half-written string that
  *      gets closed reads as a complete (but wrong) value
  *   2. roll back to the comma at the innermost still-open level, then close
@@ -196,7 +196,7 @@ export function closeTruncatedJson(text) {
  * Coerce a model answer into a value a caller can parse.
  *
  * Returns { value, repaired, truncated } on success and null when nothing in the
- * answer parses — the caller then decides between surfacing an error and passing
+ * answer parses - the caller then decides between surfacing an error and passing
  * the original text through.
  */
 export function coerceJsonOutput(text) {
@@ -243,7 +243,7 @@ export function coerceJsonOutput(text) {
  * The `function.arguments` string of one tool call, coerced to an object.
  *
  * Returns { args, repaired } with args === null when the arguments are not an
- * object at all — an array or a bare scalar is valid JSON but not a valid
+ * object at all - an array or a bare scalar is valid JSON but not a valid
  * argument list, and the caller must not treat it as one.
  */
 export function coerceToolArguments(raw) {

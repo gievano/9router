@@ -116,7 +116,7 @@ function npmInstall(pkgs, opts = {}) {
   const res = runNpmInstall({ cwd, pkgs, extraArgs: extra, timeout: opts.timeout || 180000 });
   if (!res.ok && !opts.silent) {
     const reason = summarizeNpmError(res.stderr);
-    console.warn("⚠️  SQLite engine install failed — using fallback");
+    console.warn("⚠️  SQLite engine install failed - using fallback");
     console.warn(`   Reason: ${reason}`);
     console.warn(`   Retry:  cd "${cwd}" && npm install ${pkgs.join(" ")}`);
   }
@@ -125,8 +125,8 @@ function npmInstall(pkgs, opts = {}) {
 
 // Public: ensure better-sqlite3 native module is installed in user-writable
 // runtime dir. sql.js may be bundled in bin/app, but npm publish strips .wasm
-// from nested node_modules — verify and reinstall if missing. node:sqlite is
-// built-in. This is purely a *speed optimization* — app works without
+// from nested node_modules - verify and reinstall if missing. node:sqlite is
+// built-in. This is purely a *speed optimization* - app works without
 // better-sqlite3 via fallbacks.
 function isSqlJsWasmValid() {
   const bundledWasm = path.join(__dirname, "..", "app", "node_modules", "sql.js", "dist", "sql-wasm.wasm");
@@ -152,7 +152,7 @@ function ensureSqliteRuntime({ silent = false } = {}) {
 
   // npm injects an implicit `node-gyp rebuild` for any package carrying a
   // binding.gyp, which would demand build tools even though 13.x already bundles
-  // the binary — skip scripts so the bundled prebuild is used as-is.
+  // the binary - skip scripts so the bundled prebuild is used as-is.
   const ok = npmInstall([`better-sqlite3@${BETTER_SQLITE3_VERSION}`], { optional: true, silent, ignoreScripts: USE_NAPI_BUILD });
   return {
     betterSqlite: ok && hasModule("better-sqlite3") && isBetterSqliteBinaryValid(),

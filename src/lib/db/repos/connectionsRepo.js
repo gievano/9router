@@ -108,7 +108,7 @@ export async function getProviderConnectionById(id) {
   return rowToConn(row);
 }
 
-// Internal sync reorder — must be called INSIDE a transaction.
+// Internal sync reorder - must be called INSIDE a transaction.
 //
 // Normalizes priorities to a contiguous 1..N after a DELETE or an explicit
 // reorder, so gaps don't accumulate over time.
@@ -116,7 +116,7 @@ export async function getProviderConnectionById(id) {
 // Deliberately NOT called on insert: a new connection already gets
 // MAX(priority)+1, which sorts after every existing row, so the order is
 // identical with or without the rewrite. Skipping it there is what makes
-// import O(1) per key instead of O(pool) — see createProviderConnection.
+// import O(1) per key instead of O(pool) - see createProviderConnection.
 function reorderInTx(db, providerId) {
   const list = db.all(`SELECT * FROM providerConnections WHERE provider = ?`, [providerId]).map(rowToConn);
   list.sort((a, b) => {
@@ -140,7 +140,7 @@ export async function createProviderConnection(data) {
   db.transaction(() => {
     // apikey connections are deduped by name and need only the current max
     // priority, so query for those directly instead of loading the whole pool
-    // (O(pool) per key — the other half of the import cost in #4311). The oauth
+    // (O(pool) per key - the other half of the import cost in #4311). The oauth
     // branch below still scans, because its identity rules compare fields
     // inside providerSpecificData and have no single-column equivalent.
     const isApikey = data.authType === "apikey" && !!data.name;
@@ -178,7 +178,7 @@ export async function createProviderConnection(data) {
         if (!incomingWs && existingWs) return false;
         // Non-workspace providers: match on (email + username) so cross-IdP
         // accounts don't overwrite each other. Require username on both sides
-        // — if only one side has it, treat as a distinct identity rather than
+        // - if only one side has it, treat as a distinct identity rather than
         // collapsing onto the bare-email fallback (which would re-introduce
         // the cross-IdP overwrite).
         const existingUsername = c.providerSpecificData?.username;
@@ -191,7 +191,7 @@ export async function createProviderConnection(data) {
     } else if (data.authType === "apikey" && data.name) {
       existing = all.find(c => c.authType === "apikey" && c.name === data.name);
     }
-    // access_token: never dedup — user manages duplicates manually
+    // access_token: never dedup - user manages duplicates manually
 
     if (existing) {
       // Name collision on an apikey connection used to silently replace the
@@ -250,7 +250,7 @@ export async function createProviderConnection(data) {
     upsert(db, conn);
     // No reorderInTx here. `conn.priority` is already MAX(priority)+1, so the
     // row sorts last and the resulting order is what reorderInTx would have
-    // produced anyway. The rewrite cost ~2N statements per insert — O(pool) —
+    // produced anyway. The rewrite cost ~2N statements per insert - O(pool) -
     // which made a 5k-key import O(n*m): ~25M statements at a 5k pool, and it
     // serialized every parallel writer on the same transaction. #4311
     result = conn;
@@ -259,7 +259,7 @@ export async function createProviderConnection(data) {
   return result;
 }
 
-// Critical: OAuth refresh token race — atomic merge inside transaction
+// Critical: OAuth refresh token race - atomic merge inside transaction
 export async function updateProviderConnection(id, data) {
   const db = await getAdapter();
   let result;

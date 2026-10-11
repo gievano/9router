@@ -39,7 +39,7 @@ async function validateGrokWeb(apiKey) {
     body: JSON.stringify({ temporary: true, modelName: "grok-4", message: "ping" }),
   });
   if (res.status === 401 || res.status === 403) {
-    return { valid: false, error: "Invalid SSO cookie — re-paste from grok.com DevTools → Cookies → sso" };
+    return { valid: false, error: "Invalid SSO cookie - re-paste from grok.com DevTools → Cookies → sso" };
   }
   return { valid: true, error: null };
 }
@@ -61,7 +61,7 @@ async function validatePerplexityWeb(apiKey) {
     body: JSON.stringify({ query_str: "ping" }),
   });
   if (res.status === 401 || res.status === 403) {
-    return { valid: false, error: "Invalid session cookie — re-paste __Secure-next-auth.session-token from perplexity.ai" };
+    return { valid: false, error: "Invalid session cookie - re-paste __Secure-next-auth.session-token from perplexity.ai" };
   }
   return { valid: true, error: null };
 }

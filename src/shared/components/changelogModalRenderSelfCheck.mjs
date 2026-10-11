@@ -2,7 +2,7 @@
 //
 // Why this exists: esbuild only proves a file parses. The switcher is a list
 // built with a filter and a fallback, so a renamed variable inside it parses
-// fine and throws only when the modal opens — which is a blank changelog for
+// fine and throws only when the modal opens - which is a blank changelog for
 // everyone, with no other place that would surface it.
 //
 // The state is fed through a queue so the loaded, populated case is actually
@@ -174,7 +174,7 @@ run("a closed modal renders nothing", () => {
 
 const failed = results.filter((r) => !r.ok);
 for (const r of results) {
-  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` — ${r.err}` : ""}`);
+  console.log(`${r.ok ? "  ok  " : "  FAIL"} ${r.name}${r.err ? ` - ${r.err}` : ""}`);
 }
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length === 0 ? 0 : 1);

@@ -48,7 +48,7 @@ function startBackgroundTokenRefreshFromCustomServer() {
   if (backgroundRefreshStarted) return;
   backgroundRefreshStarted = true;
   // Prefer source path (repo / standalone that still has src). Fail-open if missing
-  // — initializeApp also starts the same scheduler when the Next app boots.
+  // - initializeApp also starts the same scheduler when the Next app boots.
   const modPath = path.join(__dirname, "src", "sse", "services", "backgroundTokenRefresh.js");
   import(pathToFileURL(modPath).href)
     .then((m) => {

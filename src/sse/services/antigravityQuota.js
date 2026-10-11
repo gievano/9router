@@ -1,5 +1,5 @@
 /**
- * Antigravity live quota cache — in-memory, refreshed on demand.
+ * Antigravity live quota cache - in-memory, refreshed on demand.
  * Used by auth.js pre-filter to skip accounts with exhausted model quota.
  * Also triggered by 409/429 error handler to sync exact resetAt from upstream.
  */
@@ -12,7 +12,7 @@ import * as log from "../utils/logger.js";
 const quotaCache = new Map();
 // Track last refresh per connection to avoid hammering
 const lastRefreshAt = new Map();
-// In-flight refresh promises — dedup concurrent 409/429 bursts
+// In-flight refresh promises - dedup concurrent 409/429 bursts
 const inflightRefresh = new Map();
 
 const MIN_REFRESH_INTERVAL_MS = 30_000; // 30s between refreshes per connection
@@ -31,7 +31,7 @@ const strikeBlocks = new Map(); // "connectionId|model" → blockedUntil ms
 /**
  * Re-apply active strike blocks onto a fresh quotas snapshot so the auth
  * pre-filter (which reads this cache) keeps skipping the blocked pair across
- * requests until the block expires — same channel as the exhausted-0% path.
+ * requests until the block expires - same channel as the exhausted-0% path.
  */
 function applyActiveStrikeBlocks(connectionId, quotas) {
   const now = Date.now();
@@ -131,12 +131,12 @@ async function _doRefresh(connectionId, accessToken, providerSpecificData, now) 
 }
 
 /**
- * Handle Antigravity 409/429 — refresh RAM cache and return model resetAt when exhausted.
+ * Handle Antigravity 409/429 - refresh RAM cache and return model resetAt when exhausted.
  * Called from chat handler error path.
  * @returns {number|null} resetAt timestamp ms (for resetsAtMs passthrough) or null
  */
 export async function handleAntigravityQuotaError(connectionId, status, model, accessToken, providerSpecificData) {
-  log.info("AG_QUOTA", `${connectionId.slice(0, 8)} | ${status} on ${model} — refreshing quota`);
+  log.info("AG_QUOTA", `${connectionId.slice(0, 8)} | ${status} on ${model} - refreshing quota`);
 
   // Throttle applies to error paths too: one quota request per account/30s.
   // The first 409/429 populates cache; concurrent or repeated errors reuse it.
@@ -146,7 +146,7 @@ export async function handleAntigravityQuotaError(connectionId, status, model, a
   // (remaining > 0) or unavailable (quota API 403/error). 3 within the window
   // => the pair is unhealthy regardless of what the API claims; block 15m.
   // 409 counts too by design: Antigravity signals pool exhaustion with 409 as
-  // well (see #3561 — "skip exhausted account/model quota before upstream
+  // well (see #3561 - "skip exhausted account/model quota before upstream
   // retry" was motivated by 409/429 pairs), and poisoning by transient 409s
   // requires 3 of them inside 60 seconds on the same pair.
   if (!quota || quota.remainingPercentage > 0) {
@@ -162,7 +162,7 @@ export async function handleAntigravityQuotaError(connectionId, status, model, a
       strikeCounts.delete(key);
       const blockedUntil = now + STRIKE_BLOCK_MS;
       const reading = quota ? `${Math.round(quota.remainingPercentage)}%` : "unknown";
-      log.warn("AG_QUOTA", `${connectionId.slice(0, 8)} | STRIKE_${status} ${model} — ${count}x 429 (quota ${reading}); CACHE_BLOCK 15m`);
+      log.warn("AG_QUOTA", `${connectionId.slice(0, 8)} | STRIKE_${status} ${model} - ${count}x 429 (quota ${reading}); CACHE_BLOCK 15m`);
       // Synthesize a 0% entry in the shared cache so the auth pre-filter skips
       // this pair on subsequent requests too, not just the current retry loop
       // (the chat handler does not persist modelLock_* for this path).
@@ -182,6 +182,6 @@ export async function handleAntigravityQuotaError(connectionId, status, model, a
   const resetMs = new Date(quota.resetAt).getTime();
   if (resetMs <= Date.now()) return null;
 
-  log.warn("AG_QUOTA", `${connectionId.slice(0, 8)} | UPSTREAM_${status} ${model} — quota exhausted; CACHE_BLOCK until ${quota.resetAt}`);
+  log.warn("AG_QUOTA", `${connectionId.slice(0, 8)} | UPSTREAM_${status} ${model} - quota exhausted; CACHE_BLOCK until ${quota.resetAt}`);
   return resetMs;
 }

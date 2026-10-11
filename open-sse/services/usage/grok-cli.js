@@ -112,7 +112,7 @@ function planFromAccessToken(accessToken) {
 function makeQuota({ used, total, resetAt, unlimited = false }) {
   const safeTotal = Math.max(0, toFiniteNumber(total, 0));
   const safeUsed = Math.max(0, toFiniteNumber(used, 0));
-  // Do NOT set absolute `remaining` — QuotaTable's getRemainingPercentage treats
+  // Do NOT set absolute `remaining` - QuotaTable's getRemainingPercentage treats
   // `remaining` as a 0–100 percentage (same trap as Qoder credits).
   if (unlimited || safeTotal === 0) {
     return {
@@ -226,7 +226,7 @@ export function parseGrokCliBilling(billing, user = null) {
 
   // SuperGrok weekly shared-pool usage (subscription tier). creditUsagePercent is
   // the single total used %; productUsage is a breakdown legend, NOT independent
-  // quotas — never split it into separate bars.
+  // quotas - never split it into separate bars.
   const usedPct = unwrapVal(
     config.creditUsagePercent ?? config.credit_usage_percent ?? root.creditUsagePercent,
     NaN,
@@ -393,7 +393,7 @@ export async function getGrokCliUsage(accessToken, providerSpecificData = null, 
 
     if (!parsed.quotas || Object.keys(parsed.quotas).length === 0) {
       // Paid SuperGrok often returns cap=0 over REST but exposes the shared
-      // weekly pool on GetGrokCreditsConfig — try that before giving up.
+      // weekly pool on GetGrokCreditsConfig - try that before giving up.
       const grpc = await fetchGrokCliCreditsConfig(accessToken, proxyOptions);
       const grpcQuotas = quotasFromGrpcCredits(grpc);
       if (grpcQuotas) {

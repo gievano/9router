@@ -16,7 +16,7 @@ function resolveRouterPath(reqUrl) {
 }
 
 /**
- * Intercept Copilot request — replace model and forward to matching 9Router endpoint
+ * Intercept Copilot request - replace model and forward to matching 9Router endpoint
  */
 async function intercept(req, res, bodyBuffer, mappedModel) {
   try {

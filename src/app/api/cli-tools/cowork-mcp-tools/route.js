@@ -6,7 +6,7 @@ import { isLocalRequest } from "@/dashboardGuard";
 
 const TIMEOUT_MS = 8000;
 
-// Probe MCP server: initialize + tools/list. No auth header — works for authless servers.
+// Probe MCP server: initialize + tools/list. No auth header - works for authless servers.
 // OAuth servers return 401, signal client to skip tool listing.
 async function probeMcp(url) {
   const headers = {

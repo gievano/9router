@@ -4,7 +4,7 @@ import { PROVIDER_MEDIA } from "../providers/index.js";
 import { generateSessionId } from "../executors/opencode-zen.js";
 
 /**
- * Core System One (Jev) handler — native decision payload pass-through.
+ * Core System One (Jev) handler - native decision payload pass-through.
  * URL/headers come from the registry's systemoneConfig; body and JSON response
  * are forwarded untouched (decision models have no chat translation layer).
  *

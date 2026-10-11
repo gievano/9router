@@ -277,7 +277,7 @@ describe("getUsageForProvider(grok-cli)", () => {
     expect(billingCall[1].headers["x-userid"]).toBe(
       "d84768dd-224d-4052-ba49-0d336fa9160c",
     );
-    // REST already has numeric quotas — do not hit gRPC fallback
+    // REST already has numeric quotas - do not hit gRPC fallback
     expect(proxyAwareFetch.mock.calls).toHaveLength(2);
   });
 
@@ -306,12 +306,12 @@ describe("getUsageForProvider(grok-cli)", () => {
       accessToken: "test-token",
     });
 
-    // Dashboard hides QuotaTable when `message` is set — keep message empty
+    // Dashboard hides QuotaTable when `message` is set - keep message empty
     // so the 0% bar still renders for exhausted free/promo accounts.
     expect(usage.message).toBeUndefined();
     expect(usage.quotas["On-demand"].remainingPercentage).toBe(0);
     expect(usage.quotas["On-demand"].total).toBe(1);
-    // Exhausted free already has a quota bar — no gRPC fallback
+    // Exhausted free already has a quota bar - no gRPC fallback
     expect(proxyAwareFetch.mock.calls).toHaveLength(2);
   });
 

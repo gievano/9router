@@ -1,4 +1,4 @@
-// Web Fetch handler — dispatches to firecrawl, jina-reader, tavily, exa, ollama, tinyfish
+// Web Fetch handler - dispatches to firecrawl, jina-reader, tavily, exa, ollama, tinyfish
 // Returns normalized shape across all providers
 
 const DEFAULT_TIMEOUT_MS = 15000;

@@ -97,7 +97,7 @@ def load_ligatures(font_path):
 
 def subset_outlines(codes, tmp):
     """Stage 1: outlines + cmap for the icon PUA codepoints and the a-z0-9_
-    letters every ligature is spelled with. No layout features — closure over
+    letters every ligature is spelled with. No layout features - closure over
     rlig pulls all 4262 ligatures and exhausts memory."""
     out = os.path.join(tmp, "stage1.woff2")
     unicodes = "U+%s,U+61-7A,U+30-39,U+5F" % ",".join(codes)
@@ -114,7 +114,7 @@ def subset_outlines(codes, tmp):
 
 def graft_gsub(stage1, wanted_ligs, out_path):
     """Stage 2: attach only the ligature entries whose glyphs survived stage 1,
-    as a single rlig feature — the feature the original font uses."""
+    as a single rlig feature - the feature the original font uses."""
     import json
     from fontTools.ttLib import TTFont, newTable
     from fontTools.ttLib.tables import otTables
@@ -198,7 +198,7 @@ def main():
             unresolved.append(name)
 
     if not wanted:
-        sys.exit("no icon names matched the font's ligatures — scan patterns need updating")
+        sys.exit("no icon names matched the font's ligatures - scan patterns need updating")
 
     # PUA codepoints of the ligature glyphs, used as the stage-1 selection
     from fontTools.ttLib import TTFont

@@ -3,7 +3,7 @@ import opencodeRegistry from "open-sse/providers/registry/opencode.js";
 // Free OpenCode models that don't use the "-free" id suffix
 const KNOWN_FREE_OPENCODE_MODELS = ["big-pickle"];
 
-// Upstream returns "Model is unavailable" for this id (2026-09-02) — re-enable when fixed
+// Upstream returns "Model is unavailable" for this id (2026-09-02) - re-enable when fixed
 const DEAD_FREE_OPENCODE_MODELS = new Set(["deepseek-v4-flash-free"]);
 
 // tolerant id reader: falls back to `name` when upstream changes its schema
@@ -59,7 +59,7 @@ export const FILTERS = {
       .filter((m) => typeof m?.id === "string" && m.id.trim() !== "")
       .map((m) => ({ id: m.id, name: m.name || m.id })),
 
-  // Go subscription catalogue — every /models id is selectable; the endpoint lane
+  // Go subscription catalogue - every /models id is selectable; the endpoint lane
   // per model is resolved by the family regex (see open-sse/providers/models/helpers.js)
   "opencode-go": (models) =>
     (Array.isArray(models) ? models : [])
@@ -119,7 +119,7 @@ export async function fetchSuggestedModelsServer(fetcher) {
       data = filter(Array.isArray(raw) ? raw : []);
     }
   } catch {
-    // Offline, timed out, or malformed — the fallback below keeps the list useful.
+    // Offline, timed out, or malformed - the fallback below keeps the list useful.
   }
   if (data.length === 0) data = fallback;
 

@@ -1,12 +1,12 @@
 // Regression: an unmatched 4xx (a request-scoped failure) used to hit the
-// transient-cooldown default, which locked the account for 30s and — with a
-// single connection — answered every other request in that window with a copy of
+// transient-cooldown default, which locked the account for 30s and - with a
+// single connection - answered every other request in that window with a copy of
 // the first error. A 400 "maximum context length" from one session therefore
 // looked like the same failure in unrelated sessions.
 import { describe, expect, it } from "vitest";
 import { checkFallbackError } from "../../open-sse/services/accountFallback.js";
 
-describe("checkFallbackError — request-scoped vs account-scoped failures", () => {
+describe("checkFallbackError - request-scoped vs account-scoped failures", () => {
   it("does not cool the account down for a 400 caused by the request", () => {
     const result = checkFallbackError(400, JSON.stringify({
       error: {

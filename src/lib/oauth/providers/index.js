@@ -123,7 +123,7 @@ export async function generateAuthData(providerName, redirectUri, meta) {
     // Zed: surface the system_id embedded in the sign-in URL so the frontend
     // can thread it through register-session → exchange → stored connection
     // (exchangeTokens re-runs prepareConfig, which would otherwise mint a
-    // different one). Absent for every other provider — purely additive.
+    // different one). Absent for every other provider - purely additive.
     ...(config.systemId ? { systemId: config.systemId } : {}),
   };
 }
@@ -185,7 +185,7 @@ export async function pollForToken(providerName, deviceCode, codeVerifier, extra
         } catch (err) {
           // The grant succeeded but post-login exchange failed (e.g. Muse key
           // mint). The device code is one-shot, so re-polling can never
-          // recover — surface as fatal so the client stops and shows the error.
+          // recover - surface as fatal so the client stops and shows the error.
           console.warn(`[oauth] ${providerName} postExchange failed:`, err?.message || err);
           return { success: false, error: "exchange_failed", errorDescription: err.message, fatal: true };
         }

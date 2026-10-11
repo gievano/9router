@@ -1,5 +1,5 @@
 /**
- * Tests for #4217 — Quota Tracker URL ?provider= parameter support.
+ * Tests for #4217 - Quota Tracker URL ?provider= parameter support.
  *
  * Before this fix, visiting /dashboard/quota?provider=codex ignored the query
  * parameter and always defaulted to "All providers". The dropdown selection
@@ -21,7 +21,7 @@ const src = fs.readFileSync(
   "utf-8"
 );
 
-describe("ProviderLimits — URL ?provider= sync (#4217)", () => {
+describe("ProviderLimits - URL ?provider= sync (#4217)", () => {
   it("imports useSearchParams from next/navigation", () => {
     expect(src).toContain("useSearchParams");
     expect(src).toContain("next/navigation");

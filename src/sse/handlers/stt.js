@@ -20,7 +20,7 @@ const CREDENTIALED_PROVIDERS = new Set(
 // Custom-model transport marker: models registered through
 // /api/models/custom may pin a specialized STT transport (e.g.
 // "gemini-live"). The engine dispatches on the marker itself, so the app
-// layer only resolves it — same getModelInfo-style provider+model pairing,
+// layer only resolves it - same getModelInfo-style provider+model pairing,
 // restricted to type "stt" records.
 async function resolveCustomModelTransport(provider, model) {
   try {
@@ -75,7 +75,7 @@ export async function handleStt(request) {
     return errorResponse(result.status || HTTP_STATUS.BAD_GATEWAY, result.error || "STT failed");
   }
 
-  // Credentialed — fallback loop
+  // Credentialed - fallback loop
   const excludeConnectionIds = new Set();
   let lastError = null;
   let lastStatus = null;

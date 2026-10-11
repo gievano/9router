@@ -12,7 +12,7 @@ import { beginSession, encodeSessionCookie, rewriteMimoBases, absorbSetCookies a
  * All subsequent account.xiaomi.com traffic flows through src/proxy.js.
  *
  * Egress resolution: MIMO_LOGIN_PROXY env > (region=sgp: probe common LOCAL
- * HTTP proxy ports — v2rayN/clash defaults) > direct. The resolved URL rides
+ * HTTP proxy ports - v2rayN/clash defaults) > direct. The resolved URL rides
  * the session cookie so every hop/XHR uses the same exit.
  */
 
@@ -30,7 +30,7 @@ function probeLocalHttpProxy(timeoutMs = 500) {
         const done = (v) => {
           if (settled) return;
           settled = true;
-          // Promise.any picks the first FULFILLED value — failures must reject,
+          // Promise.any picks the first FULFILLED value - failures must reject,
           // otherwise an instant ECONNREFUSED from a closed candidate port would
           // "win" with null before the real proxy answers.
           if (v) resolve(v);
@@ -74,13 +74,13 @@ export async function POST(request) {
     try {
       const body = await request.json();
       const r = String(body?.region || "").toLowerCase();
-      // Known MiMo Desktop clusters (cn/sgp/ams/ru/in) — default cn.
+      // Known MiMo Desktop clusters (cn/sgp/ams/ru/in) - default cn.
       if (r === "cn" || r === "sgp" || r === "ams" || r === "ru" || r === "in") region = r;
-    } catch { /* empty body — default cn */ }
+    } catch { /* empty body - default cn */ }
 
     const sess = beginSession(region);
 
-    // Egress — non-CN clusters may need an overseas exit for the login page's
+    // Egress - non-CN clusters may need an overseas exit for the login page's
     // geo-decided features (e.g. Google sign-in); CN is always direct.
     let egress = null;
     let egressSource = "direct";
@@ -99,7 +99,7 @@ export async function POST(request) {
     const ssoLoc = meRes.headers.get("location");
     if (!ssoLoc || !/account\.xiaomi\.com/.test(ssoLoc)) {
       return NextResponse.json(
-        { error: `Unexpected me response (${meRes.status}) — no account redirect` },
+        { error: `Unexpected me response (${meRes.status}) - no account redirect` },
         { status: 502 },
       );
     }
@@ -118,7 +118,7 @@ export async function POST(request) {
     // Same-origin path for the SPA (middleware proxies native prefixes).
     const pageUrl = new URL(pageLoc, "https://account.xiaomi.com");
     const origin = originOf(request);
-    // Session travels ONLY in the httpOnly cookie — never in the URL (history,
+    // Session travels ONLY in the httpOnly cookie - never in the URL (history,
     // logs, Referer). /login/status re-arms the cookie on every poll, so a
     // dropped-cookie browser still recovers on the next poll cycle.
     const proxiedPath = rewriteMimoBases(pageUrl.pathname + pageUrl.search, "toProxy", origin);

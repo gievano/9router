@@ -163,7 +163,7 @@ describe("PR #1175 - false positive risks", () => {
       "2026-05-16 10:00:15 INFO Connection restored"
     ].join("\n");
     const filter = autoDetectFilter(input);
-    // Document actual behavior — may detect as buildOutput
+    // Document actual behavior - may detect as buildOutput
     console.log("[generic-error-log] detected:", filter?.filterName || "null");
     // Whatever the detection, the filter should NOT corrupt the data
     if (filter === buildOutput) {

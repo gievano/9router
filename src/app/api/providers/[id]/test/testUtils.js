@@ -29,7 +29,7 @@ const OAUTH_TEST_CONFIG = {
     authHeader: "Authorization",
     authPrefix: "Bearer ",
     extraHeaders: { "Content-Type": "application/json", "originator": "codex_cli_rs", "User-Agent": `codex_cli_rs/${CODEX_CLI_VERSION}` },
-    // Minimal invalid body — triggers fast 400 without consuming quota
+    // Minimal invalid body - triggers fast 400 without consuming quota
     body: JSON.stringify({ model: "gpt-5.3-codex", input: [], stream: false, store: false }),
     // 400 (bad request) means auth succeeded; only 401/403 means token is bad
     acceptStatuses: [400],
@@ -66,7 +66,7 @@ const OAUTH_TEST_CONFIG = {
   qoder: {
     // Test by hitting Qoder's userinfo endpoint with the device token.
     // refreshable: false because the device-flow refresh endpoint returns
-    // 403 for our flow (users re-login when expired). No checkExpiry —
+    // 403 for our flow (users re-login when expired). No checkExpiry -
     // we want the actual URL probe to run so revoked tokens surface.
     url: "https://openapi.qoder.sh/api/v1/userinfo",
     method: "GET",
@@ -93,7 +93,7 @@ const OAUTH_TEST_CONFIG = {
   },
   cline: { refreshable: true },
   gitlab: {
-    // Test by hitting the GitLab user API — requires api or read_user scope
+    // Test by hitting the GitLab user API - requires api or read_user scope
     url: "https://gitlab.com/api/v4/user",
     method: "GET",
     authHeader: "Authorization",
@@ -111,7 +111,7 @@ const OAUTH_TEST_CONFIG = {
     },
     refreshable: false,
   },
-  // Grok CLI / Grok Build — probe /v1/user (no inference quota). Headers mirror official CLI.
+  // Grok CLI / Grok Build - probe /v1/user (no inference quota). Headers mirror official CLI.
   "grok-cli": {
     url: PROVIDERS["grok-cli"]?.userUrl || "https://cli-chat-proxy.grok.com/v1/user",
     method: "GET",
@@ -127,14 +127,14 @@ const OAUTH_TEST_CONFIG = {
       }),
     },
     refreshable: true,
-    // Subscription spending-limit is not an auth failure — token is fine, credits aren't.
+    // Subscription spending-limit is not an auth failure - token is fine, credits aren't.
     // Accept 402 so the connection stays "active" with a warning (same idea as Codex 400).
     acceptStatuses: [402],
     softFailMessage: {
       402: "Connected, but Grok Build credits are exhausted (spending limit). Add credits or upgrade SuperGrok.",
     },
   },
-  // Muse Code subscription — probe /v1/models with the minted LLM|… key
+  // Muse Code subscription - probe /v1/models with the minted LLM|… key
   "muse": {
     url: "https://api.meta.ai/v1/models",
     method: "GET",
@@ -148,7 +148,7 @@ const OAUTH_TEST_CONFIG = {
 /**
  * Classify an OAuth probe response as success / soft-success / hard-fail.
  * Soft success (e.g. 402 spending-limit on Grok CLI) means auth works but the
- * account cannot spend — keep connection active and surface a warning.
+ * account cannot spend - keep connection active and surface a warning.
  * Exported for unit tests.
  */
 export function classifyOAuthProbeResult(res, config, bodyText = "") {
@@ -163,7 +163,7 @@ export function classifyOAuthProbeResult(res, config, bodyText = "") {
 
   // Soft success only when the provider configured an explicit message for this
   // status (e.g. Grok CLI 402 spending-limit). Codex-style acceptStatuses:[400]
-  // stays silent success — 400 there only proves auth, not a user-facing warning.
+  // stays silent success - 400 there only proves auth, not a user-facing warning.
   if (!res.ok && config?.acceptStatuses?.includes(status)) {
     const softMap = config.softFailMessage || {};
     if (softMap[status]) {
@@ -785,7 +785,7 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         // Connectivity-only probe: GET /models never exercises the Responses
         // tool path, so a green dashboard test does NOT rule out 403
         // FreeTierError on POST /zen/v1/responses with tools (requires
-        // bash+read decoys + tool_choice auto — see OpenCodeExecutor).
+        // bash+read decoys + tool_choice auto - see OpenCodeExecutor).
         const res = await fetchWithConnectionProxy("https://opencode.ai/zen/v1/models", {
           headers: { Authorization: "Bearer public", "User-Agent": "opencode/1.18.31" },
         }, effectiveProxy);
@@ -847,7 +847,7 @@ case "llm7": {
         return { valid: res.ok, error: res.ok ? null : "Invalid API key or base URL" };
       }
       case "kimchi": {
-        // Dual-auth: same validation endpoint as the OAuth flow — the token (API key
+        // Dual-auth: same validation endpoint as the OAuth flow - the token (API key
         // or OAuth access token) is sent as Authorization: Bearer.
         const url = KIMCHI_CONFIG.validationUrl || "https://api.cast.ai/v1/llm/openai/supported-providers";
         const res = await fetchWithConnectionProxy(url, {

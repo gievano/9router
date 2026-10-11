@@ -50,7 +50,7 @@ export async function POST(request) {
   let success = 0;
   let failed = 0;
 
-  // SERIAL loop — createProviderConnection reads max(priority) and reorders
+  // SERIAL loop - createProviderConnection reads max(priority) and reorders
   // inside a transaction. Parallel calls would race on priority assignment.
   for (let i = 0; i < accounts.length; i++) {
     const raw = accounts[i];

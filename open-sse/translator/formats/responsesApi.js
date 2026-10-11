@@ -3,7 +3,7 @@ import { ROLE, OPENAI_BLOCK, RESPONSES_ITEM } from "../schema/index.js";
 /**
  * Normalize Responses API input to array format.
  * Accepts string or array, returns array of message items.
- * An empty array is treated like an empty string — providers require at least one user
+ * An empty array is treated like an empty string - providers require at least one user
  * message, so we inject a placeholder rather than forwarding an empty messages[].
  * @param {string|Array} input - raw input from Responses API body
  * @returns {Array|null} normalized array or null if invalid
@@ -27,7 +27,7 @@ export function normalizeResponsesInput(input) {
 export const MAX_RESPONSES_CALL_ID_LEN = 64;
 
 // Fallback ids share one Date.now() when a batch of items is sanitized in a tight
-// loop — a per-process sequence keeps same-millisecond ids unique so
+// loop - a per-process sequence keeps same-millisecond ids unique so
 // function_call ↔ function_call_output correlation never collides.
 let responsesCallIdSeq = 0;
 
@@ -56,7 +56,7 @@ export function coerceResponsesArguments(value) {
   }
 }
 
-// function_call_output.output must be a string — never null/object.
+// function_call_output.output must be a string - never null/object.
 export function coerceResponsesOutput(value) {
   if (typeof value === "string") return value;
   if (value === undefined || value === null) return "";
@@ -142,7 +142,7 @@ export function convertResponsesApiFormat(body) {
           tool_calls: []
         };
       }
-      // Skip items with empty/missing name — upstream APIs reject nameless tool calls (#444)
+      // Skip items with empty/missing name - upstream APIs reject nameless tool calls (#444)
       if (!item.name || typeof item.name !== "string" || item.name.trim() === "") continue;
       currentAssistantMsg.tool_calls.push({
         id: item.call_id,

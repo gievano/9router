@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, Button, Badge, Modal, Input, ModelSelectModal } from "@/shared/components";
 import Image from "next/image";
 
-/** Claude 5.5 model ids — gated behind Antigravity's own paid tier, not Google One. */
+/** Claude 5.5 model ids - gated behind Antigravity's own paid tier, not Google One. */
 const isClaude55 = (id = "") =>
   /opus[-_.]?5[-_.]?5/i.test(id) || /sonnet[-_.]?5[-_.]?5/i.test(id);
 
@@ -275,7 +275,7 @@ export default function AntigravityToolCard({
 
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-border flex flex-col gap-4">
-          {/* Status indicators — ordered: Cert → Server → DNS */}
+          {/* Status indicators - ordered: Cert → Server → DNS */}
           <div className="flex items-center gap-1">
             {[
               { key: "cert", label: "Cert", ok: status?.certExists },

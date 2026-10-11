@@ -54,7 +54,7 @@ export default {
     },
   ],
   models: [
-    // Flagship K3 — platform.kimi.ai id `kimi-k3`, Kimi Code OAuth id `k3` (up to 1M)
+    // Flagship K3 - platform.kimi.ai id `kimi-k3`, Kimi Code OAuth id `k3` (up to 1M)
     { id: "kimi-k3", name: "Kimi K3" },
     { id: "k3", name: "Kimi K3 (Code)" },
     // Kimi Code subscription stable ids (map to K2.7 Code backend)
@@ -85,7 +85,7 @@ export default {
   },
   features: {
     usage: true,
-    // API-key connections also hit /v1/usages (x-api-key) — need usageApikey
+    // API-key connections also hit /v1/usages (x-api-key) - need usageApikey
     // so isUsageEligible + /api/usage allow non-oauth authType.
     usageApikey: true,
   },

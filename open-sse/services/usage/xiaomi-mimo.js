@@ -1,5 +1,5 @@
 /**
- * Xiaomi MiMo usage — weekly quota from the Xiaomi account session.
+ * Xiaomi MiMo usage - weekly quota from the Xiaomi account session.
  *
  * Primary path: GET {mimo-server}/api/user/usage authorized by the account-session
  * cookie (see shared/mimoAccount.js). Response: { code: 0, data: { percent (remaining
@@ -98,7 +98,7 @@ export async function getXiaomiMimoUsage(accessToken = null, providerSpecificDat
     const remaining = Math.max(0, Math.min(100, Math.round(percent)));
     const used = 100 - remaining;
 
-    // Parse resetDate — expected format "2026-09-16"
+    // Parse resetDate - expected format "2026-09-16"
     let resetAt = null;
     if (resetDate && typeof resetDate === "string") {
       const parsed = new Date(`${resetDate}T00:00:00Z`);

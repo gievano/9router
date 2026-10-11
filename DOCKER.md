@@ -1,6 +1,6 @@
 # Docker
 
-Run 9Router in a container. Published image: [`decolua/9router`](https://hub.docker.com/r/decolua/9router) — multi-platform `linux/amd64` + `linux/arm64`.
+Run 9Router in a container. Published image: [`decolua/9router`](https://hub.docker.com/r/decolua/9router) - multi-platform `linux/amd64` + `linux/arm64`.
 
 ---
 

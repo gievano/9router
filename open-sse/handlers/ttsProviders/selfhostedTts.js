@@ -1,4 +1,4 @@
-// Self-hosted OpenAI-compatible TTS — POST {baseUrl}/v1/audio/speech.
+// Self-hosted OpenAI-compatible TTS - POST {baseUrl}/v1/audio/speech.
 //
 // A SPECIAL_ADAPTER rather than a genericFormats handler on purpose: the generic
 // dispatcher resolves baseUrl from the static registry entry
@@ -16,7 +16,7 @@ export default {
     // STT providers carry it) or a bare credentials.baseUrl (how the OpenAI TTS
     // adapter does), so a connection configured either way works.
     const raw = credentials?.providerSpecificData?.baseUrl || credentials?.baseUrl || DEFAULT_BASE_URL;
-    // Tolerate a baseUrl given as the full endpoint or with a trailing /v1 —
+    // Tolerate a baseUrl given as the full endpoint or with a trailing /v1 -
     // both are natural things to paste, and silently double-appending the path
     // would 404 with nothing pointing at the cause.
     const base = String(raw)
@@ -25,14 +25,14 @@ export default {
       .replace(/\/v1$/, "");
 
     // The provider prefix is already stripped by getModelInfo, so `model` here is
-    // "kokoro" or "kokoro/af_heart" — NOT "selfhosted-tts/...".
+    // "kokoro" or "kokoro/af_heart" - NOT "selfhosted-tts/...".
     //
     // A bare value is the MODEL, not the voice. The OpenAI adapter reads a bare
     // value as a voice, which is right for a service whose model is fixed
-    // ("tts-1") and whose voice varies — but wrong here, where the model is the
+    // ("tts-1") and whose voice varies - but wrong here, where the model is the
     // variable part. Treating it as a voice sent voice="kokoro" upstream and
-    // Kokoro answered 400, so `selfhosted-tts/kokoro` — the obvious way to
-    // address this provider — was the one form that did not work (verified
+    // Kokoro answered 400, so `selfhosted-tts/kokoro` - the obvious way to
+    // address this provider - was the one form that did not work (verified
     // against a live Kokoro through 9router, 2026-08-03).
     let ttsModel = DEFAULT_MODEL;
     let voice = DEFAULT_VOICE;

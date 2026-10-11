@@ -6,7 +6,7 @@ import { Card, Button, Badge, Input } from "@/shared/components";
 const DEFAULT_MITM_ROUTER_BASE = "http://localhost:20128";
 
 /**
- * Shared MITM infrastructure card — manages SSL cert + server start/stop.
+ * Shared MITM infrastructure card - manages SSL cert + server start/stop.
  * DNS per-tool is handled separately in MitmToolCard.
  */
 export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }) {
@@ -172,7 +172,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
             </p>
           </div>
 
-          {/* Base URL + API Key — same row pattern as Claude Code / cli-tools */}
+          {/* Base URL + API Key - same row pattern as Claude Code / cli-tools */}
           <div className="flex flex-col gap-2">
             <div className="grid gap-1 sm:grid-cols-[8rem_auto_1fr] sm:items-center sm:gap-2">
               <span className="text-xs font-semibold text-text-main sm:text-right sm:text-sm">9Router Base URL</span>
@@ -258,7 +258,7 @@ export default function MitmServerCard({ apiKeys, cloudEnabled, onStatusChange }
           {serverIsWindows && !isAdmin && (
             <div className="flex items-center gap-2 px-2 py-1.5 rounded text-xs bg-red-500/10 text-red-600 border border-red-500/20">
               <span className="material-symbols-outlined text-[14px]">shield_lock</span>
-              <span>Administrator required — restart 9Router as Administrator to use MITM</span>
+              <span>Administrator required - restart 9Router as Administrator to use MITM</span>
             </div>
           )}
         </div>

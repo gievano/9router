@@ -7,7 +7,7 @@ import { bucketTimestampsByDowHour } from "./activityBuckets.js";
  * Shared visual atoms for the Usage Overview: a tiny trend line for the
  * summary cards (#16) and an hour×weekday activity grid (#15).
  *
- * Both take plain arrays and never fetch — the caller owns data and refresh.
+ * Both take plain arrays and never fetch - the caller owns data and refresh.
  */
 
 function extent(values) {
@@ -105,7 +105,7 @@ function cellColor(value, max) {
  * Activity heatmap: requests per weekday × hour.
  *
  * Rows are Mon…Sun, columns are 00–23, so a nightly cron or a working-hours
- * spike is visible at a glance. Cells with no traffic stay outlined — an
+ * spike is visible at a glance. Cells with no traffic stay outlined - an
  * inactive slot still reads as "checked, empty" rather than a hole.
  */
 export function ActivityHeatmap({ grid = [], max = 0, cell = 14, gap = 3 }) {
@@ -123,7 +123,7 @@ export function ActivityHeatmap({ grid = [], max = 0, cell = 14, gap = 3 }) {
               {row.map((v, hi) => (
                 <div
                   key={hi}
-                  title={`${dayNames[di]} ${String(hi).padStart(2, "0")}:00 — ${v} request${v === 1 ? "" : "s"}`}
+                  title={`${dayNames[di]} ${String(hi).padStart(2, "0")}:00 - ${v} request${v === 1 ? "" : "s"}`}
                   className="rounded-[2px] border border-border"
                   style={{ width: cell, height: cell, backgroundColor: cellColor(v, max) }}
                 />

@@ -19,7 +19,7 @@ describe("studio catalogue: no trace of the upstream model", () => {
   it("stops publishing resolved_model", () => {
     expect(v1models).not.toContain("resolved_model:");
     // the only remaining mention of the target is a code comment explaining why
-    // the catalogue must NOT name it — no entry, key, or rendered field may
+    // the catalogue must NOT name it - no entry, key, or rendered field may
     expect(v1models).toContain("but the catalogue must not name that target");
     const codeLines = v1models
       .split("\n")

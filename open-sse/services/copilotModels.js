@@ -111,7 +111,7 @@ export async function resolveCopilotModels(credentials, options = {}) {
   try {
     raw = await fetchCatalogRaw(token, options.signal);
   } catch (err) {
-    // A 401/403 means the Copilot token is stale — refresh from the GitHub
+    // A 401/403 means the Copilot token is stale - refresh from the GitHub
     // access token and retry once.
     if (err && (err.status === 401 || err.status === 403) && credentials.accessToken) {
       options.log?.info?.("COPILOT_MODELS", `Got ${err.status}; refreshing Copilot token`);

@@ -1,5 +1,5 @@
 /**
- * `9router xai video` — generate a Grok Imagine video through the local
+ * `9router xai video` - generate a Grok Imagine video through the local
  * 9router gateway and save the result as an MP4 file.
  *
  * Flow: POST /v1/videos/generations → poll GET /v1/videos/{request_id}
@@ -26,7 +26,7 @@ const HELP = `
 Usage: 9router xai video --prompt "..." [options]
 
 Generate a Grok Imagine video via your local 9router gateway
-(requires a connected xAI account — Grok Build OAuth or API key).
+(requires a connected xAI account - Grok Build OAuth or API key).
 
 Options:
   --prompt <text>         Video description (required)
@@ -123,7 +123,7 @@ const sleep = (ms, signal) =>
 
 /**
  * Poll GET /v1/videos/{id} until a terminal status or deadline.
- * @returns {Promise<object>} final poll body (status done) — throws on failed/timeout.
+ * @returns {Promise<object>} final poll body (status done) - throws on failed/timeout.
  */
 async function pollUntilDone({ host, port, apiKey, requestId, connectionId, timeoutSec, pollIntervalMs, signal, onProgress }) {
   const deadline = Date.now() + timeoutSec * 1000;

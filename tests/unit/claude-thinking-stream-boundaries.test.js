@@ -8,7 +8,7 @@
 //
 // The Responses translators leaned on that "</think>" marker as their only signal
 // to close the reasoning item before the answer. Dropping the marker therefore
-// requires closing reasoning when the first message text or tool call arrives —
+// requires closing reasoning when the first message text or tool call arrives -
 // which also fixes item ordering for every reasoning_content provider (DeepSeek,
 // GLM, Qwen, Kimi), not just Claude.
 import { describe, it, expect } from "vitest";
@@ -18,7 +18,7 @@ import { createSSETransformStreamWithLogger } from "../../open-sse/utils/stream.
 import { createResponsesApiTransformStream } from "../../open-sse/transformer/responsesTransformer.js";
 
 const THINKING = "391 factors as 17 times 23, so it's not prime.";
-const ANSWER = "No — 391 = 17 × 23.";
+const ANSWER = "No - 391 = 17 × 23.";
 
 function claudeThinkingStream({ thinkingText = THINKING, answer = ANSWER } = {}) {
   const thinkingDeltas = thinkingText

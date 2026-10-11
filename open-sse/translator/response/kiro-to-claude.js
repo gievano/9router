@@ -5,7 +5,7 @@
  * KiroExecutor.transformEventStreamToSSE() (open-sse/executors/kiro.js) already
  * parses the binary EventStream and emits OpenAI-shaped
  * `chat.completion.chunk` objects. So the chunks arriving here are OpenAI
- * streaming chunks, and our job is OpenAI-chunk → Claude SSE events — the same
+ * streaming chunks, and our job is OpenAI-chunk → Claude SSE events - the same
  * transformation openai-to-claude.js performs. We re-implement it here so the
  * direct `kiro:claude` route is self-contained and lossless (reasoning_content
  * → thinking blocks, tool_calls → tool_use blocks, usage → message_delta).
@@ -56,7 +56,7 @@ function restoreToolName(stateOrData, name) {
 
 export function kiroToClaudeResponse(chunk, state) {
   // KiroExecutor emits chat.completion.chunk objects; tolerate string chunks
-  // by attempting a parse (defensive — the direct path is always objects).
+  // by attempting a parse (defensive - the direct path is always objects).
   let data = chunk;
   if (typeof chunk === "string") {
     const trimmed = chunk.trim();

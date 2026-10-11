@@ -1,18 +1,18 @@
-// Model capabilities — what each model can read/do beyond plain text.
+// Model capabilities - what each model can read/do beyond plain text.
 //
 // Fallback order (first match wins), result merged over DEFAULT_CAPABILITIES:
-//   1. PROVIDER_CAPABILITIES[provider][model]  — provider-specific override
-//   2. MODEL_CAPABILITIES[model]               — canonical exact id (handles exceptions)
-//   3. PATTERN_CAPABILITIES                     — glob match, ordered specific -> generic
-//   4. DEFAULT_CAPABILITIES                     — safe floor (always returned)
+//   1. PROVIDER_CAPABILITIES[provider][model]  - provider-specific override
+//   2. MODEL_CAPABILITIES[model]               - canonical exact id (handles exceptions)
+//   3. PATTERN_CAPABILITIES                     - glob match, ordered specific -> generic
+//   4. DEFAULT_CAPABILITIES                     - safe floor (always returned)
 //
 // Two extra layers then refine the result, and neither can override the hand
 // written tables above (steps 1-2 short-circuit before they are consulted):
-//   • the synced catalog — modalities keyed by model, limits keyed by provider
+//   • the synced catalog - modalities keyed by model, limits keyed by provider
 //     + model, refreshed from models.dev in the background. It reads a file, so
 //     the server installs it via setCatalogSource(); this module stays free of
 //     node:fs because the dashboard bundles it into the browser too.
-//   • visionPatterns.js — name-based vision detection, last resort so a model
+//   • visionPatterns.js - name-based vision detection, last resort so a model
 //     nobody has catalogued yet still accepts images.
 // Both only ever turn a capability ON.
 //
@@ -36,7 +36,7 @@ import { matchPattern } from "./pricing.js";
 import { looksLikeVisionModel } from "./visionPatterns.js";
 
 /**
- * Safe floor — every resolved result is merged over this so consumers
+ * Safe floor - every resolved result is merged over this so consumers
  * never need null-checks. Most modern LLMs meet these limits.
  */
 export const DEFAULT_CAPABILITIES = {
@@ -79,13 +79,13 @@ export function capabilitiesFromServiceKind(kind) {
 }
 
 /**
- * Canonical exact-id overrides — used for exceptions that patterns would
+ * Canonical exact-id overrides - used for exceptions that patterns would
  * otherwise mis-match. Only declare deltas vs DEFAULT.
  */
 export const MODEL_CAPABILITIES = {
   // Claude Fable 5.1, Opus 5.5/5, 4.6/4.7/4.8, and Kiro Sonnet 5 have 1M context + adaptive thinking (override generic claude pattern)
   "claude-fable-5-1": { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 },
-  // Claude Opus 5.5 — experimental preview on Kiro (rateMultiplier: 2.0, 1M context) (#4410)
+  // Claude Opus 5.5 - experimental preview on Kiro (rateMultiplier: 2.0, 1M context) (#4410)
   "claude-opus-5.5":                   { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000 },
   "claude-opus-5.5-thinking":          { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000 },
   "claude-opus-5.5-agentic":           { vision: true, reasoning: true, search: true, thinkingFormat: "claude-adaptive", contextWindow: 1000000, maxOutput: 128000 },
@@ -114,22 +114,22 @@ export const MODEL_CAPABILITIES = {
   // Gemini image-gen / OpenAI image / xai image variants
   "gpt-image-1":       { imageOutput: true, tools: false },
 
-  // GLM vision variants (text GLM has no vision) — 5.3-Flash and 5V-Turbo are
+  // GLM vision variants (text GLM has no vision) - 5.3-Flash and 5V-Turbo are
   // natively multimodal per z.ai, and 5.3-Flash carries the full 1M window.
-  // GLM-5.3 / 5.3-Flash cannot disable thinking — z.ai answers 400 code 1210
+  // GLM-5.3 / 5.3-Flash cannot disable thinking - z.ai answers 400 code 1210
   // "Invalid API parameter" when thinking.type is set to disabled. Ported from
   // upstream #4656 (fixes #4409).
   "glm-5.3-flash":     { vision: true, videoInput: true, pdf: true, reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 131072 },
   "glm-4.6v":          { vision: true, videoInput: true, reasoning: true, thinkingFormat: "zai", contextWindow: 128000, maxOutput: 32768 },
   "glm-4.5v":          { vision: true, videoInput: true, reasoning: true, thinkingFormat: "zai", contextWindow: 64000, maxOutput: 16384 },
-  // GLM-5.2 has 1M context — pattern *glm-5* only gives 200k, so override here
+  // GLM-5.2 has 1M context - pattern *glm-5* only gives 200k, so override here
   "glm-5.2":           { reasoning: true, thinkingFormat: "zai", thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 131072 },
 
   // DeepSeek's first V4 model with image input; text limits match V4-Flash.
   "deepseek-v4-flash-vision-exp": { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
 
-  // DeepSeek V4.1-Flash is natively multimodal — models.dev lists
-  // opencode-go/deepseek-v4.1-flash with modalities.input ["text","image"] — and upstream
+  // DeepSeek V4.1-Flash is natively multimodal - models.dev lists
+  // opencode-go/deepseek-v4.1-flash with modalities.input ["text","image"] - and upstream
   // the retired v4-flash / vision-exp ids route to it, so the live V4.1 ids carry the
   // same image capability as the exp id above. "deepseek-flash" is the GA id on the
   // DeepSeek API; it previously fell through to the generic *deepseek* pattern, whose
@@ -138,18 +138,20 @@ export const MODEL_CAPABILITIES = {
   "deepseek-v4.1-flash": { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 1000000, maxOutput: 384000 },
   "deepseek-flash":      { vision: true, reasoning: true, thinkingFormat: "deepseek", contextWindow: 128000, maxOutput: 64000 },
 
-  // Qwen plain coder/text (no vision) — registry "vision-model" / "coder-model" aliases
+  // Qwen plain coder/text (no vision) - registry "vision-model" / "coder-model" aliases
   "vision-model":      { vision: true, reasoning: true, thinkingFormat: "qwen", contextWindow: 1000000 },
   "coder-model":       { reasoning: true, thinkingFormat: "qwen", contextWindow: 1000000 },
 
-  // Kimi flagship + coding (platform + Kimi Code ids) — vision/video native
+  // Kimi flagship + coding (platform + Kimi Code ids) - vision/video native
   "kimi-k3":           { vision: true, videoInput: true, reasoning: true, thinkingFormat: "kimi", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 131072 },
   "k3":                { vision: true, videoInput: true, reasoning: true, thinkingFormat: "kimi", thinkingCanDisable: false, contextWindow: 1048576, maxOutput: 131072 },
   "kimi-for-coding":   { vision: true, videoInput: true, reasoning: true, thinkingFormat: "kimi", thinkingCanDisable: false, contextWindow: 262144, maxOutput: 65536 },
   "kimi-for-coding-highspeed": { vision: true, videoInput: true, reasoning: true, thinkingFormat: "kimi", thinkingCanDisable: false, contextWindow: 262144, maxOutput: 65536 },
   "kimi-k2.7-code":    { vision: true, videoInput: true, reasoning: true, thinkingFormat: "kimi", thinkingCanDisable: false, contextWindow: 262144, maxOutput: 65536 },
   "kimi-k2.7-code-highspeed": { vision: true, videoInput: true, reasoning: true, thinkingFormat: "kimi", thinkingCanDisable: false, contextWindow: 262144, maxOutput: 65536 },
-  // OpenCode Free Muse Spark — multimodal (text+image per models.dev meta/muse-spark)
+  // OpenCode Zen still serves Union Alpha; the free tier no longer does.
+  "union-alpha":      { vision: true, reasoning: true, thinkingFormat: "anthropic", contextWindow: 262144, maxOutput: 131072 },
+  // OpenCode Free Muse Spark - multimodal (text+image per models.dev meta/muse-spark)
   // via OpenAI Responses input_image; reasoning supports up to xhigh.
   "muse-spark-1.2-contributor-free": { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1048576, maxOutput: 131072 },
   "muse-spark-1.3-contributor-free": { vision: true, reasoning: true, thinkingFormat: "openai", contextWindow: 1048576, maxOutput: 131072 },
@@ -157,7 +159,7 @@ export const MODEL_CAPABILITIES = {
 
 const KIRO_GPT_5_6_CAPABILITIES = { vision: true, reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 };
 
-// Codex OAuth (ChatGPT backend) — per-model context window reported by upstream
+// Codex OAuth (ChatGPT backend) - per-model context window reported by upstream
 // (lower than OpenAI API's 1.05M). Sol differs from Terra/Luna. #2720
 const CODEX_GPT_56_SOL_CAPS  = { vision: true, reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 372000, maxOutput: 128000 };
 const CODEX_GPT_56_DEFAULT_CAPS = { vision: true, reasoning: true, search: true, thinkingFormat: "openai", contextWindow: 272000, maxOutput: 128000 };
@@ -213,11 +215,11 @@ export const PROVIDER_CAPABILITIES = {
     "gpt-5.6-terra-thinking-agentic": KIRO_GPT_5_6_CAPABILITIES,
     "gpt-5.6-luna-thinking-agentic": KIRO_GPT_5_6_CAPABILITIES,
   },
-  // CodeBuddy.cn — authoritative per-model metadata from the gateway's model
+  // CodeBuddy.cn - authoritative per-model metadata from the gateway's model
   // config (contextWindow=maxInputTokens, maxOutput=maxOutputTokens, vision=
   // supportsImages). Every model reasons via OpenAI-style reasoning_effort
   // (see registry thinkingFormat). For thinkingCanDisable use the server's
-  // reasoning.canDisableThinking flag — see the note in the codebuddy-cn block
+  // reasoning.canDisableThinking flag - see the note in the codebuddy-cn block
   // below; it is NOT the inverse of onlyReasoning.
   "codebuddy-cn": {
     "glm-5.2":            { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 48000 },
@@ -239,7 +241,7 @@ export const PROVIDER_CAPABILITIES = {
     // maxInputTokens/maxOutputTokens/supportsImages). contextWindow =
     // maxInputTokens, maxOutput = maxOutputTokens. Where the server and the
     // plugin-baked fallback disagree, the server table wins.
-    // ⚠️ thinkingCanDisable maps to the server's reasoning.canDisableThinking —
+    // ⚠️ thinkingCanDisable maps to the server's reasoning.canDisableThinking -
     // it is NOT the inverse of onlyReasoning. onlyReasoning means "thinking is
     // on by default"; canDisableThinking means "it CAN be turned off". glm-5.3
     // and glm-5.3-flash are onlyReasoning:true BUT canDisableThinking:true, so
@@ -255,16 +257,16 @@ export const PROVIDER_CAPABILITIES = {
     // contract). maxOutput 128000 per the server's product-config payload.
     "deepseek-v4.1-flash": { vision: true, reasoning: true, thinkingFormat: "openai", thinkingCanDisable: true, contextWindow: 1000000, maxOutput: 128000 },
   },
-  // Poolside Laguna — OpenAI-compatible, all reasoning-capable (32K max output).
+  // Poolside Laguna - OpenAI-compatible, all reasoning-capable (32K max output).
   "poolside": {
     "laguna-s-2.1":  { reasoning: true, thinkingFormat: "openai", contextWindow: 1000000, maxOutput: 32000 },
     "laguna-xs-2.1": { reasoning: true, thinkingFormat: "openai", contextWindow: 200000, maxOutput: 32000 },
   },
-  // Ollama Cloud — the generic *deepseek-v4* pattern misses the vision badge
+  // Ollama Cloud - the generic *deepseek-v4* pattern misses the vision badge
   // the library page publishes for this model (text+image in, 1M context).
   // ponytail: thinkingFormat stays "deepseek" to preserve today's body shape;
   // Ollama's native toggle is the top-level `think` field (bool or
-  // low/medium/high/max), which no format in thinkingUnified.js emits yet —
+  // low/medium/high/max), which no format in thinkingUnified.js emits yet -
   // openai-to-ollama.js drops it. Wire a "think" format when thinking on
   // Ollama Cloud is actually needed.
   "ollama": {
@@ -290,7 +292,7 @@ PROVIDER_CAPABILITIES["qoder-cn"] = PROVIDER_CAPABILITIES["qoder"];
 PROVIDER_CAPABILITIES.cx = PROVIDER_CAPABILITIES.codex;
 
 /**
- * Pattern fallback — glob (* = wildcard), matched case-insensitively and
+ * Pattern fallback - glob (* = wildcard), matched case-insensitively and
  * anchored (^...$) so a pattern must match the full model id. ORDER MATTERS:
  * vision/specific variants first, text-only/generic families last, to avoid
  * a broad family pattern swallowing an exception (e.g. glm-4.6v vs glm-5).
@@ -375,7 +377,7 @@ export const PATTERN_CAPABILITIES = [
   { pattern: "*kimi*",          caps: { reasoning: true, thinkingFormat: "kimi", contextWindow: 262144 } },
 
   // ── GLM / Z.ai (thinking.enabled; disable via enable_thinking:false) ─
-  // reasoning_effort is only read by z.ai from GLM-5.2 onward (docs.z.ai/guides/capabilities/thinking) —
+  // reasoning_effort is only read by z.ai from GLM-5.2 onward (docs.z.ai/guides/capabilities/thinking) -
   // older GLM (4.x, 5.0, 5.1, 5-turbo, 5v-turbo) ignore it, so gate it per exact version, not the "*glm-5*" catch-all.
   { pattern: "*glm-5.3*",       caps: { reasoning: true, thinkingFormat: "zai", thinkingEffortSupported: true, thinkingCanDisable: false, contextWindow: 1000000, maxOutput: 128000 } },
   { pattern: "*glm-5.2*",       caps: { reasoning: true, thinkingFormat: "zai", thinkingEffortSupported: true, contextWindow: 200000, maxOutput: 128000 } },
@@ -470,7 +472,7 @@ export const PATTERN_CAPABILITIES = [
  */
 export function aggregateComboCapabilities(comboModels, comboLookup = null, resolveCaps = null, _depth = 0, contextOverride = 0) {
   // Backward compatibility: callers written before resolveCaps existed passed
-  // (comboModels, comboLookup, depth, contextOverride) — shift when arg3 is a number.
+  // (comboModels, comboLookup, depth, contextOverride) - shift when arg3 is a number.
   if (typeof resolveCaps === "number") {
     contextOverride = Number(_depth) || 0;
     _depth = resolveCaps;
@@ -478,7 +480,7 @@ export function aggregateComboCapabilities(comboModels, comboLookup = null, reso
   }
   if (!comboModels?.length || _depth > 6) return null;
   const allCaps = comboModels.map((fullId) => {
-    // Nested combo: bare name (no slash) that exists in the lookup — recurse
+    // Nested combo: bare name (no slash) that exists in the lookup - recurse
     if (!fullId.includes("/") && comboLookup?.[fullId]) {
       return aggregateComboCapabilities(comboLookup[fullId], comboLookup, resolveCaps, _depth + 1, contextOverride)
           ?? resolveCaps?.(fullId)

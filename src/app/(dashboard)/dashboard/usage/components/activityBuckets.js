@@ -2,7 +2,7 @@
  * Traffic bucketing for the Overview activity heatmap (#15).
  *
  * Lives apart from the JSX atoms on purpose: this is the only piece with real
- * logic, and keeping it framework-free makes it directly unit-testable — the
+ * logic, and keeping it framework-free makes it directly unit-testable - the
  * repo runs vitest without a JSX transform.
  *
  * Buckets are the *browser's* local weekday × hour, not UTC: the traffic
@@ -21,7 +21,7 @@ function mondayFirstIndex(day) {
 /**
  * Bucket request timestamps into a 7×24 grid.
  *
- * Unparsable entries are skipped rather than throwing — one bad row must not
+ * Unparsable entries are skipped rather than throwing - one bad row must not
  * cost the user the whole heatmap. Returns { grid, max, total } with grid in
  * Monday-first row order and local hour columns.
  */

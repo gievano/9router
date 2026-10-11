@@ -37,7 +37,7 @@
 html:not(.fonts-loading) .material-symbols-outlined { opacity: 1; transition: opacity .12s ease-out; }
 
 /* ============================================================
-   9Router palette — adopted from 9remote_private/web
+   9Router palette - adopted from 9remote_private/web
    Brand orange (dark) / soft coral (light), neutral warm bases
    ============================================================ */
 :root {
@@ -95,6 +95,12 @@ html:not(.fonts-loading) .material-symbols-outlined { opacity: 1; transition: op
     0 12px 36px -8px rgba(15,23,42,0.10);
   --shadow-focus: 0 0 0 3px rgba(229,106,74,0.18);
 
+  /* Full-screen dim behind modals and long-task banners. A real variable,
+     not a Tailwind bg-black/x utility, so both themes can tune it: the dark
+     base is opaque and wants a uniform cut, while glass renders the aurora
+     behind the panel and wants a lighter veil that lets the colour through. */
+  --color-scrim: rgba(30, 24, 21, 0.34);
+
   color-scheme: light;
 }
 
@@ -143,6 +149,9 @@ html:not(.fonts-loading) .material-symbols-outlined { opacity: 1; transition: op
     0 1px 2px rgba(0,0,0,0.4),
     0 16px 48px -8px rgba(0,0,0,0.55);
   --shadow-focus: 0 0 0 3px rgba(229, 106, 74, 0.18);
+
+  /* Dark scrim: a heavier uniform veil over the opaque base. */
+  --color-scrim: rgba(0, 0, 0, 0.55);
 
   color-scheme: dark;
 }
@@ -357,7 +366,7 @@ input, textarea {
 .traffic-light.yellow { background: #FFBD2E; }
 .traffic-light.green { background: #27C93F; }
 
-/* Material Symbols — layered so a text-[..] utility can still size each icon */
+/* Material Symbols - layered so a text-[..] utility can still size each icon */
 @layer base {
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined', sans-serif;
@@ -397,7 +406,7 @@ button {
   user-select: none;
 }
 
-/* Tailwind v4 dropped default button cursor — restore globally */
+/* Tailwind v4 dropped default button cursor - restore globally */
 button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]),
 label[for],
@@ -666,7 +675,7 @@ button:disabled,
 }
 
 /* ============================================================
-   Glassmorphism theme — dark base with frosted translucent surfaces
+   Glassmorphism theme - dark base with frosted translucent surfaces
    Applied as `<html class="dark glass">`.
 
    Why explicit colours instead of token overrides: `@theme inline` bakes each
@@ -714,6 +723,14 @@ button:disabled,
 /* The shell's opaque bg-bg would bury the aurora; let it show through. */
 .dark.glass .bg-bg {
   background-color: transparent !important;
+}
+
+/* Modal and long-task scrim. The glass body paints a colourful aurora, so the
+   dark theme's 55% black veil turned every overlay muddy brown-black. A
+   lighter veil keeps the frost readable and lets the theme's colour survive
+   underneath instead of being buried. */
+.dark.glass {
+  --color-scrim: rgba(8, 11, 16, 0.34);
 }
 
 /* Nested menus, modals and popovers inherit the same frost. */

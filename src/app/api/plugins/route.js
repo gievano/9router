@@ -56,7 +56,7 @@ export async function PUT(request) {
         models: Array.isArray(entry?.models) ? entry.models.filter(Boolean) : [],
         // Anti Slop's level rides on the same entry. Without this line the merge
         // rebuilt every entry as {enabled, models} and the level was dropped on
-        // every save — the same failure shape as the lost openaiToolBridge key.
+        // every save - the same failure shape as the lost openaiToolBridge key.
         ...(key === "antiSlop" ? { level: normalizeAntislopLevel(entry?.level) } : {}),
       };
     }

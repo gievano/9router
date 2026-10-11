@@ -1,4 +1,4 @@
-// ZedHostedExecutor — routes requests to Zed's hosted LLM aggregator
+// ZedHostedExecutor - routes requests to Zed's hosted LLM aggregator
 // (cloud.zed.dev/completions), a multi-format proxy fronting
 // Anthropic/OpenAI/Google/xAI depending on the requested model.
 //
@@ -7,7 +7,7 @@
 // `[DONE]`), authenticated with a short-lived LLM bearer token exchanged from
 // the RSA-decrypted access_token (see open-sse/shared/zedAuth.js). The
 // provider-shaped chunk is Claude/Gemini/OpenAI-Responses/xAI(OpenAI-shaped)
-// depending on which upstream Zed fronts for the model — translated back to
+// depending on which upstream Zed fronts for the model - translated back to
 // OpenAI Chat Completions by reusing the existing translators.
 //
 // Overrides execute() entirely (does NOT use DefaultExecutor's pipeline) because the Zed wire
@@ -34,7 +34,7 @@ import {
 // fails the whole request with `500 {"message":"An internal server error
 // occurred."}` before the model is ever looked at. Spellings come from Zed's
 // own GET /models catalog: `anthropic`, `open_ai`, `google` (note underscore),
-// `x_ai` follows the same convention — so feeding a catalog value back through
+// `x_ai` follows the same convention - so feeding a catalog value back through
 // normalizeZedProvider is identity.
 const ZED_PROVIDER = {
   anthropic: "anthropic",
@@ -66,7 +66,7 @@ function buildProviderRequest(provider, model, body, stream, credentials) {
     // Zed's hosted Gemini backend speaks the Vertex safety vocabulary, not the
     // public Gemini API enum the shared translator emits (`OFF`, `CIVIC_INTEGRITY`,
     // `DANGEROUS_CONTENT`). Drop client-side safetySettings for the Zed Google
-    // path so Zed applies its own defaults — scoped here so native Gemini/
+    // path so Zed applies its own defaults - scoped here so native Gemini/
     // Antigravity is untouched.
     delete geminiRequest.safetySettings;
     return geminiRequest;
@@ -74,7 +74,7 @@ function buildProviderRequest(provider, model, body, stream, credentials) {
   if (provider === ZED_PROVIDER.openai) {
     return openaiToOpenAIResponsesRequest(model, body, true, credentials);
   }
-  // xAI is OpenAI-shaped — forward as-is.
+  // xAI is OpenAI-shaped - forward as-is.
   return { ...(body || {}), model, stream: stream !== false };
 }
 
@@ -306,7 +306,7 @@ class ZedExecutor extends BaseExecutor {
   }
 
   async refreshCredentials() {
-    // Zed uses a long-lived RSA-decrypted access_token — no OAuth refresh.
+    // Zed uses a long-lived RSA-decrypted access_token - no OAuth refresh.
     return null;
   }
 

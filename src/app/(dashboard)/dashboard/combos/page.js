@@ -19,7 +19,7 @@ const VALID_NAME_REGEX = /^[a-zA-Z0-9_.\-]+$/;
 // to the first enabled model here instead of erroring or dropping the data.
 const CAPACITY_ADAPTER_CAPS = [
   { key: "vision", label: "Vision", icon: "visibility", desc: "images (png, jpg, webp, …)" },
-  // pdf, videoInput temporarily hidden — no translator support yet for those blocks.
+  // pdf, videoInput temporarily hidden - no translator support yet for those blocks.
   { key: "audioInput", label: "Audio", icon: "graphic_eq", desc: "audio input" },
 ];
 const DEFAULT_FALLBACK_MODEL = "oc/mimo-v2.6-flash-free";
@@ -48,9 +48,9 @@ function normalizeCapEntry(entry) {
 }
 
 const STRATEGY_OPTIONS = [
-  { value: "fallback", label: "Fallback — try in order" },
-  { value: "round-robin", label: "Round Robin — rotate" },
-  { value: "fusion", label: "Fusion — panel + judge" },
+  { value: "fallback", label: "Fallback - try in order" },
+  { value: "round-robin", label: "Round Robin - rotate" },
+  { value: "fusion", label: "Fusion - panel + judge" },
 ];
 
 export default function CombosPage() {
@@ -369,9 +369,9 @@ export default function CombosPage() {
             Group models under one name, then pick a strategy per combo:
           </p>
           <ul className="text-sm text-text-muted mt-2 flex flex-col gap-1">
-            <li><span className="font-medium text-text-main">Fallback</span> — tries models in order (next on failure)</li>
-            <li><span className="font-medium text-text-main">Round Robin</span> — rotates models across requests to spread load</li>
-            <li><span className="font-medium text-text-main">Fusion</span> — queries all models in parallel and merges their answers into one, giving the best quality at the highest cost because every request bills all panel models plus the judge (N+1 calls)</li>
+            <li><span className="font-medium text-text-main">Fallback</span> - tries models in order (next on failure)</li>
+            <li><span className="font-medium text-text-main">Round Robin</span> - rotates models across requests to spread load</li>
+            <li><span className="font-medium text-text-main">Fusion</span> - queries all models in parallel and merges their answers into one, giving the best quality at the highest cost because every request bills all panel models plus the judge (N+1 calls)</li>
           </ul>
           <p className="hidden text-xs text-text-muted mt-3 max-w-2xl">
             <span className="font-medium text-text-main">Cursor / Claude Default</span> create combos named exactly like those clients&apos; model IDs (e.g. <code className="font-mono">composer-2.5</code>, <code className="font-mono">opus</code>), seeded with the matching <code className="font-mono">cu/…</code> or <code className="font-mono">cc/…</code> route so traffic can hit 9router without the prefix.
@@ -568,7 +568,7 @@ function ComboCard({ combo, getCaps, comboByName = {}, activeProviders = [], cop
               checked={selected}
               onChange={onToggleSelect}
               onClick={(e) => e.stopPropagation()}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
               aria-label={`Select ${combo.name}`}
             />
           </label>
@@ -622,7 +622,7 @@ function ComboCard({ combo, getCaps, comboByName = {}, activeProviders = [], cop
                   title="Pick the model that fuses panel answers"
                 >
                   <span className="material-symbols-outlined text-[13px]">gavel</span>
-                  <span className="truncate">{judge || `Auto — ${combo.models[0] || "first model"}`}</span>
+                  <span className="truncate">{judge || `Auto - ${combo.models[0] || "first model"}`}</span>
                 </button>
                 {judge && (
                   <button
@@ -640,7 +640,7 @@ function ComboCard({ combo, getCaps, comboByName = {}, activeProviders = [], cop
 
         {/* Actions */}
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3 sm:shrink-0">
-          {/* Strategy selector — always visible */}
+          {/* Strategy selector - always visible */}
           <div className="w-full sm:w-[200px]">
             <Select
               options={STRATEGY_OPTIONS}
@@ -771,7 +771,7 @@ function CapacityAdapterCap({ cap, entry, onChange, activeProviders, getCaps }) 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <code className="font-mono text-sm font-medium">{cap.label}</code>
-              <span className="text-[10px] text-text-muted">— {cap.desc}</span>
+              <span className="text-[10px] text-text-muted">- {cap.desc}</span>
             </div>
           </div>
         </div>
@@ -906,7 +906,7 @@ function ModelItem({ id, index, model, isFirst, isLast, context, onEdit, onMoveU
   const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
-    // no transition — prevents the CSS settle animation fighting React's re-render on drop
+    // no transition - prevents the CSS settle animation fighting React's re-render on drop
     opacity: isDragging ? 0.4 : 1,
     zIndex: isDragging ? 999 : undefined,
   };

@@ -86,7 +86,7 @@ function processTextNode(node) {
   // React reuses text nodes and rewrites their value on re-render (a
   // characterData mutation, no childList event). When the current value is
   // neither our last translation nor the recorded original, it is fresh
-  // source text — re-capture it as the new original before translating.
+  // source text - re-capture it as the new original before translating.
   const isOurTranslation = node._translated != null && current === node._translated;
   const isSameAsOriginal = current === node._originalText;
   if (!isOurTranslation && !isSameAsOriginal) {

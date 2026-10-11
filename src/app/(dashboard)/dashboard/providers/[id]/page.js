@@ -190,7 +190,7 @@ export default function ProviderDetailPage() {
   const providerStorageAlias = isCompatible ? providerId : providerAlias;
   // Studio names replace the model they point at: those models leave the list below.
   const studioTargetIndex = buildStudioTargetIndex(studioModels);
-  // Union of levels across this provider's reasoning models — drives the level picker options.
+  // Union of levels across this provider's reasoning models - drives the level picker options.
   // Include custom models too (e.g. manually added gpt-5.6-sol → max).
   const providerThinkingLevels = (() => {
     const set = new Set();
@@ -491,7 +491,7 @@ export default function ProviderDetailPage() {
 
   // Live per-connection catalogs (cursor, zed): the static registry carries
   // no usable list, so resolve from the active connection. Fires only when
-  // the provider id or connection list changes — no polling, no loop.
+  // the provider id or connection list changes - no polling, no loop.
   // Cursor path is statement-identical to before; zed adds error surfacing.
   useEffect(() => {
     const isLiveCatalog = providerId === "cursor" || providerId === "zed";
@@ -1060,7 +1060,7 @@ export default function ProviderDetailPage() {
                 type="checkbox"
                 checked={isSelected(conn.id)}
                 onChange={() => toggleSelectConnection(conn.id)}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -1200,7 +1200,7 @@ export default function ProviderDetailPage() {
       );
     }
     // Combine hardcoded models with Kilo free models (deduplicated)
-    // Exclude non-llm models (embedding, tts, etc.) — they have dedicated pages under media-providers
+    // Exclude non-llm models (embedding, tts, etc.) - they have dedicated pages under media-providers
     const allModels = [
       ...models,
       ...kiloFreeModels.filter((fm) => !models.some((m) => m.id === fm.id)),
@@ -1272,7 +1272,7 @@ export default function ProviderDetailPage() {
           );
         })}
 
-        {/* Add model button — inline, same style as model chips */}
+        {/* Add model button - inline, same style as model chips */}
         <button
           onClick={() => setShowAddCustomModel(true)}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/40 px-3 py-2 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/5 sm:w-auto"
@@ -1281,7 +1281,7 @@ export default function ProviderDetailPage() {
           Add Model
         </button>
 
-        {/* Import Qoder models button — only show for qoder/qoder-cn provider */}
+        {/* Import Qoder models button - only show for qoder/qoder-cn provider */}
         {(providerId === "qoder" || providerId === "qoder-cn") && connections.some((conn) => conn.isActive !== false) && (
           <button
             onClick={handleImportQoderModels}
@@ -1295,7 +1295,7 @@ export default function ProviderDetailPage() {
           </button>
         )}
 
-        {/* Import Cline /models catalog button — only show for cline and clinepass providers */}
+        {/* Import Cline /models catalog button - only show for cline and clinepass providers */}
         {(providerId === "cline" || providerId === "clinepass") && connections.some((conn) => conn.isActive !== false) && (
           <button
             onClick={handleImportClineModels}
@@ -1309,7 +1309,7 @@ export default function ProviderDetailPage() {
           </button>
         )}
 
-        {/* Suggested models from provider API — show only models not yet added.
+        {/* Suggested models from provider API - show only models not yet added.
             Rendered on data OR error so a failed refresh explains itself
             instead of vanishing. */}
         {(suggestedModels.length > 0 || suggestedModelsError) && (() => {
@@ -1350,7 +1350,7 @@ export default function ProviderDetailPage() {
           );
         })()}
 
-        {/* Disabled models — restorable */}
+        {/* Disabled models - restorable */}
         {disabledDisplayModels.length > 0 && (
           <div className="w-full mt-2">
             <p className="text-xs text-text-muted mb-2">Disabled models ({disabledDisplayModels.length}):</p>
@@ -1706,7 +1706,7 @@ export default function ProviderDetailPage() {
                       type="checkbox"
                       checked={allSelected}
                       onChange={toggleSelectAllConnections}
-                      className="h-3.5 w-3.5 rounded border-gray-300 text-primary focus:ring-primary"
+                      className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
                     />
                     Select All
                   </label>

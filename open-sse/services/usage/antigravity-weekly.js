@@ -1,18 +1,18 @@
 /**
- * Antigravity weekly quota — best-effort retrieval from retrieveUserQuotaSummary.
+ * Antigravity weekly quota - best-effort retrieval from retrieveUserQuotaSummary.
  * Failure never breaks existing per-model quota display.
  */
 
 import { U, parseResetTime, fetchWithTimeout } from "./shared.js";
 import { ANTIGRAVITY_IDE_USER_AGENT, ANTIGRAVITY_IDE_VERSION } from "../../providers/shared.js";
 
-// — Weekly quota summary config ——————————————————————————————
+// - Weekly quota summary config ------------------------------
 const WEEKLY_CONFIG = {
   ...U("antigravity"),
   userAgent: ANTIGRAVITY_IDE_USER_AGENT,
 };
 
-// — Cache: TTL + in-flight dedup per project ———————————————
+// - Cache: TTL + in-flight dedup per project ---------------
 const WEEKLY_CACHE_TTL_MS = 180_000; // 3 minutes
 const weeklyCache = new Map(); // cacheKey -> { result, expiresAt } | { promise }
 
@@ -25,7 +25,7 @@ export function _clearWeeklyCache() {
   weeklyCache.clear();
 }
 
-// — Group-name and window to stable key mapping ——————————————————————
+// - Group-name and window to stable key mapping ----------------------
 const GROUP_CONFIGS = [
   {
     pattern: /gemini/i,
@@ -41,7 +41,7 @@ const GROUP_CONFIGS = [
 
 /**
  * Parse a retrieveUserQuotaSummary response into normalized weekly quotas.
- * Pure function — safe to unit-test without network.
+ * Pure function - safe to unit-test without network.
  *
  * @param {Object|null} data  Raw JSON response
  * @returns {Object}  e.g. { gemini_weekly: { used, total, ... }, claude_gpt_weekly: { ... } }
@@ -111,7 +111,7 @@ export function parseWeeklyQuotaSummary(data) {
 }
 
 /**
- * Fetch weekly quota summary — cached, deduped, never throws.
+ * Fetch weekly quota summary - cached, deduped, never throws.
  */
 export async function fetchAntigravityWeeklyQuota(accessToken, projectId, proxyOptions = null) {
   const key = cacheKey(accessToken, projectId);

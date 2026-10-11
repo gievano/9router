@@ -23,7 +23,7 @@ afterAll(() => {
   else process.env.DATA_DIR = originalDataDir;
 });
 
-describe("DB SQLite layer — public API parity", () => {
+describe("DB SQLite layer - public API parity", () => {
   it("settings: get → defaults; update → merge", async () => {
     const s = await sqliteDb.getSettings();
     expect(s).toBeDefined();

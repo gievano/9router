@@ -11,7 +11,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Import the real filter/cache module so the contract under test is the one the
-// routes import — only the network boundary is stubbed per test.
+// routes import - only the network boundary is stubbed per test.
 import {
   fetchSuggestedModelsServer,
   FILTERS,

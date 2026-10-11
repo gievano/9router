@@ -119,13 +119,13 @@ function getMappedModel(tool, model) {
 
 /**
  * Forward request to real upstream.
- * Optional onResponse(rawBuffer) callback — if provided, tees the response
+ * Optional onResponse(rawBuffer) callback - if provided, tees the response
  * so it's both forwarded to client AND passed to the callback for inspection.
  * Also tees full stream into a dump file when ENABLE_FILE_LOG is on.
  */
 async function passthrough(req, res, bodyBuffer, onResponse) {
   const originalHost = (req.headers.host || TARGET_HOSTS[0]).split(":")[0];
-  // Only rewrite host for chat endpoints — daily-cloudcode-pa rejects auth/login requests
+  // Only rewrite host for chat endpoints - daily-cloudcode-pa rejects auth/login requests
   const isChatEndpoint = req.url.includes(":generateContent") || req.url.includes(":streamGenerateContent");
   const targetHost = isChatEndpoint ? (HOST_REWRITE[originalHost] || originalHost) : originalHost;
   const dumper = ENABLE_FILE_LOG ? createResponseDumper(req, "passthrough") : null;
@@ -314,7 +314,7 @@ const server = https.createServer(sslOptions, async (req, res) => {
     // Kiro IDE posts chat to `/` with x-amz-target (not path /generateAssistantResponse)
     if (!isChatRequest(tool, req)) return passthrough(req, res, bodyBuffer);
 
-    // Cursor uses binary proto — model extraction not possible at this layer.
+    // Cursor uses binary proto - model extraction not possible at this layer.
     // Delegate directly to handler which decodes proto internally.
     if (tool === "cursor") {
       return handlers[tool].intercept(req, res, bodyBuffer, null, passthrough);
@@ -323,7 +323,7 @@ const server = https.createServer(sslOptions, async (req, res) => {
     const model = extractModel(req.url, bodyBuffer);
 
     // Intentional passthrough: some models must never be re-routed (e.g. Antigravity
-    // tab-autocomplete) so latency-critical inline completion stays native. Silent — this
+    // tab-autocomplete) so latency-critical inline completion stays native. Silent - this
     // is by design, not a leak, and fires per keystroke. See MODEL_NO_MAP in config.js.
     if (model && (MODEL_NO_MAP[tool] || []).some((re) => re.test(model))) {
       return passthrough(req, res, bodyBuffer);

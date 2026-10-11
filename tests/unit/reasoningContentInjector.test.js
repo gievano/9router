@@ -23,7 +23,7 @@ function bodyWith(messages) {
   return { model: "deepseek-v4-flash", messages, reasoning_effort: "medium" };
 }
 
-describe("injectReasoningContent — DeepSeek thinking round-trip", () => {
+describe("injectReasoningContent - DeepSeek thinking round-trip", () => {
   it("injects reasoning_content on a deepseek- assistant message that lacks it", () => {
     const out = injectReasoningContent({
       provider: "opencode",
@@ -84,7 +84,7 @@ describe("injectReasoningContent — DeepSeek thinking round-trip", () => {
   });
 });
 
-describe("injectReasoningContent — MiniMax thinking round-trip", () => {
+describe("injectReasoningContent - MiniMax thinking round-trip", () => {
   const minimaxAssistantMsg = { role: "assistant", content: "here is a response", reasoning_content: "" };
   const minimaxAssistantWithToolCall = {
     role: "assistant",
@@ -147,7 +147,7 @@ describe("injectReasoningContent — MiniMax thinking round-trip", () => {
   });
 });
 
-describe("OpenCodeExecutor — issue #1543 regression", () => {
+describe("OpenCodeExecutor - issue #1543 regression", () => {
   it("runs the injector so deepseek-v4-flash-free round-trips reasoning_content", () => {
     const executor = new OpenCodeExecutor();
     const out = executor.transformRequest(

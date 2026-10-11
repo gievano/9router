@@ -1,4 +1,4 @@
-// Content-block "type" discriminators — fixed per format. Pure data (no logic).
+// Content-block "type" discriminators - fixed per format. Pure data (no logic).
 
 // OpenAI chat content blocks + tool_call wrapper.
 export const OPENAI_BLOCK = {

@@ -106,7 +106,7 @@ const comboRotationState = new Map();
 // Trailing run of items after the last assistant/model turn = the current user
 // turn. It may span several messages (e.g. text + image split across blocks),
 // so we return all of them. History media (older turns) must not pin the combo
-// to a vision model — those get stripped + placeholdered downstream instead.
+// to a vision model - those get stripped + placeholdered downstream instead.
 function trailingUserItems(arr) {
   if (!Array.isArray(arr) || arr.length === 0) return [];
   const isAssistant = (r) => r === "assistant" || r === "model";
@@ -390,7 +390,7 @@ export async function handleComboChat({ body, models, handleSingleModel, log, co
   }
 
   // All models failed
-  // Use 503 (Service Unavailable) rather than 406 (Not Acceptable) — 406 implies
+  // Use 503 (Service Unavailable) rather than 406 (Not Acceptable) - 406 implies
   // the request itself is invalid, but here the providers are simply unavailable
   // or have no active credentials. 503 is more accurate and retryable by clients.
   const allDisabled = lastError && lastError.toLowerCase().includes("no credentials");
@@ -470,7 +470,7 @@ function appendUserTurn(body, text) {
 
 /**
  * Build the judge directive. Per OpenRouter's Fusion design, the judge does NOT
- * merge — it analyzes (consensus / contradictions / partial coverage / unique
+ * merge - it analyzes (consensus / contradictions / partial coverage / unique
  * insights / blind spots) then writes one answer grounded in that analysis.
  * ~3/4 of fusion's quality lift comes from this synthesis step.
  *
@@ -487,7 +487,7 @@ function buildJudgePrompt(answers) {
     "",
     "Do NOT mention that multiple models were used, and do NOT refer to the sources. Produce ONE authoritative final answer addressed directly to the user.",
     "",
-    "First, internally analyze the panel along these dimensions: consensus (points most sources agree on — treat as higher-confidence), contradictions (where they disagree — resolve with your own judgment), partial coverage, unique insights only one source surfaced, and blind spots every source missed. Then write the best possible final answer grounded in that analysis — more complete and correct than any single response, with no filler.",
+    "First, internally analyze the panel along these dimensions: consensus (points most sources agree on - treat as higher-confidence), contradictions (where they disagree - resolve with your own judgment), partial coverage, unique insights only one source surfaced, and blind spots every source missed. Then write the best possible final answer grounded in that analysis - more complete and correct than any single response, with no filler.",
     "",
     "=== PANEL RESPONSES ===",
     panel,
@@ -582,7 +582,7 @@ export async function handleFusionChat({ body, models, handleSingleModel, log, c
     );
   }
 
-  // A single-model fusion has nothing to fuse — just answer directly.
+  // A single-model fusion has nothing to fuse - just answer directly.
   if (panel.length === 1) {
     return handleSingleModel(deepCopyBody(body), panel[0]);
   }
@@ -645,7 +645,7 @@ export async function handleFusionChat({ body, models, handleSingleModel, log, c
     );
   }
   if (answers.length === 1) {
-    log.info("FUSION", `Only ${answers[0].model} succeeded — answering directly (no fusion)`);
+    log.info("FUSION", `Only ${answers[0].model} succeeded - answering directly (no fusion)`);
     return handleSingleModel(deepCopyBody(body), answers[0].model);
   }
 

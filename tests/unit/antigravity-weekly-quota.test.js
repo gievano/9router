@@ -12,7 +12,7 @@ import {
   _clearWeeklyCache,
 } from "../../open-sse/services/usage/antigravity-weekly.js";
 
-// — Fixtures ——————————————————————————————————————————————
+// - Fixtures ----------------------------------------------
 const GEMINI_GROUP = {
   displayName: "Gemini Models",
   buckets: [
@@ -51,7 +51,7 @@ const NESTED_RESPONSE = {
   },
 };
 
-// — parseWeeklyQuotaSummary ———————————————————————————————
+// - parseWeeklyQuotaSummary -------------------------------
 describe("parseWeeklyQuotaSummary", () => {
   it("extracts Gemini weekly and session quotas from top-level groups", () => {
     const result = parseWeeklyQuotaSummary(FULL_RESPONSE);
@@ -176,7 +176,7 @@ describe("parseWeeklyQuotaSummary", () => {
   });
 });
 
-// — fetchAntigravityWeeklyQuota ———————————————————————————
+// - fetchAntigravityWeeklyQuota ---------------------------
 describe("fetchAntigravityWeeklyQuota", () => {
   beforeEach(() => {
     proxyAwareFetch.mockReset();
@@ -287,7 +287,7 @@ describe("fetchAntigravityWeeklyQuota", () => {
   });
 });
 
-// — Integration: weekly failure does not affect existing quotas —————
+// - Integration: weekly failure does not affect existing quotas -----
 describe("weekly quota isolation from existing quota", () => {
   beforeEach(() => {
     proxyAwareFetch.mockReset();
@@ -357,7 +357,7 @@ describe("weekly quota isolation from existing quota", () => {
               },
               "claude-sonnet-4-6": {
                 displayName: "Claude Sonnet 4.6",
-                // Missing remainingFraction — free tier exhausted
+                // Missing remainingFraction - free tier exhausted
                 quotaInfo: { resetTime: "2026-09-13T12:00:00Z" },
               },
             },

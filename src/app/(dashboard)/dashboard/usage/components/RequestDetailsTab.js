@@ -329,10 +329,10 @@ export default function RequestDetailsTab() {
                       {getInputTokens(detail.tokens).toLocaleString()}
                     </td>
                     <td className="p-4 text-sm text-text-main text-right font-mono">
-                      {getCachedTokens(detail.tokens) > 0 ? getCachedTokens(detail.tokens).toLocaleString() : "—"}
+                      {getCachedTokens(detail.tokens) > 0 ? getCachedTokens(detail.tokens).toLocaleString() : "-"}
                     </td>
                     <td className="p-4 text-sm text-text-main text-right font-mono">
-                      {getCacheCreationTokens(detail.tokens) > 0 ? getCacheCreationTokens(detail.tokens).toLocaleString() : "—"}
+                      {getCacheCreationTokens(detail.tokens) > 0 ? getCacheCreationTokens(detail.tokens).toLocaleString() : "-"}
                     </td>
                     <td className="p-4 text-sm text-text-main text-right font-mono">
                       {detail.tokens?.completion_tokens?.toLocaleString() || 0}
@@ -488,7 +488,7 @@ export default function RequestDetailsTab() {
                 ) : (
                   <p className="text-sm text-text-muted">
                     Reason: <span className="font-mono">{selectedDetail.pxpipe.reason}</span>
-                    {selectedDetail.pxpipe.detail ? ` — ${selectedDetail.pxpipe.detail}` : ""}
+                    {selectedDetail.pxpipe.detail ? ` - ${selectedDetail.pxpipe.detail}` : ""}
                   </p>
                 )}
               </div>

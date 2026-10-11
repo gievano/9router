@@ -42,7 +42,7 @@ function translatedSession(sessionId, clientTool) {
 }
 
 // Responses-only per the provider registry (grok-4.6, gpt-5.6-luna, muse-spark, …),
-// including the family-regex fallback for passthrough ids — never hardcode model ids here.
+// including the family-regex fallback for passthrough ids - never hardcode model ids here.
 function isResponsesModel(model) {
   return getModelTargetFormat("opencode-go", model) === FORMATS.OPENAI_RESPONSES;
 }

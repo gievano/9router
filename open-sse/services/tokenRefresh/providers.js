@@ -142,7 +142,7 @@ export async function refreshAccessToken(provider, refreshToken, credentials, lo
 }
 
 // CLIProxyAPI DeviceFlowClient.RefreshToken: form body (no client_secret) + X-Msh-* headers
-// Delegate to refreshAccessToken("kimi", ...) — profile carries the X-Msh headers.
+// Delegate to refreshAccessToken("kimi", ...) - profile carries the X-Msh headers.
 export async function refreshKimiToken(refreshToken, credentials, log) {
   return refreshAccessToken("kimi", refreshToken, credentials, log);
 }
@@ -509,7 +509,7 @@ export async function refreshCopilotToken(githubAccessToken, log) {
   }, log);
 }
 
-// CodeBuddy (Tencent) refresh — POST /v2/plugin/auth/token/refresh with the
+// CodeBuddy (Tencent) refresh - POST /v2/plugin/auth/token/refresh with the
 // refresh token carried in the X-Refresh-Token header (not a form body),
 // matching the official CodeBuddy CLI. Response: { code: 0, data: <token> }.
 export async function refreshCodebuddyToken(refreshToken, log) {
@@ -614,7 +614,7 @@ export async function refreshCodebuddyIntlToken(refreshToken, log) {
   }, log);
 }
 
-// Trae refresh — POST ExchangeToken with JSON body {ClientID, RefreshToken, ClientSecret, UserID}.
+// Trae refresh - POST ExchangeToken with JSON body {ClientID, RefreshToken, ClientSecret, UserID}.
 // Response: {Result: {AccessToken, RefreshToken, TokenType, ExpiresAt}}.
 export async function refreshTraeToken(refreshToken, credentials, log) {
   if (!refreshToken) return null;
@@ -688,7 +688,7 @@ export async function refreshTraeToken(refreshToken, credentials, log) {
 }
 
 // Zed access_token is long-lived; auth flow returns no refresh_token.
-// No refresh possible — re-login required when token expires/revoked.
+// No refresh possible - re-login required when token expires/revoked.
 // Mirrors cursor/kilocode null-refresh pattern.
 export function refreshZedToken() {
   return null;
@@ -701,7 +701,7 @@ export function refreshZedToken() {
 export async function refreshWindsurfToken(credentials, log) {
   log?.info?.(
     "TOKEN_REFRESH",
-    "windsurf: apiKey is long-lived (no refresh_token flow) — skipping"
+    "windsurf: apiKey is long-lived (no refresh_token flow) - skipping"
   );
   return null;
 }

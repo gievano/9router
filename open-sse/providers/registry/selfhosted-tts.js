@@ -1,5 +1,5 @@
 // Self-hosted, OpenAI-compatible text-to-speech (Kokoro-FastAPI, openedai-speech,
-// vLLM-served TTS, ...) — the TTS counterpart of selfhosted-stt.
+// vLLM-served TTS, ...) - the TTS counterpart of selfhosted-stt.
 //
 // Every other self-hostable TTS provider here (coqui, tortoise) carries a FIXED
 // localhost baseUrl in its registry entry and `authType: "none"`, and the generic
@@ -24,7 +24,7 @@ export default {
   category: "apikey",
   auth: {
     apiKey: {
-      text: "Set providerSpecificData.baseUrl to the server root, e.g. http://host:8080 — /v1/audio/speech is appended. The API key is not checked by local servers; any value works.",
+      text: "Set providerSpecificData.baseUrl to the server root, e.g. http://host:8080 - /v1/audio/speech is appended. The API key is not checked by local servers; any value works.",
     },
   },
   // Voice is selected as "<model>/<voice>", the same convention the OpenAI TTS

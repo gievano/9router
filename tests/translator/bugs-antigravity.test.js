@@ -11,7 +11,7 @@ const AG2O = (req) =>
   translateRequest(FORMATS.ANTIGRAVITY, FORMATS.OPENAI, "m", { request: req }, true, null, null);
 
 describe("Antigravity → OpenAI", () => {
-  // antigravity-to-openai.js — content with BOTH functionResponse and functionCall/text
+  // antigravity-to-openai.js - content with BOTH functionResponse and functionCall/text
   // previously returned toolResults early → dropped tool calls / text (fixed in #2225)
   it("functionResponse + functionCall in same content keeps both", () => {
     const out = AG2O({
@@ -27,7 +27,7 @@ describe("Antigravity → OpenAI", () => {
     expect(json, "functionCall lost when sharing content with functionResponse").toContain("\"next\"");
   });
 
-  // antigravity-to-openai.js:167 — functionCall without id gets a random Date.now() id
+  // antigravity-to-openai.js:167 - functionCall without id gets a random Date.now() id
   // KNOWN BUG: unstable id breaks matching with its functionResponse
   it("functionCall without id keeps a stable matchable id", () => {
     const out = AG2O({
@@ -41,7 +41,7 @@ describe("Antigravity → OpenAI", () => {
     expect(tool?.tool_call_id, "id mismatch between call and response").toBe(asst?.tool_calls?.[0]?.id);
   });
 
-  // antigravity-to-openai.js:144-147 — signature-only part handling (regression guard)
+  // antigravity-to-openai.js:144-147 - signature-only part handling (regression guard)
   it("signature-only part does not produce empty text", () => {
     const out = AG2O({
       contents: [{ role: "model", parts: [{ thoughtSignature: "sig", text: "" }] }],

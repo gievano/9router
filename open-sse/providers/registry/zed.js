@@ -1,4 +1,4 @@
-// Zed provider — RSA keypair callback auth (NOT standard OAuth).
+// Zed provider - RSA keypair callback auth (NOT standard OAuth).
 export default {
   id: "zed",
   priority: 999,
@@ -34,12 +34,12 @@ export default {
     auth: {
       combined: true,
       header: "Authorization",
-      scheme: "<user_id> <access_token>", // placeholder — real value built in executor
+      scheme: "<user_id> <access_token>", // placeholder - real value built in executor
     },
     usage: {
       url: "https://cloud.zed.dev/client/users/me", // verified in zed_account.rs
     },
-    // Live catalog discovery — Zed's hosted model list changes frequently and is fetched
+    // Live catalog discovery - Zed's hosted model list changes frequently and is fetched
     // per-connection rather than hardcoded.
     modelsUrl: "https://cloud.zed.dev/models",
   },
@@ -58,7 +58,7 @@ export default {
     //   4. After login, browser redirects http://127.0.0.1:{port}/?user_id=...&access_token=...
     //      where access_token = base64(RSA-encrypted plaintext token).
     //   5. Decrypt with private key (OAEP-SHA256, fallback PKCS1v15). Store user_id + plaintext token.
-    // No clientId/clientSecret/tokenUrl/refreshUrl — long-lived access_token, no refresh.
+    // No clientId/clientSecret/tokenUrl/refreshUrl - long-lived access_token, no refresh.
     authorizeUrl: "https://zed.dev/native_app_signin",
     platform: "zed",
     rsaKeyExchange: true, // new flag: signals frontend/router this flow needs local RSA + TCP listener.

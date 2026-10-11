@@ -108,7 +108,7 @@ function migrateEntry(entry, filename) {
   return out;
 }
 
-// Format a registry entry as clean JS (no JSON.stringify — write proper ES module)
+// Format a registry entry as clean JS (no JSON.stringify - write proper ES module)
 function formatValue(v, indent = 0) {
   const pad = "  ".repeat(indent);
   const pad1 = "  ".repeat(indent + 1);
@@ -151,7 +151,7 @@ function formatInlineObject(obj) {
   return `{ ${parts.join(", ")} }`;
 }
 
-// Config objects (ttsConfig etc) — inline single line if short, else multi-line
+// Config objects (ttsConfig etc) - inline single line if short, else multi-line
 function formatConfig(cfg) {
   const line = `{ ${Object.entries(cfg).map(([k,v])=>`${k}: ${JSON.stringify(v)}`).join(", ")} }`;
   if (line.length <= 120) return line;
@@ -190,13 +190,13 @@ function formatEntry(entry, imports = "") {
     const v = entry[k];
     const key = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k) ? k : JSON.stringify(k);
 
-    // Config objects (xConfig) — special inline format
+    // Config objects (xConfig) - special inline format
     if (CFG_KIND[k] || k === "searchViaChat" || k === "searchConfig" || k === "fetchConfig" || k === "modelsFetcher") {
       lines.push(`  ${key}: ${formatConfig(v)},`);
       return;
     }
 
-    // models[] — terse per-line
+    // models[] - terse per-line
     if (k === "models" && Array.isArray(v)) {
       if (v.length === 0) { lines.push(`  models: [],`); return; }
       lines.push(`  models: [`);
@@ -205,19 +205,19 @@ function formatEntry(entry, imports = "") {
       return;
     }
 
-    // serviceKinds — inline array
+    // serviceKinds - inline array
     if (k === "serviceKinds") {
       lines.push(`  serviceKinds: ${JSON.stringify(v)},`);
       return;
     }
 
-    // display — multi-line
+    // display - multi-line
     if (k === "display") {
       lines.push(`  display: ${formatValue(v, 1)},`);
       return;
     }
 
-    // transport — multi-line
+    // transport - multi-line
     if (k === "transport") {
       lines.push(`  transport: ${formatValue(v, 1)},`);
       return;

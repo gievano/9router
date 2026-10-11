@@ -1,4 +1,4 @@
-// Name-based vision detection — last resort when neither the catalog file nor
+// Name-based vision detection - last resort when neither the catalog file nor
 // the capability tables know a model. Vendors put the modality in the id
 // ("qwen3-vl-plus", "glm-4.6v", "deepseek-v4-flash-vision-exp"), so a custom or
 // freshly released model still gets image input instead of silently dropping it.
@@ -8,7 +8,7 @@
 const SEP = "[-_/:.]";
 
 // Image GENERATION, video generation, and non-chat models also carry these
-// words but take no image input — checked first so they can never match.
+// words but take no image input - checked first so they can never match.
 const NOT_VISION = new RegExp(
   [
     `(^|${SEP})(image|img)(${SEP}|$)`,
