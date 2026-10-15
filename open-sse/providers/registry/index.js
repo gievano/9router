@@ -66,7 +66,7 @@ import p63 from "./nebius.js";
 import p64 from "./nvidia.js";
 import p65 from "./ollama-local.js";
 import p66 from "./ollama.js";
-import p123 from "./ollama-search.js";
+import p151 from "./ollama-search.js";
 import p67 from "./openai.js";
 import p68 from "./opencode-go.js";
 import p68z from "./opencode-zen.js";
@@ -76,7 +76,7 @@ import p72 from "./perplexity.js";
 import p73 from "./perplexity-agent.js";
 import p74 from "./playht.js";
 import p75 from "./qoder.js";
-import p124 from "./qoder-cn.js";
+import p152 from "./qoder-cn.js";
 import p77 from "./recraft.js";
 import p78 from "./runwayml.js";
 import p79 from "./sdwebui.js";
@@ -220,8 +220,8 @@ export default [
   p64,
   p65,
   p66,
-  p123,
-  p124,
+  p151,
+  p152,
   p67,
   p68,
   p68z,
