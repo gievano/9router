@@ -146,63 +146,69 @@ export default function UpdateBanner({ pollMs = POLL_MS }) {
           key={pathname}
           className={`w-full mb-4 ${closing ? "pointer-events-none -translate-y-2 opacity-0 transition-all duration-200 ease-in" : "slide-in-top"}`}
         >
-          <div className="flex flex-col gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:flex-row sm:items-center">
-            <span className="material-symbols-outlined shrink-0 text-[20px] text-amber-500">system_update_alt</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                {info.behindBy ? `Update available: ${info.behindBy} commit${info.behindBy > 1 ? "s" : ""} behind` : `Update available: ${info.latestVersion}`}
-              </p>
-              <p className="text-xs text-text-muted">{summaryFor(info)}</p>
-              {Array.isArray(info.releaseNotes) && info.releaseNotes.length > 0 && (
-                <ul className="mt-1 space-y-0.5">
-                  {info.releaseNotes.slice(0, 3).map((note) => (
-                    <li key={note} className="truncate text-xs text-text-muted" title={note}>{note}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              {/* The command stays visible and selectable; copying it is the
-                  job of "Update now" -> "Copy & Shutdown", so a second Copy
-                  button here only offered the same clipboard write twice. */}
-              <code className="hidden select-all overflow-x-auto whitespace-nowrap rounded-lg border border-border-subtle bg-bg px-2.5 py-1.5 font-mono text-[11px] text-text-muted sm:block">
-                {installCmd}
-              </code>
-              <Button
-                variant="primary"
-                size="sm"
-                icon="system_update_alt"
-                onClick={() => setShowConfirm(true)}
-              >
-                Update now
-              </Button>
-              <a href={GITHUB_CONFIG.repoUrl} target="_blank" rel="noopener noreferrer">
-                <Button variant="secondary" size="sm" icon="open_in_new">
-                  GitHub
+          <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-4 backdrop-blur-md shadow-lg shadow-amber-500/5 transition-all">
+            <div className="absolute -top-12 -left-12 size-32 rounded-full bg-amber-500/15 blur-2xl pointer-events-none" />
+            <div className="relative flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-500 ring-1 ring-amber-500/30">
+                  <span className="material-symbols-outlined text-[20px]">system_update_alt</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-amber-600 dark:text-amber-300">
+                      {info.behindBy ? `Update available: ${info.behindBy} commit${info.behindBy > 1 ? "s" : ""} behind` : `Update available: ${info.latestVersion}`}
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      {info.latestVersion || "New Release"}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-text-muted">{summaryFor(info)}</p>
+                  {Array.isArray(info.releaseNotes) && info.releaseNotes.length > 0 && (
+                    <ul className="mt-1.5 space-y-0.5 border-l-2 border-amber-500/30 pl-2">
+                      {info.releaseNotes.slice(0, 3).map((note) => (
+                        <li key={note} className="truncate text-xs text-text-muted" title={note}>{note}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
+                <code className="hidden select-all overflow-x-auto whitespace-nowrap rounded-lg border border-amber-500/20 bg-black/20 px-2.5 py-1.5 font-mono text-[11px] text-amber-300/80 md:block">
+                  {installCmd}
+                </code>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon="system_update_alt"
+                  onClick={() => setShowConfirm(true)}
+                  className="shadow-sm shadow-amber-500/20"
+                >
+                  Update now
                 </Button>
-              </a>
-              <button
-                type="button"
-                onClick={() => {
-                  // Animate out first: without this the dismiss is an instant pop
-                  // and the content below jumps up with no transition.
-                  setClosing(true);
-                  setTimeout(() => {
-                    try {
-                      window.localStorage.setItem(DISMISSED_KEY, identity);
-                    } catch {
-                      // Storage blocked: the banner simply comes back after a reload.
-                    }
-                    setDismissed(identity);
-                    setClosing(false);
-                  }, 200);
-                }}
-                className="rounded p-1 text-text-muted transition-colors hover:text-amber-500"
-                title="Close"
-                aria-label="Dismiss update notice"
-              >
-                <span className="material-symbols-outlined text-[16px]">close</span>
-              </button>
+                <a href={GITHUB_CONFIG.repoUrl} target="_blank" rel="noopener noreferrer">
+                  <Button variant="secondary" size="sm" icon="open_in_new">
+                    GitHub
+                  </Button>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClosing(true);
+                    setTimeout(() => {
+                      try {
+                        window.localStorage.setItem(DISMISSED_KEY, identity);
+                      } catch {}
+                      setDismissed(identity);
+                      setClosing(false);
+                    }, 200);
+                  }}
+                  className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-amber-500/10 hover:text-amber-400"
+                  title="Close"
+                  aria-label="Dismiss update notice"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

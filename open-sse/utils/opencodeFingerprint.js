@@ -9,17 +9,38 @@
  */
 
 /** Canonical names required by the upstream free-tier gate. */
-export const OPENCODE_FINGERPRINT_TOOLS = ["bash", "glob", "grep", "read"];
+export const OPENCODE_FINGERPRINT_TOOLS = ["read", "shell"];
 
-// Request body -> names renamed for that request. transformRequest() mutates the
-// same body object that chatCore passed into the executor, so a WeakMap keeps the
-// mapping request-local without putting transport metadata on the wire.
+export const OPENCODE_CANONICAL_TOOL_DEFINITIONS = {
+  read: {
+    description: "Read the contents of a file or directory. Supports text files, images, and PDFs. Images and PDFs are presented directly to the model. Each text line is prefixed by its 1-based line number as <line>: <content>. The prefix is for reference and is not part of the file content. Directory entries are returned one per line. Use offset and limit to read large files or directories in sections. Prefer one larger read over many small slices, and use grep to find specific content in large files.",
+    parameters: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "File or directory to read" },
+      },
+      required: ["path"],
+    },
+  },
+  shell: {
+    description: "Execute a shell command and return its output. Commands run on Windows using pwsh. Quote file paths containing spaces or special characters. Prefer dedicated tools over shell commands when possible. When output is large, the full result is saved to a file and a truncated preview is returned. Rely on automatic truncation unless filtering the output is more useful. Commands accept an optional timeout, background commands have no timeout by default. Background commands return immediately, and you will be notified when they complete.",
+    parameters: {
+      type: "object",
+      properties: {
+        command: { type: "string", description: "Shell command string to execute" },
+      },
+      required: ["command"],
+    },
+  },
+};
 const renamedToolNames = new WeakMap();
 
-/** Canonical lowercase name when `name` is a quartet member; "" otherwise. */
+/** Canonical lowercase name when `name` is a fingerprint member; "" otherwise. */
 export function fingerprintToolKey(name) {
   const lower = String(name ?? "").trim().toLowerCase();
-  return OPENCODE_FINGERPRINT_TOOLS.includes(lower) ? lower : "";
+  if (lower === "bash" || lower === "shell") return "shell";
+  if (lower === "read") return "read";
+  return "";
 }
 
 /** Read a tool name from either flat ({name}) or chat ({function:{name}}) shape. */
@@ -65,12 +86,26 @@ export function concealFingerprintToolNames(tools) {
     if (seenQuartet.has(key)) continue;
     seenQuartet.add(key);
 
+    const def = OPENCODE_CANONICAL_TOOL_DEFINITIONS[key];
     if (current !== key) {
       map.set(key, current);
       const fn = tool.function && typeof tool.function === "object" && !Array.isArray(tool.function)
         ? tool.function
         : null;
-      out.push(fn ? { ...tool, function: { ...fn, name: key } } : { ...tool, name: key });
+      out.push(fn ? {
+        ...tool,
+        function: {
+          ...fn,
+          name: key,
+          description: def?.description || fn.description,
+          parameters: def?.parameters || fn.parameters,
+        },
+      } : {
+        ...tool,
+        name: key,
+        description: def?.description || tool.description,
+        parameters: def?.parameters || tool.parameters,
+      });
     } else {
       out.push(tool);
     }
@@ -78,22 +113,23 @@ export function concealFingerprintToolNames(tools) {
   return { tools: out, map };
 }
 
-/** Append only genuinely missing quartet declarations. */
+/** Append only genuinely missing fingerprint declarations. */
 export function appendMissingFingerprintTools(tools, flat) {
   const list = Array.isArray(tools) ? tools : [];
   for (const name of OPENCODE_FINGERPRINT_TOOLS) {
     if (list.some((tool) => fingerprintToolKey(toolNameOf(tool)) === name)) continue;
+    const def = OPENCODE_CANONICAL_TOOL_DEFINITIONS[name];
     list.push(flat ? {
       type: "function",
       name,
-      description: "This tool is currently unavailable and must not be used.",
-      parameters: { type: "object", properties: {} },
+      description: def.description,
+      parameters: def.parameters,
     } : {
       type: "function",
       function: {
         name,
-        description: "This tool is currently unavailable and must not be used.",
-        parameters: { type: "object", properties: {} },
+        description: def.description,
+        parameters: def.parameters,
       },
     });
   }
@@ -139,13 +175,12 @@ export function applyFingerprintTools(body, flat) {
   retargetToolChoice(body, map);
 
   // Preserve the existing executor semantics. Responses uses auto when the
-  // fingerprint helper supplies tools; chat requests with no caller tools use
-  // none so the injected decoys cannot be selected.
-  if (!body.tool_choice) {
-    if (flat) body.tool_choice = "auto";
-    else if (!hadClientTools) body.tool_choice = "none";
+  // Free-tier responses API requires tool_choice to be auto when tools are declared.
+  // Upstream rejects tool_choice: "none" with FreeTierError (403), so omit tool_choice
+  // for chat completions when the client provided no tools.
+  if (!body.tool_choice && flat) {
+    body.tool_choice = "auto";
   }
-
   recordRenamedToolNames(body, map);
   return map;
 }

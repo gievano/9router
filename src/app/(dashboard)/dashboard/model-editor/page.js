@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Card, Button, Modal, Input, ModelSelectModal } from "@/shared/components";
+import { Card, Button, Modal, Input, ModelSelectModal, Toggle } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { findStudioCycle, describeStudioCycle } from "@/shared/utils/studioComboGuard";
@@ -97,7 +97,47 @@ function antiMaskFindings({ callName, ownedBy, targetModel }) {
   return findings;
 }
 
+// The BazaarLink probe is an outside service that judges an endpoint by its
+// behaviour, not by its name. The anti-probe switch decides whether this editor
+// also warns about the metadata that reads as masked: a call name or owned_by
+// claiming a vendor the target does not match. It is a saved setting, not a
+// per-browser cookie, so the same editor form shows the same warnings for every
+// administrator who opens it.
 export default function ModelStudioPage() {
+  const [antiProbe, setAntiProbe] = useState(true);
+  const [savingProbe, setSavingProbe] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/settings", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data) => {
+        // Absent means this install never stored the switch: default on, so an
+        // existing deployment keeps the warnings it had before the toggle existed.
+        if (data && typeof data.antiProbeMetadata === "boolean") {
+          setAntiProbe(data.antiProbeMetadata);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const toggleAntiProbe = async () => {
+    const next = !antiProbe;
+    setAntiProbe(next);
+    setSavingProbe(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ antiProbeMetadata: next }),
+      });
+      if (!res.ok) setAntiProbe(!next);
+    } catch {
+      setAntiProbe(!next);
+    } finally {
+      setSavingProbe(false);
+    }
+  };
+
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
       <div className="min-w-0">
@@ -105,13 +145,32 @@ export default function ModelStudioPage() {
         <p className="text-xs text-text-muted mt-0.5">
           Give any model your own name, context size and behaviour, and it becomes a callable model ID for clients, combos, and API keys.
         </p>
+        <div className="mt-2 flex items-start justify-between gap-3 rounded-xl border border-border bg-black/[0.02] dark:bg-white/[0.03] px-3 py-2">
+          <div className="min-w-0">
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-text-main">
+              <span className="material-symbols-outlined text-[16px] leading-none text-primary">
+                shield_person
+              </span>
+              Anti-probe metadata
+            </span>
+            <p className="text-[11px] text-text-muted mt-0.5">
+              Warns in the form when a model&apos;s name or <code className="font-mono">owned_by</code> claims a
+              vendor the target model does not match - the shape BazaarLink&apos;s probe flags. Nothing is blocked
+              or rewritten; the checks only report what a probe would read.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-col items-center gap-1">
+            <Toggle checked={antiProbe} onChange={toggleAntiProbe} disabled={savingProbe} />
+            <span className="text-[10px] font-medium text-text-muted">{antiProbe ? "On" : "Off"}</span>
+          </div>
+        </div>
       </div>
-      <ModelStudioContent />
+      <ModelStudioContent antiProbe={antiProbe} />
     </div>
   );
 }
 
-function ModelStudioContent() {
+function ModelStudioContent({ antiProbe = true }) {
   const [models, setModels] = useState([]);
   const [providerNodes, setProviderNodes] = useState([]);
   const [activeProviders, setActiveProviders] = useState([]);
@@ -285,6 +344,7 @@ function ModelStudioContent() {
 
       {showForm && (
         <StudioFormModal
+          antiProbe={antiProbe}
           editing={editing}
           activeProviders={activeProviders}
           modelAliases={modelAliases}
@@ -302,6 +362,7 @@ function ModelStudioContent() {
 }
 
 function StudioFormModal({
+  antiProbe = true,
   editing,
   activeProviders,
   modelAliases,
@@ -363,14 +424,14 @@ function StudioFormModal({
 
   // Client-side precheck mirroring the server guard: warn before saving when
   // the picked combo leads back to this model. The server still decides.
-  // Live check: recomputed as the fields change, so the panel reacts to the
-  // edit instead of only to the saved state.
+
+  // Only computed while the switch is on: the panel is not rendered otherwise,
+  // and re-deriving it on every keystroke for a hidden check is wasted work.
   const maskFindings = useMemo(
-    () => antiMaskFindings({ callName, ownedBy, targetModel }),
-    [callName, ownedBy, targetModel]
+    () => (antiProbe ? antiMaskFindings({ callName, ownedBy, targetModel }) : []),
+    [antiProbe, callName, ownedBy, targetModel]
   );
   const maskWarns = maskFindings.filter((f) => f.level === "warn");
-
   const cycleError = useMemo(() => {
     const name = callName.trim();
     const target = targetModel.trim();
@@ -531,6 +592,10 @@ function StudioFormModal({
             </p>
           </div>
 
+          {/* Owned-by stays a plain field; the external probe link lived here. */}
+
+
+          {antiProbe ? (
           <div className="rounded-xl border border-border bg-black/[0.02] dark:bg-white/[0.03] p-3 flex flex-col gap-2.5">
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-1.5 text-xs font-semibold text-text-main">
@@ -584,7 +649,7 @@ function StudioFormModal({
               spelling of a name can make a probe pass or fail it.
             </p>
           </div>
-
+          ) : null}
           <div>
             <label className="block text-xs font-medium text-text-main mb-1">
               Context window <span className="text-text-muted font-normal">(tokens)</span>

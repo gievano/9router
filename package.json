@@ -1,6 +1,6 @@
 {
   "name": "9router-app",
-  "version": "0.5.166-Custom",
+  "version": "0.5.181-Custom",
   "description": "9Router web dashboard",
   "private": true,
   "scripts": {
@@ -32,6 +32,7 @@
     "cheerio": "^1.0.0",
     "confbox": "^0.2.4",
     "diff": "^7.0.0",
+    "enquirer": "^2.4.1",
     "ioredis": "^5.4.1",
     "jose": "^5.9.6",
     "js-yaml": "^4.1.0",
@@ -59,6 +60,9 @@
     "uuid": "^13.0.0",
     "zod": "^3.23.8",
     "zustand": "^5.0.10"
+  },
+  "optionalDependencies": {
+    "@aws-sdk/credential-providers": "^3.1135.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

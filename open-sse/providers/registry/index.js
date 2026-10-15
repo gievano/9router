@@ -118,22 +118,40 @@ import p113 from "./morph.js";
 // import p104 from "./windsurf.js";
 import p115 from "./poolside.js";
 import p116 from "./tokenrouter.js";
-import p117 from "./selfhosted-stt.js";
-import p118 from "./selfhosted-tts.js";
-import p119 from "./selfhosted-embedding.js";
-import p120 from "./fish-audio.js";
-import p121 from "./alitp-intl.js";
-import p122 from "./xquik.js";
-import p125 from "./freebuff.js";
-import p126 from "./tokenharbor.js";
-import p127 from "./dahl.js";
-import p128 from "./atria.js";
-import p129 from "./agnes.js";
-import p130 from "./bai.js";
-import p131 from "./tinyfish.js";
-import p132 from "./v1m.js";
-import p133 from "./muse.js";
-import p134 from "./mimocode.js";
+import p117 from "./topaz.js";
+import p118 from "./tortoise.js";
+import p119 from "./trae.js";
+import p120 from "./v1m.js";
+import p121 from "./venice.js";
+import p122 from "./vercel-ai-gateway.js";
+import p123 from "./vertex-partner.js";
+import p124 from "./vertex.js";
+import p125 from "./volcengine-ark.js";
+import p126 from "./voyage-ai.js";
+import p127 from "./windsurf.js";
+import p128 from "./xai.js";
+import p129 from "./xiaomi-mimo.js";
+import p130 from "./xiaomi-tokenplan.js";
+import p131 from "./xquik.js";
+import p132 from "./youcom.js";
+import p133 from "./zed.js";
+import p134 from "./selfhosted-stt.js";
+import p135 from "./selfhosted-tts.js";
+import p136 from "./selfhosted-embedding.js";
+import p137 from "./fish-audio.js";
+import p138 from "./alitp-intl.js";
+import p139 from "./tokenharbor.js";
+import p140 from "./dahl.js";
+import p141 from "./atria.js";
+import p142 from "./agnes.js";
+import p143 from "./bai.js";
+import p144 from "./tinyfish.js";
+import p145 from "./muse.js";
+import p146 from "./minimax-code.js";
+import p147 from "./minimax-code-global.js";
+import p148 from "./bedrock.js";
+import p149 from "./bedrock-xai.js";
+import p150 from "./freebuff.js"; // local-only: gievano fork
 export default [
   p0,
   p1,
@@ -258,6 +276,8 @@ export default [
   p120,
   p121,
   p122,
+  p123,
+  p124,
   p125,
   p126,
   p127,
@@ -268,4 +288,20 @@ export default [
   p132,
   p133,
   p134,
+  p135,
+  p136,
+  p137,
+  p138,
+  p139,
+  p140,
+  p141,
+  p142,
+  p143,
+  p144,
+  p145,
+  p146,
+  p147,
+  p148,
+  p149,
+  p150, // local-only: gievano fork (freebuff)
 ];

@@ -436,7 +436,11 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
   if (proxyUrl) {
     try {
       const dispatcher = await getDispatcher(proxyUrl);
-      return await originalFetch(url, { ...options, dispatcher });
+      const res = await originalFetch(url, { ...options, dispatcher });
+      if (res.status === 407) {
+        throw new Error("HTTP 407 Proxy Authentication Required (credentials invalid or plan expired)");
+      }
+      return res;
     } catch (proxyError) {
       // If strictProxy is enabled, fail hard instead of falling back to direct
       if (proxyOptions?.strictProxy === true) {

@@ -11,6 +11,9 @@ const ICON_ALIASES = {
   "deepseek-web": "deepseek",
   "gemini-web": "gemini",
   "kimi-web": "kimi",
+  // MiniMax Code rides the existing MiniMax brand mark
+  "minimax-code": "minimax",
+  "minimax-code-global": "minimax",
 };
 
 const TYPE_PREFIX_ALIASES = {

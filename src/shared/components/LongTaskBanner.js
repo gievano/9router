@@ -74,7 +74,7 @@ function ProgressBar({ percent }) {
  * bordered card, so giving each its own 1px frame doubles the chrome for no
  * reason. Tone is text colour only, with a soft hover wash.
  */
-function IconButton({ label, glyph, onClick, tone = "default", className }) {
+function IconButton({ label, glyph, onClick, tone = "default", className, children }) {
   return (
     <button
       type="button"
@@ -89,7 +89,9 @@ function IconButton({ label, glyph, onClick, tone = "default", className }) {
         className
       )}
     >
-      <span className="material-symbols-outlined text-[16px] leading-none">{glyph}</span>
+      {children ?? (
+        <span className="material-symbols-outlined text-[16px] leading-none">{glyph}</span>
+      )}
     </button>
   );
 }
@@ -188,11 +190,22 @@ function Panel({ title, message, percent, canCancel, canBackground, onCancel, on
                 />
               ) : null}
               {canBackground ? (
-                <IconButton
-                  label="Run in background"
-                  glyph="download"
-                  onClick={onBackground}
-                />
+                <IconButton label="Run in background" onClick={onBackground}>
+                  {/* Two squares overlapping: a card being tucked behind the
+                      one in front of it, which is what "run in background" does. */}
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className="size-4 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="9" y="9" width="11" height="11" rx="2" />
+                    <rect x="4" y="4" width="11" height="11" rx="2" />
+                  </svg>
+                </IconButton>
               ) : null}
             </div>
             {percent !== null ? (

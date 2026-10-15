@@ -32,6 +32,10 @@ const DEFAULT_SETTINGS = {
     CUSTOM_PLUGIN_KEYS.map((key) => [key, { enabled: false, models: [] }])
   ),
   requireLogin: true,
+  // Custom-model editor: warn about name/owned_by that claim a vendor the
+  // target model does not match. Persisted so every administrator sees the
+  // same editor rather than each browser deciding for itself.
+  antiProbeMetadata: true,
   requireApiKey: true,
   // Site-wide theme (glass | dark). An administrator picks it once here instead
   // of every browser choosing its own: the value is rendered into the document

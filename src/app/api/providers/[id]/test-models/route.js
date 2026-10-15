@@ -3,7 +3,7 @@ import { getProviderConnectionById } from "@/lib/localDb";
 import { getProviderModels, PROVIDER_ID_TO_ALIAS } from "open-sse/config/providerModels.js";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider } from "@/shared/constants/providers";
 import { UPDATER_CONFIG } from "@/shared/constants/config";
-import { pingModelByKind } from "@/app/api/models/test/ping";
+import { pingModelByKind, WEB_COOKIE_PROVIDERS } from "@/app/api/models/test/ping";
 
 /**
  * POST /api/providers/[id]/test-models
@@ -48,14 +48,22 @@ export async function POST(request, { params }) {
     const firstResult = await pingModelByKind(`${alias}/${first.id}`, firstKind, baseUrl);
     const results = [{ modelId: first.id, name: first.name || first.id, ...firstResult }];
 
+    // Cookie-based web providers queue per account, so firing every probe at
+    // once just makes them all time out behind each other. Probe those serially
+    // and keep the fan-out for ordinary REST providers.
+    const isWebCookie = WEB_COOKIE_PROVIDERS.has(providerId);
     if (rest.length > 0) {
-      const restResults = await Promise.all(
-        rest.map(async (model) => {
-          const result = await pingModelByKind(`${alias}/${model.id}`, model.kind || model.type || "llm", baseUrl);
-          return { modelId: model.id, name: model.name || model.id, ...result };
-        })
-      );
-      results.push(...restResults);
+      const probe = async (model) => {
+        const result = await pingModelByKind(`${alias}/${model.id}`, model.kind || model.type || "llm", baseUrl);
+        return { modelId: model.id, name: model.name || model.id, ...result };
+      };
+      if (isWebCookie) {
+        for (const model of rest) {
+          results.push(await probe(model));
+        }
+      } else {
+        results.push(...(await Promise.all(rest.map(probe))));
+      }
     }
 
     return NextResponse.json({ provider: providerId, connectionId: id, results });

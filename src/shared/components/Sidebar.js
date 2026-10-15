@@ -293,6 +293,7 @@ export default function Sidebar({ onClose }) {
                 ) : null;
               })}
 
+
               {/* Settings */}
               {!isApiKeyUser && (
               <NavLink

@@ -1,0 +1,400 @@
+📦 Building 9Router CLI package with Next.js...
+
+0️⃣  Syncing version to app/package.json...
+✅ Version already synced: 0.5.166-Custom
+
+1️⃣  Building Next.js app...
+   $ npm run build
+
+> 9router-app@0.5.166-Custom build
+> next build
+
+ ⚠ Invalid next.config.mjs options detected: 
+ ⚠     Unrecognized key(s) in object: 'proxyClientMaxBodySize', 'serverComponentsHmrCache', 'webpackMemoryOptimizations' at "experimental"
+ ⚠     Unrecognized key(s) in object: 'serverExternalPackages', 'turbopack'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+  ▲ Next.js 14.2.35
+  - Experiments (use with caution):
+    · cpus
+    · outputFileTracingRoot
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+[DB] Driver: node:sqlite | file: C:\Users\USER\9router-serenhope\cli\.build-home\AppData\Roaming\9router\db\data.sqlite
+   Generating static pages (0/152) ...
+Error fetching MITM aliases: Dynamic server usage: Route /api/cli-tools/antigravity-mitm/alias couldn't be rendered statically because it used `request.url`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+   Generating static pages (38/152) 
+Kiro social authorize error: B [Error]: Dynamic server usage: Route /api/oauth/kiro/social-authorize couldn't be rendered statically because it used `request.url`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at V (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:21778)
+    at Object.get (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:29465)
+    at l (C:\Users\USER\9router-serenhope\.next-cli-build\server\app\api\oauth\kiro\social-authorize\route.js:1:640)
+    at C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:38417
+    at C:\Users\USER\9router-serenhope\node_modules\next\dist\server\lib\trace\tracer.js:140:36
+    at NoopContextManager.with (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:7062)
+    at ContextAPI.with (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:518)
+    at NoopTracer.startActiveSpan (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18093)
+    at ProxyTracer.startActiveSpan (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18854)
+    at C:\Users\USER\9router-serenhope\node_modules\next\dist\server\lib\trace\tracer.js:122:103 {
+  description: "Route /api/oauth/kiro/social-authorize couldn't be rendered statically because it used `request.url`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Error fetching providers for client: B [Error]: Dynamic server usage: Route /api/providers/client couldn't be rendered statically because it used `request.url`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at V (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:21778)
+    at Object.get (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:29465)
+    at c (C:\Users\USER\9router-serenhope\.next-cli-build\server\app\api\providers\client\route.js:1:6882)
+    at async C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:38411
+    at async e_.execute (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:27880)
+    at async e_.handle (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:39943)
+    at async exportAppRoute (C:\Users\USER\9router-serenhope\node_modules\next\dist\export\routes\app-route.js:77:26)
+    at async exportPageImpl (C:\Users\USER\9router-serenhope\node_modules\next\dist\export\worker.js:175:20)
+    at async Span.traceAsyncFn (C:\Users\USER\9router-serenhope\node_modules\next\dist\trace\trace.js:154:20)
+    at async Object.exportPage (C:\Users\USER\9router-serenhope\node_modules\next\dist\export\worker.js:237:20) {
+  description: "Route /api/providers/client couldn't be rendered statically because it used `request.url`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+   Generating static pages (76/152) 
+Error loading file: B [Error]: Dynamic server usage: Route /api/translator/load couldn't be rendered statically because it used `request.url`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at V (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:21778)
+    at Object.get (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:29465)
+    at d (C:\Users\USER\9router-serenhope\.next-cli-build\server\app\api\translator\load\route.js:1:656)
+    at C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:38417
+    at C:\Users\USER\9router-serenhope\node_modules\next\dist\server\lib\trace\tracer.js:140:36
+    at NoopContextManager.with (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:7062)
+    at ContextAPI.with (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:518)
+    at NoopTracer.startActiveSpan (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18093)
+    at ProxyTracer.startActiveSpan (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18854)
+    at C:\Users\USER\9router-serenhope\node_modules\next\dist\server\lib\trace\tracer.js:122:103 {
+  description: "Route /api/translator/load couldn't be rendered statically because it used `request.url`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+[API] Failed to get providers: n [Error]: Dynamic server usage: Route /api/usage/providers couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at l (C:\Users\USER\9router-serenhope\.next-cli-build\server\chunks\8948.js:1:37220)
+    at f (C:\Users\USER\9router-serenhope\.next-cli-build\server\chunks\8590.js:1:1756)
+    at a (C:\Users\USER\9router-serenhope\.next-cli-build\server\chunks\9355.js:1:6296)
+    at f (C:\Users\USER\9router-serenhope\.next-cli-build\server\app\api\usage\providers\route.js:1:1339)
+    at C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:38417
+    at C:\Users\USER\9router-serenhope\node_modules\next\dist\server\lib\trace\tracer.js:140:36
+    at NoopContextManager.with (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:7062)
+    at ContextAPI.with (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:518)
+    at NoopTracer.startActiveSpan (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18093)
+    at ProxyTracer.startActiveSpan (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18854) {
+  description: "Route /api/usage/providers couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+[API] Failed to get request details: n [Error]: Dynamic server usage: Route /api/usage/request-details couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at l (C:\Users\USER\9router-serenhope\.next-cli-build\server\chunks\8948.js:1:37220)
+    at f (C:\Users\USER\9router-serenhope\.next-cli-build\server\chunks\8590.js:1:1756)
+    at a (C:\Users\USER\9router-serenhope\.next-cli-build\server\chunks\9355.js:1:6296)
+    at l (C:\Users\USER\9router-serenhope\.next-cli-build\server\app\api\usage\request-details\route.js:1:1308)
+    at C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:38417
+    at C:\Users\USER\9router-serenhope\node_modules\next\dist\server\lib\trace\tracer.js:140:36
+    at NoopContextManager.with (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:7062)
+    at ContextAPI.with (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:518)
+    at NoopTracer.startActiveSpan (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18093)
+    at ProxyTracer.startActiveSpan (C:\Users\USER\9router-serenhope\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18854) {
+  description: "Route /api/usage/request-details couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+   Generating static pages (114/152) 
+ ✓ Generating static pages (152/152)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                        Size     First Load JS
+┌ ○ /                                              143 B          88.3 kB
+├ ○ /_not-found                                    880 B          89.1 kB
+├ ƒ /api/auth/login                                0 B                0 B
+├ ƒ /api/auth/logout                               0 B                0 B
+├ ƒ /api/auth/oidc/callback                        0 B                0 B
+├ ƒ /api/auth/oidc/start                           0 B                0 B
+├ ƒ /api/auth/oidc/test                            0 B                0 B
+├ ƒ /api/auth/reset-password                       0 B                0 B
+├ ƒ /api/auth/saml/acs                             0 B                0 B
+├ ƒ /api/auth/saml/metadata                        0 B                0 B
+├ ƒ /api/auth/saml/start                           0 B                0 B
+├ ƒ /api/auth/saml/test                            0 B                0 B
+├ ƒ /api/auth/status                               0 B                0 B
+├ ƒ /api/changelog                                 0 B                0 B
+├ ○ /api/cli-tools/all-statuses                    0 B                0 B
+├ ƒ /api/cli-tools/antigravity-mitm                0 B                0 B
+├ ƒ /api/cli-tools/antigravity-mitm/alias          0 B                0 B
+├ ƒ /api/cli-tools/claude-settings                 0 B                0 B
+├ ƒ /api/cli-tools/cline-settings                  0 B                0 B
+├ ƒ /api/cli-tools/codewhale-settings              0 B                0 B
+├ ƒ /api/cli-tools/codex-profiles                  0 B                0 B
+├ ƒ /api/cli-tools/codex-settings                  0 B                0 B
+├ ƒ /api/cli-tools/copilot-settings                0 B                0 B
+├ ƒ /api/cli-tools/cowork-mcp-registry             0 B                0 B
+├ ƒ /api/cli-tools/cowork-mcp-tools                0 B                0 B
+├ ƒ /api/cli-tools/cowork-settings                 0 B                0 B
+├ ƒ /api/cli-tools/crush-settings                  0 B                0 B
+├ ƒ /api/cli-tools/deepseek-tui-settings           0 B                0 B
+├ ○ /api/cli-tools/devin-settings                  0 B                0 B
+├ ƒ /api/cli-tools/droid-settings                  0 B                0 B
+├ ƒ /api/cli-tools/forge-settings                  0 B                0 B
+├ ƒ /api/cli-tools/grok-build-settings             0 B                0 B
+├ ƒ /api/cli-tools/hermes-settings                 0 B                0 B
+├ ƒ /api/cli-tools/jcode-settings                  0 B                0 B
+├ ƒ /api/cli-tools/kilo-settings                   0 B                0 B
+├ ƒ /api/cli-tools/omp-settings                    0 B                0 B
+├ ƒ /api/cli-tools/openclaw-settings               0 B                0 B
+├ ƒ /api/cli-tools/opencode-settings               0 B                0 B
+├ ƒ /api/cli-tools/pi-settings                     0 B                0 B
+├ ƒ /api/cli-tools/smelt-settings                  0 B                0 B
+├ ƒ /api/combos                                    0 B                0 B
+├ ƒ /api/combos/[id]                               0 B                0 B
+├ ƒ /api/combos/presets                            0 B                0 B
+├ ƒ /api/headroom/extras                           0 B                0 B
+├ ƒ /api/headroom/proxy/[...path]                  0 B                0 B
+├ ƒ /api/headroom/restart                          0 B                0 B
+├ ƒ /api/headroom/start                            0 B                0 B
+├ ƒ /api/headroom/status                           0 B                0 B
+├ ƒ /api/headroom/stop                             0 B                0 B
+├ ƒ /api/health                                    0 B                0 B
+├ ○ /api/init                                      0 B                0 B
+├ ƒ /api/keys                                      0 B                0 B
+├ ƒ /api/keys/[id]                                 0 B                0 B
+├ ƒ /api/keys/bulk                                 0 B                0 B
+├ ƒ /api/locale                                    0 B                0 B
+├ ƒ /api/mcp/[plugin]/message                      0 B                0 B
+├ ƒ /api/mcp/[plugin]/sse                          0 B                0 B
+├ ƒ /api/media-providers/tts/deepgram/voices       0 B                0 B
+├ ƒ /api/media-providers/tts/elevenlabs/voices     0 B                0 B
+├ ƒ /api/media-providers/tts/inworld/voices        0 B                0 B
+├ ƒ /api/media-providers/tts/minimax/voices        0 B                0 B
+├ ƒ /api/media-providers/tts/voices                0 B                0 B
+├ ƒ /api/model-editor                              0 B                0 B
+├ ƒ /api/models                                    0 B                0 B
+├ ƒ /api/models/alias                              0 B                0 B
+├ ƒ /api/models/availability                       0 B                0 B
+├ ƒ /api/models/catalog-sync                       0 B                0 B
+├ ƒ /api/models/custom                             0 B                0 B
+├ ƒ /api/models/disabled                           0 B                0 B
+├ ƒ /api/models/test                               0 B                0 B
+├ ƒ /api/notifications                             0 B                0 B
+├ ƒ /api/notifications/scan                        0 B                0 B
+├ ƒ /api/oauth/[provider]/[action]                 0 B                0 B
+├ ƒ /api/oauth/codex/bulk-import                   0 B                0 B
+├ ƒ /api/oauth/codex/import-token                  0 B                0 B
+├ ○ /api/oauth/cursor/auto-import                  0 B                0 B
+├ ƒ /api/oauth/cursor/import                       0 B                0 B
+├ ƒ /api/oauth/gitlab/pat                          0 B                0 B
+├ ƒ /api/oauth/grok-cli/bulk-import                0 B                0 B
+├ ƒ /api/oauth/iflow/cookie                        0 B                0 B
+├ ƒ /api/oauth/kiro/api-key                        0 B                0 B
+├ ○ /api/oauth/kiro/auto-import                    0 B                0 B
+├ ƒ /api/oauth/kiro/import                         0 B                0 B
+├ ƒ /api/oauth/kiro/import-cli-proxy               0 B                0 B
+├ ƒ /api/oauth/kiro/social-authorize               0 B                0 B
+├ ƒ /api/oauth/kiro/social-exchange                0 B                0 B
+├ ƒ /api/oauth/xiaomi-mimo/api-key                 0 B                0 B
+├ ○ /api/oauth/xiaomi-mimo/auto-import             0 B                0 B
+├ ƒ /api/oauth/xiaomi-mimo/login/start             0 B                0 B
+├ ƒ /api/oauth/xiaomi-mimo/login/status            0 B                0 B
+├ ○ /api/oauth/zed/auto-import                     0 B                0 B
+├ ƒ /api/oauth/zed/import                          0 B                0 B
+├ ƒ /api/plugins                                   0 B                0 B
+├ ƒ /api/pricing                                   0 B                0 B
+├ ƒ /api/provider-nodes                            0 B                0 B
+├ ƒ /api/provider-nodes/[id]                       0 B                0 B
+├ ƒ /api/provider-nodes/validate                   0 B                0 B
+├ ƒ /api/providers                                 0 B                0 B
+├ ƒ /api/providers/[id]                            0 B                0 B
+├ ƒ /api/providers/[id]/models                     0 B                0 B
+├ ƒ /api/providers/[id]/overrides                  0 B                0 B
+├ ƒ /api/providers/[id]/test                       0 B                0 B
+├ ƒ /api/providers/[id]/test-models                0 B                0 B
+├ ƒ /api/providers/client                          0 B                0 B
+├ ○ /api/providers/kilo/free-models                0 B                0 B
+├ ƒ /api/providers/suggested-models                0 B                0 B
+├ ƒ /api/providers/test-batch                      0 B                0 B
+├ ƒ /api/providers/validate                        0 B                0 B
+├ ƒ /api/proxy-pools                               0 B                0 B
+├ ƒ /api/proxy-pools/[id]                          0 B                0 B
+├ ƒ /api/proxy-pools/[id]/test                     0 B                0 B
+├ ƒ /api/proxy-pools/bulk                          0 B                0 B
+├ ƒ /api/proxy-pools/cloudflare-deploy             0 B                0 B
+├ ƒ /api/proxy-pools/deno-deploy                   0 B                0 B
+├ ƒ /api/proxy-pools/import-jobs                   0 B                0 B
+├ ƒ /api/proxy-pools/vercel-deploy                 0 B                0 B
+├ ƒ /api/pxpipe/health                             0 B                0 B
+├ ƒ /api/pxpipe/install                            0 B                0 B
+├ ƒ /api/pxpipe/logs                               0 B                0 B
+├ ƒ /api/pxpipe/restart                            0 B                0 B
+├ ƒ /api/pxpipe/start                              0 B                0 B
+├ ƒ /api/pxpipe/stats                              0 B                0 B
+├ ƒ /api/pxpipe/status                             0 B                0 B
+├ ƒ /api/pxpipe/stop                               0 B                0 B
+├ ƒ /api/settings                                  0 B                0 B
+├ ƒ /api/settings/auto-backup                      0 B                0 B
+├ ƒ /api/settings/database                         0 B                0 B
+├ ƒ /api/settings/database/jobs                    0 B                0 B
+├ ƒ /api/settings/database/jobs/[jobId]            0 B                0 B
+├ ƒ /api/settings/history                          0 B                0 B
+├ ƒ /api/settings/proxy-test                       0 B                0 B
+├ ○ /api/settings/require-login                    0 B                0 B
+├ ƒ /api/settings/rollback                         0 B                0 B
+├ ƒ /api/shutdown                                  0 B                0 B
+├ ƒ /api/tags                                      0 B                0 B
+├ ƒ /api/theme                                     0 B                0 B
+├ ƒ /api/token-saver/cache-stats                   0 B                0 B
+├ ƒ /api/translator/console-logs                   0 B                0 B
+├ ƒ /api/translator/console-logs/stream            0 B                0 B
+├ ƒ /api/translator/load                           0 B                0 B
+├ ƒ /api/translator/save                           0 B                0 B
+├ ƒ /api/translator/send                           0 B                0 B
+├ ƒ /api/translator/translate                      0 B                0 B
+├ ƒ /api/tunnel/disable                            0 B                0 B
+├ ƒ /api/tunnel/enable                             0 B                0 B
+├ ƒ /api/tunnel/status                             0 B                0 B
+├ ƒ /api/tunnel/tailscale-check                    0 B                0 B
+├ ƒ /api/tunnel/tailscale-disable                  0 B                0 B
+├ ƒ /api/tunnel/tailscale-enable                   0 B                0 B
+├ ƒ /api/tunnel/tailscale-install                  0 B                0 B
+├ ƒ /api/usage/[connectionId]                      0 B                0 B
+├ ƒ /api/usage/[connectionId]/claude-reset         0 B                0 B
+├ ƒ /api/usage/[connectionId]/codex-reset-credits  0 B                0 B
+├ ƒ /api/usage/antigravity-tier                    0 B                0 B
+├ ƒ /api/usage/api-keys                            0 B                0 B
+├ ƒ /api/usage/available-models                    0 B                0 B
+├ ƒ /api/usage/chart                               0 B                0 B
+├ ƒ /api/usage/errors                              0 B                0 B
+├ ƒ /api/usage/history                             0 B                0 B
+├ ƒ /api/usage/leaderboard                         0 B                0 B
+├ ○ /api/usage/logs                                0 B                0 B
+├ ƒ /api/usage/providers                           0 B                0 B
+├ ƒ /api/usage/request-details                     0 B                0 B
+├ ƒ /api/usage/request-details/[id]                0 B                0 B
+├ ○ /api/usage/request-logs                        0 B                0 B
+├ ƒ /api/usage/sparks                              0 B                0 B
+├ ƒ /api/usage/stats                               0 B                0 B
+├ ƒ /api/usage/stream                              0 B                0 B
+├ ƒ /api/usage/token-savings                       0 B                0 B
+├ ƒ /api/v1                                        0 B                0 B
+├ ƒ /api/v1/api/chat                               0 B                0 B
+├ ƒ /api/v1/audio/speech                           0 B                0 B
+├ ƒ /api/v1/audio/transcriptions                   0 B                0 B
+├ ƒ /api/v1/audio/voices                           0 B                0 B
+├ ƒ /api/v1/chat/completions                       0 B                0 B
+├ ƒ /api/v1/embeddings                             0 B                0 B
+├ ƒ /api/v1/images/generations                     0 B                0 B
+├ ƒ /api/v1/messages                               0 B                0 B
+├ ƒ /api/v1/messages/count_tokens                  0 B                0 B
+├ ƒ /api/v1/models                                 0 B                0 B
+├ ƒ /api/v1/models/[...model]                      0 B                0 B
+├ ƒ /api/v1/models/info                            0 B                0 B
+├ ƒ /api/v1/responses                              0 B                0 B
+├ ƒ /api/v1/responses/compact                      0 B                0 B
+├ ƒ /api/v1/search                                 0 B                0 B
+├ ƒ /api/v1/systemone                              0 B                0 B
+├ ƒ /api/v1/videos/[id]                            0 B                0 B
+├ ƒ /api/v1/videos/edits                           0 B                0 B
+├ ƒ /api/v1/videos/extensions                      0 B                0 B
+├ ƒ /api/v1/videos/generations                     0 B                0 B
+├ ƒ /api/v1/web/fetch                              0 B                0 B
+├ ƒ /api/v1beta/models                             0 B                0 B
+├ ƒ /api/v1beta/models/[...path]                   0 B                0 B
+├ ƒ /api/version                                   0 B                0 B
+├ ƒ /api/version/shutdown                          0 B                0 B
+├ ƒ /api/version/update                            0 B                0 B
+├ ○ /callback                                      1.34 kB        89.5 kB
+├ ○ /dashboard                                     154 B           236 kB
+├ ○ /dashboard/api-key-usage                       2.3 kB          222 kB
+├ ○ /dashboard/arena                               8.93 kB         229 kB
+├ ○ /dashboard/basic-chat                          6.39 kB         226 kB
+├ ○ /dashboard/cli-tools                           1.38 kB         265 kB
+├ ƒ /dashboard/cli-tools/[toolId]                  1.91 kB         265 kB
+├ ○ /dashboard/combos                              24.2 kB         244 kB
+├ ƒ /dashboard/console-log                         1.49 kB         222 kB
+├ ○ /dashboard/console-log-poll                    0 B                0 B
+├ ○ /dashboard/endpoint                            154 B           236 kB
+├ ƒ /dashboard/media-providers/[kind]              2.7 kB          223 kB
+├ ƒ /dashboard/media-providers/[kind]/[id]         18.3 kB         238 kB
+├ ƒ /dashboard/media-providers/combo/[id]          4.1 kB          224 kB
+├ ○ /dashboard/media-providers/web                 2.36 kB         222 kB
+├ ○ /dashboard/mitm                                1.27 kB         265 kB
+├ ○ /dashboard/model-editor                        6.34 kB         226 kB
+├ ○ /dashboard/plugins                             3.45 kB         223 kB
+├ ○ /dashboard/prd-builder                         5.83 kB         226 kB
+├ ○ /dashboard/profile                             12.5 kB         233 kB
+├ ○ /dashboard/providers                           8.35 kB         228 kB
+├ ƒ /dashboard/providers/[id]                      23.8 kB         249 kB
+├ ○ /dashboard/providers/new                       1.9 kB          222 kB
+├ ○ /dashboard/proxy-pools                         8.73 kB         229 kB
+├ ○ /dashboard/pxpipe                              112 kB          332 kB
+├ ○ /dashboard/quota                               13.5 kB         234 kB
+├ ○ /dashboard/settings/pricing                    2.81 kB        95.7 kB
+├ ○ /dashboard/skills                              1.99 kB         222 kB
+├ ○ /dashboard/token-saver                         7 kB            227 kB
+├ ○ /dashboard/translator                          3.49 kB         224 kB
+├ ○ /dashboard/usage                               17.3 kB         237 kB
+├ ○ /landing                                       11.2 kB        99.4 kB
+├ ○ /login                                         2.67 kB         223 kB
+└ ○ /manifest.webmanifest                          0 B                0 B
++ First Load JS shared by all                      88.2 kB
+  ├ chunks/2117-444ce27c536335f3.js                31.9 kB
+  ├ chunks/fd9d1056-ba5fd14cf02c3f5b.js            53.6 kB
+  └ other shared chunks (total)                    2.65 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+> 9router-app@0.5.166-Custom postbuild
+> node scripts/copy-standalone-assets.mjs
+
+[standalone-assets] Skipping workspace-traced CLI build; CLI packaging handles assets
+✅ Next.js build completed
+
+2️⃣  Cleaning old app/cli/app...
+✅ Cleaned
+
+3️⃣  Copying Next.js standalone build to app/cli/app...
+ℹ️  Detected nested standalone output: 9router-serenhope/
+✅ Copied standalone build
+
+✅ Copied custom-server.js
+
+3️⃣ b Configuring SQLite drivers...
+✅ sql.js already bundled
+✅ open already bundled
+✅ Stripped better-sqlite3 (lives in ~/.9router/runtime)
+
+3️⃣ c Shipping auth guard sources...
+✅ Copied src/ (auth guard tree)
+✅ Copied scripts/ (auth guard loader)
+✅ Bundled jose
+✅ Bundled uuid
+✅ Bundled bcryptjs
+✅ Restored node_modules/next/server.js shim
+
+4️⃣  Copying static files...
+✅ Copied static files
+
+5️⃣  Copying public folder...
+✅ Copied public folder
+
+6️⃣  Copying vendor-chunks...
+⏭️  No vendor-chunks found
+
+6️⃣ b Copying complete server artifacts...
+✅ Copied complete server artifacts
+
+7️⃣  Copying MITM server files...
+✅ Copied MITM files
+
+7️⃣ b Copying updater files...
+✅ Copied updater files
+
+8️⃣  Building MITM server...
+⚙️  Config: bundle, minify, cleanPlainFiles
+✅ bundled + minified → C:\Users\USER\9router-serenhope\cli\app\src\mitm\server.js
+✅ Removed plain MITM files from CLI bundle
+✅ MITM server build completed
+
+✨ CLI package build completed!
+📁 Output: C:\Users\USER\9router-serenhope\cli\app
+📊 Package size: 75M

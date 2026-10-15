@@ -77,13 +77,49 @@ export default function NotificationBell() {
   // without this list.
   const loadJobs = useCallback(async () => {
     if (!isAdmin) return;
+    const live = [];
     try {
-      const res = await fetch("/api/proxy-pools/import-jobs", { cache: "no-store" });
-      if (!res.ok) return;
-      const data = await res.json();
-      const live = (Array.isArray(data.jobs) ? data.jobs : []).filter(
-        (j) => j.status === "queued" || j.status === "running"
-      );
+      // The proxy-import job predates the generic runner and keeps its own
+      // store, so both lists are read and shown as one queue: to the operator
+      // "an operation I started is still running" does not depend on which
+      // subsystem happens to own it.
+      const [imports, generic] = await Promise.all([
+        fetch("/api/proxy-pools/import-jobs", { cache: "no-store" })
+          .then((r) => (r.ok ? r.json() : { jobs: [] }))
+          .catch(() => ({ jobs: [] })),
+        fetch("/api/dashboard-jobs", { cache: "no-store" })
+          .then((r) => (r.ok ? r.json() : { jobs: [] }))
+          .catch(() => ({ jobs: [] })),
+      ]);
+
+      for (const job of Array.isArray(imports.jobs) ? imports.jobs : []) {
+        if (job.status === "queued" || job.status === "running") {
+          live.push({
+            id: job.id,
+            taskId: "proxy-pools-import",
+            title: "Importing proxies",
+            message: job.message || "",
+            progress: Number(job.progress) || 0,
+            href: "/dashboard/proxy-pools",
+          });
+        }
+      }
+      for (const job of Array.isArray(generic.jobs) ? generic.jobs : []) {
+        if (job.status === "queued" || job.status === "running") {
+          live.push({
+            id: job.id,
+            // The banner for this job is keyed the same way on the task store,
+            // which is how the click below knows whether to reopen a banner it
+            // is already rendering or to navigate to the page that owns it.
+            taskId: `dashboard-job-${job.kind}`,
+            title: job.title || job.kind,
+            message: job.message || "",
+            progress: Number(job.progress) || 0,
+            href: "/dashboard/proxy-pools",
+          });
+        }
+      }
+      live.sort((a, b) => (a.id < b.id ? 1 : -1));
       setJobs(live);
     } catch {
       // A failed poll must not disturb the header.
@@ -103,7 +139,7 @@ export default function NotificationBell() {
   // a derived .map(): a derived array is a new reference every render, which
   // re-subscribes the component on every paint and loops the page to death.)
   const tasks = useTaskStore((state) => state.tasks);
-  const taskTitles = useMemo(() => tasks.map((t) => t.title), [tasks]);
+  const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
 
   const markAllRead = async () => {
     setUnread(0);
@@ -131,7 +167,15 @@ export default function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() =>
+          setOpen((v) => {
+            // Refresh on open: a poll interval is right for the badge, but a
+            // user opening the panel is asking "what is running right now"
+            // and must not wait out the remainder of a 4s tick.
+            if (!v) loadJobs();
+            return !v;
+          })
+        }
         className="relative flex items-center justify-center size-8 rounded-[10px] text-text-muted hover:text-text-main hover:bg-surface-2 transition-colors"
         title="Notifications"
         aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
@@ -175,7 +219,7 @@ export default function NotificationBell() {
               </div>
               {jobs.map((job) => {
                 const pct = Number(job.progress) || 0;
-                const alreadyShown = taskTitles.includes("Importing proxies");
+                const alreadyShown = taskIds.includes(job.taskId);
                 return (
                   <button
                     key={job.id}
@@ -188,7 +232,7 @@ export default function NotificationBell() {
                       // banner reopens on the run itself.
                       revealBackgroundedTasks();
                       if (!alreadyShown && typeof window !== "undefined") {
-                        window.location.assign("/dashboard/proxy-pools");
+                        window.location.assign(job.href || "/dashboard/proxy-pools");
                       } else if (typeof window !== "undefined") {
                         window.dispatchEvent(new CustomEvent("9r:reveal-tasks"));
                       }
@@ -197,11 +241,11 @@ export default function NotificationBell() {
                   >
                     <span className="flex items-start gap-2 px-3.5 py-2.5 transition-colors hover:bg-surface-2">
                       <span className="material-symbols-outlined text-[16px] mt-0.5 shrink-0 text-primary">
-                        download
+                        progress_activity
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-xs font-medium text-text-main">
-                          Importing proxies
+                          {job.title}
                         </span>
                         <span className="block text-[11px] text-text-muted mt-0.5 break-words">
                           {job.message || `${pct}%`}
