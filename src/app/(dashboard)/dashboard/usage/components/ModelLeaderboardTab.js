@@ -27,7 +27,7 @@ export default function ModelLeaderboardTab({ period }) {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+    <div className="rounded-xl border border-border bg-surface-2 p-4">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -43,7 +43,7 @@ export default function ModelLeaderboardTab({ period }) {
           </thead>
           <tbody>
             {data.leaderboard.map((m, i) => (
-              <tr key={i} className="border-b border-border/50 hover:bg-zinc-800/30">
+              <tr key={i} className="border-b border-border/50 hover:bg-state-hover">
                 <td className="px-3 py-2.5 text-text-muted">{i + 1}</td>
                 <td className="px-3 py-2.5 max-w-[240px] truncate text-text-main" title={m.model}>{m.model}</td>
                 <td className="px-3 py-2.5 text-right text-text-main">{fmt(m.requests)}</td>

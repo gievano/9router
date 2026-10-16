@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ChangelogModal from "./ChangelogModal";
+import BellMenu from "./BellMenu";
+import NotifToast, { mergeLiveTasks } from "./NotifToast";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTaskStore } from "@/store/taskStore";
 import { revealBackgroundedTasks } from "./LongTaskBanner";
@@ -18,6 +20,12 @@ const SEVERITY_STYLE = {
  * Notification bell: quota pressure, updates and anything the scan route
  * derives. A key-signed session gets nothing - these messages describe this
  * install, not the caller's own key.
+ *
+ * Live long tasks live here too, through NotifToast: the import progress the
+ * operator used to read off a card floating over the table now has a home in
+ * the bell. The floating card keeps working (TaskDock + LongTaskBanner) as
+ * the transient signal; this is where the progress lives, and picking a row
+ * brings the card back through the existing reveal.
  */
 export default function NotificationBell() {
   const role = useSessionStore((state) => state.role);
@@ -55,22 +63,6 @@ export default function NotificationBell() {
     return () => clearInterval(timer);
   }, [isAdmin, load]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const onClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    const onKey = (e) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
   // Running server-side operations. Listed here so a job that outlived the page
   // that started it is still reachable: the banner sits collapsed in a corner
   // with nothing pointing at it, and "where did that import go" has no answer
@@ -100,6 +92,7 @@ export default function NotificationBell() {
             title: "Importing proxies",
             message: job.message || "",
             progress: Number(job.progress) || 0,
+            status: job.status,
             href: "/dashboard/proxy-pools",
           });
         }
@@ -115,6 +108,7 @@ export default function NotificationBell() {
             title: job.title || job.kind,
             message: job.message || "",
             progress: Number(job.progress) || 0,
+            status: job.status,
             href: "/dashboard/proxy-pools",
           });
         }
@@ -140,6 +134,11 @@ export default function NotificationBell() {
   // re-subscribes the component on every paint and loops the page to death.)
   const tasks = useTaskStore((state) => state.tasks);
   const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
+  const live = useMemo(() => mergeLiveTasks(tasks, jobs), [tasks, jobs]);
+  // Unread notices plus live tasks: an import still running keeps its badge
+  // after the operator has read every notice, which is the case that made the
+  // badge feel like it lied.
+  const badge = unread + live.length;
 
   const markAllRead = async () => {
     setUnread(0);
@@ -159,12 +158,28 @@ export default function NotificationBell() {
     }
   };
 
+  // Picking a live task brings its banner back instead of rendering a second
+  // copy of it.
+  const handlePick = (task) => {
+    setOpen(false);
+    // The reveal notifies banners that are already mounted (see the reveal
+    // subscription in LongTaskBanner), so a run on this page expands in place
+    // instead of staying collapsed in the corner.
+    revealBackgroundedTasks();
+    if (!taskIds.includes(task.id) && typeof window !== "undefined") {
+      // No banner is mounted for this run: the page that owns it is closed.
+      // Navigation lands where the operator started the run, so the task
+      // store reconnects and the banner reopens on the run itself.
+      window.location.assign(task.href || "/dashboard/proxy-pools");
+    }
+  };
+
   if (!isAdmin) return null;
 
   const visible = items.filter((n) => !n.cleared);
 
   return (
-    <div className="relative" ref={ref}>
+    <div ref={ref}>
       <button
         type="button"
         onClick={() =>
@@ -178,24 +193,30 @@ export default function NotificationBell() {
         }
         className="relative flex items-center justify-center size-8 rounded-[10px] text-text-muted hover:text-text-main hover:bg-surface-2 transition-colors"
         title="Notifications"
-        aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
+        aria-label={`Notifications${unread ? `, ${unread} unread` : ""}${
+          live.length ? `, ${live.length} running` : ""
+        }`}
         aria-expanded={open}
       >
         <span className="material-symbols-outlined text-[20px]">notifications</span>
-        {unread > 0 && (
+        {badge > 0 && (
           <span
             className={`absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 rounded-full text-[9px] font-bold leading-[15px] text-white ${
               items.some((n) => !n.read && n.severity === "error") ? "bg-red-500" : "bg-primary"
             }`}
           >
-            {unread > 99 ? "99+" : unread}
+            {badge > 99 ? "99+" : badge}
           </span>
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 mt-2 w-[min(340px,calc(100vw-2rem))] rounded-xl border border-border-subtle bg-surface shadow-xl z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border-subtle">
+      <BellMenu
+        open={open}
+        onClose={() => setOpen(false)}
+        triggerRef={ref}
+        label="Notifications"
+        header={
+          <div className="flex items-center justify-between border-b border-border-subtle px-3.5 py-2.5">
             <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">
               Notifications
             </span>
@@ -209,114 +230,58 @@ export default function NotificationBell() {
               </button>
             )}
           </div>
-
-          {jobs.length > 0 && (
-            <>
-              <div className="px-3.5 pt-3 pb-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">
-                  Running in background
+        }
+      >
+        <NotifToast jobs={jobs} onPick={handlePick} />
+        {visible.length === 0 ? (
+          // Only claim "nothing" when the panel really is empty: a running
+          // task listed just above contradicts it.
+          <p className="px-4 py-6 text-center text-xs text-text-muted">
+            {live.length > 0 ? "No notifications." : "Nothing to report."}
+          </p>
+        ) : (
+          visible.map((n) => {
+            const style = SEVERITY_STYLE[n.severity] || SEVERITY_STYLE.info;
+            // Every entry opens the changelog: the bell says something
+            // changed, and the changelog says what.
+            return (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setChangelogOpen(true);
+                }}
+                className="block w-full text-left border-b border-border-subtle/60 last:border-0"
+              >
+                <span
+                  className={`flex items-start gap-2 px-3.5 py-2.5 transition-colors hover:bg-surface-2 ${
+                    n.read ? "opacity-65" : ""
+                  }`}
+                >
+                  <span
+                    className={`material-symbols-outlined text-[16px] mt-0.5 shrink-0 ${style.text}`}
+                  >
+                    {style.icon}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-medium text-text-main">{n.title}</span>
+                    {n.body && (
+                      <span className="block text-[11px] text-text-muted mt-0.5 break-words">
+                        {n.body}
+                      </span>
+                    )}
+                    <span className="block text-[10px] text-text-muted/70 mt-1">
+                      {new Date(n.at).toLocaleString()}
+                    </span>
+                  </span>
+                  {!n.read && <span className={`size-1.5 rounded-full mt-1.5 shrink-0 ${style.dot}`} />}
                 </span>
-              </div>
-              {jobs.map((job) => {
-                const pct = Number(job.progress) || 0;
-                const alreadyShown = taskIds.includes(job.taskId);
-                return (
-                  <button
-                    key={job.id}
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      // Expand the collapsed corner card instead of rendering a
-                      // second copy of it. Navigation lands where the operator
-                      // started the run, so the task store reconnects and the
-                      // banner reopens on the run itself.
-                      revealBackgroundedTasks();
-                      if (!alreadyShown && typeof window !== "undefined") {
-                        window.location.assign(job.href || "/dashboard/proxy-pools");
-                      } else if (typeof window !== "undefined") {
-                        window.dispatchEvent(new CustomEvent("9r:reveal-tasks"));
-                      }
-                    }}
-                    className="block w-full text-left border-b border-border-subtle/60 last:border-0"
-                  >
-                    <span className="flex items-start gap-2 px-3.5 py-2.5 transition-colors hover:bg-surface-2">
-                      <span className="material-symbols-outlined text-[16px] mt-0.5 shrink-0 text-primary">
-                        progress_activity
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-xs font-medium text-text-main">
-                          {job.title}
-                        </span>
-                        <span className="block text-[11px] text-text-muted mt-0.5 break-words">
-                          {job.message || `${pct}%`}
-                        </span>
-                        <span className="mt-1.5 block h-1 overflow-hidden rounded bg-border">
-                          <span
-                            className="block h-full bg-primary transition-[width] duration-300"
-                            style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
-                          />
-                        </span>
-                      </span>
-                      <span className="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-primary">
-                        {pct}%
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </>
-          )}
-          <div className="max-h-[min(380px,60vh)] overflow-y-auto">
-            {visible.length === 0 ? (
-              // Only claim "nothing" when the panel really is empty: a running
-              // job listed just above contradicts it.
-              <p className="px-4 py-6 text-center text-xs text-text-muted">
-                {jobs.length > 0 ? "No notifications." : "Nothing to report."}
-              </p>
-            ) : (
-              visible.map((n) => {
-                const style = SEVERITY_STYLE[n.severity] || SEVERITY_STYLE.info;
-                const body = (
-                  <>
-                    <span className={`flex items-start gap-2 px-3.5 py-2.5 transition-colors hover:bg-surface-2 ${n.read ? "opacity-65" : ""}`}>
-                      <span className={`material-symbols-outlined text-[16px] mt-0.5 shrink-0 ${style.text}`}>
-                        {style.icon}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-xs font-medium text-text-main">{n.title}</span>
-                        {n.body && (
-                          <span className="block text-[11px] text-text-muted mt-0.5 break-words">
-                            {n.body}
-                          </span>
-                        )}
-                        <span className="block text-[10px] text-text-muted/70 mt-1">
-                          {new Date(n.at).toLocaleString()}
-                        </span>
-                      </span>
-                      {!n.read && <span className={`size-1.5 rounded-full mt-1.5 shrink-0 ${style.dot}`} />}
-                    </span>
-                  </>
-                );
-                // Every entry opens the changelog: the bell says something
-                // changed, and the changelog says what.
-                return (
-                  <button
-                    key={n.id}
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      setChangelogOpen(true);
-                    }}
-                    className="block w-full text-left border-b border-border-subtle/60 last:border-0"
-                  >
-                    {body}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
+              </button>
+            );
+          })
+        )}
+      </BellMenu>
 
       <ChangelogModal isOpen={changelogOpen} onClose={() => setChangelogOpen(false)} />
     </div>

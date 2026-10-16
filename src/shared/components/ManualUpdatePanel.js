@@ -21,7 +21,7 @@ function versionLabel(version) {
 export default function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdown, onCancel, countdown, isDisconnected }) {
   const isCountingDown = countdown > 0;
   return (
-    <div className="w-full max-w-lg rounded-xl bg-surface border border-border p-6 text-text-main dark:bg-neutral-900/95 dark:border-white/10 dark:text-white">
+    <div className="w-full max-w-lg rounded-xl bg-surface border border-border p-6 text-text-main">
       <div className="flex items-center gap-3 mb-4">
         <div className="flex items-center justify-center size-11 rounded-full bg-amber-500/20 text-amber-400">
           <span className="material-symbols-outlined text-[24px]">content_copy</span>

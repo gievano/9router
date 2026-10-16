@@ -1,0 +1,274 @@
+/* ============================================================
+   Chrome design-token contract
+   ============================================================
+
+   Why a stylesheet rather than a JS constants module: every value here has to
+   be reachable from a Tailwind utility (`rounded-[var(--r-card)]`), from a
+   hand-written state rule (`.chrome-interactive:hover`), and from the dark
+   variants below. Custom properties are the only form all three can consume.
+   A JS module would need a second CSS mirror for the class-based consumers,
+   which is exactly the duplication this file removes.
+
+   Two deliberate tiers, so it is obvious what a caller may override:
+
+   1. TOKENS (unlayered custom properties, below). Radii, the elevation
+      ladder, motion, interaction state, density. One name per role, no
+      component inventing its own number.
+
+   2. STATE RULES (unlayered classes). Focus, disabled, hover lift, hover
+      wash, entrance animation, tooltip. Unlayered on purpose: unlayered CSS
+      outranks every `@layer`, so an interaction state cannot be accidentally
+      defeated by a utility that happens to still be in the className list -
+      which is precisely how the old Card's `hover:border-*` and its
+      `border-border-subtle` utility were fighting each other.
+
+   Geometry defaults are NOT here: components express radius and elevation as
+   token-referencing utilities in their own className, so a caller can still
+   override them per instance (`className="rounded-[4px]"`). `.chrome-field` is
+   the one exception and lives in `@layer components` for the same reason -
+   Input and Select must agree on padding, but each needs a utility
+   (`pl-10`/`pr-10`) to inset for its icon, and utilities are the later layer.
+
+   The elevation ladder is the piece that previously did not exist: soft /
+   warm / elevated / elev were four overlapping shadows that Card, Modal,
+   Drawer, Toggle and Button each picked from by eye. Now there are three
+   tiers with a stated rank, and every tier carries the same 1px top hairline
+   so a raised surface reads as lit from above instead of as a flat cut-out.
+   ============================================================ */
+
+:root {
+  /* ---- Radii: four steps. chip = small inline mark (badge, tooltip),
+     control = anything you click or type into, card = a surface, card-lg =
+     the same surface at overlay size (Modal/Drawer). */
+  --r-chip: 6px;
+  --r-control: 10px;
+  --r-card: 14px;
+  --r-card-lg: 18px;
+
+  /* ---- Focus: one visible treatment for the whole chrome. An offset
+     outline rather than an inset ring, because the fields' own border is the
+     same colour as their focus ring. */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* ---- Motion: fast for state a pointer is already touching, panel for
+     something that moves a whole surface. Long enough to read as a
+     transition, short enough not to feel like latency on a control used all
+     day. */
+  --motion-fast: 150ms;
+  --motion-panel: 220ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ---- Interaction state. One hover wash and one press wash for every
+     interactive element, derived from the text colour so they invert with the
+     theme instead of needing a dark: variant each. */
+  --state-hover: color-mix(in srgb, var(--color-text-main) 5%, transparent);
+  --state-press: color-mix(in srgb, var(--color-text-main) 9%, transparent);
+  --state-disabled: 0.5;
+
+  /* ---- The 1px top hairline carried by every elevation tier. */
+  --edge-highlight: rgba(255, 255, 255, 0.8);
+
+  /* ---- Elevation: 1 resting surface, 2 raised/interactive, 3 floating
+     overlay. Keyed to the existing --shadow-* values so nothing moves by more
+     than the hairline. `--elev-2-hover` is the brand-tinted lift, kept
+     separate because "under the pointer" is a different signal from "above
+     the page". */
+  --elev-1: inset 0 1px 0 0 var(--edge-highlight), var(--shadow-soft);
+  --elev-2: inset 0 1px 0 0 var(--edge-highlight), var(--shadow-elevated);
+  --elev-3: var(--shadow-elev);
+  --elev-2-hover: var(--shadow-warm);
+
+  /* ---- Density: one step per role so a header, body and footer cannot drift
+     between Modal and Drawer. */
+  --pad-control-block: 0.625rem;
+  --pad-control-inline: 0.75rem;
+  --pad-surface: 1.5rem;
+  --pad-surface-sm: 1rem;
+  --h-header: 3.25rem;
+
+  /* ---- Control heights (segmented track, page-size field, toggles). */
+  --height-sm: 1.75rem;
+  --height-md: 2.25rem;
+  --height-lg: 2.75rem;
+
+  /* ---- Tooltip: the one inverse surface in the system. It ignores the theme
+     on purpose - its job is to stay legible over arbitrary content behind it -
+     but it still takes a per-theme border so it is visible on a dark panel. */
+  --tooltip-bg: #1f2937;
+  --tooltip-fg: #ffffff;
+  --tooltip-border: rgba(0, 0, 0, 0.06);
+}
+
+.dark {
+  /* --elev-1/2/3 inherit the dark --shadow-* values automatically (the var()
+     reference resolves per element), so only the non-inherited parts of the
+     ladder need restating here. */
+  --edge-highlight: rgba(255, 255, 255, 0.06);
+  --tooltip-bg: rgba(17, 17, 17, 0.96);
+  --tooltip-fg: #ededed;
+  --tooltip-border: rgba(255, 255, 255, 0.14);
+}
+
+/* ============================================================
+   State rules
+   ============================================================ */
+
+/* Focus. `:focus-visible` only, so a mouse click never paints a ring: the ring
+   means "the keyboard is here", and if it also appears on click it stops
+   carrying information. */
+.chrome-focus {
+  outline: none;
+}
+.chrome-focus:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-primary);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Disabled. Colour + cursor, never opacity alone: a half-opaque control on a
+   translucent glass panel can fall under readable contrast, and opacity does
+   not tell anyone the control refuses input. */
+.chrome-disabled,
+.chrome-disabled:disabled,
+.chrome-disabled[aria-disabled="true"] {
+  opacity: var(--state-disabled);
+  cursor: not-allowed;
+}
+
+/* Disabled parts of a composite control (the two inert traffic lights) follow
+   the theme's border colour instead of a hardcoded grey. */
+.chrome-inert {
+  background-color: var(--color-border);
+  cursor: not-allowed;
+}
+
+/* The interactive surface: a card/list row that really does something lifts
+   one tier and picks up the brand border. A card that is only read does not
+   move at all, so the lift means "clickable" and nothing else. */
+.chrome-interactive {
+  transition:
+    box-shadow var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease);
+}
+@media (hover: hover) {
+  .chrome-interactive:hover {
+    box-shadow: var(--elev-2-hover);
+    border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+    transform: translateY(-1px);
+  }
+}
+.chrome-interactive:active {
+  transform: translateY(0);
+  box-shadow: var(--elev-1);
+}
+
+/* The one hover wash for interactive rows and unselected segments, so a
+   hovered list row and a hovered menu item cannot land on two different greys. */
+.chrome-row {
+  transition: background-color var(--motion-fast) var(--motion-ease);
+}
+@media (hover: hover) {
+  .chrome-row:hover {
+    background-color: var(--state-hover);
+  }
+}
+.chrome-row:active {
+  background-color: var(--state-press);
+}
+
+/* Entrance for overlays. The panel is laid out at its final geometry and only
+   opacity plus a 4px settle move, so opening a second overlay (or reopening
+   one) cannot shift a box the user is already aiming at. */
+.chrome-enter-panel {
+  animation: chromePanelIn var(--motion-panel) var(--motion-ease) both;
+}
+.chrome-enter-overlay {
+  animation: chromeFadeIn var(--motion-fast) ease-out both;
+}
+.chrome-enter-drawer {
+  animation: chromeDrawerIn var(--motion-panel) var(--motion-ease) both;
+}
+@keyframes chromePanelIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes chromeFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes chromeDrawerIn {
+  from { opacity: 0.6; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Tooltip bubble. Colour and border come from the tokens; the component keeps
+   only positioning and its pointer-events-none. */
+.chrome-tooltip {
+  background-color: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  border: 1px solid var(--tooltip-border);
+  border-radius: var(--r-chip);
+  box-shadow: var(--elev-3);
+  padding: 0.25rem 0.5rem;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+/* The sliding selection indicator in SegmentedControl. One element moves to
+   the newly selected option instead of two options swapping colour, so the
+   eye follows a single object and can tell which way the selection went. */
+.chrome-segment-indicator {
+  transition:
+    transform var(--motion-panel) var(--motion-ease),
+    width var(--motion-panel) var(--motion-ease);
+}
+
+/* Reduced motion: keep every state change, drop the travel. */
+@media (prefers-reduced-motion: reduce) {
+  .chrome-interactive,
+  .chrome-row {
+    transition: none;
+  }
+  .chrome-segment-indicator {
+    transition: none;
+  }
+  .chrome-interactive:hover,
+  .chrome-interactive:active {
+    transform: none;
+  }
+  .chrome-enter-panel,
+  .chrome-enter-drawer,
+  .chrome-enter-overlay {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Field geometry, shared by Input and Select
+   ============================================================
+   In `@layer components` so each field can still inset for its own icon
+   (pl-10 / pr-10) from a utility, which is the later layer. */
+@layer components {
+  .chrome-field {
+    padding: var(--pad-control-block) var(--pad-control-inline);
+    border-radius: var(--r-control);
+    /* 16px: iOS Safari zooms the viewport for a focused field smaller than
+       this, which shifts the whole page under the user's finger. */
+    font-size: 1rem;
+    transition:
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-fast) var(--motion-ease);
+  }
+  @media (min-width: 640px) {
+    .chrome-field {
+      font-size: 0.875rem;
+    }
+  }
+}
+
+/* Glass theme: the ring sits outside the panel it is drawn on, and a 2px
+   offset on a frosted surface reads as a detached halo, so it is tightened. */
+.dark.glass .chrome-focus:focus-visible {
+  outline-offset: 1px;
+}

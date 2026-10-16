@@ -1,28 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card, Button } from "@/shared/components";
+import { Card, Button, PageShell } from "@/shared/components";
 import { CONSOLE_LOG_CONFIG } from "@/shared/constants/config";
-
-const LOG_LEVEL_COLORS = {
-  LOG: "text-green-400",
-  INFO: "text-blue-400",
-  WARN: "text-yellow-400",
-  ERROR: "text-red-400",
-  DEBUG: "text-purple-400",
-};
 
 function colorLine(line, index) {
   // Detect log level from tags like [LOG], [INFO], [WARN], [ERROR], [DEBUG]
   let levelColor = "text-text-main";
-  if (line.includes("[ERROR]") || line.includes("✗")) levelColor = "text-red-400";
-  else if (line.includes("[WARN]")) levelColor = "text-yellow-400";
-  else if (line.includes("[INFO]") || line.includes("▶")) levelColor = "text-blue-400";
-  else if (line.includes("[DEBUG]")) levelColor = "text-purple-400";
-  else if (line.includes("✓") || line.includes("done")) levelColor = "text-green-400";
+  if (line.includes("[ERROR]") || line.includes("✗")) levelColor = "text-danger";
+  else if (line.includes("[WARN]")) levelColor = "text-warning";
+  else if (line.includes("[INFO]") || line.includes("▶")) levelColor = "text-info";
+  else if (line.includes("[DEBUG]")) levelColor = "text-text-muted";
+  else if (line.includes("✓") || line.includes("done")) levelColor = "text-success";
 
   return (
-    <div className="flex gap-2 hover:bg-white/5 px-1 rounded">
+    <div className="flex gap-2 hover:bg-surface-2 px-1 rounded">
       <span className="text-text-muted select-none shrink-0 w-8 text-right">{index + 1}</span>
       <span className={levelColor}>{line}</span>
     </div>
@@ -154,7 +146,7 @@ export default function ConsoleLogClient() {
   }, [logs]);
 
   return (
-    <div className="">
+    <PageShell width="full" className="min-w-0">
       <Card>
         <div className="flex items-center justify-between px-4 pt-3 pb-2">
           <div className="flex items-center gap-2">
@@ -163,7 +155,7 @@ export default function ConsoleLogClient() {
             <span className="text-xs text-text-muted">({logs.length} lines)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-xs px-2 py-0.5 rounded ${connected ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
+            <span className={`text-xs px-2 py-0.5 rounded ${connected ? "bg-success/10 text-success" : "bg-danger/10 text-danger"}`}>
               {connected ? "Connected" : "Disconnected"}
             </span>
             <Button size="sm" variant="outline" icon="delete" onClick={handleClear}>
@@ -173,7 +165,7 @@ export default function ConsoleLogClient() {
         </div>
         <div
           ref={logRef}
-          className="rounded-b-lg p-4 text-xs font-mono h-[calc(100vh-220px)] overflow-y-auto bg-bg"
+          className="rounded-b-lg p-3 text-xs font-mono h-[calc(100dvh-260px)] md:p-4 md:h-[calc(100dvh-220px)] overflow-y-auto bg-bg"
         >
           {logs.length === 0 ? (
             <span className="text-text-muted">No console logs yet.</span>
@@ -186,6 +178,6 @@ export default function ConsoleLogClient() {
           )}
         </div>
       </Card>
-    </div>
+    </PageShell>
   );
 }

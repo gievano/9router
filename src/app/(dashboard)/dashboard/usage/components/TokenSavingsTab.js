@@ -65,24 +65,24 @@ export default function TokenSavingsTab({ period }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+        <div className="rounded-xl border border-border bg-surface-2 p-4">
           <div className="text-xs text-text-muted">Tokens saved</div>
           <div className="mt-1 text-2xl font-semibold text-emerald-400">{fmt(data.totals.savedTokens)}</div>
           <div className="text-xs text-text-muted">across {fmt(data.totals.requests)} requests</div>
         </div>
-        <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+        <div className="rounded-xl border border-border bg-surface-2 p-4">
           <div className="text-xs text-text-muted">Est. cost avoided</div>
           <div className="mt-1 text-2xl font-semibold text-emerald-400">{money(data.totals.savedCost)}</div>
           <div className="text-xs text-text-muted">at live model rates</div>
         </div>
-        <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+        <div className="rounded-xl border border-border bg-surface-2 p-4">
           <div className="text-xs text-text-muted">Coverage</div>
           <div className="mt-1 text-2xl font-semibold text-text-main">{(data.models || []).length} models</div>
           <div className="text-xs text-text-muted">with recorded savings</div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+      <div className="rounded-xl border border-border bg-surface-2 p-4">
         <div className="mb-2 text-sm font-medium text-text-main">Daily savings</div>
         {data.daily && data.daily.length > 0 ? (
           <Bars daily={data.daily} />
@@ -97,14 +97,14 @@ export default function TokenSavingsTab({ period }) {
         )}
       </div>
 
-      <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+      <div className="rounded-xl border border-border bg-surface-2 p-4">
         <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm font-medium text-text-main">Per model</div>
           <input
             value={modelFilter}
             onChange={(e) => setModelFilter(e.target.value)}
             placeholder="Filter models..."
-            className="w-full rounded-lg border border-border bg-zinc-800/60 px-3 py-1.5 text-sm text-text-main placeholder:text-text-muted sm:w-56"
+            className="w-full rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-sm text-text-main placeholder:text-text-muted sm:w-56"
           />
         </div>
         {rows.length === 0 ? (
@@ -126,7 +126,7 @@ export default function TokenSavingsTab({ period }) {
               </thead>
               <tbody>
                 {rows.map((m) => (
-                  <tr key={m.model} className="border-b border-border/50 hover:bg-zinc-800/30">
+                  <tr key={m.model} className="border-b border-border/50 hover:bg-state-hover">
                     <td className="px-3 py-2.5 max-w-[240px] truncate text-text-main" title={m.model}>{m.model}</td>
                     <td className="px-3 py-2.5 text-right text-text-main">{fmt(m.requests)}</td>
                     <td className="px-3 py-2.5 text-right text-emerald-400">{fmt(m.savedTokens)}</td>

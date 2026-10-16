@@ -66,14 +66,14 @@ export default function ThemeModal({ isOpen, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label="Theme"
-        className="relative w-full bg-surface border border-black/10 dark:border-white/10 rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-w-md"
+        className="relative w-full bg-surface border border-border rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-w-md max-h-[85vh] overflow-y-auto custom-scrollbar"
       >
-        <div className="flex items-center justify-between gap-3 p-3 border-b border-black/5 dark:border-white/5">
+        <div className="flex items-center justify-between gap-3 p-3 border-b border-border-subtle">
           <h2 className="text-lg font-semibold text-text-main">Theme</h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-1 rounded-lg text-text-muted hover:text-text-main hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+            className="p-1 rounded-lg text-text-muted hover:text-text-main hover:bg-surface-2 transition-all"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -110,7 +110,7 @@ export default function ThemeModal({ isOpen, onClose }) {
                 )}
               >
                 {/* Mini preview of the palette so the choice is visible, not just named. */}
-                <span className="flex shrink-0 overflow-hidden rounded-[10px] border border-black/10 dark:border-white/10">
+                <span className="flex shrink-0 overflow-hidden rounded-[10px] border border-border">
                   {mode.swatches.map((c, i) => (
                     <span key={i} className="block h-9 w-3.5" style={{ backgroundColor: c }} />
                   ))}

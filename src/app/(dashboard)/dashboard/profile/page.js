@@ -1866,7 +1866,7 @@ export default function ProfilePage() {
               fullWidth
               icon="power_settings_new"
               onClick={() => setShutdownOpen(true)}
-              className="text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300"
+              className="text-danger border-danger/30 hover:bg-danger/10 hover:border-danger/40"
             >
               Shutdown
             </Button>

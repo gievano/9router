@@ -18,47 +18,35 @@
 
 const PLUGIN_MARKS = {
   // Vision: an eye - an almond lens with a solid pupil. "Sees the image."
-  vision: (
-    <>
-      <path d="M3 12s3.6-5.2 9-5.2 9 5.2 9 5.2-3.6 5.2-9 5.2-9-5.2-9-5.2z" />
-      <circle cx="12" cy="12" r="2.7" fill="currentColor" stroke="none" />
-    </>
-  ),
-  // Image Vision: viewfinder corners around the same pupil - the frame a
-  // picture goes into. One step apart from native vision on purpose.
+  // Image Vision: viewfinder corners around a hollow lens ring - the frame a
+  // picture goes into. The ring is stroked, never filled, so it cannot read
+  // as native vision's solid pupil on a model row. (The old mark reused the
+  // same solid dot and the two blurred together at 14px.)
   imageVision: (
     <>
-      <path d="M4 8.5V5.5A1.5 1.5 0 0 1 5.5 4h3M15.5 4h3A1.5 1.5 0 0 1 20 5.5v3M20 15.5v3a1.5 1.5 0 0 1-1.5 1.5h-3M8.5 20h-3A1.5 1.5 0 0 1 4 18.5v-3" />
-      <circle cx="12" cy="12" r="2.7" fill="currentColor" stroke="none" />
+      <path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16" />
+      <circle cx="12" cy="12" r="3" />
     </>
   ),
   // Reasoning: three concepts joined - a chain of thought drawn as a graph.
-  reasoning: (
-    <>
-      <circle cx="5.8" cy="7" r="2.3" />
-      <circle cx="18.2" cy="7" r="2.3" />
-      <circle cx="12" cy="17.2" r="2.3" />
-      <path d="M8.1 7h7.8M7.2 9l3.6 6.3M16.8 9l-3.6 6.3" />
-    </>
-  ),
-  // Think Deeper: stacked layers with a chevron driving down through them -
-  // depth. (The previous arrow-through-a-line read as "download".)
+  // Nodes grew from r=2.3 to r=2.6 and the links were re-seated on their
+  // edges; at 14px the old nodes blurred into the links and the graph read
+  // as a triangle doodle.
+  // Think Deeper: plates narrowing into the page with a chevron driving down
+  // through them - depth. (The old equal-width bars read as a hamburger menu
+  // with a chevron under it.)
   thinkDeeper: (
     <>
-      <path d="M4 4.8h16" />
-      <path d="M6.4 9.6h11.2" />
-      <path d="M8.8 14.4h6.4" />
-      <path d="M9.4 18l2.6 2.6L14.6 18" />
+      <path d="M4.5 5.5h15" />
+      <path d="M7 10h10" />
+      <path d="M9.5 14.5h5" />
+      <path d="M9.3 17.6l2.7 2.7 2.7-2.7" />
     </>
   ),
-  // Speed Mode: a play triangle with two trails - go now, answer directly.
-  // (The earlier streaks-with-a-dot read as a speedometer doodle.)
-  speedMode: (
-    <>
-      <path d="M9 6.6l9 5.4-9 5.4z" />
-      <path d="M5.4 8.4v7.2" />
-    </>
-  ),
+  // Speed Mode: a lightning bolt - the answer comes back now, no thinking
+  // first. The bolt alone is the whole mark; it needs no second reading.
+  // (The old play triangle with a bar read as "next track".)
+  speedMode: <path d="M13.5 3.5L6.2 13H11l-0.5 7.5 7.3-9.8h-4.9z" />,
   // JSON Guard: braces sealing a checked value - the structure is valid.
   jsonGuard: (
     <>
@@ -67,21 +55,26 @@ const PLUGIN_MARKS = {
       <path d="M9.6 12.2l1.7 1.7 3.2-3.4" />
     </>
   ),
-  // Context Squeezer: two presses closing on a stack - same content, less room.
+  // Context Squeezer: two presses closing on a stack from the sides - same
+  // content, less room. Squeezing sideways keeps it apart from Think Deeper's
+  // downward chevron. (The old vertical chevrons around a full-width bar read
+  // as expand/collapse.)
   contextSqueezer: (
     <>
-      <path d="M12 4v4.6M8.6 7.2L12 10.4l3.4-3.2" />
-      <path d="M12 20v-4.6M8.6 16.8L12 13.6l3.4 3.2" />
-      <path d="M4.5 12h15" />
+      <path d="M9.4 8.5h5.2M9.4 12h5.2M9.4 15.5h5.2" />
+      <path d="M6.6 6.5L4.5 12l2.1 5.5" />
+      <path d="M17.4 6.5l2.1 5.5-2.1 5.5" />
     </>
   ),
-  // OpenAI Tool Bridge: two half-docks joined by one cable - a call crossing.
+  // OpenAI Tool Bridge: two docks joined by one cable arcing over like a
+  // bridge, the recovered call crossing at the apex dot. (The old S-curve
+  // sagged through the middle and read as a squiggle at 14px.)
   openaiToolBridge: (
     <>
-      <path d="M4.5 6.5v11" />
-      <path d="M19.5 6.5v11" />
-      <path d="M4.5 12c3 0 4-3.4 7.5-3.4S16.5 12 19.5 12" />
-      <circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none" />
+      <path d="M5 6.5v11" />
+      <path d="M19 6.5v11" />
+      <path d="M5 12c2.5 0 3-5 7-5s4.5 5 7 5" />
+      <circle cx="12" cy="7" r="1.8" fill="currentColor" stroke="none" />
     </>
   ),
   // Anti Slop: a funnel - the flow passes, the specks are caught at the neck.

@@ -21,7 +21,7 @@ import { resolveZedModels } from "open-sse/shared/zedAuth.js";
 import { updateProviderCredentials } from "@/sse/services/tokenRefresh";
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { capabilitiesFromServiceKind, getCapabilitiesForModel, aggregateComboCapabilities } from "open-sse/providers/capabilities.js";
-import { fetchSuggestedModelsServer } from "@/app/api/providers/suggested-models/filters.js";
+import { fetchSuggestedModelsServer, onlyFree } from "@/app/api/providers/suggested-models/filters.js";
 
 // Qoder shares one live resolver across intl (qoder) and CN (qoder-cn); the
 // credentials carry the provider id so qoderModels picks the right region's
@@ -342,6 +342,17 @@ export async function buildModelsList(kindFilter, options = {}) {
     }
   }
 
+  // Include no-auth free providers (e.g. opencode) so their models are exposed in /v1/models
+  for (const [id, provider] of Object.entries(FREE_PROVIDERS || {})) {
+    if (provider?.noAuth && !activeConnectionByProvider.has(id)) {
+      activeConnectionByProvider.set(id, {
+        id: "noauth",
+        provider: id,
+        isActive: true,
+      });
+    }
+  }
+
   const models = [];
 
   // Lookup map so aggregateComboCapabilities can recursively resolve nested combos
@@ -401,7 +412,7 @@ export async function buildModelsList(kindFilter, options = {}) {
       if (!providerMatchesKinds(providerId, kindFilter)) continue;
       for (const model of providerModels) {
         if (!kindFilter.includes(modelKind(model))) continue;
-        if (isDisabled(alias, model.id)) continue;
+        if (isDisabled(alias, model.id) || isDisabled(providerId, model.id)) continue;
         if (studioTargets.isStudioTarget([providerId, alias], model.id)) continue;
         models.push({
           id: `${alias}/${model.id}`,
@@ -574,7 +585,7 @@ export async function buildModelsList(kindFilter, options = {}) {
         // imageToText custom models stay in the LLM list (vision-capable chat models)
         const allowAsLlm = kind === "imageToText" && kindFilter.includes(LLM_KIND);
         if (!kindFilter.includes(kind) && !allowAsLlm) continue;
-        if (isDisabled(outputAlias, modelId) || isDisabled(staticAlias, modelId)) continue;
+        if (isDisabled(outputAlias, modelId) || isDisabled(staticAlias, modelId) || isDisabled(providerId, modelId)) continue;
         // Hidden behind a studio name: only the studio name is published.
         if (studioTargets.isStudioTarget([providerId, staticAlias, outputAlias], modelId)) continue;
 
@@ -675,7 +686,7 @@ export async function buildModelsList(kindFilter, options = {}) {
     })
   );
   for (const [alias, liveModels] of liveFreeLists) {
-    for (const live of liveModels) {
+    for (const live of onlyFree(liveModels)) {
       if (isDisabled(alias, live.id)) continue;
       const caps = getCapabilitiesForModel(alias, live.id);
       const entry = {

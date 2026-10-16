@@ -45,26 +45,26 @@ function formatResetTimeDisplay(resetTime) {
 function getColorClasses(remainingPercentage) {
   if (remainingPercentage > 70) {
     return {
-      text: "text-green-600 dark:text-green-400",
-      bg: "bg-green-500",
-      bgLight: "bg-green-500/10",
+      text: "text-success",
+      bg: "bg-success",
+      bgLight: "bg-success/10",
       emoji: "🟢",
     };
   }
 
   if (remainingPercentage >= 30) {
     return {
-      text: "text-yellow-600 dark:text-yellow-400",
-      bg: "bg-yellow-500",
-      bgLight: "bg-yellow-500/10",
+      text: "text-warning",
+      bg: "bg-warning",
+      bgLight: "bg-warning/10",
       emoji: "🟡",
     };
   }
 
   return {
-    text: "text-red-600 dark:text-red-400",
-    bg: "bg-red-500",
-    bgLight: "bg-red-500/10",
+    text: "text-danger",
+    bg: "bg-danger",
+    bgLight: "bg-danger/10",
     emoji: "🔴",
   };
 }
@@ -142,7 +142,7 @@ export default function QuotaTable({
           {sortedQuotas.length} quota{sortedQuotas.length > 1 ? "s" : ""}
         </div>
         {showSortLabel && (
-          <div className="rounded-md border border-black/10 bg-black/[0.02] px-2 py-1 text-[10px] text-text-muted dark:border-white/10 dark:bg-white/[0.03]">
+          <div className="rounded-md border border-border bg-surface-2 px-2 py-1 text-[10px] text-text-muted">
             {sortLabel}
           </div>
         )}
@@ -153,16 +153,47 @@ export default function QuotaTable({
           const isUnlimited = quota.unlimited === true;
           const isCreditBalance = quota.isCreditBalance === true;
           const colors = isCreditBalance
-            ? { text: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500", bgLight: "bg-blue-500/10", emoji: "💰" }
+            ? { text: "text-info", bg: "bg-info", bgLight: "bg-info/10", emoji: "💰" }
             : getColorClasses(quota.remaining);
-          const countdown = formatResetTime(quota.resetAt);
-          const resetDisplay = formatResetTimeDisplay(quota.resetAt);
+          // Qoder flags open-ended plans with `neverExpires` (its API reports a
+          // year-9999 sentinel). Return "-"/"Never expires" rather than an empty
+          // countdown: the render below branches on `countdown !== "-"`, so an
+          // empty string would fall through to the "in " label.
+          const countdown = quota.neverExpires ? "-" : formatResetTime(quota.resetAt);
+          // Providers that expose a detail page but no per-bucket reset date
+          // (Qoder add-on grants) get a pointer to it instead of a bare "N/A".
+          const seeDetails = !quota.neverExpires && !quota.resetAt && Boolean(quota.detailUrl);
+          const resetDisplay = quota.neverExpires
+            ? "Never expires"
+            : seeDetails
+              ? "See details"
+              : formatResetTimeDisplay(quota.resetAt);
+          const resetSecondaryText = seeDetails && quota.detailUrl ? quota.detailUrl : resetDisplay;
           // recurring defaults true: a missing flag means the quota
           // refreshes at resetAt. Bonus/one-shot packs set recurring:false
           // and their resetAt is a hard expiry, so word it as "expires".
           const recurring = quota.recurring !== false;
           const countdownLabel = recurring ? `in ${countdown}` : `expires in ${countdown}`;
           const resetWord = recurring ? "Reset" : "Expires";
+
+          // "See details" rows are a link to the provider's own usage page —
+          // used where the API exposes no per-bucket date (Qoder add-on grants).
+          const renderResetCell = (className) =>
+            seeDetails ? (
+              <a
+                href={quota.detailUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${className} inline-flex items-center gap-0.5 hover:text-text-main hover:underline`}
+                title={`Open usage details: ${resetSecondaryText}`}
+                aria-label={`Open usage details for ${quota.name}`}
+              >
+                {resetDisplay}
+                <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+              </a>
+            ) : (
+              resetDisplay
+            );
 
           return (
             <div
@@ -209,7 +240,9 @@ export default function QuotaTable({
                       ? `${quota.used.toLocaleString()} used · Unlimited`
                       : isCreditBalance
                       ? `Credit: ${quota.total.toFixed(2)} ${quota.currency || ""}`
-                      : `${quota.used.toLocaleString()} / ${quota.total > 0 ? quota.total.toLocaleString() : "∞"}`}
+                      : `${quota.used.toLocaleString()} / ${quota.total > 0 ? quota.total.toLocaleString() : "∞"}${
+                          quota.unit ? ` ${quota.unit}` : ""
+                        }`}
                   </span>
                   <div className="flex items-center gap-2">
                     {countdown !== "-" && (
@@ -221,7 +254,7 @@ export default function QuotaTable({
                       <button
                         type="button"
                         onClick={() => onHideQuota(quota)}
-                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-text-muted transition-colors hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/5"
+                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-text-muted transition-colors hover:bg-surface-2 hover:text-text-main"
                         title="Hide this quota row"
                         aria-label={`Hide quota ${quota.name}`}
                       >
@@ -233,19 +266,42 @@ export default function QuotaTable({
                   </div>
                 </div>
 
-                {resetDisplay && (
-                  <div className="text-[10px] text-text-muted/70">
-                    {resetWord} at {resetDisplay}
-                  </div>
+              {/* Reset time */}
+              <div className="min-w-0 shrink">
+                {countdown !== "-" || resetDisplay ? (
+                  compact ? (
+                    <div
+                      className={`${resetPrimary} text-text-main font-medium truncate`}
+                      title={resetSecondaryText || ""}
+                    >
+                      {countdown !== "-" ? countdownLabel : renderResetCell(resetPrimary)}
+                    </div>
+                  ) : (
+                    <div className="min-w-0 space-y-0.5">
+                      {countdown !== "-" && (
+                        <div className={`${resetPrimary} text-text-main font-medium truncate`}>
+                          {countdownLabel}
+                        </div>
+                      )}
+                      {resetDisplay && (
+                        <div className="text-[10px] text-text-muted/70">
+                          {resetWord} at {renderResetCell(resetSecondary)}
+                        </div>
+                      )}
+                    </div>
+                  )
+                ) : (
+                  <div className={`${resetPrimary} text-text-muted italic`}>N/A</div>
                 )}
               </div>
             </div>
+          </div>
           );
         })}
       </div>
 
       {totalPages > 1 && (
-        <div className="rounded-lg border border-border-subtle bg-bg/50 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="rounded-lg border border-border-subtle bg-bg/50 px-3 py-2">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] text-text-muted">
               Showing {pageStart}-{pageEnd} of {sortedQuotas.length}
@@ -259,7 +315,7 @@ export default function QuotaTable({
               type="button"
               onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
               disabled={page === 1}
-              className="flex h-6 items-center rounded-md border border-black/10 px-2 text-[10px] text-text-primary transition-colors hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:hover:bg-white/5"
+              className="flex h-6 items-center rounded-md border border-border px-2 text-[10px] text-text-main transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Prev
             </button>
@@ -267,7 +323,7 @@ export default function QuotaTable({
               type="button"
               onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
               disabled={page === totalPages}
-              className="flex h-6 items-center rounded-md border border-black/10 px-2 text-[10px] text-text-primary transition-colors hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:hover:bg-white/5"
+              className="flex h-6 items-center rounded-md border border-border px-2 text-[10px] text-text-main transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Next
             </button>

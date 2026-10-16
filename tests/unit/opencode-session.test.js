@@ -100,6 +100,17 @@ describe("OpenCode Free Session ID Format", () => {
     expect(idA1).toBe(idA2);
     expect(idA1).not.toBe(idB);
     expect(idA1).not.toBe(idTool);
+
+    // Upstream Zen verifies the 12-hex prefix decodes to
+    // ~(BigInt(Date.now()) * 4096n + counter) - a synthesized SHA-256 prefix
+    // is rejected with 403 FreeTierError.
+    const timeHex = idA1.slice(4, 16);
+    const recovered = (0xffffffffffffn ^ BigInt(`0x${timeHex}`)) >> 12n;
+    const nowExpected = BigInt(Date.now()) & ((1n << 36n) - 1n);
+    expect(Math.abs(Number(recovered - nowExpected))).toBeLessThanOrEqual(2000);
+
+    // Stability across repeated translations of the same input.
+    expect(translateSessionId("conv-1", "claude")).toBe(idA1);
   });
 });
 

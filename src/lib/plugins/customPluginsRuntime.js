@@ -4,9 +4,11 @@
 //   - Image Vision: signals caps.vision = true on the request so the translator
 //     keeps raw image blocks intact instead of stripping them.
 //   - Think Deeper: sets native reasoning parameters (reasoning_effort, thinking
-//     config) so the provider routes to its deepest reasoning tier.
+//     config) so the provider routes to its deepest reasoning tier, plus a
+//     step-by-step persona instruction for providers that ignore those params.
 //   - Speed Mode: sets native reasoning-disabled parameters so the provider
-//     skips all thinking and returns the answer directly.
+//     skips all thinking and returns the answer directly, plus an
+//     answer-directly persona instruction for providers that ignore them.
 //   - JSON Guard: repairs machine-readable output on the way back (fenced JSON,
 //     prose around it, Python literals, a tail cut off by the output limit) and
 //     removes tool-call argument names the declared schema never had.
@@ -20,10 +22,12 @@
 //   - open-sse/translator/concerns/contextSqueezer.js (requests)
 
 import { getSettings } from "@/lib/localDb";
+import { matchesModel } from "@/shared/utils/pluginModelMatch";
 import { FORMATS } from "open-sse/translator/formats.js";
 import { getCapabilitiesForModel } from "open-sse/providers/capabilities.js";
 import { squeezeContext } from "open-sse/translator/concerns/contextSqueezer.js";
 import { applyAntiSlop } from "open-sse/rtk/antislop.js";
+import { injectSystemPrompt } from "open-sse/rtk/systemInject.js";
 
 // Default plugin state for fresh installs / missing settings
 const DEFAULT_PLUGINS = {
@@ -61,16 +65,6 @@ export function clearPluginCache() {
   lastFetch = 0;
 }
 
-function matchesModel(modelList, modelKey) {
-  if (!Array.isArray(modelList) || !modelKey) return false;
-  const key = String(modelKey).toLowerCase();
-  const bare = key.includes("/") ? key.split("/").pop() : key;
-  return modelList.some((m) => {
-    const s = String(m).toLowerCase();
-    const sBare = s.includes("/") ? s.split("/").pop() : s;
-    return s === key || sBare === bare || s === bare || key === sBare;
-  });
-}
 
 /**
  * Every name this request could be called by, in the order the layers know it:
@@ -154,7 +148,13 @@ export function applyImageVision(body) {
  *
  * Sets native reasoning parameters so the provider routes to its deepest
  * reasoning tier. Uses the same params the 9Router thinking pipeline reads.
+ * A persona instruction goes in alongside: most OpenAI-compatible providers
+ * drop reasoning_* fields they do not implement, and then the param alone
+ * would leave the plugin enabled-but-inert. The instruction is the portable
+ * half; the param is the native half.
  */
+const THINK_DEEPER_PERSONA = "Think Deeper is active: work through the problem step by step before answering - break it into parts, reason through each one, then give the final answer.";
+
 export function applyThinkDeeper(body, sourceFormat) {
   if (!body) return;
 
@@ -173,6 +173,10 @@ export function applyThinkDeeper(body, sourceFormat) {
       body.reasoning = { effort: "high" };
     }
   }
+
+  // Persona half, through the shared injector so every wire format (chat,
+  // responses, Claude system, Gemini, Kiro) is covered and repeats dedupe.
+  injectSystemPrompt(body, sourceFormat, THINK_DEEPER_PERSONA);
 }
 
 /**
@@ -180,7 +184,11 @@ export function applyThinkDeeper(body, sourceFormat) {
  *
  * Uses native reasoning-disable parameters. Skips thinking entirely
  * so responses come back instantly without any chain-of-thought overhead.
+ * Same portable-half reasoning as Think Deeper: a provider that ignores
+ * the disable fields still obeys the answer-directly instruction.
  */
+const SPEED_MODE_PERSONA = "Speed Mode is active: answer directly with no deliberation, no chain-of-thought preamble and no thinking trace - the shortest correct answer.";
+
 export function applySpeedMode(body, sourceFormat) {
   if (!body) return;
 
@@ -195,6 +203,9 @@ export function applySpeedMode(body, sourceFormat) {
   }
   delete body.enable_thinking;
   delete body.thinking_budget;
+
+  // Persona half - see applyThinkDeeper for why the param alone is not enough.
+  injectSystemPrompt(body, sourceFormat, SPEED_MODE_PERSONA);
 }
 
 /* ------------------------------------------------------------------ *

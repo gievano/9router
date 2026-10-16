@@ -3,9 +3,9 @@ import { getModelAliases, setModelAlias, getCustomModels } from "@/models";
 import { getDisabledModels } from "@/lib/disabledModelsDb";
 import { getSettings } from "@/lib/localDb";
 import { AI_MODELS } from "@/shared/constants/config";
-import { getProviderAlias } from "@/shared/constants/providers";
+import { getProviderAlias, ALIAS_TO_ID } from "@/shared/constants/providers";
 import { getCapabilitiesForModel } from "open-sse/providers/capabilities.js";
-import { fetchSuggestedModelsServer } from "@/app/api/providers/suggested-models/filters.js";
+import { fetchSuggestedModelsServer, onlyFree } from "@/app/api/providers/suggested-models/filters.js";
 import { FREE_PROVIDERS as FREE_PROVIDER_REGISTRY } from "@/shared/constants/providers.js";
 
 // GET /api/models - Get models with aliases. Always dynamic: plugin badges
@@ -98,6 +98,7 @@ export async function GET() {
 
     // Custom-model ids and live-catalogue ids both live in this set.
     const seenFull = new Set(models.map((m) => m.fullModel));
+    const seenRouted = new Set(models.map((m) => m.routedModel));
 
     // Free no-auth providers publish a live catalogue (OpenCode Free moves weekly).
     // Registry entries above are curated, so anything upstream adds is merged in
@@ -109,7 +110,7 @@ export async function GET() {
     );
     const addedLive = [];
     for (const [alias, , liveModels] of liveFree) {
-      for (const live of liveModels) {
+      for (const live of onlyFree(liveModels)) {
         const fullModel = `${alias}/${live.id}`;
         if (seenFull.has(fullModel)) continue;
         seenFull.add(fullModel);
@@ -138,14 +139,24 @@ export async function GET() {
       }
     }
 
-    // Custom models ride along; their stored caps override the name heuristic
+    // Custom models ride along; their stored caps override the name heuristic.
+    // A custom row whose provider alias routes to an already-listed model is a
+    // pure shadow: the real entry wins (and is listed first), but this row would
+    // land later with the same routedModel key and the client's last-write-wins
+    // map then serves its thinner caps (a pre-registry "add custom model" row
+    // stores {vision, reasoning} only — no contextWindow). Drop the shadow and
+    // resolve the survivors' provider id, not the UI alias: the capability
+    // tables are keyed by provider id, and an alias like `ocg` misses the
+    // provider-scoped entries and falls back to the generic patterns.
     const customModels = (await getCustomModels()).filter((m) => {
       if (!m?.id || (m.kind || m.type || "llm") !== "llm") return false;
+      if (seenRouted.has(`${m.providerAlias}/${m.id}`)) return false;
       return !seenFull.has(`${m.providerAlias}/${m.id}`);
     });
     for (const m of customModels) {
       const fullModel = `${m.providerAlias}/${m.id}`;
-      const c = getCapabilitiesForModel(m.providerAlias, m.id);
+      const providerId = ALIAS_TO_ID[m.providerAlias] || m.providerAlias;
+      const c = getCapabilitiesForModel(providerId, m.id);
       const caps = {
         vision: c.vision,
         search: c.search,

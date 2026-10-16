@@ -41,6 +41,8 @@ import {
 } from "./utils";
 import Card from "@/shared/components/Card";
 import { ConfirmModal, EditConnectionModal } from "@/shared/components";
+import AutoPingScheduleModal from "@/app/(dashboard)/dashboard/providers/[id]/AutoPingScheduleModal";
+import { getScheduleSlotLabels } from "@/shared/services/quotaPingSchedule";
 import { USAGE_SUPPORTED_PROVIDERS, AI_PROVIDERS } from "@/shared/constants/providers";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
@@ -63,7 +65,7 @@ const AUTO_PING_SETTINGS_KEYS = {
 
 const AUTO_PING_TOOLTIPS = {
   claude: "When your 5h quota runs out, auto-sends a request the moment it resets so a new window starts right away.",
-  codex: "Auto-starts the next 5h Codex window after reset by sending a tiny gpt-5.5 request. Consumes a small amount of quota.",
+  codex: "Auto-starts the next 5h Codex window after reset by sending a tiny request. Consumes a small amount of quota.",
 };
 
 function kiroMethodLabel(conn) {
@@ -161,7 +163,8 @@ export default function ProviderLimits() {
   const [loading, setLoading] = useState({});
   const [errors, setErrors] = useState({});
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [autoPingMaps, setAutoPingMaps] = useState({ claude: {}, codex: {} });
+  const [autoPingConfigs, setAutoPingConfigs] = useState({ claude: {}, codex: {} });
+  const [scheduleConnection, setScheduleConnection] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [hasHydratedAutoRefresh, setHasHydratedAutoRefresh] = useState(false);
   const [refreshingAll, setRefreshingAll] = useState(false);
@@ -597,41 +600,51 @@ export default function ProviderLimits() {
     window.localStorage.setItem(AUTO_REFRESH_STORAGE_KEY, String(autoRefresh));
   }, [autoRefresh, hasHydratedAutoRefresh]);
 
-  // Load auto-ping per-connection maps
+  // Load auto-ping per-connection configs
   useEffect(() => {
     fetch("/api/settings", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : {}))
       .then((s) => {
-        setAutoPingMaps({
-          claude: s?.claudeAutoPing?.connections || {},
-          codex: s?.codexAutoPing?.connections || {},
+        setAutoPingConfigs({
+          claude: s?.claudeAutoPing || {},
+          codex: s?.codexAutoPing || {},
         });
         setQuotaVisibility(s?.quotaVisibility || {});
       })
       .catch(() => {});
   }, []);
 
-  const toggleAutoPing = useCallback(async (connectionId, provider, on) => {
+  const handleSaveAutoPing = useCallback(async (connectionId, provider, { reactive, schedule }) => {
     const settingsKey = AUTO_PING_SETTINGS_KEYS[provider];
     if (!settingsKey) return;
 
-    const previous = autoPingMaps;
-    const nextProviderMap = { ...(autoPingMaps[provider] || {}), [connectionId]: on };
-    const nextMaps = { ...autoPingMaps, [provider]: nextProviderMap };
-    setAutoPingMaps(nextMaps);
+    const previous = autoPingConfigs;
+    const prevCfg = autoPingConfigs[provider] || {};
+    const nextProviderCfg = {
+      ...prevCfg,
+      connections: { ...(prevCfg.connections || {}), [connectionId]: reactive },
+      schedules: { ...(prevCfg.schedules || {}), [connectionId]: schedule },
+    };
+    const nextConfigs = { ...autoPingConfigs, [provider]: nextProviderCfg };
+    setAutoPingConfigs(nextConfigs);
+
     try {
       const r = await fetch("/api/settings", { cache: "no-store" });
       const s = r.ok ? await r.json() : {};
-      const cfg = { ...(s[settingsKey] || {}), connections: nextProviderMap };
+      const fullCfg = {
+        ...(s[settingsKey] || {}),
+        connections: nextProviderCfg.connections,
+        schedules: nextProviderCfg.schedules,
+      };
       await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [settingsKey]: cfg }),
+        body: JSON.stringify({ [settingsKey]: fullCfg }),
       });
     } catch {
-      setAutoPingMaps(previous);
+      setAutoPingConfigs(previous);
     }
-  }, [autoPingMaps]);
+  }, [autoPingConfigs]);
 
   const updateQuotaVisibility = useCallback(async (nextVisibility, previousVisibility) => {
     setQuotaVisibility(nextVisibility);
@@ -1242,18 +1255,38 @@ export default function ProviderLimits() {
                         </Tooltip>
                       </>
                     )}
-                    {AUTO_PING_SETTINGS_KEYS[conn.provider] && conn.authType === "oauth" && (
-                      <Tooltip text={AUTO_PING_TOOLTIPS[conn.provider]}>
-                        <button
-                          type="button"
-                          onClick={() => toggleAutoPing(conn.id, conn.provider, !(autoPingMaps[conn.provider]?.[conn.id] === true))}
-                          aria-label="Toggle auto-ping"
-                          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${autoPingMaps[conn.provider]?.[conn.id] === true ? "text-primary" : "text-text-muted"}`}
-                        >
-                          <span className="material-symbols-outlined text-[18px]">bolt</span>
-                        </button>
-                      </Tooltip>
-                    )}
+                    {AUTO_PING_SETTINGS_KEYS[conn.provider] && conn.authType === "oauth" && (() => {
+                      const cfg = autoPingConfigs[conn.provider] || {};
+                      const isReactive = cfg.connections?.[conn.id] === true;
+                      const schedule = cfg.schedules?.[conn.id];
+                      const isSchedule = schedule?.enabled === true;
+                      const isActive = isReactive || isSchedule;
+
+                      const activeModes = [];
+                      if (isReactive) activeModes.push("On reset");
+                      if (isSchedule) {
+                        const summary = getScheduleSlotLabels(schedule).join(" / ");
+                        activeModes.push(`Scheduled (${summary || "active"})`);
+                      }
+                      const tooltipText = activeModes.length > 0
+                        ? `Auto-ping active: ${activeModes.join(" + ")}. Click to configure.`
+                        : conn.provider === "codex"
+                          ? "Auto-starts the next 5h Codex window after reset or on schedule. Click to configure."
+                          : "Auto-starts a new window on quota reset or fixed schedule. Click to configure.";
+
+                      return (
+                        <Tooltip text={tooltipText}>
+                          <button
+                            type="button"
+                            onClick={() => setScheduleConnection(conn)}
+                            aria-label="Configure auto-ping"
+                            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${isActive ? "text-primary" : "text-text-muted"}`}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">bolt</span>
+                          </button>
+                        </Tooltip>
+                      );
+                    })()}
                     <Tooltip text="Refresh quota">
                       <button
                         type="button"
@@ -1527,8 +1560,8 @@ export default function ProviderLimits() {
       />
 
       {resetCreditsState && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-black/15 bg-white shadow-2xl ring-1 ring-black/10 dark:border-white/15 dark:bg-neutral-950 dark:ring-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim px-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl ring-1 ring-border">
             <div className="flex items-start justify-between gap-3 border-b border-black/10 bg-black/[0.03] px-4 py-3 dark:border-white/10 dark:bg-white/[0.04]">
               <div className="min-w-0">
                 <h3 className="text-base font-semibold text-text-primary">
@@ -1548,7 +1581,7 @@ export default function ProviderLimits() {
               </button>
             </div>
 
-            <div className="max-h-[70vh] overflow-auto bg-white p-4 dark:bg-neutral-950">
+            <div className="max-h-[70vh] overflow-auto bg-surface p-4">
               {resetCreditsState.loading ? (
                 <div className="flex items-center justify-center gap-2 py-10 text-sm text-text-muted">
                   <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
@@ -1647,6 +1680,17 @@ export default function ProviderLimits() {
           setSelectedConnection(null);
         }}
       />
+
+      {scheduleConnection && (
+        <AutoPingScheduleModal
+          isOpen={!!scheduleConnection}
+          onClose={() => setScheduleConnection(null)}
+          connection={scheduleConnection}
+          reactive={autoPingConfigs[scheduleConnection.provider]?.connections?.[scheduleConnection.id] === true}
+          schedule={autoPingConfigs[scheduleConnection.provider]?.schedules?.[scheduleConnection.id] || null}
+          onSave={(result) => handleSaveAutoPing(scheduleConnection.id, scheduleConnection.provider, result)}
+        />
+      )}
     </div>
   );
 }

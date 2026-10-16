@@ -11,7 +11,7 @@
  */
 
 import { makeKv } from "@/lib/db/helpers/kvStore.js";
-import { FILTERS } from "@/app/api/providers/suggested-models/filters.js";
+import { FILTERS, onlyFree } from "@/app/api/providers/suggested-models/filters.js";
 import REGISTRY from "open-sse/providers/registry/index.js";
 
 const kv = makeKv("freeCatalogSync");
@@ -39,7 +39,7 @@ export async function syncOneFreeCatalog(entry) {
   if (!res.ok) throw new Error(`upstream ${res.status}`);
   const json = await res.json();
   const raw = json?.data ?? json?.models ?? json;
-  const data = FILTERS[type](Array.isArray(raw) ? raw : []);
+  const data = onlyFree(FILTERS[type](Array.isArray(raw) ? raw : []));
   if (!data.length) throw new Error("upstream returned no usable models");
   await kv.set(entry.id, { data, syncedAt: Date.now(), url });
   return data.length;

@@ -44,6 +44,7 @@ export { default as CapacityBadges } from "./CapacityBadges";
 export { default as WelcomeModal } from "./WelcomeModal";
 export { default as UpdateBanner } from "./UpdateBanner";
 export { default as DownloadBackupModal } from "./DownloadBackupModal";
+export { default as PageShell, TableScroll } from "./PageShell";
 
 // Layouts
 export * from "./layouts";

@@ -115,7 +115,7 @@ export default function ModelAvailabilityBadge() {
             <div className="flex items-center gap-2">
               <span
                 className="material-symbols-outlined text-[16px]"
-                style={{ color: isHealthy ? "#22c55e" : "#f59e0b" }}
+                style={{ color: isHealthy ? "var(--color-success)" : "var(--color-warning)" }}
               >
                 {isHealthy ? "verified" : "warning"}
               </span>

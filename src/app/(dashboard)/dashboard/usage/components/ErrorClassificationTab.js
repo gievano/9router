@@ -23,22 +23,22 @@ export default function ErrorClassificationTab({ period }) {
  <div className="flex flex-col gap-4">
  {/* Summary cards */}
  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
- <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+ <div className="rounded-xl border border-border bg-surface-2 p-4">
  <div className="text-xs text-text-muted uppercase tracking-wider">Total Requests</div>
  <div className="text-2xl font-semibold text-text-main mt-1">{data.total.toLocaleString()}</div>
  </div>
- <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+ <div className="rounded-xl border border-border bg-surface-2 p-4">
  <div className="text-xs text-text-muted uppercase tracking-wider">Errors</div>
  <div className="text-2xl font-semibold text-red-400 mt-1">{data.errors.toLocaleString()}</div>
  </div>
- <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+ <div className="rounded-xl border border-border bg-surface-2 p-4">
  <div className="text-xs text-text-muted uppercase tracking-wider">Error Rate</div>
  <div className="text-2xl font-semibold text-amber-400 mt-1">{data.errorRate}%</div>
  </div>
  </div>
 
  {/* By Status */}
- <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+ <div className="rounded-xl border border-border bg-surface-2 p-4">
  <h3 className="text-sm font-medium text-text-main mb-3">Errors by Status</h3>
  <div className="space-y-2">
  {Object.entries(data.byStatus)
@@ -59,7 +59,7 @@ export default function ErrorClassificationTab({ period }) {
 
  {/* Top error models */}
  {data.topErrorModels.length > 0 && (
- <div className="rounded-xl border border-border bg-zinc-900/50 p-4">
+ <div className="rounded-xl border border-border bg-surface-2 p-4">
  <h3 className="text-sm font-medium text-text-main mb-3">Top Error Models</h3>
  <div className="overflow-x-auto">
  <table className="w-full text-sm">

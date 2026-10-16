@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import LongTaskBanner from "./LongTaskBanner";
+import { useEffect, useState } from "react";
+import LongTaskBanner, { subscribeToTaskReveal } from "./LongTaskBanner";
 import { useTaskStore } from "@/store/taskStore";
 
 /**
@@ -46,6 +46,15 @@ function DockBanner({ task, startForeground }) {
   // click on the page. Keeping the flag here and never re-deriving `fixed`
   // from it means the overlay unmounts the same render the chip appears.
   const [backgrounded, setBackgrounded] = useState(!startForeground);
+
+  // The latch is local state, so a reveal from the bell reaches it only
+  // through a subscription: the map in LongTaskBanner is read at mount time
+  // and this card never remounts while collapsed. A task that never had the
+  // foreground stays a chip; only the newest task owns the full banner.
+  useEffect(() => {
+    if (!startForeground) return undefined;
+    return subscribeToTaskReveal(() => setBackgrounded(false));
+  }, [startForeground]);
 
   // A task that is not the newest one has never had a foreground banner, so it
   // is a chip by definition and has nothing to expand back to.

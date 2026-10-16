@@ -229,6 +229,19 @@ const SWAP_MS = 160;
 // the operator over at a full-screen overlay.
 const backgroundedKeys = new Set();
 
+// Mounted banners hold `backgrounded` as local state and read the map above
+// once, at mount - so clearing the map alone changed nothing for a banner
+// already collapsed in the corner, and the bell's reveal looked like it did
+// nothing. A listener set lets the reveal reach the instances on screen; the
+// map stays what it was, the cross-mount memory of the decision.
+const revealListeners = new Set();
+
+/** Subscribe a mounted banner to reveals. Returns the unsubscribe. */
+export function subscribeToTaskReveal(listener) {
+  revealListeners.add(listener);
+  return () => revealListeners.delete(listener);
+}
+
 /**
  * Expand every backgrounded banner again.
  *
@@ -239,6 +252,7 @@ const backgroundedKeys = new Set();
  */
 export function revealBackgroundedTasks() {
   backgroundedKeys.clear();
+  for (const listener of revealListeners) listener();
 }
 
 export default function LongTaskBanner({
@@ -282,6 +296,20 @@ export default function LongTaskBanner({
 
   // The swap timer outlives renders that change props mid-transition.
   useEffect(() => () => clearTimeout(swapTimer.current), []);
+
+  // A reveal from the bell has to reach THIS instance, not only the next
+  // mount: the map above is read once, at mount time, so a card already
+  // backgrounded never re-rendered and the click did nothing. Flipping local
+  // state here is visual only - the task store, and the job behind it, were
+  // never paused.
+  useEffect(
+    () =>
+      subscribeToTaskReveal(() => {
+        backgroundedKeys.delete(instanceKey);
+        setBackgrounded(false);
+      }),
+    [instanceKey]
+  );
 
   // Escape cancels, but only while the card still covers the page: a card in
   // the corner must not swallow a keystroke meant for the form underneath.

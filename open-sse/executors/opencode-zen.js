@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { DefaultExecutor } from "./default.js";
 import { resolveSessionId } from "../utils/sessionManager.js";
-import { isMuseSparkModel } from "../providers/models/helpers.js";
+import { isMuseSparkModel, isOpencodeFreeTierModel } from "../providers/models/helpers.js";
 import {
   normalizeResponsesInput,
   clampResponsesCallId,
@@ -235,15 +235,22 @@ export class OpenCodeZenExecutor extends DefaultExecutor {
       headers["x-opencode-session-id"] = prepared;
       headers["x-session-affinity"] = prepared;
       headers["x-session-id"] = prepared;
-      return headers;
+    } else {
+      const fallback = this.prepareRequestCredentials({ credentials });
+      const ses = fallback?.[SESSION_FIELD] || generateSessionId();
+      headers[SESSION_HEADER] = ses;
+      headers["x-opencode-session-id"] = ses;
+      headers["x-session-affinity"] = ses;
+      headers["x-session-id"] = ses;
     }
-
-    const fallback = this.prepareRequestCredentials({ credentials });
-    const ses = fallback?.[SESSION_FIELD] || generateSessionId();
-    headers[SESSION_HEADER] = ses;
-    headers["x-opencode-session-id"] = ses;
-    headers["x-session-affinity"] = ses;
-    headers["x-session-id"] = ses;
+    if (isOpencodeFreeTierModel(model)) {
+      // Free-tier models are gated behind the attested free-tier identity even
+      // on the keyed lane: a real oc_sk_* key answers 403 FreeTierError, while
+      // `Bearer public` + session/request ids succeed. Paid models keep the
+      // connection key untouched.
+      headers["Authorization"] = "Bearer public";
+      headers["x-opencode-request"] = generateRequestId();
+    }
     return headers;
   }
 

@@ -1,5 +1,11 @@
 /* source() sets scan base to src/ for both webpack + Turbopack; auto-detection still skips binaries + gitignore */
 @import "tailwindcss" source("../../");
+/* Chrome design tokens. Unlayered here on purpose: unlayered rules outrank
+   Tailwind's @layer utilities, so an interaction state (.chrome-focus,
+   .chrome-interactive) cannot be silently defeated by a stale utility still
+   sitting in a component's className list. Import position is irrelevant to
+   that ordering - only the layer - so right after tailwindcss is just tidy. */
+@import "../shared/styles/chrome.css";
 /* Icon font comes from the material-symbols package; declared here instead of importing
    the package stylesheet because its unlayered .material-symbols-outlined rule would
    outrank every Tailwind text-[..] utility and pin all icons to 24px.
@@ -100,6 +106,26 @@ html:not(.fonts-loading) .material-symbols-outlined { opacity: 1; transition: op
      base is opaque and wants a uniform cut, while glass renders the aurora
      behind the panel and wants a lighter veil that lets the colour through. */
   --color-scrim: rgba(30, 24, 21, 0.34);
+
+  /* ---- Derived surfaces: aliases onto the scale above.
+     They exist because many components already reference these names
+     (`bg-bg-subtle`, `text-text-primary`, `hover:bg-bg-hover`) but no token
+     backed them, so the utility never emitted any colour at all - the element
+     rendered transparent in EVERY theme. Declared as real custom properties
+     (not just @theme entries) so the glass theme can retune them per-mode
+     exactly like the base tokens, and pointed at vars so they flip with
+     .dark automatically. */
+  --color-bg-base: var(--color-bg);
+  --color-bg-subtle: var(--color-bg-alt);
+  --color-bg-secondary: var(--color-surface-2);
+  --color-bg-tertiary: var(--color-surface-3);
+  --color-surface-secondary: var(--color-surface-2);
+  --color-text-primary: var(--color-text-main);
+  --color-border-hover: var(--color-primary);
+  /* Hover wash derived from the text colour so it inverts with the theme
+     instead of needing a dark: variant at every call site. Mirrors
+     --state-hover in chrome.css. */
+  --color-bg-hover: color-mix(in srgb, var(--color-text-main) 6%, transparent);
 
   color-scheme: light;
 }
@@ -207,6 +233,25 @@ select {
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
   --color-info: var(--color-info);
+
+  /* Scrim + interaction washes exposed as utilities. --color-scrim already
+     existed as a var (modals/scrims tuned it per-mode) but was never reachable
+     from a Tailwind class, so overlays fell back to raw bg-black/NN that could
+     not follow the theme. */
+  --color-scrim: var(--color-scrim);
+  --color-state-hover: var(--state-hover);
+  --color-state-press: var(--state-press);
+
+  /* Derived surfaces (see :root). Self-referential so the utility carries the
+     var() reference and the glass theme can retune it per-mode. */
+  --color-bg-base: var(--color-bg-base);
+  --color-bg-subtle: var(--color-bg-subtle);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-bg-tertiary: var(--color-bg-tertiary);
+  --color-surface-secondary: var(--color-surface-secondary);
+  --color-text-primary: var(--color-text-primary);
+  --color-border-hover: var(--color-border-hover);
+  --color-bg-hover: var(--color-bg-hover);
 
   /* Static fallbacks (explicit per-mode usage if needed) */
   --color-bg-light: #FCFBF9;
@@ -731,6 +776,21 @@ button:disabled,
    underneath instead of being buried. */
 .dark.glass {
   --color-scrim: rgba(8, 11, 16, 0.34);
+}
+
+/* Derived surfaces follow the same frost ladder the explicit utilities above
+   use (bg -> transparent, bg-alt -> 4%, surface-2 -> 11%, surface-3 -> 15%),
+   so `bg-bg-subtle`/`bg-bg-secondary`/`bg-bg-tertiary` frosted panels match
+   their `bg-bg-alt`/`bg-surface-2`/`bg-surface-3` neighbours instead of
+   landing on an opaque dark block over the aurora. Because the utilities carry
+   a var() reference (see @theme inline), retuning the var here also reaches
+   the opacity variants (`bg-bg-subtle/30`). */
+.dark.glass {
+  --color-bg-base: rgba(255, 255, 255, 0.07);
+  --color-bg-subtle: rgba(255, 255, 255, 0.04);
+  --color-bg-secondary: rgba(255, 255, 255, 0.11);
+  --color-bg-tertiary: rgba(255, 255, 255, 0.15);
+  --color-surface-secondary: rgba(255, 255, 255, 0.11);
 }
 
 /* Nested menus, modals and popovers inherit the same frost. */
