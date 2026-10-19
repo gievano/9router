@@ -74,20 +74,51 @@ export async function POST(request) {
       const { validateApiKey, getApiKeyByKey } = await import("@/lib/localDb");
       const keyStr = apiKey.trim();
       const valid = await validateApiKey(keyStr, null, ip);
-      if (valid !== true) {
+      // An exhausted quota still signs in: the usage page is the thing that
+      // has to show the bar at 100%, so locking the session out would hide
+      // the very state the operator needs to see. Request-side limits stay
+      // enforced because the SSE handler calls validateApiKey again.
+      const quotaExhausted = valid === "QUOTA_EXCEEDED";
+      if (valid !== true && !quotaExhausted) {
         let msg = "Invalid API key";
         if (valid === "KEY_DISABLED") msg = "API key is disabled";
         else if (valid === "KEY_EXPIRED") msg = "API key is expired";
-        else if (valid === "QUOTA_EXCEEDED") msg = "API key quota exceeded";
         else if (valid === "IP_NOT_ALLOWED") msg = "Client IP not allowed for this API key";
+        // Wrong keys burn the same attempt counter as a wrong password, so
+        // guessing costs the same either way and both show what is left.
+        const { remainingBeforeLock } = recordFail(ip);
+        const postLock = checkLock(ip);
+        if (postLock.locked) {
+          await audit(request, ip, {
+            type: "apikey_login_locked",
+            severity: "warn",
+            detail: `Locked out after repeated failures; retry allowed in ${postLock.retryAfter}s`,
+            actor: keyStr.slice(0, 8) + "…",
+          });
+          return NextResponse.json(
+            { error: `Too many failed attempts. Try again in ${postLock.retryAfter}s. ${RESET_HINT}`, retryAfter: postLock.retryAfter, resetHint: RESET_HINT },
+            { status: 429, headers: { "Retry-After": String(postLock.retryAfter) } }
+          );
+        }
         await audit(request, ip, {
           type: "apikey_login_failed",
           severity: "warn",
           // The reason, never the key: this table is readable in the dashboard.
-          detail: msg,
+          detail: `${msg}. ${remainingBeforeLock} attempt(s) left before lockout`,
           actor: keyStr.slice(0, 8) + "…",
         });
-        return NextResponse.json({ error: msg }, { status: 401 });
+        return NextResponse.json(
+          { error: `${msg}. ${remainingBeforeLock} attempt(s) left before lockout.`, remainingBeforeLock },
+          { status: 401 }
+        );
+      }
+      if (quotaExhausted) {
+        await audit(request, ip, {
+          type: "apikey_login_quota",
+          severity: "info",
+          actor: keyStr.slice(0, 8) + "…",
+          detail: "Signed in despite an exhausted token quota",
+        });
       }
 
       const keyObj = await getApiKeyByKey(keyStr);

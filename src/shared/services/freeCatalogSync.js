@@ -34,7 +34,7 @@ export async function syncOneFreeCatalog(entry) {
   const { url, type } = entry.modelsFetcher;
   const res = await fetch(url, {
     signal: AbortSignal.timeout(SYNC_TIMEOUT_MS),
-    headers: type === "opencode-free" ? { "x-opencode-client": "desktop" } : undefined,
+    headers: type === "opencode-free" ? { "x-opencode-client": "cli" } : undefined,
   });
   if (!res.ok) throw new Error(`upstream ${res.status}`);
   const json = await res.json();

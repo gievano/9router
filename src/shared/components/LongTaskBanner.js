@@ -101,8 +101,9 @@ function IconButton({ label, glyph, onClick, tone = "default", className, childr
  * way. Fixed clear of mobile browser chrome on small screens.
  */
 function BackgroundCard({ title, message, percent, onExpand, onCancel, canCancel, inline = false }) {
+  if (!inline) return null;
   return (
-    <div className={inline ? "pointer-events-none" : "pointer-events-none fixed bottom-20 right-4 z-[80] sm:bottom-6"}>
+    <div className="pointer-events-none">
       <div
         role="status"
         aria-live="polite"
@@ -251,8 +252,7 @@ export function subscribeToTaskReveal(listener) {
  * actual job, was never paused.
  */
 export function revealBackgroundedTasks() {
-  backgroundedKeys.clear();
-  for (const listener of revealListeners) listener();
+  // No-op: progress lives only in the bell now, there is no chip to re-expand.
 }
 
 export default function LongTaskBanner({
@@ -380,9 +380,11 @@ export default function LongTaskBanner({
     );
   }
 
-  // The overlay is a thin scrim, not a blur: the operator is waiting on a
-  // status panel, not a modal, and a blurred full-screen wash reads as
-  // "something is blocking me" when nothing is.
+  // Bell-only: every long task reports through the notification bell
+  // (taskStore → NotifToast). The floating scrim + corner chip duplicated
+  // the bell, so fixed overlays render nothing. Callers that need an
+  // inline readout inside a positioned container keep using fixed={false}.
+  if (fixed) return null;
   return (
     <div
       role="status"
@@ -390,7 +392,7 @@ export default function LongTaskBanner({
       className={cn(
         "flex items-end justify-end p-4 sm:p-6",
         exiting ? "opacity-0 transition-opacity duration-150" : "fade-in",
-        fixed ? "fixed inset-0 z-[70]" : "absolute inset-0 z-10 rounded-[10px]",
+        "absolute inset-0 z-10 rounded-[10px]",
         className
       )}
       style={{ backgroundColor: "var(--color-scrim)" }}

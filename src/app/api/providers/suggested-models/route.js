@@ -81,7 +81,7 @@ async function serveSuggestedModels(request) {
   // opencode.ai only lists public models to requests carrying its desktop
   // client header; without it the catalogue can 403 or hang the fetch.
   const headers =
-    type === "opencode-free" ? { "x-opencode-client": "desktop" } : undefined;
+    type === "opencode-free" ? { "x-opencode-client": "cli" } : undefined;
   try {
     const res = await undiciFetch(url, {
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),

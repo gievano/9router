@@ -1,4 +1,5 @@
 import { PROVIDER_MODELS, PROVIDER_ID_TO_ALIAS, getModelKind } from "@/shared/constants/models";
+import { resolveModelDisplayName } from "@/shared/utils/modelDisplayName";
 import {
   AI_PROVIDERS,
   FREE_PROVIDERS,
@@ -361,10 +362,13 @@ export async function buildModelsList(kindFilter, options = {}) {
   // Combos first (filtered by kind). Web combos expose `kind` so AI knows search vs fetch.
   for (const combo of combos) {
     if (!comboMatchesKinds(combo, kindFilter)) continue;
+    // `name` is derived: combos are identified by their name (which is the id),
+    // and clients render model names as-is when the field is missing.
     const entry = {
       id: combo.name,
       object: "model",
       owned_by: "combo",
+      name: resolveModelDisplayName(combo.name),
     };
     if (combo.kind === "webSearch" || combo.kind === "webFetch") {
       entry.kind = combo.kind;
@@ -418,6 +422,7 @@ export async function buildModelsList(kindFilter, options = {}) {
           id: `${alias}/${model.id}`,
           object: "model",
           owned_by: alias,
+          name: resolveModelDisplayName(model.id, model.name),
           capabilities: getCapabilitiesForModel(alias, model.id),
         });
       }
@@ -440,6 +445,7 @@ export async function buildModelsList(kindFilter, options = {}) {
         // Optional operator-set label, exactly as for studio models; falls back
         // to the provider alias so an unset field changes nothing.
         owned_by: customModel.ownedBy || providerAlias,
+        name: resolveModelDisplayName(modelId, customModel.name),
       });
     }
   } else {
@@ -463,7 +469,13 @@ export async function buildModelsList(kindFilter, options = {}) {
       const staticModelKindById = new Map(
         providerModels.map((m) => [m.id, modelKind(m)])
       );
+      // Registry entries publish a human name for most models; keep it for the
+      // entries below instead of making clients render the raw id.
+      const staticModelNameById = new Map(
+        providerModels.filter((m) => m?.id).map((m) => [m.id, m.name])
+      );
       let liveModelKindById = new Map();
+      let liveModelNameById = new Map();
       let liveCapabilitiesById = new Map();
 
       let rawModelIds = hasExplicitEnabledModels
@@ -494,6 +506,11 @@ export async function buildModelsList(kindFilter, options = {}) {
                 .filter((m) => m?.id)
                 .map((m) => [m.id, modelKind(m)])
             );
+            liveModelNameById = new Map(
+              live.models
+                .filter((m) => m?.id && typeof m.name === "string")
+                .map((m) => [m.id, m.name])
+            );
             liveCapabilitiesById = new Map(
               live.models
                 .filter((m) => m?.id && m.capabilities)
@@ -521,6 +538,7 @@ export async function buildModelsList(kindFilter, options = {}) {
         .filter((modelId) => typeof modelId === "string" && modelId.trim() !== "");
 
       const customModelKindById = new Map();
+      const customModelNameById = new Map();
       const customModelIds = customModels
         .filter((m) => {
           if (!m?.id) return false;
@@ -534,6 +552,7 @@ export async function buildModelsList(kindFilter, options = {}) {
         .map((m) => {
           const modelId = String(m.id).trim();
           if (modelId) customModelKindById.set(modelId, getModelKind(m) || LLM_KIND);
+          if (modelId && typeof m.name === "string") customModelNameById.set(modelId, m.name);
           return modelId;
         })
         .filter((modelId) => modelId !== "");
@@ -595,6 +614,12 @@ export async function buildModelsList(kindFilter, options = {}) {
           // Optional label the operator set on this custom model; the provider
           // alias stays the default so an unset field changes nothing.
           owned_by: customOwnedByById.get(modelId) || outputAlias,
+          // Prefer the name the provider/custom entry published; ids with none
+          // (combos, raw passthrough slugs) get a readable name derived from it.
+          name: resolveModelDisplayName(
+            modelId,
+            customModelNameById.get(modelId) || liveModelNameById.get(modelId) || staticModelNameById.get(modelId),
+          ),
         };
         // Live-catalog resolvers (kiro/qoder/github/clinepass) mostly only return
         // { id, name } - no per-model capability data. Fall back to the same

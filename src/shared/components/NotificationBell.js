@@ -6,7 +6,6 @@ import BellMenu from "./BellMenu";
 import NotifToast, { mergeLiveTasks } from "./NotifToast";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTaskStore } from "@/store/taskStore";
-import { revealBackgroundedTasks } from "./LongTaskBanner";
 
 const POLL_MS = 60000;
 
@@ -21,11 +20,11 @@ const SEVERITY_STYLE = {
  * derives. A key-signed session gets nothing - these messages describe this
  * install, not the caller's own key.
  *
- * Live long tasks live here too, through NotifToast: the import progress the
- * operator used to read off a card floating over the table now has a home in
- * the bell. The floating card keeps working (TaskDock + LongTaskBanner) as
- * the transient signal; this is where the progress lives, and picking a row
- * brings the card back through the existing reveal.
+ * Live long tasks live here too, through NotifToast. The import progress the
+ * operator used to read off a card floating over the table covered the very
+ * page they were trying to work on, so that dock is gone: every long
+ * operation reports into the task store and surfaces here. Progress is
+ * visible while this menu is open, and the badge says the rest of the time.
  */
 export default function NotificationBell() {
   const role = useSessionStore((state) => state.role);
@@ -133,8 +132,10 @@ export default function NotificationBell() {
   // a derived .map(): a derived array is a new reference every render, which
   // re-subscribes the component on every paint and loops the page to death.)
   const tasks = useTaskStore((state) => state.tasks);
-  const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
   const live = useMemo(() => mergeLiveTasks(tasks, jobs), [tasks, jobs]);
+  // A finished run is still listed for its grace window, but it is not work in
+  // flight: the dot and the aria label say "running", so they count only these.
+  const running = live.filter((t) => t.state !== "done").length;
   // Unread notices plus live tasks: an import still running keeps its badge
   // after the operator has read every notice, which is the case that made the
   // badge feel like it lied.
@@ -158,19 +159,46 @@ export default function NotificationBell() {
     }
   };
 
-  // Picking a live task brings its banner back instead of rendering a second
-  // copy of it.
+  // Per-row controls. Both write through to the feed and then trust the
+  // server's own recount, so a concurrent scan cannot leave the badge lying.
+  const postRow = async (body, apply) => {
+    apply();
+    try {
+      const res = await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Number.isFinite(data.unread)) setUnread(data.unread);
+      } else {
+        load();
+      }
+    } catch {
+      load();
+    }
+  };
+
+  const markReadOne = (n) =>
+    postRow({ action: "read", id: n.id }, () => {
+      setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+    });
+
+  // Dismissing keeps the row's dedupeKey, so a condition that is still true is
+  // announced again by the next scan instead of being suppressed for good.
+  const dismissOne = (n) =>
+    postRow({ action: "clear", id: n.id }, () => {
+      setItems((prev) => prev.filter((x) => x.id !== n.id));
+    });
+
+  // A row is a status readout: with the floating dock gone there is nothing to
+  // expand, so picking one only helps when it can take the operator to the
+  // page that owns the run.
   const handlePick = (task) => {
     setOpen(false);
-    // The reveal notifies banners that are already mounted (see the reveal
-    // subscription in LongTaskBanner), so a run on this page expands in place
-    // instead of staying collapsed in the corner.
-    revealBackgroundedTasks();
-    if (!taskIds.includes(task.id) && typeof window !== "undefined") {
-      // No banner is mounted for this run: the page that owns it is closed.
-      // Navigation lands where the operator started the run, so the task
-      // store reconnects and the banner reopens on the run itself.
-      window.location.assign(task.href || "/dashboard/proxy-pools");
+    if (task.href && typeof window !== "undefined") {
+      window.location.assign(task.href);
     }
   };
 
@@ -194,11 +222,19 @@ export default function NotificationBell() {
         className="relative flex items-center justify-center size-8 rounded-[10px] text-text-muted hover:text-text-main hover:bg-surface-2 transition-colors"
         title="Notifications"
         aria-label={`Notifications${unread ? `, ${unread} unread` : ""}${
-          live.length ? `, ${live.length} running` : ""
+          running ? `, ${running} running` : ""
         }`}
         aria-expanded={open}
       >
         <span className="material-symbols-outlined text-[20px]">notifications</span>
+        {running > 0 && (
+          // Sits clear of the badge's circle (outside it by ~1.5px) rather than
+          // under it, so the count is never half-covered.
+          <span
+            aria-hidden="true"
+            className="absolute -top-1.5 -right-1.5 size-1.5 rounded-full bg-success"
+          />
+        )}
         {badge > 0 && (
           <span
             className={`absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 rounded-full text-[9px] font-bold leading-[15px] text-white ${
@@ -245,39 +281,69 @@ export default function NotificationBell() {
             // Every entry opens the changelog: the bell says something
             // changed, and the changelog says what.
             return (
-              <button
+              // Siblings, not a button in a button: the row stays clickable to
+              // open the changelog, and the two controls keep their own hit area.
+              <div
                 key={n.id}
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  setChangelogOpen(true);
-                }}
-                className="block w-full text-left border-b border-border-subtle/60 last:border-0"
+                className="flex items-start border-b border-border-subtle/60 last:border-0"
               >
-                <span
-                  className={`flex items-start gap-2 px-3.5 py-2.5 transition-colors hover:bg-surface-2 ${
-                    n.read ? "opacity-65" : ""
-                  }`}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    setChangelogOpen(true);
+                  }}
+                  className="min-w-0 flex-1 text-left"
                 >
                   <span
-                    className={`material-symbols-outlined text-[16px] mt-0.5 shrink-0 ${style.text}`}
+                    className={`flex items-start gap-2 px-3.5 py-2.5 transition-colors hover:bg-surface-2 ${
+                      n.read ? "opacity-65" : ""
+                    }`}
                   >
-                    {style.icon}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-xs font-medium text-text-main">{n.title}</span>
-                    {n.body && (
-                      <span className="block text-[11px] text-text-muted mt-0.5 break-words">
-                        {n.body}
-                      </span>
-                    )}
-                    <span className="block text-[10px] text-text-muted/70 mt-1">
-                      {new Date(n.at).toLocaleString()}
+                    <span
+                      className={`material-symbols-outlined text-[16px] mt-0.5 shrink-0 ${style.text}`}
+                    >
+                      {style.icon}
                     </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-xs font-medium text-text-main">{n.title}</span>
+                      {n.body && (
+                        <span className="block text-[11px] text-text-muted mt-0.5 break-words">
+                          {n.body}
+                        </span>
+                      )}
+                      <span className="block text-[10px] text-text-muted/70 mt-1">
+                        {new Date(n.at).toLocaleString()}
+                      </span>
+                    </span>
+                    {!n.read && (
+                      <span className={`size-1.5 rounded-full mt-1.5 shrink-0 ${style.dot}`} />
+                    )}
                   </span>
-                  {!n.read && <span className={`size-1.5 rounded-full mt-1.5 shrink-0 ${style.dot}`} />}
-                </span>
-              </button>
+                </button>
+                <div className="flex shrink-0 items-center gap-0.5 pr-2.5 py-2.5">
+                  {!n.read && (
+                    <button
+                      type="button"
+                      onClick={() => markReadOne(n)}
+                      title="Mark as read"
+                      aria-label={`Mark ${n.title} as read`}
+                      className="flex size-6 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-2 hover:text-text-main"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">check</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => dismissOne(n)}
+                    title="Remove notification"
+                    aria-label={`Remove ${n.title}`}
+                    className="flex size-6 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-2 hover:text-text-main"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">delete</span>
+                  </button>
+                </div>
+              </div>
             );
           })
         )}

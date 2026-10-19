@@ -7,6 +7,7 @@ import { getProviderAlias, ALIAS_TO_ID } from "@/shared/constants/providers";
 import { getCapabilitiesForModel } from "open-sse/providers/capabilities.js";
 import { fetchSuggestedModelsServer, onlyFree } from "@/app/api/providers/suggested-models/filters.js";
 import { FREE_PROVIDERS as FREE_PROVIDER_REGISTRY } from "@/shared/constants/providers.js";
+import { resolveModelDisplayName } from "@/shared/utils/modelDisplayName";
 
 // GET /api/models - Get models with aliases. Always dynamic: plugin badges
 // (vision/thinkDeeper/jsonGuard/...) come from settings, which a prerendered
@@ -88,6 +89,7 @@ export async function GET() {
         const pluginMarks = applyPluginMarks(caps, [fullModel, routedModel, m.model]);
         return {
           ...m,
+          name: resolveModelDisplayName(m.model, m.name),
           fullModel,
           routedModel,
           alias: modelAliases[fullModel] || m.model,

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { Button, ProgressCard } from "@/shared/components";
+import { Button } from "@/shared/components";
+import { useTaskStore } from "@/store/taskStore";
 import { getProviderCustomModelRows } from "@/shared/utils/providerCustomModels";
 function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }) {
   const borderColor = testStatus === "ok"
@@ -75,7 +76,6 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const [newModel, setNewModel] = useState("");
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [importTotals, setImportTotals] = useState(null);
   const [testingModelId, setTestingModelId] = useState(null);
   const [modelTestResults, setModelTestResults] = useState({});
 
@@ -123,14 +123,47 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
     }
   };
 
+  // Client-side cap for the list-fetch step: the route bounds each upstream
+  // read, but without this the browser still waits on the route itself with no
+  // ceiling when the provider stalls.
+  // Client-side cap for the list-fetch step: the route bounds each upstream
+  // read, but without this the browser still waits on the route itself with no
+  // ceiling when the provider stalls.
+  const LIST_TIMEOUT_MS = 20000;
   const handleImport = async () => {
     if (importing) return;
     const activeConnection = connections.find((conn) => conn.isActive !== false);
     if (!activeConnection) return;
 
     setImporting(true);
+    // The bell owns long-task visibility in this app, so a local boolean is
+    // not enough: register the run in the store and the panel shows it, with
+    // its own Completed row and running dot, like every other long task.
+    const taskId = `models-import-${activeConnection.id}`;
+    useTaskStore.getState().start({
+      id: taskId,
+      title: "Importing models",
+      message: "Fetching model list",
+      progress: 0,
+      href: typeof window !== "undefined" ? window.location.pathname : null,
+    });
     try {
-      const res = await fetch(`/api/providers/${activeConnection.id}/models`);
+      const controller = new AbortController();
+      const listTimer = setTimeout(() => controller.abort(), LIST_TIMEOUT_MS);
+      let res;
+      try {
+        res = await fetch(`/api/providers/${activeConnection.id}/models`, {
+          signal: controller.signal,
+        });
+      } catch (listError) {
+        if (listError?.name === "AbortError") {
+          alert("Fetching the model list timed out after 20 seconds.");
+          return;
+        }
+        throw listError;
+      } finally {
+        clearTimeout(listTimer);
+      }
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || "Failed to import models");
@@ -141,22 +174,26 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         alert("No models returned from /models.");
         return;
       }
-      setImportTotals({ done: 0, total: models.length });
+      useTaskStore.getState().update(taskId, {
+        message: `0/${models.length} models`,
+        progress: 0,
+      });
       let importedCount = 0;
       for (let index = 0; index < models.length; index += 1) {
         const model = models[index];
         const modelId = model.id || model.name || model.model;
         if (!modelId) {
-          setImportTotals({ done: index + 1, total: models.length });
           continue;
         }
         if (allModels.some((entry) => entry.id === modelId)) {
-          setImportTotals({ done: index + 1, total: models.length });
           continue;
         }
         await onAddCustomModel(modelId);
         importedCount += 1;
-        setImportTotals({ done: index + 1, total: models.length });
+        useTaskStore.getState().update(taskId, {
+          message: `${index + 1}/${models.length} models`,
+          progress: Math.round(((index + 1) / models.length) * 100),
+        });
       }
       if (importedCount === 0) {
         alert("No new models were added.");
@@ -164,8 +201,8 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
     } catch (error) {
       console.log("Error importing models:", error);
     } finally {
+      useTaskStore.getState().finish(taskId);
       setImporting(false);
-      setImportTotals(null);
     }
   };
 
@@ -222,28 +259,8 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         </div>
       )}
 
-      {importing && (
-        // Wrapped in a positioned box. `fixed={false}` renders the card as
-        // `absolute inset-0`, and without a positioned ancestor that resolves
-        // against the whole page - so the scrim covered the dashboard for the
-        // whole import while only this section's progress needed showing.
-        <div className="relative">
-          <ProgressCard
-            fixed={false}
-            title="Importing models"
-            message={
-              importTotals && importTotals.total > 0
-                ? `${importTotals.done}/${importTotals.total} models`
-                : "Fetching model list"
-            }
-            progress={
-              importTotals && importTotals.total > 0
-                ? Math.round((importTotals.done / importTotals.total) * 100)
-                : null
-            }
-          />
-        </div>
-      )}
+      {/* No section-covering scrim here: handleImport() reports into the task
+          store, so the notification bell is the only progress surface. */}
     </div>
   );
 }

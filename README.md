@@ -599,6 +599,40 @@ http://host.docker.internal:8787
 
 If Headroom is down or returns an error, 9Router fails open and sends the original request.
 
+### 🧩 AI Gateway Prompt Injection
+
+## AI Gateway Prompt Injection
+
+The **Prompt Injection** module (`/dashboard/prompt-injection`) equips 9Router with an intelligent prompt orchestration and guardrail layer. It allows you to inject system personas, formatting requirements, security policies, or dynamic context on the fly—**without modifying client applications, IDEs, or client-side prompts** (e.g., Cursor, Claude Code, Cline, Windsurf).
+
+### Key Features
+- **Precise Target Scopes**:
+  - **Combos**: Target traffic routed through specific combos (e.g., `smart-coder`, `fallback-auto`).
+  - **Models & Wildcards**: Target specific model IDs (`claude-3-7-sonnet`, `deepseek-chat`) or pattern wildcards (`claude-*`, `openai/*`, `*deepseek*`, `*`).
+  - **Global Traffic**: Apply universal rules across all gateway requests.
+- **Per-Key Targeting**: Restrict injection rules to specific API Keys (e.g., internal team keys vs. client-facing keys) or apply universally.
+- **Keyword & Regex Trigger Filters**:
+  - **Always Active**: Injects on every matching request.
+  - **Contains Keywords**: Triggers only when the user's prompt contains designated keywords (e.g., `code, python, sql, bug, refactor`). Supports case-sensitive matching.
+  - **Regular Expressions (Regex)**: Triggers only when the prompt matches custom RegExp patterns (e.g., `\b(python|javascript|golang)\b` or `^(create|build)\b`).
+- **5 Injection Strategies**:
+  - `Prepend System` — Insert instructions at the very beginning of the system prompt (highest priority).
+  - `Append System` — Append guidelines or constraints to the end of the system prompt.
+  - `Override System` — Replace the client's system prompt completely.
+  - `Prepend User` — Prepend instructions directly before the user's latest prompt.
+  - `Append User` — Append instructions directly after the user's latest prompt.
+- **Dynamic Template Interpolation**: Built-in variables evaluated in real-time on every request:
+  - `{{model}}` — Resolved active model name.
+  - `{{provider}}` — Active upstream provider (e.g., `openai`, `anthropic`, `deepseek`).
+  - `{{date}}` — Current UTC/local date (`YYYY-MM-DD`).
+  - `{{time}}` — Current local time (`HH:mm:ss`).
+  - `{{datetime}}` — Full ISO timestamp.
+- **Dry-Run Gateway Simulator**: Test and verify transformed JSON payloads side-by-side (Original vs. Injected) in the dashboard drawer before applying rules to live traffic.
+- **Idempotency & Fail-Open Safety**:
+  - Multi-account rotation and combo fallbacks never cause duplicate prompt injections.
+  - Multi-wire protocol translation automatically normalizes payloads for OpenAI Chat (`messages`), Anthropic Claude (`system`), Google Gemini (`system_instruction`), and OpenAI Responses (`instructions`).
+  - Fails open gracefully if any rule format is malformed, ensuring zero disruption to chat inferences.
+
 ### 🐴 Ponytail (Lazy Senior Dev)
 
 Ponytail injects a _"lazy senior dev"_ system prompt into every request, biasing the LLM toward minimal, YAGNI-first code — deletion over addition, stdlib over new deps, one-liners over abstractions. Adapted from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail).

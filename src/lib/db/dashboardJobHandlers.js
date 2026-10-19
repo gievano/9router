@@ -90,16 +90,16 @@ registerDashboardJobHandler("health-check", async (job, { report }) => {
  * whose failure becomes the job's error instead of a toast nobody sees because
  * the page that raised it is gone.
  */
-const DEPLOY_ROUTES = {
-  vercel: "@/app/api/proxy-pools/vercel-deploy/route",
-  cloudflare: "@/app/api/proxy-pools/cloudflare-deploy/route",
-  deno: "@/app/api/proxy-pools/deno-deploy/route",
+const DEPLOY_IMPORTERS = {
+  vercel: () => import("@/app/api/proxy-pools/vercel-deploy/route"),
+  cloudflare: () => import("@/app/api/proxy-pools/cloudflare-deploy/route"),
+  deno: () => import("@/app/api/proxy-pools/deno-deploy/route"),
 };
 
 registerDashboardJobHandler("deploy-relay", async (job, { report }) => {
   const provider = String(job.payload?.provider || "");
-  const modPath = DEPLOY_ROUTES[provider];
-  if (!modPath) {
+  const importer = DEPLOY_IMPORTERS[provider];
+  if (!importer) {
     job.status = "error";
     job.message = "Unknown relay provider";
     return;
@@ -111,7 +111,7 @@ registerDashboardJobHandler("deploy-relay", async (job, { report }) => {
   const form = { ...(job.payload?.form || {}) };
   delete form.provider;
 
-  const { POST: deploy } = await import(modPath);
+  const { POST: deploy } = await importer();
   const res = await deploy(routeRequest(`/api/proxy-pools/${provider}-deploy`, form));
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.error || `${label} deploy failed`);

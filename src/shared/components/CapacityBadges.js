@@ -27,6 +27,11 @@ export default function CapacityBadges({ caps, marks, className = "", colorOverr
   const nativeKeys = active.filter((k) => !covered.has(k));
   if (active.length === 0 && pluginKeys.length === 0) return null;
 
+  // Every mark is a monogram in one ink now, so the colour is decided once here
+  // instead of per plugin: muted by default because these ride on dense model
+  // rows, overridable by a surface that wants the accent.
+  const tone = colorOverride || "text-text-muted";
+
   return (
     <span className={`inline-flex items-center gap-0.5 ${className}`}>
       {nativeKeys.map((k) => {
@@ -34,7 +39,7 @@ export default function CapacityBadges({ caps, marks, className = "", colorOverr
         return (
           <Tooltip key={k} text={`${meta.label} - ${meta.desc}`}>
             <span
-              className={`inline-flex items-center justify-center cursor-help ${colorOverride || meta.color}`}
+              className={`inline-flex items-center justify-center cursor-help ${tone}`}
               style={{ width: `${size}px`, height: `${size}px` }}
             >
               <PluginMark name={meta.mark} size={size} strokeWidth={1.9} />
@@ -48,7 +53,7 @@ export default function CapacityBadges({ caps, marks, className = "", colorOverr
         return (
           <Tooltip key={`plugin-${key}`} text={`${meta.label} - ${meta.desc}`}>
             <span
-              className={`inline-flex items-center justify-center cursor-help ${colorOverride || meta.color}`}
+              className={`inline-flex items-center justify-center cursor-help ${tone}`}
               style={{ width: `${size}px`, height: `${size}px` }}
             >
               <PluginMark name={key} size={size} strokeWidth={1.9} />

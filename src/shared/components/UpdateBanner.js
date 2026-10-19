@@ -8,6 +8,7 @@ import { ConfirmModal } from "./Modal";
 import ManualUpdatePanel from "./ManualUpdatePanel";
 import { GITHUB_CONFIG, UPDATER_CONFIG } from "@/shared/constants/config";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+import { useSessionStore } from "@/store/sessionStore";
 
 // updateCheck reads the changelog heading verbatim, so the tag already rides
 // along ("v0.5.165", or "git-abc1234" when there is no release yet). A caller
@@ -78,9 +79,17 @@ export default function UpdateBanner({ pollMs = POLL_MS }) {
   // Re-keyed per route below, so the banner briefly exits and re-enters on
   // navigation instead of sitting frozen while the page swaps beneath it.
   const pathname = usePathname();
+  // The sidebar already resolves the session once for the whole shell; reading it
+  // here instead of fetching /api/auth/status again removes both the duplicate
+  // request and the window in which `isApiKeyUser` is still false for a key
+  // session -- during which the version poll ran and the banner flashed.
+  const sessionRole = useSessionStore((state) => state.role);
+  const sessionLoaded = useSessionStore((state) => state.loaded);
+  const sessionReady = sessionLoaded === true;
+  const isApiKeyUser = sessionReady && sessionRole === "apikey";
+
   const [info, setInfo] = useState(null);
   const [dismissed, setDismissed] = useState("");
-  const [isApiKeyUser, setIsApiKeyUser] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
@@ -90,24 +99,15 @@ export default function UpdateBanner({ pollMs = POLL_MS }) {
 
   useEffect(() => {
     setDismissed(readDismissed());
-
-    // Update notices are an administrator surface: a key-signed session skips it
-    // instead of firing a request it may not read (same rule as Sidebar).
-    let alive = true;
-    fetch("/api/auth/status")
-      .then((res) => res.json())
-      .then((data) => {
-        if (alive && data?.role === "apikey") setIsApiKeyUser(true);
-      })
-      .catch(() => {});
-
-    return () => {
-      alive = false;
-    };
   }, []);
 
+  // Update notices are an administrator surface: a key-signed session skips it
+  // instead of firing a request it may not read (same rule as Sidebar). Waiting
+  // on `sessionReady` is what removes the flash -- before the role was known the
+  // poll ran, the response landed, and the banner painted for a key session
+  // until the separate status fetch caught up.
   useEffect(() => {
-    if (isApiKeyUser) return undefined;
+    if (!sessionReady || isApiKeyUser) return undefined;
 
     let alive = true;
     const check = async () => {
@@ -127,7 +127,7 @@ export default function UpdateBanner({ pollMs = POLL_MS }) {
       alive = false;
       clearInterval(id);
     };
-  }, [pollMs, isApiKeyUser]);
+  }, [pollMs, sessionReady, isApiKeyUser]);
 
   // Shutdown countdown is owned here now that the panel lives here: copy the
   // command, wait out the countdown, then stop the server so the operator can

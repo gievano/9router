@@ -1,4 +1,5 @@
 import { PROVIDER_MODELS } from "@/shared/constants/models";
+import { resolveModelDisplayName } from "@/shared/utils/modelDisplayName";
 
 /**
  * Handle CORS preflight
@@ -37,17 +38,20 @@ export async function GET() {
     
     for (const [provider, providerModels] of Object.entries(PROVIDER_MODELS)) {
       for (const model of providerModels) {
+        // Registry names are authoritative; ids the registry does not name (and
+        // that clients would otherwise render as a slug) get a readable name.
+        const displayName = resolveModelDisplayName(model.id, model.name);
         addModel({
           name: `models/${provider}/${model.id}`,
-          displayName: model.name || model.id,
-          description: `${provider} model: ${model.name || model.id}`,
+          displayName,
+          description: `${provider} model: ${displayName}`,
         });
 
         if (provider === "gemini") {
           addModel({
             name: `models/${model.id}`,
-            displayName: model.name || model.id,
-            description: `Gemini model: ${model.name || model.id}`,
+            displayName,
+            description: `Gemini model: ${displayName}`,
             methods: ["generateContent", "streamGenerateContent"],
           });
         }

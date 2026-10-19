@@ -5,7 +5,8 @@ import path from "node:path";
 const ROOT = process.cwd();
 const banner = fs.readFileSync(path.join(ROOT, "src/shared/components/LongTaskBanner.js"), "utf8");
 const loading = fs.readFileSync(path.join(ROOT, "src/shared/components/Loading.js"), "utf8");
-const dock = fs.readFileSync(path.join(ROOT, "src/shared/components/TaskDock.js"), "utf8");
+const layout = fs.readFileSync(path.join(ROOT, "src/shared/components/layouts/DashboardLayout.js"), "utf8");
+const bell = fs.readFileSync(path.join(ROOT, "src/shared/components/NotificationBell.js"), "utf8");
 const css = fs.readFileSync(path.join(ROOT, "src/app/globals.css"), "utf8");
 
 describe("loading banner theme + layout (user: 5 points)", () => {
@@ -64,9 +65,10 @@ describe("loading banner theme + layout (user: 5 points)", () => {
     expect(loading).toContain("<LongTaskBanner");
   });
 
-  it("dock renders one overlay max; extras stack as inline chips", () => {
-    expect(dock).toContain("const [first, ...rest] = tasks");
-    expect(dock).toContain("inlineChip");
+  it("live tasks surface in the bell; no floating dock is mounted", () => {
+    expect(fs.existsSync(path.join(ROOT, "src/shared/components/TaskDock.js"))).toBe(false);
+    expect(layout).not.toContain("TaskDock");
+    expect(bell).toContain("<NotifToast");
     expect(banner).toContain("inlineChip");
   });
 });

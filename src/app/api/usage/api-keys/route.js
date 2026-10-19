@@ -123,8 +123,15 @@ export async function GET() {
       const completionTokens = t.completionTokens || 0;
       const st = errorsByKey[k.key] || { ok: 0, errors: 0 };
       const limit = k.tokenLimit || 0;
-      // Use tokens actually consumed in the current window, not the mutable usedTokens column
-      const used = tokensInWindowMap[k.key] || k.usedTokens || 0;
+      // The apiKeys.usedTokens column is the quota authority: it is what
+      // validateApiKey enforces against, and usageHistory is a pruned log, so
+      // after cleanup the window sum reads lower than what was actually spent.
+      // The log sum only wins when the column is behind it (log rows raced in
+      // before the quota update), or when the window already rolled over and
+      // the repo zeroed the column for a fresh interval.
+      const column = Number(k.usedTokens) || 0;
+      const windowSum = tokensInWindowMap[k.key] || 0;
+      const used = Math.max(column, windowSum);
       const resetSpan = intervalMs(k.resetInterval);
       return {
         id: k.id,

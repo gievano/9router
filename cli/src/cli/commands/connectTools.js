@@ -12,6 +12,7 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const { resolveModelDisplayName } = require("../utils/modelDisplayName");
 
 const home = () => os.homedir();
 const v1 = (baseUrl) => (baseUrl.endsWith("/v1") ? baseUrl : `${baseUrl}/v1`);
@@ -199,7 +200,7 @@ const opencode = {
     const p = cfg.provider["9router"] || { npm: "@ai-sdk/openai-compatible", options: {}, models: {} };
     p.options = { ...p.options, baseURL: v1(baseUrl), apiKey };
     p.models = p.models || {};
-    p.models[model] = { name: model, modalities: { input: ["text", "image"], output: ["text"] } };
+    p.models[model] = { name: resolveModelDisplayName(model), modalities: { input: ["text", "image"], output: ["text"] } };
     cfg.provider["9router"] = p;
     cfg.model = `9router/${model}`;
     cfg.agent = cfg.agent || {};
@@ -260,7 +261,7 @@ const droid = {
         index: 0,
         baseUrl: v1(baseUrl),
         apiKey,
-        displayName: model,
+        displayName: resolveModelDisplayName(model),
         maxOutputTokens: 131072,
         noImageSupport: false,
         provider: "openai",
@@ -312,7 +313,7 @@ const crush = {
       type: "openai-compat",
       base_url: v1(baseUrl),
       api_key: apiKey,
-      models: [{ id: model, name: model, context_window: 128000 }],
+      models: [{ id: model, name: resolveModelDisplayName(model), context_window: 128000 }],
     };
     writeJson(file, cfg);
     return [file];
@@ -452,7 +453,7 @@ const pi = {
       baseUrl: v1(baseUrl),
       apiKey,
       api: "openai-completions",
-      models: [{ id: model, name: model, contextWindow: 128000, maxTokens: 16384 }],
+      models: [{ id: model, name: resolveModelDisplayName(model), contextWindow: 128000, maxTokens: 16384 }],
     };
     writeJson(file, cfg);
     return [file];

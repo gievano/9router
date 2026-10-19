@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import { Button, Badge, Input, Modal, Select, ProgressCard } from "@/shared/components";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 import { planBulkAdd } from "@/shared/utils/bulkAdd";
+import { useTaskStore } from "@/store/taskStore";
 
 const BULK_PLACEHOLDER = `name1|sk-key1\nname2|sk-key2\nsk-key-only-auto-named`;
 
@@ -179,8 +180,17 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
     setSaving(true);
     setBulkResult(null);
     setBulkProgress({ done: 0, total: plan.length });
+    const taskId = `add-apikeys-${provider || "bulk"}`;
+    useTaskStore.getState().start({
+      id: taskId,
+      title: "Adding keys",
+      message: `0/${plan.length} keys`,
+      progress: 0,
+      href: typeof window !== "undefined" ? window.location.pathname : null,
+    });
     let success = 0;
     let failed = 0;
+    let processed = 0;
     for (const entry of plan) {
       try {
         // Validate each key before saving so bulk-added connections get a
@@ -215,8 +225,14 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
       } catch {
         failed++;
       }
+      processed += 1;
       setBulkProgress((prev) => (prev ? { done: Math.min(prev.total, prev.done + 1), total: prev.total } : prev));
+      useTaskStore.getState().update(taskId, {
+        message: `${processed}/${plan.length} keys`,
+        progress: Math.round((processed / plan.length) * 100),
+      });
     }
+    useTaskStore.getState().finish(taskId);
     setSaving(false);
     setBulkProgress(null);
     setBulkResult({ success, failed });

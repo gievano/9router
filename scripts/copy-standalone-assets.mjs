@@ -1,4 +1,4 @@
-import { cpSync, existsSync } from "node:fs";
+import { cpSync, existsSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
@@ -36,6 +36,24 @@ export function copyStandaloneAssets({ projectRoot = process.cwd(), distDir = pr
   if (existsSync(serverWrapperSource)) {
     cpSync(serverWrapperSource, serverWrapperDestination, { force: true });
     console.log(`[standalone-assets] Copied custom-server.js to ${serverWrapperDestination}`);
+  }
+
+  // custom-server.js imports server modules by absolute path under its own
+  // __dirname (dashboardGuard + auth-guard-hooks, securityLogRepo,
+  // dashboardSession, telegramBackup, backgroundTokenRefresh). `next build`
+  // only traces the subset of src/ that reached the webpack graph, so those
+  // files are absent from standalone/ and getGuardModule() finds nothing,
+  // answering 503 "guard unavailable" instead of serving. assemble.sh stages
+  // the same tree for the systemd unit; this makes the plain
+  // `npm run build && npm start` (and `bun run build:bun && bun run start:bun`)
+  // path work without running assemble.sh first.
+  for (const dir of ["src", "scripts"]) {
+    const dirSource = resolve(projectRoot, dir);
+    const dirDestination = resolve(standaloneDir, dir);
+    if (!existsSync(dirSource)) continue;
+    rmSync(dirDestination, { recursive: true, force: true });
+    cpSync(dirSource, dirDestination, { recursive: true, force: true });
+    console.log(`[standalone-assets] Copied ${dir}/ to ${dirDestination}`);
   }
 }
 

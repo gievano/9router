@@ -18,49 +18,42 @@ const PLUGINS = [
   {
     key: "imageVision",
     title: "Image Vision",
-    iconColor: "text-sky-400",
     description:
       "Enable image understanding for models that don't natively support vision. Images are converted to text descriptions, allowing any model to process visual content in CLI tools and agents.",
   },
   {
     key: "thinkDeeper",
     title: "Think Deeper",
-    iconColor: "text-violet-400",
     description:
       "Enhance reasoning with multi-step chain-of-thought analysis. Forces the model to break problems into steps before answering, producing more thorough and accurate responses.",
   },
   {
     key: "speedMode",
     title: "Speed Mode",
-    iconColor: "text-cyan-300",
     description:
       "Skip thinking for faster responses. Disables reasoning mode on the selected models and instructs them to answer directly, ideal for simple tasks where low latency matters more than deep analysis.",
   },
   {
     key: "jsonGuard",
     title: "JSON Guard",
-    iconColor: "text-emerald-400",
     description:
       "Keep machine-readable output parseable. Strips prose and markdown fences around JSON, fixes Python-style literals and trailing commas, closes payloads the output limit cut off, and drops tool-call arguments the schema never declared.",
   },
   {
     key: "contextSqueezer",
     title: "Context Squeezer",
-    iconColor: "text-amber-300",
     description:
       "Fit long conversations into the model's context window. The oldest turns are replaced with a short recap and oversized tool output is trimmed, so the newest turns always arrive intact instead of the provider rejecting the request.",
   },
   {
     key: "openaiToolBridge",
     title: "OpenAI Tool Bridge",
-    iconColor: "text-fuchsia-400",
     description:
       "Keep tool calling working on models that cannot do it natively. Text-only providers (browser-session models with tools disabled) answer in prose; the bridge reads the tools you offered, picks the calls the model wrote out in its answer, and hands your client proper tool_calls with arguments filtered to the schema it declared.",
   },
   {
     key: "antiSlop",
     title: "Anti Slop",
-    iconColor: "text-teal-300",
     levelled: true,
     description:
       "Injects the antislop rules (https://github.com/miqdadbadjuber/anti-slop) into the system prompt of the models you pick, so they stop shipping generic AI UI, copy and code. Three intensities: Lite catches the obvious patterns, Full adds the hard-gate rules and the craftsmanship standard, Ultra adds the mandatory PASS/FAIL delivery report.",
@@ -273,21 +266,21 @@ export default function PluginsPage() {
             <Card key={plugin.key} className="flex flex-col h-full">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex items-center gap-3">
-                  {/* Single plugin mark: one tile in the plugin's own colour.
-                      An earlier pass drew the same glyph twice (tile plus a
-                      docked mini badge); the duplicate read as a second logo,
-                      so the badge is gone. The tile gets a solid coloured ring
-                      when the plugin is enabled and a flat hairline when off. */}
-                  {/* One shared tile for all seven cards: neutral glass, thin hairline,
-                      and the plugin's own saturated colour carried by the glyph
-                      itself. Seven translucent colourwashes never read as a
-                      system; the glyph does the differentiating now. */}
+                  {/* One tile, one mark, one ink for all seven cards. The marks
+                      used to be seven pictograms in seven saturated hues, which
+                      read as seven unrelated brands rather than one plugin
+                      system; they are monograms in the theme accent now, and the
+                      letters are what tell them apart. The tile is the only
+                      thing that changes with state - the ring says enabled, the
+                      glyph stays the same either way. */}
                   <div
-                    className={`size-11 rounded-xl flex items-center justify-center border shrink-0 bg-surface text-text-main border-border-subtle ${isEnabled ? "ring-1 ring-primary/50 shadow-[var(--shadow-elev)]" : ""}`}
+                    className={`size-11 rounded-xl flex items-center justify-center border shrink-0 border-border-subtle ${
+                      isEnabled
+                        ? "bg-primary/10 text-primary ring-1 ring-primary/50 shadow-[var(--shadow-elev)]"
+                        : "bg-surface text-text-muted"
+                    }`}
                   >
-                    <span className={`inline-flex items-center justify-center ${plugin.iconColor}`}>
-                      <PluginMark name={plugin.key} size={24} strokeWidth={2} />
-                    </span>
+                    <PluginMark name={plugin.key} size={24} strokeWidth={2} />
                   </div>
                   <h3 className="font-semibold text-base text-text-main">
                     {plugin.title}

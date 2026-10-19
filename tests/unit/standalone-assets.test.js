@@ -48,6 +48,24 @@ describe("standalone build assets", () => {
       .toBe("wrapper");
   });
 
+  // getGuardModule() resolves the guard by path under the standalone dir; when
+  // next build's tracing misses them the standalone server answers 503 "guard
+  // unavailable" instead of serving.
+  it("stages src/ and scripts/ so the standalone auth guard can load", () => {
+    const projectRoot = createBuildFixture(".next");
+    mkdirSync(join(projectRoot, "src", "lib", "db", "repos"), { recursive: true });
+    mkdirSync(join(projectRoot, "scripts"), { recursive: true });
+    writeFileSync(join(projectRoot, "src", "dashboardGuard.js"), "guard");
+    writeFileSync(join(projectRoot, "src", "lib", "db", "repos", "securityLogRepo.js"), "repo");
+    writeFileSync(join(projectRoot, "scripts", "auth-guard-hooks.mjs"), "hooks");
+
+    copyStandaloneAssets({ projectRoot, distDir: ".next" });
+
+    expect(readFileSync(join(projectRoot, ".next", "standalone", "src", "dashboardGuard.js"), "utf8")).toBe("guard");
+    expect(readFileSync(join(projectRoot, ".next", "standalone", "src", "lib", "db", "repos", "securityLogRepo.js"), "utf8")).toBe("repo");
+    expect(readFileSync(join(projectRoot, ".next", "standalone", "scripts", "auth-guard-hooks.mjs"), "utf8")).toBe("hooks");
+  });
+
   it("does not modify workspace-traced CLI builds", () => {
     const projectRoot = createBuildFixture(".next-cli-build");
     const previousMode = process.env.NEXT_TRACING_ROOT_MODE;

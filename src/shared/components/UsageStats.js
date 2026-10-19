@@ -230,8 +230,11 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const sortBy = searchParams.get("sortBy") || "rawModel";
-  const sortOrder = searchParams.get("sortOrder") || "asc";
+  // The usage table opens on the most recently used row: a busy install is
+  // sorted by "what just moved", not alphabetically. Clicking a header still
+  // overrides this via the URL params.
+  const sortBy = searchParams.get("sortBy") || "lastUsed";
+  const sortOrder = searchParams.get("sortOrder") || "desc";
 
   const [stats, setStats] = useState(null);
   // Overview sparklines + activity heatmap. Trending on its own fetch so a

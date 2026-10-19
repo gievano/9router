@@ -2,6 +2,9 @@
 
 import { create } from "zustand";
 
+/** How long a finished run stays announced before the store drops it. */
+export const DONE_TTL_MS = 30000;
+
 /**
  * Long operations that outlive the page that started them.
  *
@@ -16,7 +19,7 @@ import { create } from "zustand";
  * caller), so cancelling from anywhere aborts the real request loop.
  */
 export const useTaskStore = create((set, get) => ({
-  /** [{ id, title, message, section, progress, onCancel }] */
+  /** [{ id, title, message, section, progress, state, onCancel }] */
   tasks: [],
 
   start(task) {
@@ -29,7 +32,36 @@ export const useTaskStore = create((set, get) => ({
     }));
   },
 
+  /**
+   * Park a task as done rather than deleting it.
+   *
+   * Dropping the row the moment the work ended meant the bell went empty and the
+   * operator never learned the import actually landed. The row stays, marked
+   * `done` with the time it finished, and the bell retires it on its own (see
+   * NotifToast's DONE_TTL_MS) - so a finished run is announced, not silently
+   * swallowed, and does not pile up either.
+   */
   finish(id) {
+    set((s) => ({
+      tasks: s.tasks.map((t) =>
+        t.id === id && t.state !== "done"
+          ? { ...t, state: "done", progress: 100, finishedAt: Date.now() }
+          : t
+      ),
+    }));
+    // The bell must not have to poll to notice a finish: the row retires
+    // itself. Guarded by state so a run restarted inside the window is left
+    // running rather than cancelled by the previous run's timer.
+    const timer = setTimeout(() => {
+      const st = get();
+      const task = st.tasks.find((t) => t.id === id);
+      if (task && task.state === "done") st.dismiss(id);
+    }, DONE_TTL_MS);
+    if (typeof timer.unref === "function") timer.unref();
+  },
+
+  /** Retire a row outright: its own timer fired, or the operator cleared it. */
+  dismiss(id) {
     set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
   },
 

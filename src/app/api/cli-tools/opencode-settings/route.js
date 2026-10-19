@@ -6,6 +6,7 @@ import { promisify } from "util";
 import fs from "fs/promises";
 import path from "path";
 import os from "os";
+import { resolveModelDisplayName } from "@/shared/utils/modelDisplayName";
 
 const execAsync = promisify(exec);
 
@@ -134,7 +135,7 @@ export async function POST(request) {
     // Add or update entries for all requested models
     for (const m of modelsArray) {
       if (!m || typeof m !== "string") continue;
-      existingProvider.models[m] = { name: m, modalities: { input: ["text", "image"], output: ["text"] } };
+      existingProvider.models[m] = { name: resolveModelDisplayName(m), modalities: { input: ["text", "image"], output: ["text"] } };
     }
 
     // Save merged provider back

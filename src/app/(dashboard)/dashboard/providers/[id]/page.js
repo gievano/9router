@@ -12,6 +12,7 @@ import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS,
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
 import { getThinkingLevels } from "open-sse/providers/thinkingLevels.js";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+import { useTaskStore } from "@/store/taskStore";
 import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { translate } from "@/i18n/runtime";
 import { fetchSuggestedModels } from "@/shared/utils/providerModelsFetcher";
@@ -626,6 +627,26 @@ export default function ProviderDetailPage() {
     }
   };
 
+  // Long model imports report into the task store so the bell carries -
+  // mirroring how Setup / proxy-pools / token-saver long runs do it.
+  const startImportTask = (taskId, title) => {
+    useTaskStore.getState().start({
+      id: taskId,
+      title,
+      message: "Fetching model list...",
+      progress: 0,
+      href: typeof window !== "undefined" ? window.location.pathname : null,
+    });
+  };
+  const finishImportTask = (taskId, message) => {
+    useTaskStore.getState().update(taskId, {
+      message,
+      progress: 100,
+      state: "done",
+    });
+    useTaskStore.getState().finish(taskId);
+  };
+
   // Fetch Qoder model list and automatically add to available models
   const handleImportQoderModels = async () => {
     if (importingQoderModels) return;
@@ -635,24 +656,33 @@ export default function ProviderDetailPage() {
       return;
     }
 
+    const taskId = `import-qoder-models-${Date.now()}`;
     setImportingQoderModels(true);
+    startImportTask(taskId, "Importing Qoder models");
     try {
       const res = await fetch(`/api/providers/${activeConnection.id}/models`);
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || translate("Failed to fetch models"));
+        finishImportTask(taskId, data.error || "Fetch failed");
         return;
       }
       const models = data.models || [];
       if (models.length === 0) {
         alert(translate("No models returned"));
+        finishImportTask(taskId, "No models returned");
         return;
       }
+      useTaskStore.getState().update(taskId, { message: `Adding ${models.length} models...`, progress: 0 });
 
       let importedCount = 0;
-      for (const model of models) {
+      for (const [index, model] of models.entries()) {
         const modelId = model.id || model.name;
         if (!modelId) continue;
+        useTaskStore.getState().update(taskId, {
+          message: `Checking ${modelId} (${index + 1}/${models.length})...`,
+          progress: Math.round(((index + 1) / models.length) * 100),
+        });
         
         // Qoder model ID format may be "qoder/auto", "qoder-cn/auto" or "auto",
         // need to remove the provider prefix before storing.
@@ -669,12 +699,15 @@ export default function ProviderDetailPage() {
       }
       
       if (importedCount === 0) {
+        finishImportTask(taskId, "All models already exist");
         alert(translate("All models already exist, no new models added"));
       } else {
+        finishImportTask(taskId, `Added ${importedCount} models`);
         alert(translate("Successfully added") + ` ${importedCount} ` + translate("models"));
       }
     } catch (error) {
       console.log("Error importing Qoder models:", error);
+      finishImportTask(taskId, "Fetch failed");
       alert(translate("Error fetching models") + ": " + error.message);
     } finally {
       setImportingQoderModels(false);
@@ -689,23 +722,32 @@ export default function ProviderDetailPage() {
       alert(translate("Please add an active Cline connection first"));
       return;
     }
+    const taskId = `import-cline-models-${Date.now()}`;
     setImportingClineModels(true);
+    startImportTask(taskId, "Importing Cline models");
     try {
       const res = await fetch(`/api/providers/${activeConnection.id}/models`);
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || translate("Failed to fetch models"));
+        finishImportTask(taskId, data.error || "Fetch failed");
         return;
       }
       const models = data.models || [];
       if (models.length === 0) {
         alert(translate("No models returned"));
+        finishImportTask(taskId, "No models returned");
         return;
       }
+      useTaskStore.getState().update(taskId, { message: `Adding ${models.length} models...`, progress: 0 });
       let importedCount = 0;
-      for (const model of models) {
+      for (const [index, model] of models.entries()) {
         const modelId = model.id || model.name;
         if (!modelId) continue;
+        useTaskStore.getState().update(taskId, {
+          message: `Checking ${modelId} (${index + 1}/${models.length})...`,
+          progress: Math.round(((index + 1) / models.length) * 100),
+        });
         const alreadyExists = customModels.some(
           (entry) => entry.providerAlias === providerStorageAlias && entry.id === modelId && (entry.kind || entry.type || "llm") === "llm"
         ) || Object.values(modelAliases).includes(`${providerStorageAlias}/${modelId}`);
@@ -716,12 +758,15 @@ export default function ProviderDetailPage() {
         importedCount += 1;
       }
       if (importedCount === 0) {
+        finishImportTask(taskId, "All models already exist");
         alert(translate("All models already exist, no new models added"));
       } else {
+        finishImportTask(taskId, `Added ${importedCount} models`);
         alert(translate("Successfully added") + ` ${importedCount} ` + translate("models"));
       }
     } catch (error) {
       console.log("Error importing Cline models:", error);
+      finishImportTask(taskId, "Fetch failed");
       alert(translate("Error fetching models") + ": " + error.message);
     } finally {
       setImportingClineModels(false);

@@ -145,6 +145,26 @@ export async function clearNotificationByKind(kind, dedupeKey) {
   return { ok: true };
 }
 
+/**
+ * Retire one row by id - the bell's per-item delete.
+ *
+ * Soft, like every other clear here: the row keeps its dedupeKey, so a condition
+ * that is still true is announced again on the next scan instead of being
+ * swallowed for good, and a condition that has since resolved stays gone.
+ */
+export async function clearNotificationById(id) {
+  if (!id) return { ok: true };
+  const db = await getAdapter();
+  ensureTable(db);
+  const now = new Date().toISOString();
+  db.run(`UPDATE notifications SET clearedAt = ?, readAt = COALESCE(readAt, ?) WHERE id = ?`, [
+    now,
+    now,
+    String(id),
+  ]);
+  return { ok: true };
+}
+
 export async function getUnreadCount() {
   const db = await getAdapter();
   ensureTable(db);

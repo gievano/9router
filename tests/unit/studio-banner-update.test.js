@@ -65,7 +65,7 @@ describe("banner: cancel, background, and shared look", () => {
     "utf8"
   );
   const store = readFileSync(resolve(root, "src/store/taskStore.js"), "utf8");
-  const dock = readFileSync(resolve(root, "src/shared/components/TaskDock.js"), "utf8");
+  const bell = readFileSync(resolve(root, "src/shared/components/NotificationBell.js"), "utf8");
   const pools = readFileSync(
     resolve(root, "src/app/(dashboard)/dashboard/proxy-pools/page.js"),
     "utf8"
@@ -86,9 +86,9 @@ describe("banner: cancel, background, and shared look", () => {
     expect(loading).toContain("onCancel");
   });
 
-  it("the dock is mounted once in the dashboard layout and reads the store", () => {
-    expect(layout).toContain("<TaskDock />");
-    expect(dock).toContain("useTaskStore");
+  it("the bell renders the store's live tasks instead of a floating dock", () => {
+    expect(layout).not.toContain("TaskDock");
+    expect(bell).toContain("<NotifToast");
     expect(store).toMatch(/start\(task\)/);
     expect(store).toMatch(/cancel\(id\)/);
   });

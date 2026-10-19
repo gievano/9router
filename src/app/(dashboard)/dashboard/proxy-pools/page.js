@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { Badge, Button, Card, CardSkeleton, Input, Modal, Pagination, ProgressCard, Toggle, ConfirmModal, PageShell } from "@/shared/components";
+import { Badge, Button, Card, CardSkeleton, Input, Modal, Pagination, Toggle, ConfirmModal, PageShell } from "@/shared/components";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useTaskStore } from "@/store/taskStore";
 import {
@@ -41,6 +41,7 @@ const followDashboardJob = async (kind, jobId, { title, pollMs = 1000, onFinal }
     title,
     message: "Starting",
     progress: 0,
+    href: "/dashboard/proxy-pools",
     onCancel: () => cancelDashboardJob(jobId),
   });
   try {
@@ -102,7 +103,11 @@ export default function ProxyPoolsPage() {
   const [netlifyForm, setNetlifyForm] = useState({ netlifyToken: "", projectName: "netlify-relay" });
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(() =>
-    useTaskStore.getState().tasks.some((t) => t.id === PROXY_IMPORT_TASK)
+    // A finished run lingers in the store marked `done` (see taskStore.finish),
+    // so presence alone no longer means the import is in flight.
+    useTaskStore
+      .getState()
+      .tasks.some((t) => t.id === PROXY_IMPORT_TASK && t.state !== "done")
   );
   const importAbortRef = useRef(null);
   const [deploying, setDeploying] = useState(false);
@@ -547,6 +552,7 @@ export default function ProxyPoolsPage() {
         title: "Importing proxies",
         message: `0/${total} proxies`,
         progress: 0,
+        href: "/dashboard/proxy-pools",
         onCancel: () => cancelProxyImportJob(stored.jobId),
       });
       const final = await pollProxyImportJob(
@@ -604,7 +610,7 @@ export default function ProxyPoolsPage() {
   // kept its own `fixed inset-0` overlay on screen for the whole deploy, and the
   // success path called these closers *while* `deploying` was still true, so
   // `if (deploying) return` turned the close into a no-op and the dialog never
-  // went away. Progress lives in the page's ProgressCard / layout TaskDock.
+  // went away. Deploy progress is announced through the bell task store.
   const closeVercelModal = () => {
     setShowVercelModal(false);
   };
@@ -792,8 +798,8 @@ export default function ProxyPoolsPage() {
     setImporting(true);
     // Close the modal as soon as the run starts. Its `fixed inset-0` overlay
     // used to stay mounted with both buttons disabled and swallowed every click
-    // on the page. Progress reports through the layout's TaskDock, which
-    // survives navigation.
+    // on the page. Progress reports through the task store, which survives
+    // navigation and surfaces in the notification bell.
     setShowBatchImportModal(false);
 
     const total = parsedEntries.length;
@@ -811,6 +817,7 @@ export default function ProxyPoolsPage() {
         title: "Importing proxies",
         message: `0/${total} proxies`,
         progress: 0,
+        href: "/dashboard/proxy-pools",
         onCancel: () => cancelProxyImportJob(jobId),
       });
 
@@ -1162,12 +1169,6 @@ export default function ProxyPoolsPage() {
         )}
       </Card>
 
-      {deploying && (
-        <ProgressCard
-          title={deployLabel || "Deploying relay"}
-          message="Pushing worker build to the edge, this can take about a minute"
-        />
-      )}
 
       <Modal
         isOpen={showBatchImportModal}
@@ -1198,8 +1199,9 @@ export default function ProxyPoolsPage() {
           </div>
         </div>
 
-        {/* The import banner lives in the layout's TaskDock so it survives
-            navigation; no second card inside the modal. */}
+        {/* The import banner lives in the task store so it survives
+            navigation and shows in the notification bell; no second card
+            inside the modal. */}
       </Modal>
 
       <Modal

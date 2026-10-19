@@ -374,6 +374,63 @@ async function createBypassRequest(parsedUrl, realIP, options) {
   });
 }
 
+// OpenCode's free-tier gate answers 403 `FreeTierError` when the request
+// exits from an IP it has flagged — the transport itself succeeded, so the
+// proxy-failure fallback below never sees it and every retry keeps leaving
+// through the same flagged proxy. Live measurement (#4983): identical body and
+// headers in the same minute — flagged pool egress → 403 FreeTierError,
+// direct egress → 200.
+const FREE_TIER_ERROR_MARKER = "FreeTierError";
+
+/** Rebuild a response whose body we buffered while inspecting it. */
+function bufferedResponse(text, original) {
+  const headers = new Headers(original.headers);
+  // The body was decoded while reading, so upstream framing no longer applies.
+  headers.delete("content-length");
+  headers.delete("content-encoding");
+  return new Response(text, { status: original.status, statusText: original.statusText, headers });
+}
+
+/**
+ * After a proxied attempt, replay once on the direct egress when upstream
+ * rejected the *proxy's IP* (403 FreeTierError). A body already consumed by
+ * the first attempt cannot be resent, and strictProxy keeps its contract of
+ * never leaving over another path — both return the rejection as-is.
+ */
+async function replayFreeTierRejectionDirect(url, options, proxied, proxyUrl) {
+  if (proxied.status !== 403) return proxied;
+  let text;
+  try {
+    text = await proxied.text();
+  } catch {
+    return proxied;
+  }
+  if (!text.includes(FREE_TIER_ERROR_MARKER)) return bufferedResponse(text, proxied);
+  if (options?.body && typeof options.body.getReader === "function" && options.body.locked) {
+    return bufferedResponse(text, proxied);
+  }
+  if (proxyUrl) {
+    console.warn(`[ProxyFetch] Proxy egress rejected by OpenCode free-tier gate (403 FreeTierError); direct replay skipped to protect main IP: ${targetHost(url)}`);
+    return bufferedResponse(text, proxied);
+  }
+  console.warn(`[ProxyFetch] Proxy egress rejected by the OpenCode free-tier gate (403 FreeTierError); replaying direct: ${targetHost(url)}`);
+  try {
+    return await originalFetch(url, options);
+  } catch (directError) {
+    // The direct replay failed outright — surface the original rejection.
+    console.warn(`[ProxyFetch] Direct replay failed: ${directError.message}`);
+    return bufferedResponse(text, proxied);
+  }
+}
+
+function targetHost(url) {
+  try {
+    return new URL(typeof url === "string" ? url : url.toString()).host;
+  } catch {
+    return String(url);
+  }
+}
+
 export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
   const targetUrl = typeof url === "string" ? url : url.toString();
 
@@ -440,14 +497,13 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       if (res.status === 407) {
         throw new Error("HTTP 407 Proxy Authentication Required (credentials invalid or plan expired)");
       }
-      return res;
+      // strictProxy never leaves the configured path — pass the rejection through.
+      if (proxyOptions?.strictProxy === true) return res;
+      return await replayFreeTierRejectionDirect(url, options, res, proxyUrl);
     } catch (proxyError) {
-      // If strictProxy is enabled, fail hard instead of falling back to direct
-      if (proxyOptions?.strictProxy === true) {
-        throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
-      }
-      console.warn(`[ProxyFetch] Proxy failed, falling back to direct: ${proxyError.message}`);
-      return originalFetch(url, options);
+      // If a proxy was configured, never fall back to direct egress which leaks
+      // the host's main IP.
+      throw new Error(`[ProxyFetch] Proxy required but failed (${proxyError.message}); direct fallback blocked to protect main IP.`);
     }
   }
 

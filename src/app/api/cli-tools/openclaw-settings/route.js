@@ -6,6 +6,7 @@ import { promisify } from "util";
 import fs from "fs/promises";
 import path from "path";
 import os from "os";
+import { resolveModelDisplayName } from "@/shared/utils/modelDisplayName";
 
 const execAsync = promisify(exec);
 
@@ -129,7 +130,7 @@ const writeAgentModels = async (agentDir, model, baseUrl, apiKey) => {
     baseUrl,
     apiKey: apiKey || "your_api_key",
     api: "openai-completions",
-    models: [{ id: model, name: model.split("/").pop() || model }],
+    models: [{ id: model, name: resolveModelDisplayName(model) }],
   };
   await fs.writeFile(modelsPath, JSON.stringify(existing, null, 2));
 };
@@ -199,7 +200,7 @@ export async function POST(request) {
       baseUrl: normalizedBaseUrl,
       apiKey: apiKey || "your_api_key",
       api: "openai-completions",
-      models: [...allModelIds].map((m) => ({ id: m, name: m.split("/").pop() || m })),
+      models: [...allModelIds].map((m) => ({ id: m, name: resolveModelDisplayName(m) })),
     };
 
     // Set per-agent model in agents.list and write models.json

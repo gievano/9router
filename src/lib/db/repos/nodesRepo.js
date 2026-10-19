@@ -64,6 +64,9 @@ export async function createProviderNode(data) {
     baseUrl: data.baseUrl,
     brand: data.brand,
     logo: data.logo, // optional custom logo (data URL)
+    quotaEnabled: data.quotaEnabled === true,
+    quotaPath: data.quotaPath || "/credits",
+
     createdAt: now,
     updatedAt: now,
   };

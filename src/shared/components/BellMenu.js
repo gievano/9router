@@ -61,10 +61,7 @@ export default function BellMenu({ open, onClose, triggerRef, label, header, chi
     // Capture phase: the page scrolls inside its own container, so a plain
     // window listener never sees it and the panel stayed behind.
     window.addEventListener("scroll", onChange, true);
-    // Capture again, and stop propagation: LongTaskBanner cancels the running
-    // task on Escape while its overlay is up, and a document-level listener
-    // would fire on the same keypress. The first Escape closes the menu; the
-    // banner keeps its own key for the next one.
+    // Capture again and stop propagation so Escape closes the menu first.
     const onKey = (e) => {
       if (e.key !== "Escape") return;
       e.stopPropagation();

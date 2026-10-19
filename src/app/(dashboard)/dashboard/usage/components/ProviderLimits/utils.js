@@ -789,14 +789,19 @@ export function parseQuotaData(provider, data) {
         break;
 
       default:
-        // Generic fallback for unknown providers
+        // Generic fallback for unknown providers, including compatible nodes
+        // that opt in to the standard /credits endpoint.
         if (data.quotas) {
           Object.entries(data.quotas).forEach(([name, quota]) => {
             normalizedQuotas.push({
               name,
               used: quota.used || 0,
               total: quota.total || 0,
+              remainingPercentage: quota.remainingPercentage,
               resetAt: quota.resetAt || null,
+              unlimited: quota.unlimited,
+              isCreditBalance: quota.isCreditBalance,
+              currency: quota.currency,
             });
           });
         }

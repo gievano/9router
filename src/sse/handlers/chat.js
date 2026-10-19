@@ -150,6 +150,7 @@ export async function handleChat(request, clientRawRequest = null) {
     } catch { /* studio lookup is best-effort; fall through to the raw name */ }
   }
   const comboModels = await getComboModels(comboEntryName);
+
   if (comboModels) {
     // Check for combo-specific strategy first, fallback to global
     const comboStrategies = settings.comboStrategies || {};

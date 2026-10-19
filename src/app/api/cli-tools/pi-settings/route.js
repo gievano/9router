@@ -6,6 +6,7 @@ import path from "path";
 import os from "os";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { resolveModelDisplayName } from "@/shared/utils/modelDisplayName";
 
 const execAsync = promisify(exec);
 
@@ -130,18 +131,18 @@ export async function POST(request) {
     if (Array.isArray(rawBody.models) && rawBody.models.length > 0) {
       modelList = rawBody.models.map((m) => {
         if (typeof m === "string") {
-          return { id: m, name: m, contextWindow: 128000, maxTokens: 16384 };
+          return { id: m, name: resolveModelDisplayName(m), contextWindow: 128000, maxTokens: 16384 };
         }
         return {
           id: m.id || "provider/model-id",
-          name: m.name || m.id || "provider/model-id",
+          name: resolveModelDisplayName(m.id || "provider/model-id", m.name),
           contextWindow: m.contextWindow || 128000,
           maxTokens: m.maxTokens || 16384,
         };
       });
     } else {
       const modelId = model || "provider/model-id";
-      modelList = [{ id: modelId, name: modelId, contextWindow: 128000, maxTokens: 16384 }];
+      modelList = [{ id: modelId, name: resolveModelDisplayName(modelId), contextWindow: 128000, maxTokens: 16384 }];
     }
 
     existing.providers["9router"] = {

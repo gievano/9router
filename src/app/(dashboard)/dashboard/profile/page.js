@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card, Button, Toggle, Input, Select, DownloadBackupModal, ProgressCard } from "@/shared/components";
+import { Card, Button, Toggle, Input, Select, DownloadBackupModal } from "@/shared/components";
 import Modal, { ConfirmModal } from "@/shared/components/Modal";
 import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
 import SettingsHistory from "@/shared/components/SettingsHistory";
 import { cn } from "@/shared/utils/cn";
 import { useSessionStore } from "@/store/sessionStore";
+import { useTaskStore } from "@/store/taskStore";
 import { APP_CONFIG } from "@/shared/constants/config";
 import { LOCALE_COOKIE, normalizeLocale } from "@/i18n/config";
 import { LOCALE_FLAGS } from "@/shared/constants/locales";
@@ -150,9 +151,52 @@ export default function ProfilePage() {
   const certFileRef = useRef(null);
 
   const importFileRef = useRef(null);
-  // Progress overlay state. `busy` holds { title, message, section, progress };
-  // ProgressCard from the shared Loading module renders it directly.
+  // Progress state for backup export/import and test runs. `busy` holds
+  // { title, message, section, progress }. It has no overlay of its own: the
+  // task store below is the only surface it reaches, so the run is announced in
+  // the notification bell instead of taking over the page with a fixed scrim
+  // anchored bottom-right.
   const [busy, setBusy] = useState(null);
+  const profileTaskRef = useRef(null);
+
+  // Report the backup run into the bell task store (no page overlay).
+  useEffect(() => {
+    if (busy) {
+      const taskId = "profile-backup-task";
+      profileTaskRef.current = taskId;
+      const pct = typeof busy.progress === "number" && Number.isFinite(busy.progress)
+        ? Math.min(100, Math.max(0, Math.round(busy.progress <= 1 ? busy.progress * 100 : busy.progress)))
+        : 0;
+      const taskData = {
+        id: taskId,
+        title: busy.title || "Backup Operation",
+        message: busy.message || "Working",
+        progress: pct,
+        href: "/dashboard/profile",
+      };
+      const existing = useTaskStore.getState().tasks.find((t) => t.id === taskId);
+      if (!existing || existing.state === "done") {
+        useTaskStore.getState().start(taskData);
+      } else {
+        useTaskStore.getState().update(taskId, {
+          title: taskData.title,
+          message: taskData.message,
+          progress: taskData.progress,
+        });
+      }
+    } else if (profileTaskRef.current) {
+      useTaskStore.getState().finish(profileTaskRef.current);
+      profileTaskRef.current = null;
+    }
+  }, [busy]);
+
+  useEffect(() => {
+    return () => {
+      if (profileTaskRef.current) {
+        useTaskStore.getState().finish(profileTaskRef.current);
+      }
+    };
+  }, []);
   const [proxyForm, setProxyForm] = useState({
     outboundProxyEnabled: false,
     outboundProxyUrl: "",
@@ -2024,16 +2068,6 @@ export default function ProfilePage() {
         loading={dbLoading}
       />
 
-      {/* Blocking progress card for backup export/import and test runs.
-          Backdrop-blurred and centered, same card everywhere a long
-          operation runs. */}
-      {busy ? (
-        <ProgressCard
-          title={busy.title}
-          message={busy.message}
-          progress={busy.progress}
-        />
-      ) : null}
 
       <Modal
         isOpen={dbAuth.open}

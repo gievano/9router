@@ -8,7 +8,6 @@ import {
   Badge,
   Button,
   Toggle,
-  ProgressCard,
 } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import PageShell from "@/shared/components/PageShell";
@@ -26,6 +25,7 @@ import Link from "next/link";
 import { getErrorCode, getRelativeTime } from "@/shared/utils";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
+import { useTaskStore } from "@/store/taskStore";
 import ModelAvailabilityBadge from "./components/ModelAvailabilityBadge";
 import AddCompatibleModal from "./components/AddCompatibleModal";
 import { STATUS_FILTER_OPTIONS, matchesStatusFilter } from "./utils";
@@ -245,8 +245,22 @@ export default function ProvidersPage() {
 
   const handleBatchTest = async (mode, providerId = null) => {
     if (testingMode) return;
-    setTestingMode(mode === "provider" ? providerId : mode);
+    const activeMode = mode === "provider" ? providerId : mode;
+    setTestingMode(activeMode);
     setTestResults(null);
+    const taskId = "provider-batch-test";
+    const testTitle = "Testing connections";
+    const testMessage =
+      mode === "provider"
+        ? "Testing every connection on this provider"
+        : `Testing all ${mode === "oauth" ? "OAuth" : mode === "free" ? "Free tier" : "API key"} connections`;
+    useTaskStore.getState().start({
+      id: taskId,
+      title: testTitle,
+      message: testMessage,
+      progress: 0,
+      href: "/dashboard/providers",
+    });
     try {
       const res = await fetch("/api/providers/test-batch", {
         method: "POST",
@@ -264,6 +278,7 @@ export default function ProvidersPage() {
       setTestResults({ error: "Test request failed" });
       notify.error("Provider test failed");
     } finally {
+      useTaskStore.getState().finish(taskId);
       setTestingMode(null);
     }
   };
@@ -699,17 +714,9 @@ export default function ProvidersPage() {
         }}
         />
 
-      {/* Test Results Modal */}
-      {testingMode && (
-        <ProgressCard
-          title="Testing connections"
-          message={
-            testingMode === "provider"
-              ? "Testing every connection on this provider"
-              : `Testing all ${testingMode === "oauth" ? "OAuth" : testingMode === "free" ? "Free tier" : "API key"} connections`
-          }
-        />
-      )}
+      {/* No overlay while a batch test runs: handleBatchTest() reports it into
+          the task store, so the bell owns the readout and the page stays
+          usable. The results modal below is the outcome, not the progress. */}
 
       {testResults && (
         <div
