@@ -73,7 +73,7 @@ export async function POST(request) {
     if (apiKey && typeof apiKey === "string" && apiKey.trim()) {
       const { validateApiKey, getApiKeyByKey } = await import("@/lib/localDb");
       const keyStr = apiKey.trim();
-      const valid = await validateApiKey(keyStr, null, ip);
+      const valid = await validateApiKey(keyStr);
       // An exhausted quota still signs in: the usage page is the thing that
       // has to show the bar at 100%, so locking the session out would hide
       // the very state the operator needs to see. Request-side limits stay
@@ -83,7 +83,6 @@ export async function POST(request) {
         let msg = "Invalid API key";
         if (valid === "KEY_DISABLED") msg = "API key is disabled";
         else if (valid === "KEY_EXPIRED") msg = "API key is expired";
-        else if (valid === "IP_NOT_ALLOWED") msg = "Client IP not allowed for this API key";
         // Wrong keys burn the same attempt counter as a wrong password, so
         // guessing costs the same either way and both show what is left.
         const { remainingBeforeLock } = recordFail(ip);

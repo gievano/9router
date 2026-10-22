@@ -40,8 +40,8 @@ npx vitest run unit/capabilities.test.js   # single file (path relative to tests
 ```
 > The committed `tests/package.json` `test` script hardcodes Unix paths (`NODE_PATH=/tmp/node_modules …`) - a shared-install workaround from upstream. On Windows (or anywhere), ignore it and use the `npx vitest` form above; `vitest.config.js` resolves the `open-sse`/`@/` aliases from the repo root regardless of where vitest lives.
 >
-> **The suite is NOT expected to be all-green on a plain checkout.** ~938 pass, ~64 fail. Judge regressions with `tests/__baseline__/verify-no-regression.mjs`, not a raw run. Expected red:
-> - 26 catalogued in `tests/__baseline__/known-fails.txt` (rtk, oauth-cursor-auto-import, translator-request-normalization, …).
+> **The suite is NOT expected to be all-green on a plain checkout.** A full Linux/Node 22 run is 3 643 pass / 213 fail out of 3 856. Judge regressions with `tests/__baseline__/compare-fails.mjs`, not a raw run: it reads a vitest JSON report and fails only on a failure that is not catalogued in `tests/__baseline__/known-fails.txt`; a catalogued failure that starts passing is printed as stale so it can be pruned. Expected red:
+> - The catalogue is the source of truth, not this paragraph. It was regenerated from that Linux/Node 22 run: mostly `unit/dashboard-guard` + `unit/security-audit` (a `getDashboardAuthSession` export the guard tests cannot resolve), converter snapshot drift, `UNIQUE constraint failed: combos.name` state leaking between combo tests, and 13 suites that fail to load.
 > - `unit/embeddings.cloud.test.js` imports `cloud/src/handlers/embeddings.js` - the `cloud/` worker dir is **not in this repo**, so it always fails here.
 > - `unit/xai-oauth-service.test.js` times out (5s) when the xAI endpoint-discovery fetch isn't reachable/mocked.
 > - `real/*.real.test.js` make live provider calls - need credentials, skip otherwise.

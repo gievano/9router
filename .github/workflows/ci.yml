@@ -1,0 +1,189 @@
+name: CI
+
+# The fork is developed on a small box, where `next build` does not fit in the
+# memory cap. Every build therefore happens here: the runner installs, tests,
+# builds, and boots the standalone server so a broken build is caught before it
+# reaches a deploy. The image job is manual — it is the delivery path to a host
+# that only has Docker.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: "Build and push the Docker image to GHCR"
+        type: boolean
+        default: false
+
+# One run per branch; a newer push makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # The runner's npm 10.9.9 crashes on the nested install ("Cannot read
+      # properties of null (reading 'edgesOut')") because tests/ resolves inside a
+      # project that has its own tree. npm 12 installs it fine.
+      - name: Use a recent npm
+        run: npm install --global npm@12
+
+      # No lockfile is tracked (package-lock.json is gitignored), so npm ci is not
+      # available. Root deps come first: the suite imports src/, which needs
+      # undici/open and friends at runtime.
+      - name: Install app dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install test dependencies
+        working-directory: tests
+        run: npm install --no-audit --no-fund
+
+      # A raw vitest exit code is meaningless here: the suite carries ~24
+      # catalogued failures on a clean checkout. The report is compared against
+      # tests/__baseline__/known-fails.txt, so only a NEW failure fails this job.
+      - name: Run vitest
+        working-directory: tests
+        run: npx vitest run --reporter=json --outputFile=vitest-results.json || true
+
+      - name: Compare against known failures
+        run: node tests/__baseline__/compare-fails.mjs tests/vitest-results.json
+
+      - name: Upload vitest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-results
+          path: tests/vitest-results.json
+          retention-days: 7
+
+  build:
+    name: Next.js build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      # postbuild (scripts/copy-standalone-assets.mjs) stages src/ and scripts/
+      # into the standalone tree because custom-server.js loads the auth guard by
+      # absolute path. Missing modules there answer 503 "guard unavailable", which
+      # is exactly the failure this step exists to catch.
+      - name: Check the standalone bundle is complete
+        run: |
+          set -eu
+          test -f .next/standalone/custom-server.js
+          test -f .next/standalone/server.js
+          for module in src/dashboardGuard.js src/lib/db/repos/securityLogRepo.js scripts/auth-guard-hooks.mjs node_modules/next/server.js; do
+            test -f ".next/standalone/$module" || { echo "missing in standalone: $module"; exit 1; }
+          done
+          test -d .next/standalone/.next/static
+          test -d .next/standalone/public
+
+      - name: Boot the standalone server and probe it
+        run: |
+          set -eu
+          export PORT=20128
+          export HOSTNAME=127.0.0.1
+          export DATA_DIR="$RUNNER_TEMP/9router-data"
+          export JWT_SECRET=ci-jwt-secret
+          export INITIAL_PASSWORD=ci-dashboard-password
+          export API_KEY_SECRET=ci-api-key-secret
+          export MACHINE_ID_SALT=ci-machine-id-salt
+          mkdir -p "$DATA_DIR"
+          node .next/standalone/custom-server.js > "$RUNNER_TEMP/server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 40); do
+            if ! kill -0 $server_pid 2>/dev/null; then
+              echo "server exited during startup"; tail -60 "$RUNNER_TEMP/server.log"; exit 1
+            fi
+            code=$(curl -s -o "$RUNNER_TEMP/health.json" -w '%{http_code}' http://127.0.0.1:20128/api/health || true)
+            if [ "$code" = "200" ]; then
+              echo "GET /api/health -> 200 $(cat "$RUNNER_TEMP/health.json")"
+              break
+            fi
+            if [ "$attempt" = "40" ]; then
+              echo "no healthy answer after 40s (last status: $code)"; tail -60 "$RUNNER_TEMP/server.log"; exit 1
+            fi
+            sleep 1
+          done
+
+          # 503 here is the guard-unavailable signature; anything else means the
+          # dashboard compiled and the server is serving.
+          login_code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:20128/login)
+          echo "GET /login -> $login_code"
+          test "$login_code" != "503"
+
+      - name: Pack the standalone bundle
+        run: tar -czf "$RUNNER_TEMP/9router-standalone.tar.gz" -C .next/standalone .
+
+      - name: Upload the standalone bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: 9router-standalone
+          path: ${{ runner.temp }}/9router-standalone.tar.gz
+          retention-days: 14
+
+  image:
+    name: Docker image to GHCR
+    needs: [build]
+    if: github.event_name == 'workflow_dispatch' && inputs.push_image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:master
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

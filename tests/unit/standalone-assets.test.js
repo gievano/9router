@@ -66,6 +66,26 @@ describe("standalone build assets", () => {
     expect(readFileSync(join(projectRoot, ".next", "standalone", "scripts", "auth-guard-hooks.mjs"), "utf8")).toBe("hooks");
   });
 
+  // Tracing never sees the guard's runtime `import "next/server"`: the guard is
+  // copied in after the build, so it is not in the webpack graph. The standalone
+  // tree therefore carried a partial next package and every request answered 503
+  // "guard unavailable" with ENOENT node_modules/next/server.js.
+  it("mirrors the full next package over the traced partial one", () => {
+    const projectRoot = createBuildFixture(".next");
+    mkdirSync(join(projectRoot, "node_modules", "next"), { recursive: true });
+    writeFileSync(join(projectRoot, "node_modules", "next", "server.js"), "full server");
+    mkdirSync(join(projectRoot, ".next", "standalone", "node_modules", "next"), { recursive: true });
+    writeFileSync(join(projectRoot, ".next", "standalone", "node_modules", "next", "package.json"), "partial");
+
+    copyStandaloneAssets({ projectRoot, distDir: ".next" });
+
+    expect(readFileSync(join(projectRoot, ".next", "standalone", "node_modules", "next", "server.js"), "utf8"))
+      .toBe("full server");
+    // The mirror replaces the traced directory instead of merging into it.
+    expect(() => readFileSync(join(projectRoot, ".next", "standalone", "node_modules", "next", "package.json")))
+      .toThrow();
+  });
+
   it("does not modify workspace-traced CLI builds", () => {
     const projectRoot = createBuildFixture(".next-cli-build");
     const previousMode = process.env.NEXT_TRACING_ROOT_MODE;

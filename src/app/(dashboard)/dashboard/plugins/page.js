@@ -13,6 +13,7 @@ import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { useNotificationStore } from "@/store/notificationStore";
 import PluginMark from "@/shared/components/PluginMark";
 import { CUSTOM_PLUGIN_KEYS } from "@/shared/constants/pluginKeys";
+import { ANTISLOP_LEVEL_CHARS } from "open-sse/rtk/antislopPrompt.js";
 
 const PLUGINS = [
   {
@@ -56,7 +57,7 @@ const PLUGINS = [
     title: "Anti Slop",
     levelled: true,
     description:
-      "Injects the antislop rules (https://github.com/miqdadbadjuber/anti-slop) into the system prompt of the models you pick, so they stop shipping generic AI UI, copy and code. Three intensities: Lite catches the obvious patterns, Full adds the hard-gate rules and the craftsmanship standard, Ultra adds the mandatory PASS/FAIL delivery report.",
+      "Injects the antislop rules (https://github.com/miqdadbadjuber/anti-slop) into the system prompt of the models you pick, so they stop shipping generic AI UI, copy and code. Full is the skill's core text verbatim; Ultra adds all five concern skills. The rules are reproduced from upstream, not summarised - the cost of each level is shown below.",
   },
 ];
 
@@ -66,10 +67,32 @@ const PLUGINS = [
 // Anti Slop ships three intensities, mirroring Ponytail's levels. The level is
 // stored on the plugin entry so it rides along in settings rather than living in
 // a second place that could disagree with the toggle.
+// Token figures are derived from the generated prompt itself, not typed by hand: the moment
+// someone re-syncs `antislop-src/` the number moves with it instead of going stale.
+const approxTokens = (chars) => Math.round(chars / 4).toLocaleString("en-US");
+
 export const ANTISLOP_LEVELS = [
-  { id: "lite", label: "Lite", desc: "Purpose test plus a scan for the obvious AI patterns." },
-  { id: "full", label: "Full", desc: "Adds the Hard Gate rules, the craftsmanship standard and the swap test." },
-  { id: "ultra", label: "Ultra", desc: "Adds the mandatory four-block PASS/FAIL delivery report." },
+  {
+    id: "lite",
+    label: "Lite",
+    desc: `Condensed: the purpose test plus a scan for the obvious AI patterns. About ${approxTokens(
+      ANTISLOP_LEVEL_CHARS.lite
+    )} tokens per request.`,
+  },
+  {
+    id: "full",
+    label: "Full",
+    desc: `The skill's core text verbatim - all 38 rules, the three dials, Design Read and the delivery gate. About ${approxTokens(
+      ANTISLOP_LEVEL_CHARS.full
+    )} tokens per request.`,
+  },
+  {
+    id: "ultra",
+    label: "Ultra",
+    desc: `Core plus all five concern skills (UI, copy, human, mobile, code), verbatim. About ${approxTokens(
+      ANTISLOP_LEVEL_CHARS.ultra
+    )} tokens per request.`,
+  },
 ];
 
 const DEFAULT_ANTISLOP_LEVEL = "full";

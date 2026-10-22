@@ -55,6 +55,21 @@ export function copyStandaloneAssets({ projectRoot = process.cwd(), distDir = pr
     cpSync(dirSource, dirDestination, { recursive: true, force: true });
     console.log(`[standalone-assets] Copied ${dir}/ to ${dirDestination}`);
   }
+
+  // The auth guard is one of those absolutely-loaded modules, and it imports
+  // `next/server`. Output-file tracing never sees that import - it is not in the
+  // webpack graph, it is a runtime import from a file copied after the build - so
+  // the standalone tree kept only a partial `next` package and the server
+  // answered 503 "guard unavailable" with ENOENT node_modules/next/server.js.
+  // assemble.sh has always mirrored the full package for the systemd unit; the
+  // npm/bun build path needs the same tree to be servable.
+  const nextPackageSource = resolve(projectRoot, "node_modules", "next");
+  const nextPackageDestination = resolve(standaloneDir, "node_modules", "next");
+  if (existsSync(nextPackageSource)) {
+    rmSync(nextPackageDestination, { recursive: true, force: true });
+    cpSync(nextPackageSource, nextPackageDestination, { recursive: true, force: true });
+    console.log(`[standalone-assets] Mirrored the next package to ${nextPackageDestination}`);
+  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(dirname(fileURLToPath(import.meta.url)), "copy-standalone-assets.mjs")) {

@@ -1,4 +1,127 @@
+# Failures that this checkout already has. Regenerate only from a real run:
+#   cd tests && npx vitest run --reporter=json --outputFile=vitest-results.json
+# then replace everything below the blank line with the failed entries of that
+# report, one `file :: test name` per line (a suite that fails to load uses
+# `file :: (suite)`). An entry that starts passing is reported as stale by
+# tests/__baseline__/compare-fails.mjs so it can be pruned.
+
+tests/auth/saml.test.js :: (suite)
+tests/translator/bugs-claudeCode-context.test.js :: Claude Code CLI context → OpenAI tool_result image block is preserved
+tests/translator/bugs-gemini-cursor-commandcode.test.js :: OpenAI → CommandCode image content is preserved as native CommandCode image blocks
+tests/translator/bugs-openai-bridge.test.js :: bug: Claude → OpenAI bridge data loss tool_result with image block is not turned into raw JSON / dropped
+tests/translator/bugs-toClaude-context.test.js :: OpenAI → Claude context mapping assistant reasoning_content becomes a thinking block
+tests/translator/claude-kiro-direct.test.js :: Claude → Kiro (direct route) does not send additionalModelRequestFields for Kiro models without effort support
+tests/translator/claude-kiro-direct.test.js :: Claude → Kiro (direct route) injects thinking_mode tag when model implies thinking
+tests/translator/claude-kiro-direct.test.js :: Claude → Kiro (direct route) keeps the legacy thinking fallback for unsupported GPT-5.6 effort auto
+tests/translator/claude-kiro-direct.test.js :: Claude → Kiro (direct route) keeps the legacy thinking fallback for unsupported GPT-5.6 effort minimal
+tests/translator/claude-kiro-direct.test.js :: Claude → Kiro (direct route) keeps the legacy thinking fallback for unsupported GPT-5.6 effort ultra
+tests/translator/claude-kiro-direct.test.js :: Claude → Kiro (direct route) keeps top-level systemPrompt stable across turns
+tests/translator/claude-kiro-direct.test.js :: Claude → Kiro (direct route) maps output_config.effort high to Kiro CLI-style additionalModelRequestFields for effort models
+tests/translator/claude-kiro-direct.test.js :: Claude → Kiro (direct route) normalizes an unsupported Kiro intensity suffix while preserving agentic behavior
+tests/translator/claude-kiro-direct.test.js :: Claude → Kiro (direct route) sends Claude system as top-level systemPrompt and keeps a user-content fallback
+tests/translator/golden-request.test.js :: GOLDEN request: OpenAI → Claude full body (system/image/tool/tool_result)
+tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) bedrock → headers (apiKey / oauth)
+tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) bedrock-xai → headers (apiKey / oauth)
+tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) cline → headers (apiKey / oauth)
+tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) clinepass → headers (apiKey / oauth)
+tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) codebuddy-intl → headers (apiKey / oauth)
+tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) kimi → headers (apiKey / oauth)
+tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) minimax-code → headers (apiKey / oauth)
+tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) minimax-code-global → headers (apiKey / oauth)
+tests/translator/golden-url-header.test.js :: GOLDEN buildHeaders (default executor providers) nous → headers (apiKey / oauth)
+tests/translator/golden-url-header.test.js :: GOLDEN buildUrl (default executor providers) bedrock → url (stream + non-stream)
+tests/translator/golden-url-header.test.js :: GOLDEN buildUrl (default executor providers) bedrock-xai → url (stream + non-stream)
+tests/translator/golden-url-header.test.js :: GOLDEN buildUrl (default executor providers) codebuddy-intl → url (stream + non-stream)
+tests/translator/golden-url-header.test.js :: GOLDEN buildUrl (default executor providers) minimax-code → url (stream + non-stream)
+tests/translator/golden-url-header.test.js :: GOLDEN buildUrl (default executor providers) minimax-code-global → url (stream + non-stream)
+tests/translator/golden-url-header.test.js :: GOLDEN buildUrl (default executor providers) nous → url (stream + non-stream)
+tests/translator/thinking-unified.test.js :: applyThinking per provider format GLM-5.2 also gets reasoning_effort (supported from 5.2 onward)
+tests/unit/account-fallback-4xx.test.js :: checkFallbackError - request-scoped vs account-scoped failures does not cool the account down for a 400 caused by the request
+tests/unit/aggregator-providers-batch.test.js :: batch invariants keeps every registry id unique
+tests/unit/alibaba-token-plan-provider.test.js :: Alibaba Token Plan provider keeps every registry id unique after adding the provider
+tests/unit/antigravity-mitm.test.js :: Antigravity MITM model handling flags the out-of-box agent/Default model mandatory
+tests/unit/antigravity-tier-claude55.test.js :: antigravity catalogue: Claude 5.5 is not offered lists no Claude 5.5 model for antigravity
+tests/unit/bell-all-loading.test.js :: bell all loading tasks integration AddApiKeyModal.js registers useTaskStore for bulk key imports
+tests/unit/bell-all-loading.test.js :: bell all loading tasks integration BulkImportCodexModal.js registers useTaskStore for accounts import
+tests/unit/bell-all-loading.test.js :: bell all loading tasks integration BulkImportGrokCliModal.js registers useTaskStore for grok accounts import
+tests/unit/bell-all-loading.test.js :: bell all loading tasks integration profile/page.js registers useTaskStore for backup and import operations
+tests/unit/bell-all-loading.test.js :: bell all loading tasks integration providers/[id]/page.js registers useTaskStore for Qoder and Cline model imports
+tests/unit/bell-all-loading.test.js :: bell all loading tasks integration providers/page.js registers useTaskStore for batch testing
+tests/unit/bell-done.test.js :: (suite)
 tests/unit/claude-header-forwarding.test.js :: proxyAwareFetch - api.anthropic.com routing routes api.anthropic.com to gotScraping (non-streaming) and returns ok response
+tests/unit/cli-connect.test.js :: connect run() each tool inherits its OWN server model, falling back to OpenCode's
+tests/unit/cline-free-tier-models.test.js :: cline-free namespace pricing still bills the paid twin at its published rate
+tests/unit/codex-gpt6-lite.test.js :: Codex GPT-6 Sol/Luna transport sends the Lite shape and header in the actual outbound request
+tests/unit/codex-image-fetch.test.js :: CodexExecutor image handling execute() prefetches images before sending to upstream
+tests/unit/codex-image-fetch.test.js :: CodexExecutor image handling fetches 1MB remote image and inlines it as base64 data URI
+tests/unit/codex-image-usage-persistence.test.js :: Codex image usage persistence does not persist fabricated usage when upstream usage is absent
+tests/unit/codex-image-usage-persistence.test.js :: Codex image usage persistence persists exact provider-reported input/output tokens
+tests/unit/codex-refresh-token.test.js :: Codex Refresh Token getRefreshLeadMs (early refresh config) should return provider-specific lead time for OAuth providers
+tests/unit/combo-autoswitch.test.js :: detectRequiredCapabilities web_search tool -> search
+tests/unit/combo-autoswitch.test.js :: reorderByCapabilities keeps order when no model matches
+tests/unit/commandcode-to-openai.test.js :: commandcode-to-openai - error event stringifies object errors so client sees readable message
+tests/unit/context-install.test.js :: (suite)
+tests/unit/cursor-models.test.js :: Cursor live model catalog fetches the account-specific catalog and caches it
+tests/unit/dashboard-guard.test.js :: dashboard guard local-only access allows local-only route on loopback when requireLogin=false
+tests/unit/dashboard-guard.test.js :: dashboard guard local-only access allows local-only route with valid CLI token
+tests/unit/dashboard-guard.test.js :: dashboard guard local-only access rejects local-only route from non-loopback host without CLI token
+tests/unit/dashboard-guard.test.js :: dashboard guard local-only access rejects local-only route from tunnel host even when requireLogin=false
+tests/unit/dashboard-guard.test.js :: dashboard guard local-only access rejects local-only route on loopback when requireLogin=true and no JWT
+tests/unit/dashboard-guard.test.js :: dashboard guard local-only access rejects local-only route when Origin is non-loopback (CSRF block)
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access allows loopback peer IP regardless of Host
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access allows loopback public LLM API without API key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access allows loopback rewritten public LLM API without API key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access allows remote /responses rewrite with a valid API key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access allows remote beta public LLM API with valid Google API key header
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access allows remote beta public LLM API with valid Google key query parameter
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access allows remote codex rewrite with valid API key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access allows remote public LLM API with valid bearer API key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access allows remote public LLM API with valid x-api-key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access allows remote rewritten beta public LLM API with valid API key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access rejects remote /responses rewrite without API key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access rejects remote Host-spoof when real peer IP is non-loopback
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access rejects remote beta public LLM API without API key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access rejects remote codex rewrite without API key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access rejects remote rewritten beta public LLM API without API key
+tests/unit/dashboard-guard.test.js :: dashboard guard public LLM API access rejects remote rewritten public LLM API without API key
+tests/unit/dashboard-six.test.js :: (suite)
+tests/unit/db-concurrent.test.js :: DB Concurrency - atomic safety 100 parallel saveRequestUsage → no count loss
+tests/unit/db-concurrent.test.js :: DB Concurrency - atomic safety daily summary aggregates correctly under parallel writes
+tests/unit/db-concurrent.test.js :: DB Concurrency - atomic safety mixed concurrent: usage + details + connections + aliases
+tests/unit/db-driver-chain.test.js :: Driver fallback chain falls back to sql.js when both native drivers unavailable
+tests/unit/devin-cli-executor.test.js :: DevinCliExecutor ACP session/new does not set XDG_CONFIG_HOME when DEVIN_MCP_SERVERS is absent
+tests/unit/dynamic-free-models.test.js :: fetchSuggestedModelsServer keeps the free-model predicate stable for known ids
+tests/unit/dynamic-free-models.test.js :: fetchSuggestedModelsServer returns filtered live models when upstream answers
+tests/unit/embeddings.cloud.test.js :: (suite)
+tests/unit/fish-audio-tts.test.js :: Fish Audio TTS provider keeps registry ids and aliases unique
+tests/unit/force-stream-config.test.js :: forceStream provider config keeps forced-stream providers streaming for JSON clients when body.stream is false
+tests/unit/force-stream-config.test.js :: forceStream provider config keeps forced-stream providers streaming for JSON clients when body.stream is undefined
+tests/unit/image-fetch-hardening.test.js :: fetchImageAsBase64 hardening accepts valid PNG from public host
+tests/unit/kimchi-strip-reasoning.test.js :: (suite)
+tests/unit/kimchi.test.js :: (suite)
+tests/unit/kiro-terminal-integrity.test.js :: Kiro terminal integrity recovery bounds the retry HTTP error body
+tests/unit/kiro-terminal-integrity.test.js :: Kiro terminal integrity recovery surfaces retry HTTP failures as SSE after heartbeat commits headers
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust accepts the legacy Host fallback only in development
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust blocks spoofed local-only routes that would otherwise spawn processes
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust keeps serving a genuinely local request stamped by the wrapper
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust refuses 10.204.111.34 as a peer
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust refuses 2001:db8::1 as a peer
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust refuses ::ffff:10.204.111.34 as a peer
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust refuses [2001:db8::1] as a peer
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust rejects a spoofed loopback Host in production
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust rejects a spoofed loopback peer IP carrying a wrong trust token
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust rejects a spoofed loopback peer IP that carries no trust proof
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust rejects a spoofed loopback peer IP when the wrapper never booted
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust still refuses a stamped non-loopback peer IP
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust treats 127.0.0.1 as a loopback peer
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust treats ::1 as a loopback peer
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust treats ::FFFF:127.0.0.1 as a loopback peer
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust treats ::ffff:127.0.0.1 as a loopback peer
+tests/unit/local-request-peer-trust-3294.test.js :: peer header trust treats [::1] as a loopback peer
+tests/unit/mimo-free.live.test.js :: MiMo Free anti-abuse gate (live) chat WITH Chrome User-Agent → 200
+tests/unit/model-import.test.js :: (suite)
+tests/unit/notification-links.test.js :: (suite)
+tests/unit/nous-provider.test.js :: Nous Research provider resolves the provider's public names without alias collisions
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import extracts tokens using exact keys
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import falls back to fuzzy key matching on macOS when exact keys are missing
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import linux uses single hardcoded path and original error message
@@ -8,17 +131,84 @@ tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import unsupported platform returns 400
 tests/unit/oauth-cursor-auto-import.test.js :: GET /api/oauth/cursor/auto-import unwraps JSON-encoded string values
 tests/unit/openai-to-claude.test.js :: openaiToClaudeResponse omits empty Read pages tool argument before emitting Claude input deltas
-tests/unit/rtk.test.js :: RTK flag default off, toggle works
-tests/unit/rtk.test.js :: compressMessages (disabled) returns null when disabled
-tests/unit/rtk.test.js :: compressMessages (enabled) compresses Claude array-form tool_result text parts
-tests/unit/rtk.test.js :: compressMessages (enabled) compresses Claude string-form tool_result
-tests/unit/rtk.test.js :: compressMessages (enabled) compresses OpenAI tool message (string content)
-tests/unit/rtk.test.js :: compressMessages (enabled) handles mix of messages without crashing
-tests/unit/rtk.test.js :: compressMessages (enabled) never produces empty content (R14 guard)
-tests/unit/rtk.test.js :: compressMessages (enabled) skips below MIN_COMPRESS_SIZE (<500 bytes)
-tests/unit/rtk.test.js :: compressMessages (enabled) skips is_error tool_result
-tests/unit/rtk.test.js :: compressMessages (enabled) skips when body has no messages
+tests/unit/openai-to-commandcode.test.js :: openaiToCommandCodeRequest - native image blocks maps Claude/OpenAI base64 image source to a data-URI image block
+tests/unit/openai-to-commandcode.test.js :: openaiToCommandCodeRequest - native image blocks maps OpenAI image_url data URI to CommandCode {type:image,image,mimeType}
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget clamps OpenAI Responses reasoning.effort xhigh to max_thinking_length 32000
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget clamps reasoning_effort max to Kiro max_thinking_length 32000
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget does not send Claude-specific additionalModelRequestFields for non-Claude aliases
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget does not send Claude-specific additionalModelRequestFields for prefixed non-Claude aliases
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget does not send additionalModelRequestFields for date-suffixed Claude 4 model ids
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget does not send additionalModelRequestFields for legacy Kiro model ids
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget does not send additionalModelRequestFields for pre-4 legacy Kiro model ids
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget does not send additionalModelRequestFields for prefixed pre-4 legacy Kiro model ids
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget keeps the legacy thinking fallback for unsupported GPT-5.6 effort auto
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget keeps the legacy thinking fallback for unsupported GPT-5.6 effort minimal
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget keeps the legacy thinking fallback for unsupported GPT-5.6 effort ultra
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget keeps the thinking-alias fallback when GPT effort is blank
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget keeps top-level systemPrompt stable across turns
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget maps reasoning_effort high to max_thinking_length 24576
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget maps reasoning_effort low to max_thinking_length 1024
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget normalizes unsupported Kiro intensity suffix for claude-sonnet-4.5-thinking-agentic(high)
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget normalizes unsupported Kiro intensity suffix for glm-5-thinking-agentic(medium)
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget uses Claude thinking.budget_tokens as max_thinking_length
+tests/unit/openai-to-kiro.test.js :: openaiToKiroRequest thinking budget uses the default budget for synthetic -thinking models with no explicit config
+tests/unit/opencode-freetier-direct-replay.test.js :: proxied 403 FreeTierError replays direct (#4983) replays once on the direct egress and returns its 200
+tests/unit/opencode-go-session.test.js :: chatCore provider session forwarding passes the original provider session and client tool on initial and retry execution
+tests/unit/perplexity-web.test.js :: (suite)
+tests/unit/request-details-tab.test.js :: API route contract - validation boundary page=-5 → 400
+tests/unit/request-details-tab.test.js :: API route contract - validation boundary page=0 → 400 (guard now reachable after NaN-check fix)
+tests/unit/request-details-tab.test.js :: API route contract - validation boundary pageSize=101 → 400
+tests/unit/request-details-tab.test.js :: API route contract - validation boundary pageSize=abc (NaN) → defaults to 20, returns 200
+tests/unit/request-details-tab.test.js :: API route contract - validation boundary valid request → 200 with details + pagination shape
+tests/unit/request-details-tab.test.js :: backupDbLite - excludes requestDetails, keeps critical data backup file omits requestDetails rows but keeps other tables
+tests/unit/request-details-tab.test.js :: getDistinctProviders - providers route (no full-row parse) returns unique provider list without parsing data blobs
+tests/unit/request-details-tab.test.js :: request details - tab crash-risk cases oversized field → stored truncated + reparseable (no circular)
+tests/unit/security-audit.test.js :: AUDIT-001: Synchronous restart guard mitmIsRestarting should be reset on max-restarts early return
+tests/unit/security-audit.test.js :: AUDIT-001: Synchronous restart guard mitmIsRestarting should be set before first await expression
+tests/unit/security-audit.test.js :: AUDIT-002: API key masking byApiKey object keys should use masked key, not raw key
+tests/unit/security-audit.test.js :: AUDIT-002: API key masking getUsageHistory should use apiKeyMasked instead of apiKey
+tests/unit/security-audit.test.js :: AUDIT-002: API key masking getUsageStats should use apiKeyMasked in byApiKey entries
+tests/unit/security-audit.test.js :: AUDIT-002: API key masking source should contain maskApiKey function
+tests/unit/security-audit.test.js :: AUDIT-003: Proxy URL validation source should contain validateProxyUrl function
+tests/unit/security-audit.test.js :: AUDIT-004: Atomic lock file for MITM startup manager.js should define LOCK_FILE constant
+tests/unit/security-audit.test.js :: AUDIT-004: Atomic lock file for MITM startup should clean up lock file on all exit paths
+tests/unit/security-audit.test.js :: AUDIT-004: Atomic lock file for MITM startup should use O_EXCL flag (wx) for atomic creation
+tests/unit/security-audit.test.js :: AUDIT-018: XSS escaping in OAuth callback should escape ampersand, angle brackets, and quotes
+tests/unit/security-audit.test.js :: AUDIT-018: XSS escaping in OAuth callback should use safeMessage in rendered HTML, not raw message
+tests/unit/security-audit.test.js :: AUDIT-018: XSS escaping in OAuth callback source should contain escapeHtml function
+tests/unit/shutdown-gate.test.js :: (suite)
+tests/unit/sidebar-usage-ownedby.test.js :: security log entry is visible to the administrator keeps password sessions and refuses key sessions
+tests/unit/studio-banner-update.test.js :: banner: cancel, background, and shared look the proxy import runs store-driven under an abort controller
+tests/unit/studio-combo-target.test.js :: studio combo guard unit detects a studio reaching back into the combo being saved
+tests/unit/studio-combo-target.test.js :: studio combo guard unit ignores provider/model members that cannot form a cycle
+tests/unit/studio-combo-target.test.js :: studio combo guard unit rejects a combo that directly contains the studio name
+tests/unit/studio-combo-target.test.js :: studio combo guard unit rejects an indirect cycle through a nested combo and chained studio
+tests/unit/studio-combo-target.test.js :: studio to combo resolution keeps an old provider/model backup importable
+tests/unit/studio-combo-target.test.js :: studio to combo resolution keeps resolving a legacy provider target unchanged
+tests/unit/studio-combo-target.test.js :: studio to combo resolution stores a combo target and resolves it as a combo at runtime
+tests/unit/suggested-models-sync.test.js :: suggested-models route durability falls back to built-in models only when nothing was ever synced
+tests/unit/suggested-models-sync.test.js :: suggested-models route durability prefers the synced copy over an empty upstream answer
+tests/unit/suggested-models-sync.test.js :: suggested-models route durability serves the live list untouched when upstream answers
+tests/unit/suggested-models-sync.test.js :: suggested-models route durability serves the synced copy flagged stale when upstream is unreachable
+tests/unit/theme-modes.test.js :: theme mode contract applies dark as plain .dark and glass as .dark.glass
+tests/unit/theme-modes.test.js :: theme mode contract degrades an unknown persisted value to the glass default
+tests/unit/theme-modes.test.js :: theme mode contract re-applies the persisted mode on init (page reload path)
+tests/unit/theme-modes.test.js :: theme mode contract toggles between the two modes starting from the glass default
+tests/unit/theme-security-log.test.js :: security log: sign-ins, refusals and probes are recorded and flagged both API routes stay closed to key sessions
+tests/unit/theme-security-log.test.js :: security log: sign-ins, refusals and probes are recorded and flagged the page colours breaches red and stays reachable
+tests/unit/theme-security-log.test.js :: security log: sign-ins, refusals and probes are recorded and flagged the sidebar lists Security Log and the admin gate keeps it closed to keys
+tests/unit/tokenharbor-provider.test.js :: Token Harbor provider keeps every registry id unique after adding tokenharbor
+tests/unit/translator-helpers-edge.test.js :: normalizeClaudePassthrough - haiku adaptive thinking (docs 11 §1) hoists mid-conversation system messages into top-level system
 tests/unit/translator-request-normalization.test.js :: request normalization claudeToOpenAIRequest flattens text-only content arrays into string
 tests/unit/translator-request-normalization.test.js :: request normalization filterToOpenAIFormat flattens text-only arrays to string
 tests/unit/translator-request-normalization.test.js :: request normalization parseSSELine supports provider raw NDJSON stream lines
 tests/unit/translator-request-normalization.test.js :: request normalization translateRequest keeps /v1/messages Claude->OpenAI text payloads string-safe
+tests/unit/update-banner-anim.test.js :: (suite)
+tests/unit/usage-charts.test.js :: OverviewCards trend wiring maps each card to its own series, including cached
+tests/unit/usage-charts.test.js :: OverviewCards trend wiring renders a trend only when there is one to render
+tests/unit/usage-charts.test.js :: OverviewCards trend wiring stays usable before trends arrive
+tests/unit/usage-charts.test.js :: smart empty states Recent Requests offers a next step when empty
+tests/unit/venice-provider.test.js :: Venice AI provider keeps every registry id unique after adding venice
+tests/unit/windsurf-executor.test.js :: WindsurfExecutor class PROVIDERS.windsurf baseUrl is the chat endpoint (registry in sync)
+tests/unit/windsurf-executor.test.js :: WindsurfExecutor class buildUrl returns the GetChatMessage endpoint
+tests/unit/windsurf-executor.test.js :: WindsurfExecutor class constructor wires config from PROVIDERS.windsurf

@@ -58,6 +58,29 @@ function escapeHtml(s) {
     .replace(/>/g, "&gt;");
 }
 
+// A version's body runs until the next version heading, so it always ends with the
+// `---` rule that separates versions in the file. marked turns a rule into an <hr>,
+// which drew a stray line at the bottom of a card. Only entries whose rule had a blank
+// line before it showed it: Markdown reads a `---` glued to the previous line as a
+// setext heading underline, so the rest of the file silently swallowed its rule. Strip
+// the rules here, where line boundaries are still known, and leave `---` inside fenced
+// code alone -- a changelog entry may quote one.
+function stripSectionRules(body) {
+  const kept = [];
+  let fenced = false;
+  let prevBlank = true;
+  for (const line of String(body || "").split("\n")) {
+    if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
+    if (!fenced && /^\s*-{3,}\s*$/.test(line)) continue;
+    // Removing a rule between two paragraphs would otherwise leave two blank lines.
+    const blank = !line.trim();
+    if (!fenced && blank && prevBlank) continue;
+    kept.push(line);
+    prevBlank = blank;
+  }
+  return kept.join("\n").replace(/\s+$/, "");
+}
+
 // Split markdown into per-version sections.
 // A version boundary is an h1/h2 heading whose text starts with an optional "v" + digit,
 // e.g. "# v0.5.71-Custom (2026-09-10)" or "## v0.5.65". Sub-headings like "## Features"
@@ -70,13 +93,13 @@ function splitVersions(md) {
   for (const line of lines) {
     const m = line.match(/^ {0,3}#{1,2}\s+(v?\d[^\n]*)$/i);
     if (m) {
-      if (cur) sections.push(cur);
+      if (cur) sections.push({ ...cur, body: stripSectionRules(cur.body) });
       cur = { title: m[1].trim(), body: "" };
     } else if (cur) {
       cur.body += line + "\n";
     }
   }
-  if (cur) sections.push(cur);
+  if (cur) sections.push({ ...cur, body: stripSectionRules(cur.body) });
   return sections;
 }
 
@@ -167,6 +190,7 @@ const CATEGORY_ALIAS = {
   "what's new?": "Features",
   "what's new": "Features",
   "what changed": "Changed",
+  "what was changed": "Changed",
   "what was fixed": "Fixes",
   "what was removed": "Removed",
   "what was undone?": "Undone",

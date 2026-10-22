@@ -16,7 +16,6 @@ export default function BulkEditKeys({ selectedCount, onApply, onClose }) {
     rpmLimit: { on: false, value: "" },
     tpmLimit: { on: false, value: "" },
     allowedModels: { on: false, value: "" },
-    ipWhitelist: { on: false, value: "" },
     expiresAt: { on: false, value: "" },
     isActive: { on: false, value: "true" },
   });
@@ -67,7 +66,7 @@ export default function BulkEditKeys({ selectedCount, onApply, onClose }) {
     }
   };
 
-  const rows = ["tokenLimit", "resetInterval", "rpmLimit", "tpmLimit", "allowedModels", "ipWhitelist", "expiresAt", "isActive"];
+  const rows = ["tokenLimit", "resetInterval", "rpmLimit", "tpmLimit", "allowedModels", "expiresAt", "isActive"];
 
   return (
     <Modal isOpen onClose={onClose} title={`Bulk edit ${selectedCount} key${selectedCount === 1 ? "" : "s"}`}>
@@ -143,7 +142,6 @@ function labelFor(name) {
     rpmLimit: "Requests per minute (0 = unlimited)",
     tpmLimit: "Tokens per minute (0 = unlimited)",
     allowedModels: "Allowed models pattern",
-    ipWhitelist: "IP whitelist",
     expiresAt: "Expiry date",
     isActive: "Status",
   }[name] || name;
@@ -155,7 +153,6 @@ function placeholderFor(name) {
     rpmLimit: "e.g. 60",
     tpmLimit: "e.g. 100000",
     allowedModels: "e.g. anthropic/*, openai/gpt-4o",
-    ipWhitelist: "e.g. 203.0.113.5, 198.51.100.0/24",
     expiresAt: "leave blank for no expiry",
   }[name] || "";
 }

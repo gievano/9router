@@ -335,6 +335,22 @@ export async function saveRequestUsage(entry) {
          if (totalTokens > 0) {
             db.run(`UPDATE apiKeys SET usedTokens = COALESCE(usedTokens, 0) + ? WHERE key = ?`, [totalTokens, entry.apiKey]);
          }
+         // Request counter for keys limited by request count, bumped once per logged
+         // usage row so the gate and this writer read the same number.
+         db.run(`UPDATE apiKeys SET usedRequests = COALESCE(usedRequests, 0) + 1 WHERE key = ?`, [entry.apiKey]);
+         // Daily cost counter, written in the same transaction as the usage row so the
+         // two can never disagree. date('now') is UTC, the same bucket utcDayKey()
+         // returns: a new day replaces the counter instead of adding to yesterday's.
+         const cost = Number(entry.cost) || 0;
+         if (cost > 0) {
+            db.run(
+               `UPDATE apiKeys
+                   SET costSpent = CASE WHEN costDay = date('now') THEN COALESCE(costSpent, 0) + ? ELSE ? END,
+                       costDay = date('now')
+                 WHERE key = ?`,
+               [cost, cost, entry.apiKey]
+            );
+         }
          import("./apiKeysRepo.js").then(({ recordApiKeyUsageInWindow }) => {
            recordApiKeyUsageInWindow(entry.apiKey, totalTokens);
          }).catch(() => {});

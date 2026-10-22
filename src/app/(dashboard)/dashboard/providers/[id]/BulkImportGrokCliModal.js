@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import PropTypes from "prop-types";
-import { Modal, Button, ProgressCard } from "@/shared/components";
+import { Modal, Button } from "@/shared/components";
 import { translate } from "@/i18n/runtime";
 import { useTaskStore } from "@/store/taskStore";
 
@@ -319,14 +319,6 @@ export default function BulkImportGrokCliModal({ isOpen, onClose, onSuccess }) {
           </Button>
         </div>
       </div>
-      {importProgress && (
-        <ProgressCard
-          fixed={false}
-          title={translate("Importing accounts")}
-          message={importPct !== null ? `${importProgress.done}/${importProgress.total} accounts` : null}
-          progress={importPct}
-        />
-      )}
     </Modal>
   );
 }

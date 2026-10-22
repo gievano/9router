@@ -117,6 +117,7 @@ export async function GET() {
       else row.errors += r.count;
     }
 
+    const todayKey = new Date().toISOString().slice(0, 10);
     const result = keys.map((k) => {
       const t = totals[k.key] || {};
       const promptTokens = t.promptTokens || 0;
@@ -133,6 +134,16 @@ export async function GET() {
       const windowSum = tokensInWindowMap[k.key] || 0;
       const used = Math.max(column, windowSum);
       const resetSpan = intervalMs(k.resetInterval);
+      // One unified budget per key: the page shows the kind the owner selected rather
+      // than three numbers, and the percentage is measured against that same cap.
+      const kind = k.limitKind === "cost" || k.limitKind === "requests" ? k.limitKind : "tokens";
+      const spentToday = k.costDay === todayKey ? Number(k.costSpent) || 0 : 0;
+      const cap = kind === "cost" ? Number(k.dailyCostLimit) || 0
+        : kind === "requests" ? Number(k.requestLimit) || 0
+        : limit;
+      const usedForCap = kind === "cost" ? spentToday
+        : kind === "requests" ? Number(k.usedRequests) || 0
+        : used;
       return {
         id: k.id,
         name: k.name,
@@ -154,6 +165,17 @@ export async function GET() {
         completionTokens,
         totalTokens: promptTokens + completionTokens,
         cost: t.cost || 0,
+        // Today's spend comes from the same counter validateApiKey enforces, not from
+        // the pruned usage log, so the page and the 429 can never disagree.
+        dailyCostLimit: Number(k.dailyCostLimit) || 0,
+        costSpentToday: spentToday,
+        costPercent: Number(k.dailyCostLimit) > 0 ? Math.min(100, (spentToday / Number(k.dailyCostLimit)) * 100) : null,
+        limitKind: kind,
+        requestLimit: Number(k.requestLimit) || 0,
+        usedRequests: Number(k.usedRequests) || 0,
+        limitCap: cap,
+        limitUsed: usedForCap,
+        limitPercent: cap > 0 ? Math.min(100, (usedForCap / cap) * 100) : null,
         lastUsed: t.lastUsed || null,
         okRequests: st.ok,
         errorRequests: st.errors,

@@ -1,6 +1,314 @@
+# v0.5.258-Custom (sync upstream v0.5.258)
+
+Fork gievano/9router - sync 60 commit upstream (v0.5.226 -> v0.5.258) + custom: provider freebuff, mimocode.
+
+# v0.5.258 (2026-10-21) · 3 commits
+
+## What Was Fixed
+
+- **The provider page now agrees with the model picker about what it lists.** The model picker offered all 13 free OpenCode models, but the provider page dropped `jev-1.13-free` because its registry entry carries the `kind: "systemone"` lane and the page's llm-only filter (`!k || k === "llm"`) treated that as a media kind with its own page - the free System One model was visible in one screen and invisible in the other, paid `jev-1.13` chip included while the free one was not. `systemone` is now kept alongside `llm` in the provider page filter, and `tests/unit/provider-model-catalogue.test.js` (6 cases) pins the filter so a future lane cannot silently drift again.
+
+---
+
+---
+
+# v0.5.257 (2026-10-21) · 2 commits
+
+## What Was Fixed
+
+- **The upstream smoke-test id no longer shows up as a chip.** OpenCode's live catalogue carries a placeholder id literally named `test`, and since the panel started listing "Other models" straight from the catalogue it appeared next to real models as junk. The opencode filter now drops placeholder ids alongside the known-dead one before anything reaches the panel.
+
+---
+
+---
+
+# v0.5.256 (2026-10-21) · 2 commits
+
+## What Was Changed
+
+- **Back to picking your own models: the catalogue is suggested again, not imported.** Rendering the whole live catalogue as model rows silently turned every published id into an entry in the list, which took away the step where an operator chooses what to add. The provider page renders the suggested chip rows again for free no-auth providers - `Suggested free models (n):` with `+` chips, `Other models (n):` for the paid half, and `Disabled models (n):` to restore - and each chip still calls `handleAddCustomModel`, so nothing joins the list unasked. The free/paid split, the FREE badge from `isFree` and the picker's `· N disabled` hint stay. `src/shared/utils/freeModelRows.js` and the `isDisabled`/`onRestore` props it needed are gone (no call sites left), and `tests/unit/provider-model-catalogue.test.js` (5 cases) pins the chip flow, the removed helper, the trimmed `ModelRow` props and the registry's `isFree` flags.
+
+---
+
+---
+
+# v0.5.255 (2026-10-21) · 2 commits
+
+## What Was Fixed
+
+- **The OpenCode Free panel shows every id the provider publishes, paid ones included.** The first pass of the unified list hid the ~76 paid ids of the live catalogue behind an "only advertise what a keyless caller can use" rule, and the panel then read as a short list with models missing - the opposite of what was being fixed. The catalogue now reaches the row grid unfiltered, the FREE badge comes from each row's own tier flag (`isFree` travels through `buildUnifiedModelRows` instead of being stamped on every catalogue row), and the five registry-pinned free ids (muse spark x2, union-alpha, deepseek flash, jev) carry `isFree: true` in `open-sse/providers/registry/opencode.js` so their badge no longer depends on the id suffix. Verified live: the upstream endpoint lists 86 ids, all 10 free ones plus the 3 registry-only free models render, and `tests/unit/free-model-rows.test.js` (10 cases) pins the unfiltered catalogue, the flag-driven badge and the registry flags.
+
+---
+
+---
+
+# v0.5.254 (2026-10-21) · 2 commits
+
+## What Was Fixed
+
+- **Opening the model picker no longer blanks the page.** The `· N disabled` hint was computed by a helper defined *inside* the `groupedModels` memo but printed in the group header at render time, so any picker that opened threw `ReferenceError: disabledCountFor is not defined` and Next's error boundary replaced the dashboard with "Application error: a client-side exception has occurred". The helper now lives at component scope, next to the state it reads, and `tests/unit/free-model-rows.test.js` asserts its declaration sits above the memo so the same scope mistake fails the suite instead of the browser.
+
+---
+
+---
+
+# v0.5.253 (2026-10-21) · 2 commits
+
+## What Was Fixed
+
+- **The unified free list only advertised models that can actually answer.** The first cut of the unified list passed the whole live catalogue to the row builder, and the OpenCode Free catalogue marks paid ids with `isFree: false` - so ~85 paid models (Claude, Gemini, GPT families) appeared as free-badged rows on a provider that answers 401 for every one of them without a key. The catalogue handed to `buildUnifiedModelRows` is now filtered to `isFree === true`, the same rule the suggestion picker already used, and the browser check on the provider page counts 10 free rows plus the disabled trio instead of 85+.
+
+---
+
+---
+
+# v0.5.252 (2026-10-21) · 2 commits
+
+## What Was Changed
+
+- **A free provider's catalogue is now one model list, not three.** On the OpenCode Free page the same tier was split across the model rows, a "Suggested free models (6)" chip row that asked you to add models that already answered, and a "Disabled models (3)" chip row at the bottom - so the catalogue was never visible in one place and ids you had disabled looked gone. `src/shared/utils/freeModelRows.js` folds registry models, user-added rows and the live catalogue into a single de-duplicated list (custom beats registry beats catalogue), and the page renders it as ordinary rows: each model once, free rows carrying a `FREE` badge, disabled rows dimmed with a restore action. The two chip rows stay only for providers that gate their catalogue behind adding a model.
+- **The picker stopped hiding models without saying so.** `ModelSelectModal` filters disabled ids out of every group, which is correct - a disabled model is not offered by `/v1/models` either - but a group that silently showed 10 of 13 models read as a half-missing free tier. The group header now appends `· N disabled` with a hint that they are restored on the provider page, so the gap is explained where it is seen.
+
+---
+
+---
+
+# v0.5.251 (2026-10-21) · 2 commits
+
+## What Was Changed
+
+- **The dead long-task banner is deleted, not just left unused.** `src/shared/components/LongTaskBanner.js` (431 lines) had zero callers since long runs moved to the notification bell, and `Loading.js` still exported its wrappers (`ProgressCard`, `CenterLoading`, `BusyOverlay`) as a trap for the next feature. The component file and the three exports are gone, `src/shared/components/index.js` stops re-exporting them, and `Loading.js` keeps only what still renders: `Spinner`, `PageLoading`, `Skeleton`, `CardSkeleton`.
+- **The tests follow the component out.** `tests/unit/loading-banner.test.js` existed only to assert on the deleted files (and was already a catalogued load failure), so it is removed together with its entry in `tests/__baseline__/known-fails.txt`. `tests/unit/studio-banner-update.test.js` keeps the store, bell, layout and pool assertions and drops the two that read the deleted sources. `tests/unit/bell-only-progress.test.js` gains a guard: the component file must not exist and neither the wrappers nor their barrel exports may reappear — a zero-call-site component gets re-imported the moment someone reaches for it.
+
+---
+
+---
+
+# v0.5.250 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **Parity is now asserted byte for byte, not by headings.** The previous test sampled a few lines from the middle of the core, which a careful paraphrase could still slip past. `tests/unit/antislop-prompt-parity.test.js` now asserts that `full` contains the entire core document (everything from `## What This Is` onward) character for character, and that `ultra` contains each of the five concern skills verbatim after its title — so a reformat, a dropped paragraph or a "tidied" sentence fails the suite.
+
+---
+
+# v0.5.249 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **Anti Slop is now the skill, not a summary of it**: the plugin used to inject a hand-condensed prompt of ~3.7k characters — about 6% of upstream's text, 15 of the 38 mandatory rules, no liveliness dials, no Design Read, none of the five concern skills — so calling it "the antislop skill" oversold it. `open-sse/rtk/antislopPrompt.js` is now generated from verbatim upstream sources kept in `open-sse/rtk/antislop-src/` (`core.md` plus `ui`, `copywriting`, `human`, `layoutmobile`, `code`). `full` is the core text verbatim (42,557 chars, ~10.6k tokens) and `ultra` is the core plus all five concern skills (130,512 chars, ~33k tokens). `lite` stays the 913-char condensation for cheap always-on filtering.
+- **Only the repo-editing half is dropped**: the install wizard, the self-update section and the mode-resolution section tell an agent to write pointer blocks into `AGENTS.md` and to ask which mode to use — wrong for a prompt injected on every request. A one-line runtime note replaces them (the plugin's level is the mode), and the tests fail if any of that text leaks back in.
+- **The level picker states the cost** instead of describing intensity in the abstract: each option now reads its token count straight from `ANTISLOP_LEVEL_CHARS`, so re-syncing the sources moves the number with it.
+- `scripts/generateAntislopPrompt.mjs` regenerates the module and `--check` fails when it drifts; `tests/unit/antislop-prompt-parity.test.js` (9 cases) asserts every core section is present verbatim, that all 38 rules survive, that ULTRA carries the five concern skills, that the dropped sections stay out, and that an unknown level still falls back to `full`.
+
+---
+
+# v0.5.248 (2026-10-20) · 1 commit
+
+## What Was Fixed
+
+- **Wording**: the USD notice read `$2.30 of $2.50 spent used.` — dollars are spent, not used. Each kind now owns its sentence (`… tokens used.`, `… calls used.`, `… spent.`) instead of one template with a noun swapped in, and a test rejects `spen[dt] used` so the phrasing cannot come back.
+
+---
+
+# v0.5.247 (2026-10-20) · 1 commit
+
+## What Was Fixed
+
+- **The long progress bar inside dialogs is gone; the bell owns it**: opening *Download Backup* and starting an export dropped a full-width card ("Preparing backup / Exporting database") over the form, with a scrim, covering the fields it was supposed to sit beside — and the same run was already in the bell through the task store, so the dialog showed a second, worse copy of one job. The card is removed from `DownloadBackupModal`, `BulkImportGrokCliModal`, `BulkImportCodexModal` and `AddApiKeyModal`; progress now lives only in the bell, while each dialog keeps its own busy state on the action button (`Download Backup`, `Importing…`, `Saving…`).
+- 3 tests in `tests/unit/bell-only-progress.test.js` keep it that way: no modal renders `ProgressCard`, every one of them still reports to the task store, and no empty conditional wrapper is left behind.
+
+---
+
+# v0.5.246 (2026-10-20) · 1 commit
+
+## What Was Fixed
+
+- **A returning condition lights the bell again**: clearing a notice is how a resolved condition gets retired, and it also marks the row read — so when the same condition came back (a key slid under its cap and then over it again, a task failed twice) the row reappeared in the feed already greyed out and the badge stayed at zero, which reads as "nothing to see" while the key is in fact refusing traffic. `notify()` now re-arms `readAt` when it revives a cleared row, and leaves a row the operator actually read alone.
+- 2 tests in `tests/unit/notification-revival.test.js` drive the real SQLite adapter: revival counts as unread and stays a single row, while a read row that merely changes its figure stays read.
+
+---
+
+# v0.5.245 (2026-10-20) · 1 commit
+
+## What Was Added
+
+- **Quota notices follow the budget a key actually enforces**: the notification scan only ever read `tokenLimit`/`usedTokens`, so a key switched to a USD or request budget exhausted itself in silence — it answered 429 while the bell stayed empty, and the first sign was a client failing. `src/lib/notifications/quotaPressure.js` now reads the selected `limitKind`, warns at 90% and goes critical at the cap, and each kind gets its own wording: `$2.40 of $2.50 spend used. Resets at 00:00 UTC.`, `450 of 500 calls used. No automatic reset.`, `95,000 of 100,000 tokens used. Resets in 5d.` Yesterday's dollars count as zero, so a stale `costDay` never nags about a counter that already rolled over, and inactive keys stay quiet.
+- **Switching kinds or raising a budget clears the old notice**: the dedupe key now carries the kind (`quota:<id>:<kind>:<level>`), and every pass clears the notices it did not recreate — previously a key moved from cost to tokens kept an unread "out of tokens" row in the feed.
+- 7 unit tests in `tests/unit/quota-notifications.test.js` cover the thresholds per kind, the stale-day rollover, the unselected-kind silence, and the reset timestamps.
+
+---
+
+# v0.5.244 (2026-10-20) · 1 commit
+
+## What Was Fixed
+
+- **`Error fetching models: e is not a function` — the models list died for anyone with a combo**: `aggregateComboCapabilities` gained a `resolveCaps` callback in its third position, but the two server routes still called it with their old arguments, so the recursion depth `0` landed in the callback slot and `0?.(id)` threw a `TypeError`. Both `/api/models` and `/api/v1/models` answered 500 before they could list anything. The routes now pass `null` for the resolver and the combo's own window in the last slot, and the aggregator ignores a resolver that is not a function, so a stale caller can never take the list down again.
+- **A combo reports its widest member's window again, and its own window wins**: the same merge had reverted the aggregator to `Math.min` and dropped the per-combo `contextWindow` override, so a combo built on a 1M model published 256k and clients compacted far too early. Both behaviours are restored and covered by `tests/unit/combo-capabilities.test.js`, whose four previously catalogued failures now pass (the entries were pruned from the baseline). `tests/unit/combo-caps-resolver.test.js` came in from upstream asserting the opposite window rule (minimum member), so its three window assertions were rewritten to the fork's widest-member rule with a note saying where the two disagree — the resolver cases it was really about are untouched.
+
+---
+
+# v0.5.243 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **The three budgets are named by what they measure**: `Tokens` / `Cost` / `Requests` were just the units again, so the row title repeated the sentence underneath and said nothing a reader could not guess from the icon. They now read `Token volume`, `USD spend` and `Request count` — each name pairs the unit with the thing being counted, and the explanations below stay as they were.
+
+---
+
+# v0.5.242 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **The limit cards stopped quoting a sample amount**: each row carried an invented example next to its name (`100,000 tokens`, `$2.50 per day`, `1,000 calls`), which read as a value the key already had rather than an illustration. The rows now hold only the unit, an icon and the sentence that explains how it is counted; the number lives in the field the row reveals.
+
+---
+
+# v0.5.241 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **The limit picker is a list of rows instead of three narrow cards**: the key editor is a 512px column, so a three-up grid gave each card 149px and wrapped every sentence into five short lines — the copy that was meant to explain the budget became the reason the row looked crowded. Each option is now a full-width row: coloured icon chip, name and value example on one line, one sentence underneath, radio at the end. The selected row keeps the tinted plate, accent border and glow.
+
+---
+
+# v0.5.240 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **The key editor fits the screen again**: the dialog body was capped with a magic `calc(85vh-100px)` while the header and footer added their own height on top, so a long form pushed the footer past the bottom of the window and the last permission row slid underneath it. `Modal` now caps the panel at `85vh`, lays it out as a column, and lets only the body scroll, so the footer is always reachable and no row is hidden behind it.
+- **The unselected limit cards show their radio ring**: an empty 1px `#333` circle on a `surface-2` card was invisible, so the two cards that were not chosen looked like static panels rather than options. The ring now uses `text-muted/50` and the value chips share one treatment across all three cards, differing only in opacity.
+- **Examples use one number convention**: `100K tokens` / `$2.50 / day` / `1,000 calls` became `100,000 tokens` / `$2.50 per day` / `1,000 calls`.
+- **Decorative icons are hidden from screen readers**: the material-symbols glyph text was being appended to each card's accessible name, so a radio announced itself as "data_usage Tokens Adds up prompt…".
+
+---
+
+# v0.5.239 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **The limit picker became cards that say what the budget does, not three labelled buttons**: the tiles were icon + name, which still left the reader guessing what "Cost" meters. Each card now carries a 32px tinted icon chip, the name, a filled radio mark on the selected one, a sentence explaining the rule (`Adds up prompt and completion tokens, so a long conversation costs more than a short one.`), and a monospace example of the value it expects (`100K tokens`, `$2.50 / day`, `1,000 calls`) pinned to the bottom so the three cards align. Selection adds a coloured border plus a soft accent glow around the card rather than only changing the text colour, and the unselected cards keep their chip colour at 70% so the row reads as three budgets before anything is clicked.
+
+---
+
+# v0.5.238 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **The three limit tiles keep their colour even when they are not selected**: at rest they were a hairline border around grey text, so the picker still read as one grey row until you clicked — the same complaint the dropdown earned. Each tile now carries its accent at 60% opacity (sky for Tokens, emerald for Cost, violet for Requests) and a faint `bg-surface-2/40` plate, so the row reads as three distinct budgets the moment the modal opens; selecting one strengthens the same accent instead of introducing a colour that was not there before.
+
+---
+
+# v0.5.237 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **Limit Type is a three-tile picker with colour, not a dropdown**: a `<Select>` collapsed the three budgets into one line of white text and hid two thirds of the choice, which made the setting that decides *what a key is even measuring* look like the least important field in the form. `LimitKindPicker` shows all three side by side — `Tokens` (sky, volume), `Cost` (emerald, USD per day) and `Requests` (violet, calls) — each with its own icon, an uppercase sub-label saying what it counts, and a tinted background plus coloured border on the selected tile. It is a real `radiogroup` (buttons with `role="radio"` and `aria-checked`), so arrow keys and screen readers get the same three-way choice the eye does, and it stacks to one tile per row below `sm` instead of squeezing three labels into a phone-width row. Both the create and the edit modal use it; the value field and the reset interval moved into their own row underneath. `tests/unit/api-key-limit-picker.test.js` pins the three options and their distinct accents/icons, the radiogroup markup, the selected-state styling, and that no `Select label="Limit Type"` survives.
+
+---
+
+# v0.5.236 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **The key card shows one reset badge, and it is the one that moves**: a capped key on a reset window carried two labels that said the same thing twice — `Reset: every 7d` (the setting, frozen text) next to `Next reset: 6d 23h` (the same fact as a countdown). The static one is gone; what remains is the countdown, which already ticks with `useNow` and turns into `Resetting...` when it reaches zero, so the row now answers "when does this key get its budget back" in one badge instead of restating the configured interval beside it. `tests/unit/api-key-reset-badge.test.js` keeps the static label from coming back and pins the countdown's label, its ticking and its "no window, no badge" guard.
+
+---
+
+# v0.5.235 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **Each limit kind now explains its own rule instead of sharing a template**: the three hints opened the same way (`Counted …`) and closed with the same `the key answers 429 at the cap. 0 = unlimited.`, so Requests read like Tokens with a swapped noun — the difference a reader needs is *what gets counted and why it costs what it costs*, not the refusal code. Tokens now say they add up prompt and completion tokens across the reset window, so a long conversation costs more than a short one. Requests say they count calls and not size — one call is one request however many tokens it spends, so a huge prompt counts the same as a tiny one. Cost says every call is charged at the model's price in USD, so the same amount of text costs more on an expensive model, and the total rolls over at 00:00 UTC. The only shared sentence left is `0 = unlimited`, which is true of all three. `tests/unit/api-key-limit-hint.test.js` now also asserts the three paragraphs and their opening sentences are distinct, not merely present.
+
+---
+
+# v0.5.234 (2026-10-20) · 1 commit
+
+## What Was Changed
+
+- **The limit field explains the unit it is set to, instead of saying "0 or leave empty for unlimited"**: the field is one number whose meaning depends on `Limit Type`, and the old hint was the one sentence that carried no information about any of the three. `limitHint(kind)` now answers per kind — tokens are counted in prompt + completion tokens added up over the reset window and the key answers 429 at the cap; cost is priced per request at the model's rate, rolls over at 00:00 UTC and answers 429 at the cap; requests are counted once per logged call whichever model it hits. Every variant ends with `0 = unlimited`, so the only unit-agnostic rule survives. The token variant still appends the creator's ceiling (`Your maximum is 88,000,000 tokens`) because that is a real constraint when a sub-key is minted, and the hint is now shown in the edit modal too, which had none. Labels dropped their duplicated `(0: unlimited)` suffix — the hint states it now — so the three fields read `Token Limit`, `Cost Limit (USD)` and `Request Limit`, and the rate-limit pair reads `RPM Limit` / `TPM Limit` with `0 = unlimited` moved into their hints. `tests/unit/api-key-limit-hint.test.js` asserts each kind's sentence, the shared unlimited rule, the creator ceiling appearing on tokens only, both modals rendering the helper, and the generic line being gone.
+
+---
+
+# v0.5.233 (2026-10-20) · 1 commit
+
+## What Was Fixed
+
+- **The newest changelog entry drew a stray horizontal rule**: `CHANGELOG.md` separates versions with a `---` line, and a version's body runs until the next `# vX.Y.Z` heading, so that separator was handed to the Markdown renderer and became an `<hr>` at the bottom of the card. Only v0.5.232 showed it because Markdown reads `---` glued to the line above as a setext heading underline — every older entry swallowed its separator that way and looked fine, while the new entry, written with a blank line before the rule, rendered the line. `splitVersions()` now runs each body through `stripSectionRules()`, which drops standalone rules (leaving `---` inside fenced code alone, since an entry may quote one) and collapses the blank line the removal would leave behind. Every card now ends the same way, whether or not the file happens to have the blank line. `tests/unit/changelog-section-rules.test.js` covers the rule at the end, a rule between sections, a rule inside a fence, the splitter actually applying it, and that no version body in the real file keeps a rule.
+
+---
+
+# v0.5.232 (2026-10-20) · 1 commit
+
+## What Was Added
+
+- **The limit badge says `Usage:` whatever the unit**: `Spent: $0.00 / $2.50` read as a different kind of number from `Usage: 12K / 100K tokens`, even though both answer the same question — how much of the selected budget is gone. The unit is already inside the value (`$`, `req`, `tokens`), so the label is now always `Usage: …` and the three kinds line up in the key list.
+
+## What Was Changed
+
+- **The key editor is grouped instead of stacked**: both the create and the edit modal now split their fields into `Identity` (name, expiry), `Usage Limit` (limit type + value + reset interval), `Rate Limits` (RPM/TPM) and `Access` (allowed models, permissions), each with a short caption explaining what it controls. Fields sit two-per-row from the `sm` breakpoint up so the form is shorter, the limit pair no longer wraps awkwardly next to the reset interval, and the actions moved out of the scrolling body into the modal footer — the buttons stay reachable however long the permission list gets. The reset interval and its custom value now share a row, and the edit payload moved into `handleSaveEditedKey` so the button no longer carries a twenty-line inline object.
+
+## What Was Removed
+
+- **IP whitelist**: the field is gone from the create modal, the edit modal and bulk edit, the `IP Guard` chip is gone from the key card, and the API no longer accepts or returns `ipWhitelist`. `validateApiKey()` stopped enforcing it, together with the `IP_NOT_ALLOWED` reason in `keyGate`, the chat handler and the login route — a key cannot be edited into a state the UI cannot show. The `apiKeys.ipWhitelist` column stays so existing rows, backups and restores load unchanged, but nothing reads or writes it. **Note:** a key that was previously restricted to a list of IPs is no longer restricted by IP; revoke or re-mint it if that restriction was load-bearing.
+
+---
+
+# v0.5.231 (2026-10-20) · 1 commit
+
+## What Was Added
+
+- **One budget per key, and the operator picks which unit it is measured in**: the cost cap shipped beside the token cap, so a key could carry two budgets that both applied and switching a key to money meant zeroing the token limit by hand; nothing could limit a key by request count at all. `limitKind` now names the single budget a key is measured by — `tokens` (the default, so existing rows keep their behaviour), `cost`, or `requests`. All three numbers stay stored so switching back does not lose them, but `validateApiKey()` enforces only the selected one, which is why a stale, exhausted token cap no longer blocks a key that was switched to requests. Requests get a `usedRequests` counter written in the same transaction as the usage row and reset by the same `resetInterval` window as tokens; cost keeps its UTC-day stamp, so a new day replaces the counter without any reset job. `REQUEST_LIMIT_EXCEEDED` and `COST_LIMIT_EXCEEDED` both answer **429** through the gate rather than the `401 Invalid API key` an unknown reason falls back to. The key editor is now one "Limit Type" selector plus a single value field whose label and placeholder follow the kind (and the reset-interval picker hides for cost, which is always daily), and the key list shows one badge for the active budget — `Usage: 12K / 100K tokens`, `Spent: $0.42 / $2.50`, `Usage: 12 / 1,000 req` — that turns red at the cap. The per-key usage card measures the same kind, and backup/restore carries the kind plus all three caps. `tests/unit/api-key-cost-guard.test.js` grew to 9 tests: cost accumulation and refusal, unlimited, day rollover, request counting and refusal, a stale token cap staying ignored while requests is selected, switching kind moving the enforced budget, and the 429 mapping.
+
+---
+
+# v0.5.230 (2026-10-20) · 1 commit
+
+## What Was Added
+
+- **An API key can now be given a daily spend cap in dollars**: token, RPM and TPM limits bound volume, not money — the same token count costs a cent on `gpt-4o-mini` and dollars on a frontier model, so a key could burn any amount per day and the owner only found out on the provider invoice. Each key carries `dailyCostLimit` (USD, `0` = unlimited), a `costSpent` counter and the UTC `costDay` that counter belongs to; `saveRequestUsage()` writes the counter inside the same transaction as the usage row, and because the stamp *is* the day, a new day replaces the counter instead of needing a reset job. Counting `usageHistory` instead would have been wrong: that table is pruned, so spend would read lower than it was and the key would silently overspend. `validateApiKey()` refuses with `COST_LIMIT_EXCEEDED` once today's spend reaches the cap, which `keyGate` answers as **429** (an unrecognised reason would have fallen back to `401 Invalid API key`, blaming the credential for a budget decision). A sub-key cannot be given a larger cap than its creator, on create or on edit, and the cap survives backup/restore — an older backup that predates the column leaves the live counter intact rather than zeroing it. The key editor gained a "Daily Cost Limit in USD" field beside the RPM/TPM limits, the endpoint list shows a `Cost: $x / $y today` badge that turns red at the cap, and the per-key usage card shows spend against it. `tests/unit/api-key-cost-guard.test.js` (6 tests, real SQLite adapter) covers accumulation from a logged request, refusal at the cap, passage below it, the unlimited case, the day rollover through the usage writer, and the 429 mapping. Spec: `docs/superpowers/specs/2026-10-20-api-key-daily-cost-limit-design.md`.
+
+---
+
+# v0.5.229 (2026-10-20) · 1 commit
+
+## What Was Fixed
+
+- **`next build` no longer kills itself on the database it is writing**: `/api/auth/saml/start` had no `dynamic` export, so the build prerendered it, and prerendering calls `getSettings()` — a SQLite read issued from the build process while the prerender workers were still writing. The read came back `SqliteError: database is locked`, Next reported `Error occurred prerendering page "/api/auth/saml/start"` and the export failed, which is why a build could pass on one commit and fail on the next with no code difference between them. The route now declares `dynamic = "force-dynamic"` like the other settings-reading GETs: it reads the request cookies and redirects, so there was never anything static to render. `tests/unit/saml-start-prerender.test.js` pins both the export and the redirect behaviour.
+
+---
+
+# v0.5.228 (2026-10-20) · 1 commit
+
+## What Was Fixed
+
+- **The CI test gate now measures this checkout instead of a stale wish**: the catalogue held 24 entries from a machine whose failures no longer match reality, so the first real Linux/Node 22 run (3 856 tests) tripped on 199 uncatalogued failures and the job could never pass. `tests/__baseline__/known-fails.txt` is regenerated from that run — 213 entries across 71 files — and its header now documents how to regenerate it. `compare-fails.mjs` also accepts a `file :: (suite)` entry, because a suite that fails to load has no test name and previously could never match, which made it a permanent failure by construction. No test was deleted or skipped to get here.
+- **What the catalogue actually contains is now written down** in `CLAUDE.md` instead of the old "~938 pass, ~64 fail": 39 failures are the guard tests not resolving a `getDashboardAuthSession` export, 16 are converter snapshot drift, 7 are `UNIQUE constraint failed: combos.name` state leaking between combo tests, 13 suites fail to load, and the rest are conversion assertions. That is a backlog, not an environment quirk.
+
+---
+
+# v0.5.227 (2026-10-20) · 1 commit
+
+## What Was Fixed
+
+- **The standalone build can serve again — the auth guard had no `next/server` to import**: `next build` traces only what reaches the webpack graph, and `src/dashboardGuard.js` is copied into `.next/standalone/` *after* the build because `custom-server.js` loads it by absolute path. Its runtime `import "next/server"` was therefore never traced, so the standalone tree carried a partial `next` package and every request answered `503 guard unavailable` with `ENOENT node_modules/next/server.js`. `scripts/copy-standalone-assets.mjs` now mirrors `node_modules/next` into the standalone tree — the same thing `assemble.sh` has always done for the systemd unit — so `npm run build && npm start` and the bundle CI uploads are servable. `tests/unit/standalone-assets.test.js` covers the mirror (including that it replaces the traced directory instead of merging into it), and the CI bundle check now fails when `node_modules/next/server.js` is missing.
+- **CI's nested install no longer crashes on the runner's npm**: npm 10.9.9 aborts `npm install` inside `tests/` with `Cannot read properties of null (reading 'edgesOut')` when the directory resolves inside a project that has its own tree. The test job installs npm 12 first, which is what the local setup already runs.
+
+---
+
+# v0.5.226 (2026-10-20) · 1 commit
+
+## What Was Added
+
+- **CI builds, tests, and boots the standalone server on GitHub Actions**: `next build` does not fit in the development box's memory cap, where the peak already sits next to the limit, so every build now runs on a runner instead. `.github/workflows/ci.yml` installs the root and `tests/` dependencies (no lockfile is tracked, so `npm install` rather than `npm ci`), runs vitest, then builds and checks the standalone tree for the modules `custom-server.js` loads by absolute path (`src/dashboardGuard.js`, `src/lib/db/repos/securityLogRepo.js`, `scripts/auth-guard-hooks.mjs`). It then boots the standalone server against a temporary `DATA_DIR` and fails on anything but a `200` from `/api/health`, or on a `503` from `/login` — the guard-unavailable signature. The bundle is uploaded as an artifact, and a `workflow_dispatch` input pushes a `ghcr.io/serenhope/9router` image for hosts that only run Docker.
+- **A raw vitest exit code no longer decides the CI verdict**: the suite carries catalogued failures on a clean checkout, so `tests/__baseline__/compare-fails.mjs` compares the JSON report against `tests/__baseline__/known-fails.txt` and fails only on a failure that is not catalogued. A catalogued failure that now passes is reported as stale so the list can be pruned, an entry only counts as stale when its suite actually ran, and a suite that failed to load counts as a failure with no name instead of passing silently. `tests/unit/ci-baseline-compare.test.js` (9 tests) pins the comparison and the workflow wiring.
+
+---
+
 # v0.5.225-Custom (sync upstream v0.5.225)
 
-Fork gievano/9router — sync 81 commit upstream (v0.5.191 → v0.5.225) + custom: provider freebuff, mimocode.
+Fork gievano/9router - sync 81 commit upstream (v0.5.191 -> v0.5.225) + custom: provider freebuff, mimocode.
 
 # v0.5.225 (2026-10-19) · 2 commits
 
@@ -314,10 +622,6 @@ Fork gievano/9router — sync 81 commit upstream (v0.5.191 → v0.5.225) + custo
 
 - **PR #8 test**: its own suite called `extractUserText` without importing
   it (12/13 green); one-line import added, now 13/13 -Custom
-
-# v0.5.190-Custom (sync upstream v0.5.190)
-
-Fork gievano/9router — sync 84 commit upstream (v0.5.182 → v0.5.190) + custom: provider freebuff, mimocode.
 
 # v0.5.190 (2026-10-16) · 1 commit
 

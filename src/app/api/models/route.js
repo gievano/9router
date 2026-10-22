@@ -248,7 +248,7 @@ export async function GET() {
     for (const combo of combos) {
       const members = Array.isArray(combo.models) ? combo.models : [];
       if (members.length === 0) continue;
-      const aggregated = aggregateComboCapabilities(members, comboByName, 0, Number(combo.contextWindow) || 0);
+      const aggregated = aggregateComboCapabilities(members, comboByName, null, 0, Number(combo.contextWindow) || 0);
       if (!aggregated) continue;
       const comboCaps = { ...aggregated };
       // A combo's marks come from its members: the plugin selection was made per

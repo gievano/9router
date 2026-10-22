@@ -1255,11 +1255,13 @@ export default function ProviderDetailPage() {
       );
     }
     // Combine hardcoded models with Kilo free models (deduplicated)
-    // Exclude non-llm models (embedding, tts, etc.) - they have dedicated pages under media-providers
+    // Exclude non-llm models (embedding, tts, etc.) - they have dedicated pages under media-providers.
+    // System One stays: its lane is routable inside normal chat routing, the model
+    // picker lists it, and hiding it here made the two screens disagree.
     const allModels = [
       ...models,
       ...kiloFreeModels.filter((fm) => !models.some((m) => m.id === fm.id)),
-    ].filter((m) => { const k = getModelKind(m); return !k || k === "llm"; }).filter((m) => !studioTargetIndex.isStudioTarget([providerId, providerStorageAlias, providerDisplayAlias], m.id));
+    ].filter((m) => { const k = getModelKind(m); return !k || k === "llm" || k === "systemone"; }).filter((m) => !studioTargetIndex.isStudioTarget([providerId, providerStorageAlias, providerDisplayAlias], m.id));
     const disabledSet = new Set(disabledModelIds);
     const displayModels = allModels.filter((m) => !disabledSet.has(m.id));
     const disabledDisplayModels = allModels.filter((m) => disabledSet.has(m.id));
@@ -1270,7 +1272,6 @@ export default function ProviderDetailPage() {
       builtInModels: models,
       type: "llm",
     }).filter((row) => !studioTargetIndex.isStudioTarget(providerStorageAlias, row.id));
-
     return (
       <div className="flex flex-wrap gap-3">
         {/* Custom models first */}

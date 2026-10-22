@@ -389,6 +389,6 @@ export function extractApiKey(request) {
  */
 export async function isValidApiKey(apiKey, requestedModel = null, clientIp = null) {
   if (!apiKey) return false;
-  return await validateApiKey(apiKey, requestedModel, clientIp);
+  return await validateApiKey(apiKey, requestedModel);
 }
 

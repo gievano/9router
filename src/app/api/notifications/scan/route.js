@@ -4,6 +4,7 @@ import { getDashboardAuthSession } from "@/lib/auth/dashboardSession";
 import { getUpdateInfo } from "@/lib/updateCheck";
 import { getApiKeys } from "@/lib/db/repos/apiKeysRepo.js";
 import { notify, clearNotificationByKind } from "@/lib/db/repos/notificationsRepo.js";
+import { quotaPressure, quotaTitle, quotaBody } from "@/lib/notifications/quotaPressure.js";
 
 export const dynamic = "force-dynamic";
 
@@ -14,15 +15,11 @@ export const dynamic = "force-dynamic";
 // itself when it stops being true, so a resolved problem stops nagging and a
 // relapse is announced again.
 
-function quotaState(key) {
-  const limit = Number(key.tokenLimit) || 0;
-  const used = Number(key.usedTokens) || 0;
-  if (!limit) return null;
-  const pct = used / limit;
-  if (pct >= 1) return { level: "critical", pct };
-  if (pct >= 0.9) return { level: "warning", pct };
-  return null;
-}
+// Every kind a key can enforce, so a notice written under one kind is cleared when the
+// key is switched to another (or its budget is raised) instead of lingering as advice
+// about a budget that no longer exists.
+const QUOTA_KINDS = ["tokens", "cost", "requests"];
+const QUOTA_LEVELS = ["warning", "critical"];
 
 export async function GET() {
   // Bell button and the header call this. A key session gets nothing to derive
@@ -53,31 +50,33 @@ export async function GET() {
     }
 
     // --- key quota pressure ---
+    // Reads the budget the key actually enforces (`limitKind`), not just the token cap:
+    // a key switched to a USD or request budget used to spend itself in silence.
     const keys = await getApiKeys();
-    const seen = new Set();
+    const live = new Set();
     for (const key of keys || []) {
-      const state = quotaState(key);
+      const state = quotaPressure(key);
       if (!state) continue;
-      seen.add(key.id);
-      const dedupeKey = `quota:${key.id}:${state.level}`;
+      const dedupeKey = `quota:${key.id}:${state.kind}:${state.level}`;
+      live.add(dedupeKey);
       await notify({
         kind: "quota",
         severity: state.level === "critical" ? "error" : "warning",
-        title:
-          state.level === "critical"
-            ? `Key "${key.name}" is out of tokens`
-            : `Key "${key.name}" is at ${Math.round(state.pct * 100)}% of its token limit`,
-        body: `${used(key.usedTokens)} of ${used(key.tokenLimit)} tokens used.`,
+        title: quotaTitle(key, state),
+        body: quotaBody(state),
         link: "/dashboard/endpoint",
         dedupeKey,
       });
       created.push(`quota:${key.id}`);
     }
-    // clear quotas that recovered (not in `seen`)
+    // Clear every notice this pass did not recreate: recovered, raised, deactivated, or
+    // switched to a different kind.
     for (const key of keys || []) {
-      if (!seen.has(key.id)) {
-        await clearNotificationByKind("quota", `quota:${key.id}:warning`);
-        await clearNotificationByKind("quota", `quota:${key.id}:critical`);
+      for (const kind of QUOTA_KINDS) {
+        for (const level of QUOTA_LEVELS) {
+          const dedupeKey = `quota:${key.id}:${kind}:${level}`;
+          if (!live.has(dedupeKey)) await clearNotificationByKind("quota", dedupeKey);
+        }
       }
     }
 
@@ -87,8 +86,4 @@ export async function GET() {
   }
 
   return Response.json({ created, checkedAt: new Date().toISOString() });
-}
-
-function used(n) {
-  return (Number(n) || 0).toLocaleString();
 }

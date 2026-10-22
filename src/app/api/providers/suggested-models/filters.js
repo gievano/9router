@@ -9,6 +9,10 @@ const KNOWN_FREE_OPENCODE_MODELS = ["big-pickle", "union-alpha"];
 // Upstream returns "Model is unavailable" for this id (2026-09-02) - re-enable when fixed
 const DEAD_FREE_OPENCODE_MODELS = new Set(["deepseek-v4-flash-free"]);
 
+// Placeholder ids the upstream catalogue carries for its own smoke tests. They
+// answer nothing and turn up as a junk chip ("test") beside real models.
+const PLACEHOLDER_OPENCODE_MODELS = new Set(["test"]);
+
 // tolerant id reader: falls back to `name` when upstream changes its schema
 function opencodeModelId(m) {
   const raw = typeof m?.id === "string" && m.id ? m.id : (typeof m?.name === "string" ? m.name : "");
@@ -69,7 +73,7 @@ export const FILTERS = {
   "opencode-free": (models) =>
     (Array.isArray(models) ? models : [])
       .map((m) => ({ id: opencodeModelId(m), name: opencodeModelId(m) }))
-      .filter((m) => m.id)
+      .filter((m) => m.id && !PLACEHOLDER_OPENCODE_MODELS.has(m.id))
       .map((m) => ({ ...m, isFree: isFreeOpencodeModel(m) }))
       .sort((a, b) => Number(b.isFree) - Number(a.isFree) || a.id.localeCompare(b.id)),
 

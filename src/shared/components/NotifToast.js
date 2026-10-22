@@ -46,7 +46,7 @@ export function mergeLiveTasks(tasks, jobs) {
   return merged;
 }
 
-// Same normalisation as LongTaskBanner: the store carries whole percents and a
+// The store carries whole percents and a
 // caller handing in a fraction is read as one. Splitting the rule would let
 // the bell and the floating card disagree about the same run.
 function percentOf(progress) {

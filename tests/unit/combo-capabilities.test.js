@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { aggregateComboCapabilities } from "../../open-sse/providers/capabilities.js";
 
 describe("aggregateComboCapabilities - null / empty", () => {
@@ -121,8 +123,11 @@ describe("aggregateComboCapabilities - context/output limits", () => {
   });
 
   it("an explicit context window on the combo wins over the auto value", () => {
+    // (models, lookup, resolveCaps, depth, contextOverride) — the window lives in the
+    // last slot; it used to sit third, until the resolver was inserted before it.
     const caps = aggregateComboCapabilities(
       ["opencode-go/mimo-v2.5", "opencode-go/kimi-k2.5"],
+      null,
       null,
       0,
       2000000
@@ -155,7 +160,7 @@ describe("aggregateComboCapabilities - nested combo resolution via comboLookup",
 
   it("a custom window reaches nested combos too", () => {
     const lookup = { "inner": ["opencode-go/deepseek-v4-pro"] };
-    const caps = aggregateComboCapabilities(["inner", "opencode-go/mimo-v2.5"], lookup, 0, 2000000);
+    const caps = aggregateComboCapabilities(["inner", "opencode-go/mimo-v2.5"], lookup, null, 0, 2000000);
     expect(caps.contextWindow).toBe(2000000);
   });
 
@@ -170,4 +175,37 @@ describe("aggregateComboCapabilities - nested combo resolution via comboLookup",
     expect(caps.reasoning).toBe(true);
     expect(caps.vision).toBe(false);
   });
+});
+
+describe("aggregateComboCapabilities - the resolver slot cannot break the list", () => {
+  it("ignores a non-function resolver instead of throwing", () => {
+    // The server routes used to pass the recursion depth here. `0?.(id)` is a TypeError,
+    // so /api/models answered "Error fetching models: e is not a function" for anyone
+    // who had a combo defined.
+    expect(() => aggregateComboCapabilities(["openai/gpt-5"], null, 0)).not.toThrow();
+    expect(aggregateComboCapabilities(["openai/gpt-5"], null, 0)).toBeTruthy();
+  });
+
+  it("still honours a context override passed alongside a bad resolver", () => {
+    const caps = aggregateComboCapabilities(["openai/gpt-5"], null, 0, 0, 500000);
+    expect(caps.contextWindow).toBe(500000);
+  });
+
+  it("merges a resolver's limits over the local tables and keeps the rest", () => {
+    const caps = aggregateComboCapabilities(["openai/gpt-5"], null, () => ({ contextWindow: 128000 }));
+    expect(caps.contextWindow).toBe(128000);
+    expect(caps).toHaveProperty("tools");
+  });
+});
+
+describe("the routes that publish combos pass the arguments in the right slots", () => {
+  for (const file of ["src/app/api/models/route.js", "src/app/api/v1/models/route.js"]) {
+    it(`${file} sends null for the resolver and the combo window last`, () => {
+      const src = readFileSync(resolve(__dirname, "../..", file), "utf8");
+      expect(src).toMatch(
+        /aggregateComboCapabilities\([\w.]+(?:, comboByName), null, 0, Number\(combo\.contextWindow\) \|\| 0\)/
+      );
+      expect(src).not.toMatch(/aggregateComboCapabilities\([^)]*comboByName, 0,/);
+    });
+  }
 });

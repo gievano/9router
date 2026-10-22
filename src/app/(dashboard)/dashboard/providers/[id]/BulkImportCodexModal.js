@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { Button, Modal, ProgressCard } from "@/shared/components";
+import { Button, Modal } from "@/shared/components";
 import { translate } from "@/i18n/runtime";
 import { useTaskStore } from "@/store/taskStore";
 
@@ -178,14 +178,6 @@ export default function BulkImportCodexModal({ isOpen, onClose, onSuccess }) {
           </Button>
         </div>
       </div>
-      {importProgress && (
-        <ProgressCard
-          fixed={false}
-          title={translate("Importing accounts")}
-          message={importPct !== null ? `${importProgress.done}/${importProgress.total} accounts` : null}
-          progress={importPct}
-        />
-      )}
     </Modal>
   );
 }

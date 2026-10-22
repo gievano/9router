@@ -2,23 +2,31 @@ import { describe, expect, it } from "vitest";
 
 import { aggregateComboCapabilities, getCapabilitiesForModel } from "../../open-sse/providers/capabilities.js";
 
-// A combo's limits are the conservative aggregate of its members: ctx = min,
-// maxOutput = max. Resolving those members needs the synced model catalog, which
-// is server-only (it reads a file), so the browser bundle falls back to the
-// generic patterns. The dashboard computed its badges there and under-reported:
-// /v1/models and pi-settings (both server-side) said 1M while the badge said 200k.
+// Resolving a combo's members needs the synced model catalog, which is server-only (it
+// reads a file), so the browser bundle falls back to the generic patterns. The dashboard
+// computed its badges there and under-reported: /v1/models and pi-settings (both
+// server-side) said 1M while the badge said 200k.
 //
-// resolveCaps lets a caller hand in the server's answer. It must only override
-// what it carries - the local tables still own tools/pdf/audio/video/thinking*.
+// resolveCaps lets a caller hand in the server's answer. It must only override what it
+// carries - the local tables still own tools/pdf/audio/video/thinking*.
+//
+// Window rule in this fork: a combo fails over between models instead of splitting one
+// conversation across them, so it reports the WIDEST window its members offer. Taking the
+// minimum made a client compact a 1M model down to 256k for no reason. The upstream tests
+// this file started from asserted the conservative minimum; the assertions below follow
+// the fork instead, and say so where the two disagree.
 const GLM53_FED = { vision: true, search: false, reasoning: true, contextWindow: 1_000_000, maxOutput: 131_072 };
 
 describe("aggregateComboCapabilities: resolveCaps override", () => {
   const models = ["glm-cn/glm-5.3", "deepseek-v4.1-flash"];
 
-  it("falls back to the pattern default without a resolver", () => {
+  it("uses the widest pattern window without a resolver", () => {
     const caps = aggregateComboCapabilities(models);
-    // glm-5.3 has no exact entry, so the *glm-5.3* pattern gives 200k and caps the combo.
-    expect(caps.contextWindow).toBe(200_000);
+    const windows = models.map((id) => {
+      const slash = id.indexOf("/");
+      return getCapabilitiesForModel(slash === -1 ? null : id.slice(0, slash), id.slice(slash + 1)).contextWindow;
+    });
+    expect(caps.contextWindow).toBe(Math.max(...windows));
   });
 
   it("uses the fed limits when a resolver supplies them", () => {
@@ -36,14 +44,24 @@ describe("aggregateComboCapabilities: resolveCaps override", () => {
     }
   });
 
-  it("still applies the conservative rule across members", () => {
-    const resolver = (fullId) => (fullId === "glm-cn/glm-5.3" ? GLM53_FED : null);
-    const caps = aggregateComboCapabilities(models, null, resolver);
-    // Only glm-5.3 was fed 1M; deepseek-v4.1-flash resolves locally to 1M, so min stays 1M.
-    // Feeding a *smaller* value for one member must pull the aggregate down.
-    const smaller = aggregateComboCapabilities(models, null, (id) => (id === "glm-cn/glm-5.3" ? { ...GLM53_FED, contextWindow: 64_000 } : null));
-    expect(smaller.contextWindow).toBe(64_000);
-    expect(caps.maxOutput).toBe(384_000); // max across members, from deepseek
+  it("lets a smaller fed window for one member pull the aggregate down only when it is the widest left", () => {
+    // glm-5.3 is fed 64k, but deepseek-v4.1-flash still resolves to 1M, and the combo may
+    // use whichever member is widest. Feeding a smaller value must not be ignored, though:
+    // apply it to every member and the aggregate follows.
+    const oneSmaller = aggregateComboCapabilities(
+      models,
+      null,
+      (id) => (id === "glm-cn/glm-5.3" ? { ...GLM53_FED, contextWindow: 64_000 } : null)
+    );
+    expect(oneSmaller.contextWindow).toBe(1_000_000);
+
+    const bothSmaller = aggregateComboCapabilities(
+      models,
+      null,
+      (id) => ({ contextWindow: id === "glm-cn/glm-5.3" ? 64_000 : 96_000 })
+    );
+    expect(bothSmaller.contextWindow).toBe(96_000);
+    expect(oneSmaller.maxOutput).toBe(384_000); // max across members, from deepseek
   });
 
   it("passes the resolver into nested combos", () => {
@@ -65,11 +83,11 @@ describe("aggregateComboCapabilities: resolveCaps override", () => {
     expect(caps.contextWindow).toBe(getCapabilitiesForModel("kimi", "kimi-k3").contextWindow);
   });
 
-  it("claude-haiku-5-5 combo: 1M only through the provider-alias resolver", () => {
-    // Both seats are 1M in their provider tables (opencode-go/commandcode entries),
-    // but a bare `ocg/`-style alias resolves to 200k without the resolver: null
-    // provider falls to the global *claude*haiku* pattern. The server passes
-    // comboSeatCapabilities (alias → provider id); the dashboard does not.
+  it("claude-haiku-5-5 combo: the alias resolver can only widen the window", () => {
+    // ocg/claude-haiku-5-5 falls to the global *claude*haiku* pattern (200k) while
+    // cmc/claude-haiku-5-5 has a 1M table entry, so the combo already reports 1M under the
+    // widest-member rule. The server's alias resolver keeps it at 1M; it must never report
+    // less than the widest seat.
     const seats = ["ocg/claude-haiku-5-5", "cmc/claude-haiku-5-5"];
     const seatCaps = (fullId) => {
       const slash = fullId.indexOf("/");
@@ -77,7 +95,7 @@ describe("aggregateComboCapabilities: resolveCaps override", () => {
       const providerId = { ocg: "opencode-go", cmc: "commandcode" }[fullId.slice(0, slash)] || fullId.slice(0, slash);
       return getCapabilitiesForModel(providerId, fullId.slice(slash + 1));
     };
-    expect(aggregateComboCapabilities(seats).contextWindow).toBe(200_000);
+    expect(aggregateComboCapabilities(seats).contextWindow).toBe(1_000_000);
     expect(aggregateComboCapabilities(seats, null, seatCaps).contextWindow).toBe(1_000_000);
   });
 });

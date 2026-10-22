@@ -55,11 +55,8 @@ describe("studio owned_by: free-form label, defaulting to the callable name", ()
 });
 
 describe("banner: cancel, background, and shared look", () => {
-  const banner = readFileSync(
-    resolve(root, "src/shared/components/LongTaskBanner.js"),
-    "utf8"
-  );
-  const loading = readFileSync(resolve(root, "src/shared/components/Loading.js"), "utf8");
+  // LongTaskBanner and its Loading.js wrappers are removed (the bell owns long runs), so the
+  // assertions that read them are gone. What is left is the contract that survived the removal.
   const layout = readFileSync(
     resolve(root, "src/shared/components/layouts/DashboardLayout.js"),
     "utf8"
@@ -70,21 +67,6 @@ describe("banner: cancel, background, and shared look", () => {
     resolve(root, "src/app/(dashboard)/dashboard/proxy-pools/page.js"),
     "utf8"
   );
-
-  it("LongTaskBanner offers cancel (with Escape) and run-in-background", () => {
-    expect(banner).toContain("onCancel");
-    expect(banner).toContain("onBackground");
-    expect(banner).toMatch(/e\.key === "Escape"/);
-    expect(banner).toMatch(/chipOnly/);
-    // panel styling is framed and theme-aware, not a plain spinner
-    expect(banner).toContain("rounded-2xl");
-    expect(banner).toContain("bg-surface");
-  });
-
-  it("ProgressCard and CenterLoading delegate and accept onCancel", () => {
-    expect(loading).toContain("LongTaskBanner");
-    expect(loading).toContain("onCancel");
-  });
 
   it("the bell renders the store's live tasks instead of a floating dock", () => {
     expect(layout).not.toContain("TaskDock");

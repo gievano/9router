@@ -59,13 +59,15 @@ export async function notify(input = {}) {
     if (existing) {
       // Already announced. Refresh the wording (a quota figure moves) but keep
       // the original timestamp so the bell does not stay permanently unread.
-      db.run(`UPDATE notifications SET title = ?, body = ?, link = ?, severity = ?, clearedAt = NULL WHERE id = ?`, [
-        title,
-        String(input.body || ""),
-        input.link || null,
-        severity,
-        existing.id,
-      ]);
+      // A cleared row that comes back is news again: clearing is how a resolved
+      // condition was retired (and auto-read), so reviving it must re-arm the badge.
+      db.run(
+        `UPDATE notifications
+            SET title = ?, body = ?, link = ?, severity = ?, clearedAt = NULL,
+                readAt = CASE WHEN clearedAt IS NOT NULL THEN NULL ELSE readAt END
+          WHERE id = ?`,
+        [title, String(input.body || ""), input.link || null, severity, existing.id]
+      );
       return existing.id;
     }
   }

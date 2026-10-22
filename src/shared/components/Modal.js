@@ -67,6 +67,9 @@ export default function Modal({
           "border border-border-subtle",
           "rounded-[var(--r-card-lg)] shadow-[var(--elev-3)]",
           "chrome-enter-panel",
+          // The panel owns the height budget so the body scrolls inside it; sizing the body
+          // with a magic calc instead let header + footer push the dialog past the viewport.
+          "flex max-h-[85vh] flex-col",
           sizes[size] ?? sizes.md,
           className
         )}
@@ -109,11 +112,11 @@ export default function Modal({
         )}
 
         {/* Body */}
-        <div className="p-[var(--pad-surface)] max-h-[calc(85vh-100px)] overflow-y-auto custom-scrollbar">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar p-[var(--pad-surface)]">{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-[var(--pad-surface)] py-[var(--pad-surface-sm)] border-t border-border-subtle">
+          <div className="flex shrink-0 items-center justify-end gap-3 px-[var(--pad-surface)] py-[var(--pad-surface-sm)] border-t border-border-subtle">
             {footer}
           </div>
         )}

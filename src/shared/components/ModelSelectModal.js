@@ -315,6 +315,14 @@ export default function ModelSelectModal({
   const allProviders = useMemo(() => ({ ...OAUTH_PROVIDERS, ...FREE_PROVIDERS, ...FREE_TIER_PROVIDERS, ...APIKEY_PROVIDERS }), []);
 
   // Group models by provider with priority order
+  // Component scope, not inside the memo below: the count is printed in the group
+  // header at render time, and a helper closed over only the memo's locals throws a
+  // ReferenceError there - which unmounts the page through the error boundary.
+  const disabledCountFor = (providerId, alias) => {
+    const ids = new Set([...(disabledModels[alias] || []), ...(disabledModels[providerId] || [])]);
+    return ids.size;
+  };
+
   const groupedModels = useMemo(() => {
     const groups = {};
 
@@ -1082,6 +1090,17 @@ export default function ModelSelectModal({
                 <span className="text-[10px] text-text-muted">
                   ({group.models.length})
                 </span>
+                {/* Disabled ids are filtered out of every group above, so without this
+                    count the picker silently offers fewer models than the provider
+                    publishes and reads as if the free tier were half-missing. */}
+                {disabledCountFor(providerId, group.alias) > 0 && (
+                  <span
+                    className="text-[10px] text-text-muted/70"
+                    title="Disabled models are hidden here - restore them on the provider page"
+                  >
+                    · {disabledCountFor(providerId, group.alias)} disabled
+                  </span>
+                )}
               </div>
 
             <div className="flex flex-wrap gap-1.5">
