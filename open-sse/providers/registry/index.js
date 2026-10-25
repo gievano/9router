@@ -87,24 +87,11 @@ import p83 from "./siliconflow.js";
 import p84 from "./stability-ai.js";
 import p85 from "./tavily.js";
 import p86 from "./together.js";
-import p87 from "./topaz.js";
-import p88 from "./tortoise.js";
-import p89 from "./venice.js";
-import p90 from "./vercel-ai-gateway.js";
-import p91 from "./vertex-partner.js";
-import p92 from "./vertex.js";
-import p93 from "./volcengine-ark.js";
-import p94 from "./voyage-ai.js";
-import p95 from "./xai.js";
-import p96 from "./xiaomi-mimo.js";
-import p97 from "./xiaomi-tokenplan.js";
-import p98 from "./youcom.js";
 import p99 from "./alims-intl.js";
 import p100 from "./codebuddy-intl.js";
 // Temporarily hidden — no tool calling support (trae SOLO agent / windsurf gRPC skip ToolCallChunk).
 // Re-enable by uncommenting both the import and the array entry below.
 // import p102 from "./trae.js";
-import p103 from "./zed.js";
 import p105 from "./api-airforce.js";
 import p106 from "./baidu.js";
 import p107 from "./bazaarlink.js";
@@ -152,7 +139,7 @@ import p147 from "./minimax-code-global.js";
 import p148 from "./bedrock.js";
 import p149 from "./bedrock-xai.js";
 import p150 from "./nous.js";
-import p151 from "./opencode-v2.js";
+import p155 from "./opencode-v2.js";
 import p153 from "./mimocode.js"; // restored: dropped by dup-p124 fix
 import p154 from "./freebuff.js"; // local-only: gievano fork
 export default [
@@ -244,22 +231,9 @@ export default [
   p84,
   p85,
   p86,
-  p87,
-  p88,
-  p89,
-  p90,
-  p91,
-  p92,
-  p93,
-  p94,
-  p95,
-  p96,
-  p97,
-  p98,
   p99,
   p100,
   // p102, // trae — hidden, no tool calling
-  p103,
   p105,
   p106,
   p107,
@@ -307,7 +281,7 @@ export default [
   p148,
   p149,
   p150,
-  p151,
+  p155,
   p153, // restored: mimocode
   p154, // local-only: gievano fork (freebuff)
 ];
