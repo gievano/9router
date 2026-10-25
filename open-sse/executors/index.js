@@ -11,6 +11,7 @@ import { CodexExecutor } from "./codex.js";
 import { CursorExecutor } from "./cursor.js";
 import { VertexExecutor } from "./vertex.js";
 import { OpenCodeExecutor } from "./opencode.js";
+import { OpenCodeV2Executor } from "./opencode-v2.js";
 import { OpenCodeGoExecutor } from "./opencode-go.js";
 import { OpenCodeZenExecutor } from "./opencode-zen.js";
 import { GrokCliExecutor } from "./grok-cli.js";
@@ -48,6 +49,10 @@ const executors = {
   vertex: new VertexExecutor("vertex"),
   "vertex-partner": new VertexExecutor("vertex-partner"),
   opencode: new OpenCodeExecutor(),
+  oc1: new OpenCodeExecutor(),
+  oc: new OpenCodeExecutor(),
+  "opencode-v2": new OpenCodeV2Executor(),
+  oc2: new OpenCodeV2Executor(),
   "opencode-go": new OpenCodeGoExecutor(),
   "opencode-zen": new OpenCodeZenExecutor(),
   "grok-cli": new GrokCliExecutor(),
@@ -116,6 +121,7 @@ export { CursorExecutor } from "./cursor.js";
 export { VertexExecutor } from "./vertex.js";
 export { DefaultExecutor } from "./default.js";
 export { OpenCodeExecutor } from "./opencode.js";
+export { OpenCodeV2Executor } from "./opencode-v2.js";
 export { OpenCodeGoExecutor } from "./opencode-go.js";
 export { OpenCodeZenExecutor } from "./opencode-zen.js";
 export { GrokCliExecutor } from "./grok-cli.js";

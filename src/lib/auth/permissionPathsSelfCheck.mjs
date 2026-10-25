@@ -46,6 +46,7 @@ run("each new permission opens exactly its own pages", () => {
     ["manageTools", "/dashboard/cli-tools"],
     ["manageTools", "/dashboard/token-saver"],
     ["manageAdvanced", "/dashboard/console-log"],
+    ["manageAdvanced", "/dashboard/error-log"],
     ["manageAdvanced", "/dashboard/translator"],
     ["manageAdvanced", "/dashboard/proxy-pools"],
     ["manageAdvanced", "/dashboard/pxpipe"],
@@ -101,7 +102,9 @@ run("the new API rules gate the right methods", () => {
   const cases = [
     ["manageTools", "/api/cli-tools/config"],
     ["manageTools", "/api/headroom/status"],
+    ["manageModels", "/api/models/test"],
     ["manageAdvanced", "/api/translator/run"],
+    ["manageAdvanced", "/api/error-logs"],
     ["manageAdvanced", "/api/proxy-pools"],
     ["manageAdvanced", "/api/pxpipe/preview"],
     ["managePlugins", "/api/plugins"],

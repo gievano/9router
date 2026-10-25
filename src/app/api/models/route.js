@@ -20,32 +20,15 @@ export async function GET() {
     const disabled = await getDisabledModels();
     const settings = await getSettings().catch(() => ({}));
     const customPlugins = settings?.customPlugins || {};
+    const atEnabled = Boolean(customPlugins.adaptiveThinking?.enabled);
+    const atModels = new Set(customPlugins.adaptiveThinking?.models || []);
     const ivEnabled = Boolean(customPlugins.imageVision?.enabled);
     const ivModels = new Set(customPlugins.imageVision?.models || []);
-    const tdEnabled = Boolean(customPlugins.thinkDeeper?.enabled);
-    const tdModels = new Set(customPlugins.thinkDeeper?.models || []);
-    const smEnabled = Boolean(customPlugins.speedMode?.enabled);
-    const smModels = new Set(customPlugins.speedMode?.models || []);
-    const jgEnabled = Boolean(customPlugins.jsonGuard?.enabled);
-    const jgModels = new Set(customPlugins.jsonGuard?.models || []);
-    const csEnabled = Boolean(customPlugins.contextSqueezer?.enabled);
-    const csModels = new Set(customPlugins.contextSqueezer?.models || []);
-    const otbEnabled = Boolean(customPlugins.openaiToolBridge?.enabled);
-    const otbModels = new Set(customPlugins.openaiToolBridge?.models || []);
-    const asEnabled = Boolean(customPlugins.antiSlop?.enabled);
-    const asModels = new Set(customPlugins.antiSlop?.models || []);
 
-    // One resolver for every branch below. It used to be five copies of the same
-    // five statements, so any change had to be made five times and a missed copy
-    // surfaced as a plugin mark that appeared in one view and not another.
+    // One resolver for every branch below.
     const PLUGIN_SOURCES = [
+      ["adaptiveThinking", atEnabled, atModels, { reasoning: true, adaptiveThinking: true }],
       ["imageVision", ivEnabled, ivModels, { vision: true, imageVision: true }],
-      ["thinkDeeper", tdEnabled, tdModels, { reasoning: true, thinkDeeper: true }],
-      ["speedMode", smEnabled, smModels, { speedMode: true }],
-      ["jsonGuard", jgEnabled, jgModels, { jsonGuard: true }],
-      ["contextSqueezer", csEnabled, csModels, { contextSqueezer: true }],
-      ["openaiToolBridge", otbEnabled, otbModels, { openaiToolBridge: true }],
-      ["antiSlop", asEnabled, asModels, { antiSlop: true }],
     ];
 
     /**
@@ -208,15 +191,10 @@ export async function GET() {
         caps.reasoning = true;
         caps.thinkDeeper = true;
       }
-      if (smEnabled && names.some((n) => smModels.has(n))) {
-        caps.speedMode = true;
-      }
       if (jgEnabled && names.some((n) => jgModels.has(n))) {
         caps.jsonGuard = true;
       }
-      if (csEnabled && names.some((n) => csModels.has(n))) {
-        caps.contextSqueezer = true;
-      }
+      const pluginMarks = applyPluginMarks(caps, names);
       models.push({
         provider: s.provider,
         model: s.callName,

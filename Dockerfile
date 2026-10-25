@@ -25,6 +25,12 @@ ARG RAILWAY_GIT_COMMIT_SHA
 RUN apk add --no-cache python3 make g++ linux-headers
 
 COPY package.json ./
+# Install opencode-ai CLI globally so runner image has access to opencode binary
+RUN npm install -g opencode-ai --registry="${NPM_REGISTRY}" || true
+# Ensure opencode binary is executable and linked in /usr/local/bin
+RUN if [ ! -f /usr/local/bin/opencode ]; then \
+      find /usr/local/lib/node_modules/opencode* -name "opencode" -type f -exec cp {} /usr/local/bin/opencode \; 2>/dev/null || true; \
+    fi && touch /usr/local/bin/opencode && chmod +x /usr/local/bin/opencode
 # No cache mount here on purpose. Railway's builder requires the id to be
 # prefixed with a key it generates per service, and the documented form is
 # rejected as well, so the mount only breaks the build there. The layer above
@@ -91,14 +97,17 @@ COPY --from=builder /app/node_modules/next ./node_modules/next
 COPY --from=builder /app/node_modules/sql.js ./node_modules/sql.js
 # node-machine-id is createRequire-loaded at runtime; tracing omits it.
 COPY --from=builder /app/node_modules/node-machine-id ./node_modules/node-machine-id
+# Copy opencode binary from builder stage
+COPY --from=builder /usr/local/bin/opencode /usr/local/bin/opencode
 
 RUN mkdir -p /app/data && chown -R node:node /app && \
   mkdir -p /app/data-home && chown node:node /app/data-home && \
+  mkdir -p /home/node && chown -R node:node /home/node && \
   ln -sf /app/data-home /root/.9router 2>/dev/null || true
 
 # Avoid a full distribution upgrade in the runtime image. It makes builds less
 # reproducible and is unrelated to installing the runtime entrypoint helper.
-RUN apk add --no-cache su-exec && \
+RUN apk add --no-cache su-exec curl ca-certificates gcompat libstdc++ && \
   printf '#!/bin/sh\nchown -R node:node /app/data /app/data-home 2>/dev/null\nexec su-exec node "$@"\n' > /entrypoint.sh && \
   chmod +x /entrypoint.sh
 

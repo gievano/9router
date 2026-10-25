@@ -2,6 +2,8 @@ import os from "os";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 import { isTailscaleInstalled, isTailscaleLoggedIn, isSystemDaemonRunning, getTailscaleBin, TAILSCALE_SOCKET } from "@/lib/tunnel";
 
 export const dynamic = "force-dynamic";

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { readZedIdeCredentials } from "@/lib/oauth/utils/zedCredentials";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/oauth/zed/auto-import
  * Read the signed-in Zed IDE session from the OS keyring/keychain.

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getPricing, updatePricing, resetPricing, resetAllPricing } from "@/lib/localDb.js";
 import { getDefaultPricing } from "open-sse/providers/pricing.js";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/pricing
  * Get current pricing configuration (merged user + defaults)

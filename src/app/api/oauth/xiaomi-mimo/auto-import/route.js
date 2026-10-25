@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { readFile, access, constants } from "fs/promises";
+
+export const dynamic = "force-dynamic";
 import { homedir } from "os";
 import { join } from "path";
 import { readDesktopPassToken } from "open-sse/shared/mimoAccount.js";

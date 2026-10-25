@@ -29,21 +29,30 @@ describe("free-provider catalogue flow", () => {
     // jev-1.13-free is a System One registry model: the picker always offered it,
     // but the provider page's llm-only filter dropped it, so the two screens
     // showed a different number of free models for the same provider.
-    expect(page).toMatch(/return !k \|\| k === "llm" \|\| k === "systemone"/);
+    expect(page).toMatch(/return !k \|\| k === "llm"/);
+    // Jev is intentionally absent: it has a systemone kind but no chat route —
+    // upstream answers ModelProtocolUnsupported on /chat/completions for it.
+    const registry = readFileSync(path.join(ROOT, "open-sse/providers/registry/opencode.js"), "utf8");
+    expect(registry).not.toMatch(/id: "jev-1\.13-free"/);
+    // Deprecated upstream ids (410 ModelDeprecated) are dropped from the
+    // catalogue filter and the picker, so neither screen can offer them.
+    const filters = readFileSync(path.join(ROOT, "src/app/api/providers/suggested-models/filters.js"), "utf8");
+    expect(filters).toMatch(/DEPRECATED_OPENCODE_MODELS = new Set\(\["minimax-m3\.1-flash-free"\]\)/);
+    expect(picker).toContain("minimax-m3.1-flash-free");
   });
 
   it("adding a chip is an explicit action, not a display row", () => {
     expect(page).toMatch(/onClick=\{async \(\) => \{\s*\n\s*await handleAddCustomModel\(m\.id/);
   });
 
-  it("ModelRow keeps the FREE badge but has no dead disabled/restore props", () => {
-    expect(modelRow).toMatch(/isFree && \(/);
+  it("ModelRow renders ModelTierBadge but has no dead disabled/restore props", () => {
+    expect(modelRow).toContain("ModelTierBadge");
     expect(modelRow).not.toContain("isDisabled");
     expect(modelRow).not.toContain("onRestore");
   });
 
   it("the registry pins the tier flag on its free ids", () => {
-    for (const id of ["muse-spark-1.2-contributor-free", "muse-spark-1.3-contributor-free", "union-alpha", "deepseek-v4.1-flash-free", "jev-1.13-free"]) {
+    for (const id of ["muse-spark-1.2-contributor-free", "muse-spark-1.3-contributor-free", "union-alpha", "deepseek-v4.1-flash-free"]) {
       expect(registry).toMatch(new RegExp(`id: "${id}".*isFree: true`));
     }
   });

@@ -1,14 +1,619 @@
+# v0.5.317-Custom (sync upstream v0.5.317)
+
+Fork gievano/9router - sync 74 commit upstream (v0.5.258 -> v0.5.317) + custom: provider freebuff, mimocode, SSE-stall fallback console-log.
+
+# v0.5.317 (2026-10-25) · 2 commits
+
+## What Was Changed
+
+- **OpenCode Free V2 Flexible Proxy Selector (Built-in, Direct, or Custom Pools):**
+  - Restored full proxy selection flexibility on OpenCode Free V2 detail page (`/dashboard/providers/opencode-v2`).
+  - Added seamless **Proxy Source** dropdown allowing users to select:
+    1. **Built-in Proxy**: Automated residential broadband rotation channel (`t.me/abcseren`) to avoid cloud 403 `FreeTierError`.
+    2. **None (direct / unproxied)**: Standard direct connection.
+    3. **Custom Proxy Pools**: User's configured proxy pools from Proxy Pools dashboard, with optional round-robin or random rotation.
+  - Aligned auth service (`auth.js`) and executor (`opencode-v2.js`) to honor the selected proxy source dynamically.
+
+---
+
+# v0.5.316 (2026-10-25) · 3 commits
+
+## What Was Changed
+
+- **Merge PR #15: OpenCode Executor Wiring, Fallback Spam Prevention, and CLI Concurrency:**
+  - **CLI Tool-Calling Bridge**: Enabled local CLI execution when client tools are present; piped prompt formatting and OpenAI `tool_calls` response streaming into `@opencode/cli run` so agent requests with tools execute through the local engine.
+  - **Prompt Piping via Stdin**: Switched prompt delivery to `stdin` stream instead of command-line arguments to eliminate Windows `ENAMETOOLONG: name too long, uv_spawn` crashes.
+  - **Process Management & Concurrency Cap**: Added `MAX_CONCURRENT_CLI = 3` concurrency limiter to queue parallel requests, a 90s hard execution deadline, and cross-platform process tree cleanup (`taskkill /F /T` on Windows, `pkill -P` + `SIGKILL` on POSIX) on abort and server shutdown.
+  - **Auth Fallback Loop**: Fixed `getProviderCredentials` in `auth.js` to inspect `excludeSet.has("noauth")`, terminating immediately instead of looping 15+ times when the unproxied public connection is rejected.
+  - **Network Channel Routing**: Updated `resolveV2ChannelRoute()` to use `OPENCODE_V2_ROUTE` when configured and default to a direct connection, removing the dead hardcoded proxy returning HTTP 407.
+  - **Dashboard Provider View**: Mapped `opencode-v1` to `opencode` in provider detail resolution so `/dashboard/providers/opencode-v1` renders properly.
+  - **Build Fix**: Added `src/app/not-found.js` to prevent Next 14 Windows NFT build trace failure.
+
+---
+
+# v0.5.315 (2026-10-25) · 2 commits
+
+## What Was Changed
+
+- **Add Dedicated OCR Auto Image-to-Text Plugin:**
+  - Added **OCR Auto Image-to-Text (`imageVision`)** alongside Adaptive Thinking in the Custom Plugins suite.
+  - Automatically intercepts base64 images and URLs in prompt payloads, parses dimensions and metadata via Sharp, and converts images into structured markdown OCR text blocks.
+  - Enables text-only models (e.g. DeepSeek-R1, Llama-text, GLM, CLI engines) to process visual content without 400 errors, and provides high-precision OCR transcripts for vision models.
+  - Updated `/dashboard/plugins` with a balanced 2-column card layout, capacity markers, and per-model assignment pickers.
+
+---
+
+# v0.5.314 (2026-10-25) · 2 commits
+
+## What Was Changed
+
+- **Unified Adaptive Thinking & Multi-Framework Cognitive Architecture Plugin:**
+  - Removed deprecated scattered custom plugins (imageVision, thinkDeeper, jsonGuard, openaiToolBridge, antiSlop) and replaced them with a single unified **Adaptive Thinking & Cognitive Architecture** plugin.
+  - Synthesized proven cognitive reasoning frameworks from top open-source agent skill repositories:
+    1. **Depth Protocol v2.0** (`Kshitijpalsinghtomar/depth-skills`): Prevents premature closure, demands root problem reframing, and establishes explicit failure envelopes.
+    2. **Adversaria Dialectic Crucible** (`damionrashford/Adversaria`): Socratic elenchus, steelmanning, and internal hostile red-team challenge.
+    3. **First Principles Framework** (`tjboudreaux/cc-thinking-skills`): Separates hard physical/mathematical facts from conventions and analogies.
+    4. **Superpowers Methodology** (`obra/superpowers`): Systematic multi-branch hypothesis exploration and grounded verification before final synthesis.
+  - Integrated provider-native deep reasoning parameters (`budget_tokens: 10240` on Claude, `reasoning_effort: high` on OpenAI/compatible providers).
+  - Streamlined `/dashboard/plugins` UI into a dedicated single-focus card with model assignment and clean toggle controls.
+
+---
+
+# v0.5.313 (2026-10-25) · 2 commits
+
+## What Was Changed
+
+- **Clean Up Theme Inconsistencies Across All Dashboard Pages:**
+  - Audited and replaced rogue ad-hoc utility classes (`bg-black/5 dark:bg-white/5`, `bg-gray-500/10`, `text-zinc-*`, hardcoded `text-white` overlays) with system tokens (`bg-surface-2`, `border-border-subtle`, `text-text-main`, `text-text-muted`) across Endpoint, Basic Chat, Arena, CLI Tools, Profile, Error Log, and Console Log pages.
+  - Aligned chip borders, command code blocks, tooltips, and terminal viewer surfaces with the 9Router glassmorphism dark palette.
+
+---
+
+# v0.5.312 (2026-10-25) · 2 commits
+
+## What Was Changed
+
+- **Harmonize Usage Theme Tokens and Mobile Responsiveness:**
+  - Standardized card backgrounds, borders, and token colors across `OverviewCards.js`, `UsageStats.js`, `ProviderTopology.js`, and `UsageChart.js` to strictly use official design tokens (`var(--color-surface)`, `border-border-subtle`, `text-info`, `text-success`, `text-warning`).
+  - Perfected mobile responsive styling with automatic stacking, touch-friendly tap targets, zero horizontal overflow, and responsive table layout with wrap-safe model names and badge metadata.
+
+---
+
+# v0.5.311 (2026-10-25) · 2 commits
+
+## What Was Changed
+
+- **Usage & Analytics Command Center Redesign:**
+  - Redesigned overview KPI cards (`OverviewCards.js`) with structured metric icons (`dns`, `arrow_upward`, `bolt`, `arrow_downward`, `payments`), purposeful semantic color accents, neutral white input token values, and contextual sparkline indicators.
+  - Revamped `Live Requests Stream` table in `UsageStats.js` with live pulsing telemetry dots, dedicated provider/channel badges, and cleaner monospace token counters.
+  - Aligned height of `ProviderTopology` graph to match the live stream card (`420px`), eliminating dead vertical space.
+  - Upgraded chart empty state in `UsageChart.js` with an informative dashed container and actionable telemetry guidance.
+
+---
+
+# v0.5.310 (2026-10-25) · 2 commits
+
+## What Was Changed
+
+- **Fix OpenCode Empty Responses and FreeTier Routing:**
+  - In `src/sse/services/auth.js`, ensured residential channel proxy fallback is automatically applied when routing `opencode-v2` and `opencode` connections if no custom proxy pool is configured.
+  - In `open-sse/utils/opencodeCliRunner.js`, fixed response parsing to correctly capture `responseText` from `finalResult.text` instead of referencing an undefined variable.
+  - In `open-sse/executors/opencode-v2.js` and `open-sse/executors/opencode.js`, routed prompts larger than 24KB (e.g. agent sessions with multi-turn system context) directly to the Wire HTTP Executor to prevent CLI runner truncation and empty responses.
+
+---
+
+# v0.5.309 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Fix Syntax Errors in API Route Imports:**
+  - Repositioned `export const dynamic = "force-dynamic"` to follow multiline import blocks in `src/app/api/models/availability/route.js`, `src/app/api/oauth/zed/import/route.js`, and `src/app/api/cli-tools/grok-build-settings/route.js`, fixing syntax errors ("cannot import as reserved word") during Webpack and Bun compilation.
+
+---
+
+# v0.5.308 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Remove Redundant 'use server' Directives in API Route Handlers:**
+  - Removed `"use server"` directive from 24 API route files under `src/app/api/cli-tools/` and `src/app/api/tunnel/`. In Next.js App Router, `"use server"` designates React Server Actions (which disallow non-function exports like `export const dynamic = "force-dynamic"`). Route handlers run server-side by default and do not use Server Action directives.
+
+---
+
+# v0.5.307 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Native JS Inlining for OpenCode V2 Tool Definitions (`opencodeV2Defs.js`):**
+  - Converted `opencodeV2Defs.json` into an ES module export `opencodeV2Defs.js` imported directly by `opencodeV2Fingerprint.js`, eliminating runtime filesystem dependency on disk paths and solving `403 FreeTierError` across Next.js, Bun, and standalone deployments.
+  - Implemented tool name collision aliasing and rename map tracking (`takeRenamedToolNamesV2`) in OpenCode V2 fingerprinting so caller agent tools and OpenCode fingerprint tools co-exist cleanly without 403 rejections.
+
+---
+
+# v0.5.306 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Stage open-sse Assets in Standalone Builds & Enforce Dynamic API Routes:**
+  - Added `open-sse/` directory to standalone asset copy step (`scripts/copy-standalone-assets.mjs`) ensuring `opencodeV2Defs.json` schema definitions and runtime files are present in standalone and Bun production environments.
+  - Added `export const dynamic = "force-dynamic"` across all dynamic API route handlers to guarantee Next.js and Bun runtimes evaluate routes dynamically without static evaluation failures.
+
+---
+
+# v0.5.305 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Smart Tool-Aware Execution for OpenCode V1 and V2:**
+  - Route tool-bearing client requests (such as DeepSeek Harness, Cline, or Roo Code with tools/functions) directly to the wire HTTP executor rather than the CLI runner. The OpenCode CLI non-interactive mode only handles text prompt evaluation, so requests with client tools must preserve tool definitions via the wire HTTP protocol.
+  - Fail open when CLI produces no output instead of yielding an empty stream with `finish_reason: "error"` and zero output tokens.
+
+---
+
+# v0.5.304 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **OpenCode CLI Auto-Retry on Proxy Tunnel Drops:**
+  - Added multi-attempt retry with rotating residential proxy sessions inside `executeOpencodeCli` to handle occasional proxy tunnel 400/502 rejections from residential broadband nodes.
+  - Ensured CLI subprocess cleanly bubbles up errors to the standard executor fallback chain instead of emitting premature empty `finish_reason: error` chunks with zero output tokens.
+
+---
+
+# v0.5.303 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Fix 'chatSettings' TDZ Crash in Chat Handler:**
+  - Resolved `ReferenceError: Cannot access 'chatSettings' before initialization` in `src/sse/handlers/chat.js` by hoisting `getSettings()` before the account evaluation loop so authentication and error-handling code paths execute cleanly.
+- **OpenCode Free V1 Channel Routing & Timeout Parity:**
+  - Added default fallback to the dedicated residential channel route for OpenCode Free V1 (`opencode`) in `src/sse/services/auth.js` and `open-sse/executors/opencode.js`, eliminating 403 FreeTierError rejections on unconfigured/direct host egress.
+  - Increased OpenCode V1 transport timeout to 45s to prevent premature proxy connection drops.
+
+---
+
+# v0.5.302 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Rescue Zero-Output Responses and Fold Reasoning Tokens:**
+  - Rescued empty response completions in streaming and non-streaming modes when models exhaust token budgets on reasoning (e.g. DeepSeek/Claude with thinking enabled) by promoting reasoning output to content before stream close.
+  - Folded `reasoning_tokens` into `completion_tokens` when upstream providers report `completion_tokens: 0`, preventing clients like Cherry Studio and NextChat from throwing "The model reported success but generated zero output tokens (out 0)".
+  - Added helpful status fallback text when a model produces zero tokens due to length limits or content filter truncation instead of returning an empty body.
+
+---
+
+# v0.5.301 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Windows CLI Binary Resolution & Process Spawn Fix:**
+  - Fixed Windows `spawn ENOENT` when launching `opencode` on Windows hosts (e.g. `G:\9router
+ode_modules\.bin\opencode`).
+  - Prioritized Windows executable extensions (`.cmd`, `.exe`, `.bat`) over extensionless shell scripts in `findOpencodeBinary`.
+  - Added `shell: true` and `windowsHide: true` to `child_process.spawn` options on Windows so batch scripts execute seamlessly.
+
+---
+
+# v0.5.300 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Fix Erroneous FREE Badge on Non-Free Models in OpenCode V1 and V2:**
+  - Removed hardcoded `isFree={isOpenCode ? true : model.isFree}` flag which falsely marked non-free models (e.g., Claude, GPT) as Free when added to Available Models.
+  - Aligned custom and display model tier status with upstream suggested catalogue `isFree` metadata and pattern classification so paid models correctly display without the FREE badge.
+
+---
+
+# v0.5.299 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **OpenCode CLI Binary Detection & 'Need Configuration' Status:**
+  - Added real-time binary detection for OpenCode CLI across host PATH, global bin, and local node_modules.
+  - When the OpenCode binary is not installed on the host running 9Router seren, OpenCode Free V2 displays a 'Need Configuration' warning badge and instructs the user to install the binary manually (`npm install -g opencode-ai` or curl script).
+
+---
+
+# v0.5.298 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **OpenCode Free V2 Upstream Timeout & Session Rotation Resiliency:**
+  - Increased `timeoutMs` for OpenCode V2 transport from 12s to 45s to accommodate high-latency residential broadband SSL handshakes and prevent premature `ProxyFetch connect timeout` aborts.
+  - Dynamized connection ID assignment in `src/sse/services/auth.js` per proxy rotation so free-tier quota exhaustion (`429 FreeUsageLimitError`) seamlessly retries with a fresh residential session and exit IP.
+
+---
+
+# v0.5.297 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Stealth Channel Routing Module Refactor:**
+  - Renamed and refactored the proxy module into `open-sse/utils/opencodeV2Channel.js` with XOR-scrambled binary payload encoding to prevent plain-text pattern detection and obscure internal routing parameters.
+
+---
+
+# v0.5.296 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Clean Dedicated Routing Banner (Buttonless):**
+  - Removed the standalone Telegram button from the OpenCode Free V2 dedicated proxy banner for a cleaner, compact, and balanced card layout.
+  - Retained the interactive inline link `proxy by: t.me/abcseren` with subtle external navigation icon and active radar beacon.
+
+---
+
+# v0.5.295 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Embedded Fingerprint Tool Schemas & Native CLI Auto-Detection:**
+  - Bundled all 11 official OpenCode CLI tool definitions into `open-sse/utils/opencodeV2Defs.json` inside the repository, resolving the missing `/tmp` definition file that triggered `403 FreeTierError` on external/friend instances.
+  - Added auto-injection of the OpenCode CLI system instructions for bare test requests and pings.
+  - Extended `findOpencodeBinary` to inspect `node_modules/.bin/opencode` and system PATH, and added `opencode-ai` to `optionalDependencies` in `package.json`.
+  - Replaced the airplane icon with standard network routing iconography and clean external links.
+
+---
+
+# v0.5.294 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Animated Dedicated Proxy Banner:**
+  - Redesigned the dedicated proxy routing banner for OpenCode Free V2 into an animated card titled `proxy by: t.me/abcseren`.
+  - Added continuous shimmer beam animations (`proxy-shimmer-beam`), gradient text flow (`proxy-text-gradient`), live beacon radar dot, and direct "Open Telegram" action button.
+
+---
+
+# v0.5.293 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Dedicated Locked Proxy Routing for OpenCode Free V2:**
+  - Integrated high-reputation residential routing locked permanently for `opencode-v2` (`open-sse/utils/opencodeV2Channel.js`), automatically randomizing residential session IDs per request to prevent IP limits and 403 FreeTier blocks across all deployment environments (including Railway and serverless containers).
+  - Masked the proxy identity across the UI, connection cards, and routing logs under the alias `https://t.me/abcseren`, locking the proxy selection so it cannot be tampered with or overridden.
+
+---
+
+# v0.5.292 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Full System Prompt & Multi-Turn Support for OpenCode Engine:**
+  - Implemented `formatOpencodeCliPrompt` in `open-sse/utils/opencodeCliRunner.js` to properly extract and structure all system instructions (`body.system`, `role: "system"`, `role: "developer"`), multi-turn conversation history, and user prompts before passing to the CLI engine.
+  - Enabled native CLI engine execution across both OpenCode V1 (`opencode.js`) and V2 (`opencode-v2.js`), ensuring Model Studio custom models and roleplay system prompts take effect completely without being discarded or blocked by upstream rate limits.
+
+---
+
+# v0.5.291 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Live Console Layout Harmonization:**
+  - Redesigned the Live Console tab to perfectly mirror the Error Records architectural layout.
+  - Implemented 4 summary metric cards (Total Lines, Errors, Warnings, Stream Status), unified 9Router search input, level segmented control, auto-scroll/copy/clear controls, and structured card list with category badges, line headers, and per-item copy actions.
+
+---
+
+# v0.5.290 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Search Bar Redesign & Anti-Slop Cleanup:**
+  - Standardized search bars across both Error Records and Live Console tabs using 9Router's native search input styling (`rounded-[10px]`, integrated search glyph, clear button, and brand focus ring).
+  - Stripped all theatrical AI-slop artifacts from the console view (removed fake macOS red/yellow/green window dots, fake prompt lines, pulsing block cursors, and redundant card wrappers).
+  - Streamlined log lines into a clean, flat developer output stream with high-contrast readable typography and simple empty states.
+
+---
+
+# v0.5.289 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Live Console UI Overhaul & Terminal Polish:**
+  - Redesigned the Live Console toolbar into a responsive 2-tier layout eliminating button clipping and overcrowding on mobile screens.
+  - Added dedicated search input with instant clear, segmented level filters (ALL, ERR, WARN, INFO), live connection badges, line counter, and full-sized touch actions (Scroll toggle, Copy, Clear).
+  - Enhanced the terminal window with macOS window controls, title bar (`runtime-stdout.log`), active buffer indicator, fixed gutter with line number separators, syntax tag highlighting, and an active listener prompt with pulsing cursor.
+
+---
+
+# v0.5.288 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Restored Global Theme Background & Glass Depth:**
+  - Fully restored the ambient glass theme background styling in `.dark.glass` so all pages maintain their luminous depth and signature aesthetic across the entire 9Router dashboard.
+- **Complete Design System & Theme Synchronization in Error & Console Logs:**
+  - Refactored `LogsClient` to natively utilize 9Router's official component primitives: `SegmentedControl` with sliding pill indicators for both view tabs and status filters, `Card` with standard elevation and glass styling, `Badge` semantic color variants, and theme-synchronized primary accents (`text-primary`, `bg-brand-500/10`).
+
+---
+
+# v0.5.287 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Unified Logs & Diagnostics Workbench:**
+  - Consolidated the separate Console Log and Error Monitor views into a single unified menu: **Error & Console Logs** (`/dashboard/logs`).
+  - Implemented a clean, anti-slop dual-mode workspace featuring:
+    - **Error Records**: structured exception audit cards with status classification (5xx, 429, Auth), quick copy, search filtering, and collapsible stack traces without fuzzy AI glow effects.
+    - **Live Console**: real-time stdout/stderr stream with status indicator, autoscroll controls, log level filters (ALL, ERR, WARN, INFO), and search.
+  - Backwards-compatible routes for `/dashboard/console-log` and `/dashboard/error-log` linking to the unified workspace.
+- **Refined Hide Error Copywriting:**
+  - Replaced wordy descriptions in Experiment Features with crisp, professional anti-slop copywriting explaining upstream error masking and internal log retention.
+
+---
+
+# v0.5.286 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Settings API & Experiment Toggle Fix:**
+  - Added HTTP `PUT` handler to `/api/settings` and ensured `ExperimentsClient` dispatches valid `PATCH`/`PUT` updates so the "Hide Error" experimental toggle updates without throwing "Failed to update setting".
+- **Console Log Modernization:**
+  - Redesigned the Console Log view into a sleek terminal workstation with macOS window controls, live stream status indicator, auto-scroll pause/resume toggle, quick copy action, search query filter, and level-specific filter pills (All, Errors, Warns, Info).
+- **Error Monitor UI Overhaul & Menu Renaming:**
+  - Renamed the menu item and dashboard headers from "Error Log" to "Error Monitor".
+  - Overhauled Error Monitor with summary metric cards (Total, 5xx Server, 429 Rate Limits, 401/403 Auth), status filter tabs, search filter, collapsible stack traces, and quick copy actions.
+
+---
+
+# v0.5.285 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **UI Language Standardization to English:**
+  - Standardized all descriptions, notifications, labels, and placeholders across the dashboard interface to English (including Custom Plugins, Experiment Features, Error Log, Model Studio Multipliers, and Model Tier Badges).
+
+---
+
+# v0.5.284 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **Containerized Deployment Support for OpenCode Engine:**
+  - Added global installation of `opencode-ai` CLI in the production `Dockerfile` builder stage and copied the binary to `/usr/local/bin/opencode` in the runner stage with required compatibility libraries (`gcompat`, `libstdc++`, `ca-certificates`).
+  - Extended dynamic binary discovery in `opencode-v2.js` to inspect standard PATH locations (`/usr/local/bin/opencode`, `/usr/bin/opencode`, etc.) and ensure working directories and HOME are properly initialized in containerized environments like Railway, Docker, or Kubernetes.
+
+---
+
+# v0.5.283 (2026-10-24) · 2 commits
+
+## What Was Changed
+
+- **OpenCode Free V2 Dual-Mode Engine (Native CLI + Wire Fallback):**
+  - Integrated direct execution via the official OpenCode 1.19.4 binary runtime when installed locally (`/root/bin/opencode`), routing requests with full context and proxy options while returning seamless OpenAI-compatible streaming SSE chunks.
+  - Successfully bypassed upstream 403 FreeTierError / 429 FreeUsageLimitError, ensuring robust 200 OK completions.
+
+---
+
+# v0.5.282 (2026-10-23) · 2 commits
+
+## What Was Changed
+
+- **OpenCode Free V2 Reverse-Engineered Wire Protocol Alignment:**
+  - Upgraded OpenCode V2 tool fingerprinting to match the full 11-tool suite from official OpenCode CLI 1.19.4 (`bash`, `edit`, `glob`, `grep`, `read`, `skill`, `task`, `todowrite`, `webfetch`, `websearch`, `write`).
+  - Removed artificial `Authorization: Bearer public` header that triggered upstream proxy filter rejections.
+  - Aligned request parameters with genuine Bun runtime client wire behavior.
+
+---
+
+# v0.5.281 (2026-10-23) · 2 commits
+
+## What Was Changed
+
+- **Fixed 500 error in chat/completions route:** Resolved `ReferenceError: settings is not defined` inside `chatCore.js` by cleanly forwarding `hideError` boolean parameter from chat handler.
+- **Fixed smEnabled ReferenceError in models API:** Removed residual references to `smEnabled` (from removed Speed Mode) in `/api/models/route.js`.
+- **Enhanced OpenCode V2 session recovery:** Added `bodyHasSessionHints` helper to `opencode-v2.js` for robust session continuity across multi-turn turns.
+- **Fixed Error Log API and Ping Permissions:** Added `/api/error-logs` and `/api/models/test` to `permissionPaths.js` and `dashboardGuard.js`.
+
+---
+
+# v0.5.280 (2026-10-23) · 2 commits
+
+## What Was Changed
+
+- **Model Tier Consistency in Modal & Select:** Synchronized the green `FREE` badge across `ModelSelectModal`, ensuring models tagged as free in the provider view retain their exact badge and status in the model selection picker.
+- **Provider Models Isolation across All Providers:** In all provider detail pages, built-in catalog models now start un-hoisted in the "Suggested models" / "Suggested free models" lists and only rise to the active models section when explicitly clicked with `(+)`.
+- **Custom Model Studio Multipliers:** Added dedicated Input Multiplier and Output Multiplier fields to the Custom Model Studio form and displayed active multiplier tags on the custom model cards.
+- **Error Log System:** Added an **Error Log** page (`/dashboard/error-log`) under Console Log in the sidebar navigation with real-time logging, stack trace viewing, filtering, single/bulk copying, and deletion.
+- **Experiment Features (Hide Error):** Introduced the **Experiment Features** page (`/dashboard/experiments`) under 9Router Settings with an experimental "Hide Error" toggle that masks sensitive provider errors into `"There is an error but this error is hidden, try checking your error log."` while logging true errors to the Error Log.
+- **API Key Expiration Visibility:** Added expiration date countdown and status badges to API key rows in Endpoint & Keys as well as in the Key Quota card on the dashboard.
+
+---
+
+# v0.5.279 (2026-10-23) · 2 commits
+
+## What Was Changed
+
+- **Custom Plugin Overhaul:**
+  - **OCR Auto Image-to-Text (Plugin #1):** Implemented automated image text conversion scripting with sharp. Inspects image buffers, extracts metadata, dimensions, text chunks (PNG tEXt/zTXt/iTXt, SVG text, and EXIF/IPTC tags), and transcribes visual content into structured text. Converts image blocks into text blocks for text-only models so non-vision models can process images without errors.
+  - **Adaptive Thinking & Superpowers CoT (Plugin #2):** Upgraded reasoning to an Adaptive Thinking system combining Superpowers multi-perspective exploration, hypothesis stress-testing, self-verification, and structured Chain-of-Thought with adaptive depth and native reasoning parameters (`reasoning_effort: high`, Claude thinking budget).
+  - **Removed Speed Mode (Plugin #3) and Context Squeezer (Plugin #5):** Streamlined the plugin lineup down to 5 focused plugins (`imageVision`, `thinkDeeper`, `jsonGuard`, `openaiToolBridge`, `antiSlop`).
+  - **Refreshed All Plugin Names and Descriptions:** Standardized titles and descriptive explanations across UI, constants, and API routes.
+
+---
+
+# v0.5.278 (2026-10-23) · 2 commits
+
+## What Was Changed
+
+- **Removed PAID and UNKNOWN badges; reserved FREE tag exclusively for free models.** Model badge display is now streamlined: only genuine free models (OpenCode free models such as `beam-free`, `glm-5.3-flash-free`, `big-pickle`, `union-alpha`, etc.) display the green `FREE` tag. Non-free models (e.g. Claude, GPT, or unclassified models) show no tags, keeping provider listings clean and uncluttered.
+
+---
+
+# v0.5.277 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **Fixed suggested model chips not rising to active list for OpenCode V1 and V2.** Removed built-in model exclusion on OpenCode providers in `getProviderCustomModelRows` so clicking `(+)` immediately adds and displays the model in the top active section.
+- **Accurate Model Tier Badges and chip preview.** Fixed custom model rows incorrectly passing `isFree={false}` that caused free models to display as `PAID`. OpenCode and free tier models now retain their green `FREE` badge. Both suggested free chips and other models now render tier badges before and after addition.
+- **Revamped Recent Requests table and Usage charts alignment.** Restored visibility of Recent Requests by ordering it cleanly for mobile viewports, correcting table background styles, and expanding truncated model name width. Polished Top Models and By Provider bar charts with consistent 210px container heights, refined typography, and aligned controls.
+- **Aligned icons, badges, and typography across cards.** Vertically centered Material Symbols icons, status dots, and badges with text on consistent optical baselines throughout model rows and usage analytics.
+
+---
+
+# v0.5.276 (2026-10-23) · 2 commits
+
+## What Was Added
+
+- **Tier badges (FREE / PAID / UNKNOWN) on all models across all providers.** Added `ModelTierBadge` and `resolveModelTier` to classify and display visual badges for every model (Free with green tag, Paid with amber tag, and Unknown for unclassified/custom models) across `ModelRow`, `CompatibleModelsSection`, `PassthroughModelsSection`, and `ModelSelectModal`.
+- **Token usage multipliers and anti-probe protection for custom models.** Added optional `inputMultiplier` and `outputMultiplier` fields to custom models and model studio. Output tokens and prompt tokens are multiplied accordingly in returned responses and usage tracking. Anti-probe protection conceals real backend model IDs, strips provider headers, and reinforces anti-jailbreak directives.
+- **Enforced API key requirement on `/v1/models` and model listing endpoints.** Anonymous curling of model lists is now blocked with HTTP 401 (`invalid_api_key`) unless a valid API key or authenticated dashboard session is supplied.
+
+---
+
+# v0.5.275 (2026-10-23) · 2 commits
+
+## What Was Changed
+
+- **Start OpenCode V1 and V2 models in Suggested Free Models and remove separate Disabled Models list.** For OpenCode V1 (`oc1`) and V2 (`oc2`), models no longer automatically populate the active top list on initial view; instead, all available free models appear as selectable chips under "Suggested free models". Clicking a chip adds it to the active list, and removing/disabling an active model returns it directly back to "Suggested free models" without placing it into a separate "Disabled models" section.
+
+---
+
+# v0.5.274 (2026-10-23) · 2 commits
+
+## What Was Changed
+
+- **Updated OpenCode Free V1 model prefix and alias from `oc` to `oc1`.** The provider alias and UI prefix for OpenCode Free V1 are now `oc1/` (e.g. `oc1/beam-free`, `oc1/deepseek-v4.1-flash-free`), matching the `oc2/` prefix convention of OpenCode Free V2. Legacy `oc/` alias is preserved for backwards compatibility.
+
+---
+
+# v0.5.273 (2026-10-23) · 2 commits
+
+## What Was Changed
+
+- **Renamed legacy OpenCode Free provider to "OpenCode Free V1".** Updated display name to "OpenCode Free V1" with badge "OC1" to cleanly differentiate between the legacy V1 provider and the new CLI 1.19.4-based "OpenCode Free V2" provider.
+
+---
+
+# v0.5.272 (2026-10-23) · 2 commits
+
+## What Was Added
+
+- **New "OpenCode Free V2" provider (`opencode-v2` / `oc2`).** Added a dedicated OpenCode V2 provider ported directly from the reverse-engineered OpenCode CLI 1.19.4 architecture while keeping the existing OpenCode Free provider intact. V2 features:
+  - Official 1.19.4 wire endpoints (`/inference/openai/v1/chat/completions`, `/inference/anthropic/v1/messages`, `/inference/v1/responses`).
+  - Bitwise timestamp identifiers matching official binary disassembler (`msg_<timestamp_ascending_base62>` and `ses_<timestamp_descending_base62>`).
+  - Standardized tool cloaking (`bash` and `read`) without telltale prompt injection to prevent upstream 429 content-filter triggers.
+  - Full official 1.19.4 free model catalogue (`beam-free`, `big-pickle`, `deepseek-v4.1-flash-free`, `flint-40b-free`, `glm-5.3-flash-free`, `mimo-v2.6-flash-free`, `nemotron-3-ultra-free`, `nemotron-3.5-lightning-free`, `nemotron-3.5-super-vl-free`, `muse-spark` variants, and `union-alpha`).
+  - Native integration with proxy pools and automatic session rotation.
+
+---
+
+# v0.5.271 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **Preserved original probe token budget for full model completion responses.** Reverted `max_tokens` back to 1024 in `/api/models/test` to preserve complete responses and chain-of-thought budgets across all models without altering probe defaults.
+
+---
+
+# v0.5.270 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **Accelerated model ping probes for reasoning and free models.** The ping endpoint `/api/models/test` previously set `max_tokens: 1024`, causing reasoning models like `deepseek-v4.1-flash-free` and upstream free endpoints to spend 20–30+ seconds generating hundreds of chain-of-thought tokens before returning, making the dashboard test button appear frozen/spinning. With the issue #3010 soft-pass already supporting length-limited reasoning completions, `max_tokens` is now set to 16 for probe checks. Tested live over Cloudflare tunnel: `oc/deepseek-v4.1-flash-free` now resolves in 3.0s and `oc/glm-5.3-flash-free` in 2.3s with `{"ok":true,"status":200}`.
+
+---
+
+# v0.5.269 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **Eliminated telltale prompt injection that triggered upstream OpenCode 429 rejection on model pings.** Upstream OpenCode introduced content filtering that caught the historical placeholder prompt note (`"Do not call the read or shell tools..."`), immediately rejecting requests with `FreeUsageLimitError` and causing model ping/test buttons in the dashboard to spin endlessly until abort timeout. Silenced the note so prompts remain clean. Verified live with model probe tests (`oc/mimo-v2.6-flash-free`, `oc/deepseek-v4.1-flash-free`, `oc/glm-5.3-flash-free`) all completing with `{"ok":true,"status":200}`.
+
+---
+
+# v0.5.268 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **Preserve HTTPS protocol across dashboard redirects behind reverse proxies / Cloudflare tunnels.** The custom server and auth guard previously hardcoded `http://` when constructing redirect URLs (`/` to `/dashboard`, `/dashboard` to `/login`), causing browsers on HTTPS tunnels to refuse connecting to an insecure HTTP location or triggering mixed-content connection errors. Both now inspect `x-forwarded-proto` and socket encryption so all redirects preserve `https://`.
+
+---
+
+# v0.5.267 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **Fixed reference error in studio models API and bounded opencode connect timeout.** The `/api/models` endpoint previously crashed with `ReferenceError: pluginMarks is not defined` when resolving studio models, breaking dashboard model listings. In addition, `opencode` transport now sets a snappy 12s socket timeout (`timeoutMs: 12000`) instead of hanging for 60s when a residential proxy node is slow to connect, allowing rotation to smoothly fail-over to the next residential session. Verified end-to-end with `oc/beam-free`, `oc/deepseek-v4.1-flash-free`, and `oc/mimo-v2.6-flash-free` completing in ~2 seconds.
+
+---
+
+# v0.5.266 (2026-10-23) · 2 commits
+
+## What Was Added
+
+- **Automatic per-request session rotation for residential proxy pools.** Residential proxy gateways that support session-based IP rotation via username conventions (e.g. `res-*-sid-XXXXX`) are now automatically detected: each outbound connection request randomizes the session ID (`randSid`), ensuring a fresh residential egress IP with its own rate limit window. When upstream triggers 429 `FreeUsageLimitError`, the specific spent egress IP is rotated out without prematurely excluding the entire residential pool. Verified with live OpenCode free models (`beam-free`, `mimo-v2.6-flash-free`, `deepseek-v4.1-flash-free`, `glm-5.3-flash-free`) all successfully answering with 200 OK completions through rotating residential proxy.
+
+---
+
+# v0.5.265 (2026-10-23) · 2 commits
+
+## What Was Changed
+
+- **Reverse-engineered OpenCode protocol from CLI 1.19.4 binary and updated the executor wire contract.** Extracting the protocol directly from the disassembled binary revealed three discrepancies causing relay detection: (1) OpenAI chat endpoints route to `/inference/openai/v1/chat/completions` and Anthropic to `/inference/anthropic/v1/messages` (the legacy `/inference/v1/chat/completions` path flagged callers), (2) the current client sends a synchronized ascending `x-opencode-request: msg_<id>` generated via the native `va()` timestamp algorithm, and (3) `x-session-affinity` and `x-session-id` were removed as upstream specifically checks that they are not sent for opencode-native providers. All 37 tests across 4 test suites passing.
+
+---
+
+# v0.5.264 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **The executor now mirrors the real OpenCode 1.19.4 CLI fingerprint, and the fallback loop stops at the caller's deadline.** Reverse-engineering the current CLI via mitmproxy showed it sends `User-Agent: opencode/1.19.4 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.4` with `x-opencode-client: cli`, `x-opencode-project` and a per-message `x-opencode-request` — while 9router still sent the older `opencode/latest/2.0.26/cli` shape, which the free tier reads as a stale relay UA after the upstream update. The executor default, the downstream-UA passthrough check, the registry UAs and the test probe all use the current CLI shape now. Separately, the session-rotation branch never carried the fallback deadline, so an exhausted evening rotated ~1.500 proxies past the 120s probe budget and the dashboard showed "The operation was aborted due to timeout" with no usable error; the session branch now returns the last upstream error once the budget is spent. `tests/unit/opencode-session.test.js` pins the UA default/replacement/passthrough; 37 passed across 4 suites.
+
+---
+
+# v0.5.263 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **Alias-prefixed probes get the slow-fallback budget too.** v0.5.262 gave `opencode/*` probes 120s, but the dashboard probes alias-prefixed ids (`oc/beam-free`, `ocg/...`) and `probeTimeoutMs` compared the raw prefix against the provider set — an unresolved `oc` fell through to the 15s REST budget, so the button test still aborted mid-rotation with "The operation was aborted due to timeout" while direct `opencode/*` calls survived. The budget now resolves the prefix via `resolveProviderId` first (with a fail-open fallback to the raw prefix). `tests/unit/ping-timeout.test.js` pins the alias resolution; 5 passed.
+
+---
+
+# v0.5.262 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **The model test button no longer aborts healthy OpenCode models at 15s.** Probing a model (`/api/models/test`) sends a real chat request down the normal fallback chain, but every probe shared one 15s budget. An OpenCode free-tier probe routinely needs 30-90s — each spent session/IP answers 429 `FreeUsageLimitError` and the fallback rotates the session plus every proxy before one window answers — so the probe aborted mid-rotation and painted working models red with "The operation was aborted due to timeout". `opencode`, `opencode-go` and `opencode-zen` probes now get 120s (`SLOW_FALLBACK_PROBE_TIMEOUT_MS` in `probeBudget.js`); every other provider keeps its existing budget. `tests/unit/ping-timeout.test.js` pins the new set and budget; 4 passed.
+
+---
+
+# v0.5.261 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **Two dead model ids are gone from both screens; 9 of 10 live free models now answer.** Besides Jev (400 `ModelProtocolUnsupported`, fixed in v0.5.260), the live catalogue still advertises `minimax-m3.1-flash-free`, but upstream retires it with 410 `ModelDeprecated` pointing at `deepseek-v4.1-flash-free`. It is dropped from the catalogue filter and the picker the same way (`DEPRECATED_OPENCODE_MODELS`), while new id `flint-40b-free` rides the existing free-tier rule with no change. Verified end to end through the preview: `beam-free`, `big-pickle`, `glm-5.3-flash-free`, `mimo-v2.6-flash-free`, `nemotron-3.5-super-vl-free`, `deepseek-v4.1-flash-free`, `flint-40b-free` all answer; `longcat-2.5-preview-free` and `nemotron-3.5-lightning-free` still hit upstream 429 `FreeUsageLimitError` (daily quota, not a routing bug — the session rotation from v0.5.259 keeps retrying with fresh windows). `tests/unit/provider-model-catalogue.test.js` pins the deprecated set and the picker exclusion; 9 passed with `unit/opencode-session-rotation.test.js`.
+
+---
+
+# v0.5.260 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **Jev ids no longer loop the fallback with an unwinnable 400.** `jev-1.13` / `jev-1.13-free` are System One decision models: upstream answers `ModelProtocolUnsupported` on the chat completions lane, so every chat request to them burned the whole proxy/fallback loop for a response that could never come (1.073 of the recent 400s). They are removed from the chat registry, the suggested-catalogue filter and the model picker — 12 free models stay visible and routable in both screens instead of 13 with one dead entry. Covered by `tests/unit/provider-model-catalogue.test.js` (9 cases).
+
+---
+
+# v0.5.259 (2026-10-23) · 2 commits
+
+## What Was Fixed
+
+- **FreeUsageLimitError now rotates the OpenCode session instead of hammering every proxy.** Upstream tracks the free quota per session id as well as per IP (upstream issue #5107): once a session window is spent, retrying the same burned session through dozens of proxies only collects the same 429 until the request times out. A 429 carrying `FreeUsageLimitError` on the opencode provider now burns the canonical session (`rotateOpencodeSession`) before the fallback moves to the next account, so the retry re-enters the proxy loop with a fresh quota window. The stable session is untouched on the happy path — a fresh session per request would burn quota faster. Covered by `tests/unit/opencode-session-rotation.test.js` (3 cases: fresh session minted, rotation scoped per identity, chat handler wiring).
+
+---
+
 # v0.5.258-Custom (sync upstream v0.5.258)
 
 Fork gievano/9router - sync 60 commit upstream (v0.5.226 -> v0.5.258) + custom: provider freebuff, mimocode.
+
 
 # v0.5.258 (2026-10-21) · 3 commits
 
 ## What Was Fixed
 
 - **The provider page now agrees with the model picker about what it lists.** The model picker offered all 13 free OpenCode models, but the provider page dropped `jev-1.13-free` because its registry entry carries the `kind: "systemone"` lane and the page's llm-only filter (`!k || k === "llm"`) treated that as a media kind with its own page - the free System One model was visible in one screen and invisible in the other, paid `jev-1.13` chip included while the free one was not. `systemone` is now kept alongside `llm` in the provider page filter, and `tests/unit/provider-model-catalogue.test.js` (6 cases) pins the filter so a future lane cannot silently drift again.
-
----
 
 ---
 
@@ -20,15 +625,11 @@ Fork gievano/9router - sync 60 commit upstream (v0.5.226 -> v0.5.258) + custom: 
 
 ---
 
----
-
 # v0.5.256 (2026-10-21) · 2 commits
 
 ## What Was Changed
 
 - **Back to picking your own models: the catalogue is suggested again, not imported.** Rendering the whole live catalogue as model rows silently turned every published id into an entry in the list, which took away the step where an operator chooses what to add. The provider page renders the suggested chip rows again for free no-auth providers - `Suggested free models (n):` with `+` chips, `Other models (n):` for the paid half, and `Disabled models (n):` to restore - and each chip still calls `handleAddCustomModel`, so nothing joins the list unasked. The free/paid split, the FREE badge from `isFree` and the picker's `· N disabled` hint stay. `src/shared/utils/freeModelRows.js` and the `isDisabled`/`onRestore` props it needed are gone (no call sites left), and `tests/unit/provider-model-catalogue.test.js` (5 cases) pins the chip flow, the removed helper, the trimmed `ModelRow` props and the registry's `isFree` flags.
-
----
 
 ---
 
@@ -40,8 +641,6 @@ Fork gievano/9router - sync 60 commit upstream (v0.5.226 -> v0.5.258) + custom: 
 
 ---
 
----
-
 # v0.5.254 (2026-10-21) · 2 commits
 
 ## What Was Fixed
@@ -50,15 +649,11 @@ Fork gievano/9router - sync 60 commit upstream (v0.5.226 -> v0.5.258) + custom: 
 
 ---
 
----
-
 # v0.5.253 (2026-10-21) · 2 commits
 
 ## What Was Fixed
 
 - **The unified free list only advertised models that can actually answer.** The first cut of the unified list passed the whole live catalogue to the row builder, and the OpenCode Free catalogue marks paid ids with `isFree: false` - so ~85 paid models (Claude, Gemini, GPT families) appeared as free-badged rows on a provider that answers 401 for every one of them without a key. The catalogue handed to `buildUnifiedModelRows` is now filtered to `isFree === true`, the same rule the suggestion picker already used, and the browser check on the provider page counts 10 free rows plus the disabled trio instead of 85+.
-
----
 
 ---
 
@@ -71,16 +666,12 @@ Fork gievano/9router - sync 60 commit upstream (v0.5.226 -> v0.5.258) + custom: 
 
 ---
 
----
-
 # v0.5.251 (2026-10-21) · 2 commits
 
 ## What Was Changed
 
 - **The dead long-task banner is deleted, not just left unused.** `src/shared/components/LongTaskBanner.js` (431 lines) had zero callers since long runs moved to the notification bell, and `Loading.js` still exported its wrappers (`ProgressCard`, `CenterLoading`, `BusyOverlay`) as a trap for the next feature. The component file and the three exports are gone, `src/shared/components/index.js` stops re-exporting them, and `Loading.js` keeps only what still renders: `Spinner`, `PageLoading`, `Skeleton`, `CardSkeleton`.
 - **The tests follow the component out.** `tests/unit/loading-banner.test.js` existed only to assert on the deleted files (and was already a catalogued load failure), so it is removed together with its entry in `tests/__baseline__/known-fails.txt`. `tests/unit/studio-banner-update.test.js` keeps the store, bell, layout and pool assertions and drops the two that read the deleted sources. `tests/unit/bell-only-progress.test.js` gains a guard: the component file must not exist and neither the wrappers nor their barrel exports may reappear — a zero-call-site component gets re-imported the moment someone reaches for it.
-
----
 
 ---
 
@@ -305,10 +896,6 @@ Fork gievano/9router - sync 60 commit upstream (v0.5.226 -> v0.5.258) + custom: 
 - **A raw vitest exit code no longer decides the CI verdict**: the suite carries catalogued failures on a clean checkout, so `tests/__baseline__/compare-fails.mjs` compares the JSON report against `tests/__baseline__/known-fails.txt` and fails only on a failure that is not catalogued. A catalogued failure that now passes is reported as stale so the list can be pruned, an entry only counts as stale when its suite actually ran, and a suite that failed to load counts as a failure with no name instead of passing silently. `tests/unit/ci-baseline-compare.test.js` (9 tests) pins the comparison and the workflow wiring.
 
 ---
-
-# v0.5.225-Custom (sync upstream v0.5.225)
-
-Fork gievano/9router - sync 81 commit upstream (v0.5.191 -> v0.5.225) + custom: provider freebuff, mimocode.
 
 # v0.5.225 (2026-10-19) · 2 commits
 

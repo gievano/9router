@@ -39,7 +39,7 @@ export async function GET() {
 // POST /api/models/custom - Add custom model
 export async function POST(request) {
   try {
-    const { providerAlias, id, type, name, ownedBy, caps, transport } = await request.json();
+    const { providerAlias, id, type, name, ownedBy, caps, transport, inputMultiplier, outputMultiplier, antiProbe } = await request.json();
     if (!providerAlias || !id) {
       return NextResponse.json({ error: "providerAlias and id required" }, { status: 400 });
     }
@@ -54,6 +54,9 @@ export async function POST(request) {
       ownedBy: typeof ownedBy === "string" ? ownedBy.trim() : "",
       ...(cleanCaps ? { caps: cleanCaps } : {}),
       ...(cleanTransport ? { transport: cleanTransport } : {}),
+      inputMultiplier,
+      outputMultiplier,
+      antiProbe,
     });
     return NextResponse.json({ success: true, added });
   } catch (error) {

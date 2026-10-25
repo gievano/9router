@@ -277,9 +277,9 @@ export default function OpenCodeToolCard({ tool, isExpanded, onToggle, baseUrl, 
                   <div className="space-y-3 text-sm">
                     <div>
                       <p className="text-text-muted mb-1">macOS / Linux:</p>
-                      <code className="block px-3 py-2 bg-black/5 dark:bg-white/5 rounded font-mono text-xs">npm install -g opencode-ai</code>
+                      <code className="block px-3 py-2 bg-surface-2 rounded-[var(--r-control)] font-mono text-xs border border-border-subtle text-text-main">npm install -g opencode-ai</code>
                     </div>
-                    <p className="text-text-muted">After installation, run <code className="px-1 bg-black/5 dark:bg-white/5 rounded">opencode</code> to verify.</p>
+                    <p className="text-text-muted">After installation, run <code className="px-1.5 py-0.5 bg-surface-2 rounded-[var(--r-chip)] border border-border-subtle text-text-main">opencode</code> to verify.</p>
                   </div>
                 </div>
               )}
@@ -358,7 +358,7 @@ export default function OpenCodeToolCard({ tool, isExpanded, onToggle, baseUrl, 
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer transition-colors ${
                               model === activeModel
                                 ? "bg-primary/10 text-primary border border-primary"
-                                : "bg-black/5 dark:bg-white/5 text-text-muted border border-transparent hover:border-border"
+                                : "bg-surface-2 text-text-muted border border-border-subtle hover:border-border"
                             }`}
                             title={model === activeModel ? "Click to clear active model" : "Click to set as active"}
                           >

@@ -204,31 +204,10 @@ export function aliasHistoryToolCalls(body, map) {
   }
 }
 
-// Without the old "must not be used" descriptions the model does call the
-// appended tools (live probe: `read` on "what files are in /etc?"), so tell it
-// in the system prompt instead. Upstream does not gate on the prompt text.
-// Wording matters: "not available" made the model also refuse the caller's own
-// Read/Bash; "placeholders ... use the other tools" kept those working.
-function noteUnavailableTools(body, flat, names) {
-  const list = names.map((name) => `\`${name}\``).join(" or ");
-  const note = names.length > 1
-    ? `Do not call the ${list} tools; they are placeholders that do nothing. Use the other tools you have been given instead.`
-    : `Do not call the ${list} tool; it is a placeholder that does nothing. Use the other tools you have been given instead.`;
-  if (flat) {
-    body.instructions = typeof body.instructions === "string" && body.instructions.trim()
-      ? `${body.instructions}\n\n${note}`
-      : note;
-    return;
-  }
-  // OpenAI chat shape only; Claude-shaped bodies carry `system` instead.
-  if (!Array.isArray(body.messages) || body.system !== undefined) return;
-  const first = body.messages[0];
-  if (first?.role === "system" && typeof first.content === "string") {
-    body.messages = [{ ...first, content: `${first.content}\n\n${note}` }, ...body.messages.slice(1)];
-  } else {
-    body.messages = [{ role: "system", content: note }, ...body.messages];
-  }
-}
+// Telltale prompt injection ("Do not call the read or shell tools...") is flagged
+// by upstream OpenCode filters as third-party relay and answered with 429 FreeUsageLimitError.
+// Keep this a no-op so the prompt remains pristine.
+function noteUnavailableTools() {}
 
 /**
  * Full request-side pass: alias conflicting caller tools, append OpenCode's
@@ -246,7 +225,6 @@ export function applyFingerprintTools(body, flat) {
   const appended = appendMissingFingerprintTools(body.tools, flat);
   retargetToolChoice(body, map);
   aliasHistoryToolCalls(body, map);
-  if (appended.length) noteUnavailableTools(body, flat, appended);
 
   // Responses keeps its explicit auto default. Never default to "none": upstream
   // answers tool_choice "none" with 403 FreeTierError.

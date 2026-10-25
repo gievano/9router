@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createProxyPool } from "@/models";
 
+export const dynamic = "force-dynamic";
+
 const VERCEL_API = "https://api.vercel.com";
 
 // Relay function source code deployed to Vercel

@@ -1,5 +1,7 @@
 import { handleTts } from "@/sse/handlers/tts.js";
 
+export const dynamic = "force-dynamic";
+
 export async function OPTIONS() {
   return new Response(null, {
     headers: {

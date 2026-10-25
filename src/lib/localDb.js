@@ -20,4 +20,5 @@ export {
   getMitmAlias, setMitmAliasAll,
   getPricing, getPricingForModel, updatePricing, resetPricing, resetAllPricing,
   exportDb, importDb, getDbSummary,
+  recordErrorLog, getErrorLogs, clearErrorLogs,
 } from "@/lib/db/index.js";

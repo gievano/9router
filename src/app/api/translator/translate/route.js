@@ -6,6 +6,8 @@ import { getModelInfo } from "@/sse/services/model.js";
 import { getProviderConnections } from "@/lib/localDb.js";
 import { getExecutor } from "open-sse/executors/index.js";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request) {
   try {
     const { step, body } = await request.json();

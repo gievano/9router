@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
 
+export const dynamic = "force-dynamic";
+
 /**
  * iFlow Cookie-Based Authentication
  * POST /api/oauth/iflow/cookie

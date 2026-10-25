@@ -152,6 +152,7 @@ import p147 from "./minimax-code-global.js";
 import p148 from "./bedrock.js";
 import p149 from "./bedrock-xai.js";
 import p150 from "./nous.js";
+import p151 from "./opencode-v2.js";
 import p153 from "./mimocode.js"; // restored: dropped by dup-p124 fix
 import p154 from "./freebuff.js"; // local-only: gievano fork
 export default [
@@ -306,6 +307,7 @@ export default [
   p148,
   p149,
   p150,
+  p151,
   p153, // restored: mimocode
   p154, // local-only: gievano fork (freebuff)
 ];

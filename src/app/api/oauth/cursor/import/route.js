@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { CursorService } from "@/lib/oauth/services/cursor";
+
+export const dynamic = "force-dynamic";
 import { createProviderConnection } from "@/models";
 
 /**

@@ -739,7 +739,7 @@ export default function BasicChatPageClient() {
   const modelSubLabel = activeModel ? activeModel.requestModel : "Choose from connected providers";
 
   return (
-    <div className="relative flex-1 flex flex-col h-full min-h-0 min-w-0 bg-bg text-white overflow-hidden">
+    <div className="relative flex-1 flex flex-col h-full min-h-0 min-w-0 bg-bg text-text-main overflow-hidden">
       <div className="relative mx-auto flex flex-1 h-full min-h-0 w-full max-w-4xl flex-col">
         <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3 lg:px-6">
           <div ref={modelMenuRef} className="relative">
@@ -750,24 +750,24 @@ export default function BasicChatPageClient() {
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-white">{modelLabel}</span>
-                  <span className="material-symbols-outlined text-[18px] text-white/70">expand_more</span>
+                  <span className="text-sm font-semibold text-text-main">{modelLabel}</span>
+                  <span className="material-symbols-outlined text-[18px] text-text-muted">expand_more</span>
                 </div>
-                <p className="truncate text-xs text-white/55">{modelSubLabel}</p>
+                <p className="truncate text-xs text-text-muted">{modelSubLabel}</p>
               </div>
             </button>
 
             {modelMenuOpen ? (
-              <div className="absolute left-0 top-[calc(100%+10px)] z-30 w-[min(520px,calc(100vw-2rem))] overflow-hidden rounded-[20px] border border-border bg-surface shadow-2xl shadow-black/50">
+              <div className="absolute left-0 top-[calc(100%+10px)] z-30 w-[min(520px,calc(100vw-2rem))] overflow-hidden rounded-[20px] border border-border bg-surface shadow-2xl">
                 <div className="border-b border-border px-4 py-3">
-                  <p className="text-xs uppercase tracking-[0.22em] text-white/45">Models</p>
-                  <p className="text-sm text-white/75">Only from connected providers</p>
+                  <p className="text-xs uppercase tracking-[0.22em] text-text-muted">Models</p>
+                  <p className="text-sm text-text-main">Only from connected providers</p>
                 </div>
                 <div className="max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">
                   {providerGroups.map((group) => (
                     <div key={group.providerId} className="mb-2 rounded-[16px] border border-border bg-bg-alt p-2">
                       <div className="flex items-center justify-between px-2 py-2">
-                        <p className="text-sm font-semibold text-white">{group.providerName}</p>
+                        <p className="text-sm font-semibold text-text-main">{group.providerName}</p>
                         <Badge size="sm" variant="default">{group.models.length}</Badge>
                       </div>
                       <div className="grid gap-2 sm:grid-cols-2">
@@ -778,12 +778,12 @@ export default function BasicChatPageClient() {
                               key={model.id}
                               type="button"
                               onClick={() => handleSelectModel(model.id)}
-                              className={`rounded-[14px] border px-3 py-3 text-left transition ${isActive ? "border-blue-400/40 bg-blue-500/15" : "border-border bg-surface-2 hover:bg-surface-2"}`}
+                              className={`rounded-[14px] border px-3 py-3 text-left transition ${isActive ? "border-primary/50 bg-primary/10" : "border-border bg-surface-2 hover:bg-surface-3"}`}
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <p className="truncate text-sm font-medium text-white">{model.name}</p>
-                                  <p className="truncate text-[11px] text-white/45">{model.requestModel}</p>
+                                  <p className="truncate text-sm font-medium text-text-main">{model.name}</p>
+                                  <p className="truncate text-[11px] text-text-muted">{model.requestModel}</p>
                                 </div>
                                 {isActive ? <span className="material-symbols-outlined text-[18px] text-blue-300">check_circle</span> : null}
                               </div>
@@ -860,12 +860,12 @@ export default function BasicChatPageClient() {
             {currentMessages.length === 0 ? (
               <div className="flex min-h-[50vh] items-center justify-center px-4 text-center">
                 <div className="max-w-xl space-y-4">
-                  <div className="mx-auto flex size-16 items-center justify-center rounded-[20px] border border-border bg-surface-2 text-white/80">
+                  <div className="mx-auto flex size-16 items-center justify-center rounded-[20px] border border-border bg-surface-2 text-primary">
                     <span className="material-symbols-outlined text-[30px]">chat</span>
                   </div>
                   <div className="space-y-2">
-                    <h2 className="text-2xl font-semibold text-white">Start a conversation</h2>
-                    <p className="text-sm leading-6 text-white/60">
+                    <h2 className="text-2xl font-semibold text-text-main">Start a conversation</h2>
+                    <p className="text-sm leading-6 text-text-muted">
                       Chat with any model from your connected providers.
                     </p>
                   </div>
@@ -930,7 +930,7 @@ export default function BasicChatPageClient() {
                   onKeyDown={handleKeyDown}
                   placeholder="Message AI"
                   rows={1}
-                  className="w-full resize-none bg-transparent px-2 text-[15px] leading-6 text-white outline-none placeholder:text-text-muted custom-scrollbar max-h-[25vh] overflow-y-auto"
+                  className="w-full resize-none bg-transparent px-2 text-[15px] leading-6 text-text-main outline-none placeholder:text-text-muted custom-scrollbar max-h-[25vh] overflow-y-auto"
                 />
 
                 <div className="mt-2 flex items-center justify-between gap-3">

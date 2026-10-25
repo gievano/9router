@@ -1,6 +1,8 @@
 import { VOICE_FETCHERS } from "open-sse/handlers/ttsCore.js";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 // Map locale code → country name
 const LOCALE_NAMES = new Intl.DisplayNames(["en"], { type: "region" });
 const LANG_NAMES   = new Intl.DisplayNames(["en"], { type: "language" });

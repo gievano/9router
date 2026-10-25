@@ -1,5 +1,7 @@
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 
+export const dynamic = "force-dynamic";
+
 // Provider → internal voices API. Edge/local-device share the generic endpoint.
 const PROVIDER_API = {
   elevenlabs: (origin) => `${origin}/api/media-providers/tts/elevenlabs/voices`,

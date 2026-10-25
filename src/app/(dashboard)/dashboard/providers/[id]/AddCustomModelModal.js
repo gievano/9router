@@ -17,10 +17,25 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
   const [saving, setSaving] = useState(false);
   // Realtime dispatch marker for the transport select; "" = provider default REST.
   const [transport, setTransport] = useState("");
+  // Optional token multipliers (e.g. 5.0 -> 100k becomes 500k)
+  const [inputMultiplier, setInputMultiplier] = useState("");
+  const [outputMultiplier, setOutputMultiplier] = useState("");
+  // Anti-probe protection (conceals real backend model from probe questions/headers)
+  const [antiProbe, setAntiProbe] = useState(true);
 
   // Reset state when modal opens
   useEffect(() => {
-    if (isOpen) { setModelId(""); setOwnedBy(""); setCaps(defaultCaps()); setTransport(""); setTestStatus(null); setTestError(""); }
+    if (isOpen) {
+      setModelId("");
+      setOwnedBy("");
+      setCaps(defaultCaps());
+      setTransport("");
+      setInputMultiplier("");
+      setOutputMultiplier("");
+      setAntiProbe(true);
+      setTestStatus(null);
+      setTestError("");
+    }
   }, [isOpen]);
 
   // Strip provider's own alias prefix (e.g. "cc/model" -> "model" for cc provider)
@@ -56,7 +71,11 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
     try {
       // caps.stt is UI-only; the parent save flow derives the model type from
       // it and forwards the pinned transport (null unless the caller picked one).
-      await onSave(cleanId, caps, caps.stt ? transport : null, ownedBy.trim());
+      await onSave(cleanId, caps, caps.stt ? transport : null, ownedBy.trim(), {
+        inputMultiplier: inputMultiplier ? Number(inputMultiplier) : undefined,
+        outputMultiplier: outputMultiplier ? Number(outputMultiplier) : undefined,
+        antiProbe,
+      });
     } finally {
       setSaving(false);
     }
@@ -126,6 +145,47 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
           <p className="text-xs text-text-muted mt-1">
             Shown as <code className="font-mono">owned_by</code> when clients list models.
           </p>
+        </div>
+
+        {/* Token Multipliers (Optional) */}
+        <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border border-border bg-sidebar/30">
+          <div>
+            <label className="text-xs font-medium mb-1 block">Input Multiplier</label>
+            <input
+              type="number"
+              step="any"
+              min="0.1"
+              value={inputMultiplier}
+              onChange={(e) => setInputMultiplier(e.target.value)}
+              placeholder="e.g. 1.0 (default)"
+              className="w-full px-2.5 py-1.5 text-xs border border-border rounded bg-background focus:outline-none focus:border-primary font-mono"
+            />
+            <p className="text-[10px] text-text-muted mt-0.5">Factor for prompt tokens (e.g. 2x)</p>
+          </div>
+          <div>
+            <label className="text-xs font-medium mb-1 block">Output Multiplier</label>
+            <input
+              type="number"
+              step="any"
+              min="0.1"
+              value={outputMultiplier}
+              onChange={(e) => setOutputMultiplier(e.target.value)}
+              placeholder="e.g. 5.0 (default 1.0)"
+              className="w-full px-2.5 py-1.5 text-xs border border-border rounded bg-background focus:outline-none focus:border-primary font-mono"
+            />
+            <p className="text-[10px] text-text-muted mt-0.5">Factor for completion tokens (e.g. 5x)</p>
+          </div>
+        </div>
+
+        {/* Anti-probe protection toggle */}
+        <div className="p-3 rounded-lg border border-border bg-sidebar/30">
+          <Toggle
+            checked={antiProbe}
+            onChange={setAntiProbe}
+            label="Anti-Probe Protection"
+            description="Conceals backend model identity, scrubs provider headers, and resists probe prompts"
+            size="sm"
+          />
         </div>
 
         {/* STT is a model TYPE, not a chat capability: the save flow turns this

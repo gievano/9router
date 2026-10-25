@@ -88,10 +88,19 @@ export async function resolveConnectionProxyConfig(
       const proxyUrl = normalizeString(proxyPool?.proxyUrl);
       const noProxy = normalizeString(proxyPool?.noProxy);
 
+      // Rotating residential proxies (e.g. res-*-sid-XXXXX):
+      // Each connection request randomizes the session ID so the proxy gateway
+      // assigns a fresh residential exit IP with its own clean rate limit window.
+      let effectiveProxyUrl = proxyUrl;
+      if (/-sid-\d+/i.test(proxyUrl)) {
+        const randSid = Math.floor(100000000 + Math.random() * 900000000);
+        effectiveProxyUrl = proxyUrl.replace(/-sid-\d+/i, `-sid-${randSid}`);
+      }
+
       const isValidPool =
         proxyPool &&
         proxyPool.isActive === true &&
-        proxyUrl;
+        effectiveProxyUrl;
 
       if (isValidPool) {
         /**
@@ -111,7 +120,7 @@ export async function resolveConnectionProxyConfig(
 
             strictProxy: proxyPool.strictProxy === true,
 
-            vercelRelayUrl: proxyUrl, // Still mapped to vercelRelayUrl in the unified payload since they use the exact same header spec
+            vercelRelayUrl: effectiveProxyUrl, // Still mapped to vercelRelayUrl in the unified payload since they use the exact same header spec
           };
         }
 
@@ -125,7 +134,7 @@ export async function resolveConnectionProxyConfig(
           proxyPool,
 
           connectionProxyEnabled: true,
-          connectionProxyUrl: proxyUrl,
+          connectionProxyUrl: effectiveProxyUrl,
           connectionNoProxy: noProxy,
 
           strictProxy: proxyPool.strictProxy === true,

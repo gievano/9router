@@ -1,6 +1,6 @@
 {
   "name": "9router-app",
-  "version": "0.5.258-Custom",
+  "version": "0.5.317-Custom",
   "description": "9Router web dashboard",
   "private": true,
   "scripts": {
@@ -62,7 +62,8 @@
     "zustand": "^5.0.10"
   },
   "optionalDependencies": {
-    "@aws-sdk/credential-providers": "^3.1135.0"
+    "@aws-sdk/credential-providers": "^3.1135.0",
+    "opencode-ai": "^1.19.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

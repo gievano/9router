@@ -1,10 +1,11 @@
-"use server";
 
 import os from "os";
 import { execSync } from "child_process";
 import { installTailscale, loadState, generateShortId } from "@/lib/tunnel";
 import { getCachedPassword, loadEncryptedPassword, initDbHooks } from "@/mitm/manager";
 import { getSettings, updateSettings } from "@/lib/localDb";
+
+export const dynamic = "force-dynamic";
 
 initDbHooks(getSettings, updateSettings);
 

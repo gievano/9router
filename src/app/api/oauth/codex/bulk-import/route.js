@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
 import { extractCodexAccountInfo } from "@/lib/oauth/providers";
 
+export const dynamic = "force-dynamic";
+
 /**
  * POST /api/oauth/codex/bulk-import
  * Bulk import multiple codex (OAuth) account JSON objects in one call.

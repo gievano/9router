@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { sessionFromRequest, readSessionIdentity, attachSessionCookie } from "@/lib/mimoLoginSession";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/oauth/xiaomi-mimo/login/status?state=...
  * Polls the server-side login session (state lives in the httpOnly session

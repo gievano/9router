@@ -4,6 +4,8 @@ import { getDashboardAuthSession } from "@/lib/auth/dashboardSession";
 import { killAppProcesses } from "@/lib/appUpdater";
 import { closeDb } from "@/lib/db/driver";
 
+export const dynamic = "force-dynamic";
+
 // Shutdown app to release file locks for manual update.
 //
 // Password sessions only: stopping the process is an administrator action, and

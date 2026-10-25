@@ -7,6 +7,8 @@ import {
 } from "@/models";
 import { toProviderConnectionResponse, usesAwsCredentialForm } from "@/lib/providerConnectionResponse";
 
+export const dynamic = "force-dynamic";
+
 function normalizeProxyConfig(body = {}) {
   const hasAnyProxyField =
     Object.prototype.hasOwnProperty.call(body, "connectionProxyEnabled") ||

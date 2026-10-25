@@ -1,4 +1,6 @@
 import { handleChat } from "@/sse/handlers/chat.js";
+
+export const dynamic = "force-dynamic";
 import {
   clearAccountError,
   getProviderCredentials,

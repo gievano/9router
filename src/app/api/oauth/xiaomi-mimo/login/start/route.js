@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { request as httpRequest } from "node:http";
 import { beginSession, encodeSessionCookie, rewriteMimoBases, absorbSetCookies as absorbResponseCookies, originOf, loginUpstreamFetch, SESSION_COOKIE } from "@/lib/mimoLoginSession";
 
+export const dynamic = "force-dynamic";
+
 /**
  * POST /api/oauth/xiaomi-mimo/login/start
  * Body: { region: "cn" | "sgp" | "ams" | "ru" | "in" }

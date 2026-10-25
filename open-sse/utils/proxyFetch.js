@@ -380,8 +380,7 @@ async function createBypassRequest(parsedUrl, realIP, options) {
 // through the same flagged proxy. Live measurement (#4983): identical body and
 // headers in the same minute — flagged pool egress → 403 FreeTierError,
 // direct egress → 200.
-const FREE_TIER_ERROR_MARKER = "FreeTierError";
-
+const FREE_TIER_ERROR_MARKERS = ["FreeTierError", "FreeUsageLimitError"];
 /** Rebuild a response whose body we buffered while inspecting it. */
 function bufferedResponse(text, original) {
   const headers = new Headers(original.headers);
@@ -398,14 +397,15 @@ function bufferedResponse(text, original) {
  * never leaving over another path — both return the rejection as-is.
  */
 async function replayFreeTierRejectionDirect(url, options, proxied, proxyUrl) {
-  if (proxied.status !== 403) return proxied;
+  if (proxied.status !== 403 && proxied.status !== 429) return proxied;
   let text;
   try {
     text = await proxied.text();
   } catch {
     return proxied;
   }
-  if (!text.includes(FREE_TIER_ERROR_MARKER)) return bufferedResponse(text, proxied);
+  const isFreeTierRejection = FREE_TIER_ERROR_MARKERS.some((m) => text.includes(m));
+  if (!isFreeTierRejection) return bufferedResponse(text, proxied);
   if (options?.body && typeof options.body.getReader === "function" && options.body.locked) {
     return bufferedResponse(text, proxied);
   }
@@ -446,9 +446,10 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       "x-relay-target": `${parsed.protocol}//${parsed.host}`,
       "x-relay-path": `${parsed.pathname}${parsed.search}`,
     };
-    return originalFetch(vercelRelayUrl, { ...options, headers: relayHeaders });
+    const res = await originalFetch(vercelRelayUrl, { ...options, headers: relayHeaders });
+    if (proxyOptions?.strictProxy === true) return res;
+    return await replayFreeTierRejectionDirect(url, options, res, null);
   }
-
   const connectionProxyUrl = resolveConnectionProxyUrl(targetUrl, proxyOptions);
   const envProxyUrl = connectionProxyUrl ? null : normalizeProxyUrl(getEnvProxyUrl(targetUrl));
   const proxyUrl = connectionProxyUrl || envProxyUrl;

@@ -2,6 +2,8 @@ import { PROVIDER_MODELS } from "open-sse/config/providerModels.js";
 import { AI_PROVIDERS, ALIAS_TO_ID } from "@/shared/constants/providers";
 import { getModelKind } from "@/shared/constants/models";
 
+export const dynamic = "force-dynamic";
+
 const KIND_ENDPOINT = {
   llm: "/v1/chat/completions",
   image: "/v1/images/generations",

@@ -323,6 +323,13 @@ function ModelStudioContent({ antiProbe = true }) {
                     {formatTokens(model.contextWindow)} context
                   </span>
                 )}
+                {(model.inputMultiplier > 0 || model.outputMultiplier > 0) && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
+                    {model.inputMultiplier ? `${model.inputMultiplier}x In` : ""}
+                    {model.inputMultiplier && model.outputMultiplier ? " · " : ""}
+                    {model.outputMultiplier ? `${model.outputMultiplier}x Out` : ""}
+                  </span>
+                )}
               </div>
 
               {model.systemPrompt && (
@@ -394,6 +401,12 @@ function StudioFormModal({
   const [siblings, setSiblings] = useState([]);
   const [contextWindow, setContextWindow] = useState(
     editing?.contextWindow ? String(editing.contextWindow) : ""
+  );
+  const [inputMultiplier, setInputMultiplier] = useState(
+    editing?.inputMultiplier ? String(editing.inputMultiplier) : ""
+  );
+  const [outputMultiplier, setOutputMultiplier] = useState(
+    editing?.outputMultiplier ? String(editing.outputMultiplier) : ""
   );
   const [systemPrompt, setSystemPrompt] = useState(editing?.systemPrompt || "");
 
@@ -474,6 +487,8 @@ function StudioFormModal({
           // Sent verbatim: the server keeps this as targetLabel, so the picker
           // keeps showing the spelling that was chosen here.
           contextWindow: contextWindow ? Number(contextWindow) : 0,
+          inputMultiplier: inputMultiplier ? Number(inputMultiplier) : undefined,
+          outputMultiplier: outputMultiplier ? Number(outputMultiplier) : undefined,
           systemPrompt,
         }),
       });
@@ -692,6 +707,41 @@ function StudioFormModal({
               keep the provider default. A custom model that renames a target keeps
               the target&apos;s own window unless you override it here.
             </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-text-main mb-1">
+                Input Multiplier <span className="text-text-muted font-normal">(optional)</span>
+              </label>
+              <Input
+                type="number"
+                step="0.1"
+                min="0"
+                value={inputMultiplier}
+                onChange={(e) => setInputMultiplier(e.target.value)}
+                placeholder="e.g. 1 or 2 (2x input)"
+              />
+              <p className="text-[11px] text-text-muted mt-1">
+                Token input multiplier applied to usage and quota calculation.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-text-main mb-1">
+                Output Multiplier <span className="text-text-muted font-normal">(optional)</span>
+              </label>
+              <Input
+                type="number"
+                step="0.1"
+                min="0"
+                value={outputMultiplier}
+                onChange={(e) => setOutputMultiplier(e.target.value)}
+                placeholder="e.g. 5 (5x output)"
+              />
+              <p className="text-[11px] text-text-muted mt-1">
+                Token output multiplier applied to usage and quota calculation.
+              </p>
+            </div>
           </div>
 
           <div>

@@ -1,6 +1,8 @@
 import { getSettings } from "@/lib/localDb";
 import { generateSamlMetadata } from "@/lib/auth/saml";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request) {
   try {
     const settings = await getSettings();

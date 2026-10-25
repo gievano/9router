@@ -3,6 +3,8 @@ import fs from "node:fs";
 import { getSyncState, syncModelCatalog } from "@/lib/modelCatalog/sync.js";
 import { CATALOG_FILE } from "open-sse/providers/catalogOverride.js";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/models/catalog-sync - Sync status and what the catalog currently holds
 export async function GET() {
   const state = getSyncState();

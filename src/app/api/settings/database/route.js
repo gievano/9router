@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { exportDb, getSettings, importDb, getDbSummary } from "@/lib/localDb";
+
+export const dynamic = "force-dynamic";
 import { applyOutboundProxyEnv } from "@/lib/network/outboundProxy";
 import { verifyDashboardPassword } from "@/lib/auth/dashboardSession";
 import { configureTelegramBackup } from "@/shared/services/telegramBackup";

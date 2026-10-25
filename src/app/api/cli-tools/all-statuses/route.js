@@ -1,4 +1,3 @@
-"use server";
 
 import { NextResponse } from "next/server";
 import { GET as claudeGet } from "../claude-settings/route";
@@ -20,6 +19,8 @@ import { GET as crushGet } from "../crush-settings/route";
 import { GET as forgeGet } from "../forge-settings/route";
 import { GET as smeltGet } from "../smelt-settings/route";
 import { GET as codewhaleGet } from "../codewhale-settings/route";
+
+export const dynamic = "force-dynamic";
 
 const STATUS_GETTERS = {
   claude: claudeGet,

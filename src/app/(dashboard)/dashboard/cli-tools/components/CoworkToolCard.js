@@ -340,7 +340,7 @@ export default function CoworkToolCard({
                         <span className="text-xs text-text-muted">No models selected</span>
                       ) : (
                         selectedModels.map((m) => (
-                          <span key={m} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-black/5 dark:bg-white/5 text-text-muted border border-transparent hover:border-border">
+                          <span key={m} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[var(--r-chip)] text-xs bg-surface-2 text-text-muted border border-border-subtle hover:border-border">
                             {m}
                             <button onClick={() => handleRemoveModel(m)} className="ml-0.5 hover:text-red-500">
                               <span className="material-symbols-outlined text-[12px]">close</span>
@@ -364,10 +364,10 @@ export default function CoworkToolCard({
                         {p.oauth && <span className="text-[8px] text-amber-600 shrink-0">OAuth</span>}
                         <div className="flex-1 flex flex-wrap gap-1 overflow-hidden" style={{ maxHeight: "1.125rem" /* one chip row: a wrapped second row clips whole, never mid-glyph */ }}>
                           {Array.isArray(p.toolNames) && p.toolNames.slice(0, 6).map((t) => (
-                            <span key={t} className="text-[9px] px-1 py-0.5 rounded bg-black/5 dark:bg-white/5 text-text-muted whitespace-nowrap">{t}</span>
+                            <span key={t} className="text-[9px] px-1 py-0.5 rounded-[var(--r-chip)] bg-surface-2 text-text-muted whitespace-nowrap border border-border-subtle">{t}</span>
                           ))}
                           {Array.isArray(p.toolNames) && p.toolNames.length > 6 && (
-                            <span className="text-[9px] px-1 py-0.5 rounded bg-black/5 dark:bg-white/5 text-text-muted whitespace-nowrap">+{p.toolNames.length - 6}</span>
+                            <span className="text-[9px] px-1 py-0.5 rounded-[var(--r-chip)] bg-surface-2 text-text-muted whitespace-nowrap border border-border-subtle">+{p.toolNames.length - 6}</span>
                           )}
                         </div>
                         <button onClick={() => removePlugin(p.name)} className="shrink-0 hover:text-red-500 ml-auto">
@@ -483,7 +483,7 @@ export default function CoworkToolCard({
                         })}
                       </div>
                       <p className="text-[10px] text-text-muted leading-snug">
-                        ⚠️ Local plugins run as subprocess via <code className="px-1 py-0.5 rounded bg-black/5 dark:bg-white/5">npx</code>. Requires Node.js installed.
+                        ⚠️ Local plugins run as subprocess via <code className="px-1.5 py-0.5 rounded-[var(--r-chip)] bg-surface-2 border border-border-subtle text-text-main">npx</code>. Requires Node.js installed.
                       </p>
                     </div>
                   </div>

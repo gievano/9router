@@ -2,7 +2,7 @@ import { FORMATS } from "../../translator/formats.js";
 import { needsTranslation } from "../../translator/index.js";
 import { openAICompletionToClaudeMessage } from "../../translator/concerns/claudeMessage.js";
 import { ollamaBodyToOpenAI } from "../../translator/response/ollama-to-openai.js";
-import { addBufferToUsage, filterUsageForFormat } from "../../utils/usageTracking.js";
+import { addBufferToUsage, filterUsageForFormat, applyUsageMultipliers } from "../../utils/usageTracking.js";
 import { createErrorResult } from "../../utils/error.js";
 import { rescueResponse } from "../../translator/concerns/toolCallRescue.js";
 import { applyJsonGuard } from "../../translator/concerns/jsonGuard.js";
@@ -318,7 +318,7 @@ export function translateNonStreamingResponse(responseBody, targetFormat, source
 /**
  * Handle non-streaming response from provider.
  */
-export async function handleNonStreamingResponse({ providerResponse, provider, model, sourceFormat, targetFormat, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, requestedModel, clientRawRequest, onRequestSuccess, reqLogger, toolNameMap, customToolNames, trackDone, appendLog, pxpipe, reqTag, log, pluginResult }) {
+export async function handleNonStreamingResponse({ providerResponse, provider, model, sourceFormat, targetFormat, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, requestedModel, clientRawRequest, onRequestSuccess, reqLogger, toolNameMap, customToolNames, trackDone, appendLog, pxpipe, reqTag, log, pluginResult, modelMultipliers = null, isAntiProbe = false }) {
   trackDone();
   const contentType = providerResponse.headers.get("content-type") || "";
   let responseBody;
@@ -362,7 +362,10 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
   // Decloak tool_use names once on raw Claude body, before any translation (INPUT side)
   responseBody = decloakToolNames(responseBody, toolNameMap);
 
-  const usage = extractUsageFromResponse(responseBody);
+  let usage = extractUsageFromResponse(responseBody);
+  if (modelMultipliers && usage) {
+    usage = applyUsageMultipliers(usage, modelMultipliers);
+  }
   appendLog({ tokens: usage, status: "200 OK" });
   saveUsageStats({ provider, model, tokens: usage, connectionId, apiKey, requestedModel, endpoint: clientRawRequest?.endpoint, silent: true });
   if (log?.line) log.line(reqTag, "📊", formatDoneLine({ usage, latency: { total: Date.now() - requestStartTime } }));
@@ -439,16 +442,35 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
   }
 
   if (translatedResponse?.usage) {
+    if (modelMultipliers) {
+      translatedResponse.usage = applyUsageMultipliers(translatedResponse.usage, modelMultipliers);
+    }
     translatedResponse.usage = filterUsageForFormat(addBufferToUsage(translatedResponse.usage), sourceFormat);
   }
 
-  // Strip reasoning_content only when content is non-empty.
+  if ((isAntiProbe || requestedModel) && translatedResponse && typeof translatedResponse === "object") {
+    if (requestedModel && translatedResponse.model) {
+      translatedResponse.model = requestedModel;
+    }
+    if (isAntiProbe) {
+      delete translatedResponse.system_fingerprint;
+    }
+  }
+
+  // Rescue zero-output tokens for clients:
   // When content is empty (e.g. thinking models that used all tokens for reasoning),
-  // reasoning_content is the only useful output and must be preserved.
+  // promote reasoning_content into content so standard OpenAI clients don't see 0 output tokens.
   if (!isClaudeMessageResponse && !isResponsesResponse && translatedResponse?.choices) {
     for (const choice of translatedResponse.choices) {
-      if (choice?.message?.reasoning_content && choice.message.content) {
-        delete choice.message.reasoning_content;
+      if ((!choice?.message?.content || !choice.message.content.trim()) && choice?.message?.reasoning_content) {
+        choice.message.content = choice.message.reasoning_content;
+      } else if ((!choice?.message?.content || !choice.message.content.trim()) && !choice?.message?.tool_calls) {
+        const reason = choice?.finish_reason;
+        choice.message.content = reason === "length"
+          ? "[Model stopped: max_tokens limit reached before output could be generated. Please increase max_tokens.]"
+          : reason === "content_filter"
+          ? "[Model stopped: Output filtered by upstream provider content policy.]"
+          : "[The model generated zero output tokens. Upstream completed with empty response.]";
       }
     }
   }

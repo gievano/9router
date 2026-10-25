@@ -112,6 +112,7 @@ export default function ProvidersPage() {
   const [testingMode, setTestingMode] = useState(null);
   const [testResults, setTestResults] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [opencodeInstalled, setOpencodeInstalled] = useState(true);
   const notify = useNotificationStore();
   const searchQuery = useHeaderSearchStore((s) => s.query);
   const registerSearch = useHeaderSearchStore((s) => s.register);
@@ -163,8 +164,12 @@ export default function ProvidersPage() {
         ]);
         const connectionsData = await connectionsRes.json();
         const nodesData = await nodesRes.json();
-        if (connectionsRes.ok)
+        if (connectionsRes.ok) {
           setConnections(connectionsData.connections || []);
+          if (connectionsData.opencodeInstalled !== undefined) {
+            setOpencodeInstalled(Boolean(connectionsData.opencodeInstalled));
+          }
+        }
         if (nodesRes.ok) setProviderNodes(nodesData.nodes || []);
       } catch (error) {
         console.log("Error fetching data:", error);
@@ -590,6 +595,7 @@ export default function ProvidersPage() {
                 provider={info}
                 stats={getProviderStats(key, freeAuthTypes)}
                 authType="free"
+                opencodeInstalled={opencodeInstalled}
                 onToggle={(active) =>
                   handleToggleProvider(key, freeAuthTypes, active)
                 }
@@ -748,7 +754,7 @@ export default function ProvidersPage() {
   );
 }
 
-function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
+function ProviderCard({ providerId, provider, stats, authType, onToggle, opencodeInstalled = true }) {
   const { connected, error, errorCode, errorTime, allDisabled } = stats;
   const isNoAuth = !!provider.noAuth;
 
@@ -804,11 +810,17 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
                   </Badge>
                 ) : isNoAuth ? (
                   <Badge
-                    variant={provider.statusBadge?.variant || "success"}
+                    variant={
+                      providerId === "opencode-v2" && !opencodeInstalled
+                        ? "warning"
+                        : provider.statusBadge?.variant || "success"
+                    }
                     size="sm"
                     dot
                   >
-                    {provider.statusBadge?.label || "Ready"}
+                    {providerId === "opencode-v2" && !opencodeInstalled
+                      ? "Need Configuration"
+                      : provider.statusBadge?.label || "Ready"}
                   </Badge>
                 ) : (
                   <>

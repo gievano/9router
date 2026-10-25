@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { createProviderConnection } from "@/models";
 
+export const dynamic = "force-dynamic";
+
 /**
  * POST /api/oauth/kiro/api-key
  * Import a Kiro API key (headless auth). The key is a long-lived bearer

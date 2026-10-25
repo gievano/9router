@@ -342,12 +342,12 @@ default_subagent_model = "${effectiveSubagentModel}"
                   <div className="space-y-3 text-sm">
                     <div>
                       <p className="text-text-muted mb-1">macOS / Linux / Windows:</p>
-                      <code className="block px-3 py-2 bg-black/5 dark:bg-white/5 rounded font-mono text-xs">npm install -g @openai/codex</code>
+                      <code className="block px-3 py-2 bg-surface-2 rounded-[var(--r-control)] font-mono text-xs border border-border-subtle text-text-main">npm install -g @openai/codex</code>
                     </div>
-                    <p className="text-text-muted">After installation, run <code className="px-1 bg-black/5 dark:bg-white/5 rounded">codex</code> to verify.</p>
+                    <p className="text-text-muted">After installation, run <code className="px-1.5 py-0.5 bg-surface-2 rounded-[var(--r-chip)] border border-border-subtle text-text-main">codex</code> to verify.</p>
                     <div className="pt-2 border-t border-border">
                       <p className="text-text-muted text-xs">
-                        Codex reads custom providers from <code className="px-1 bg-black/5 dark:bg-white/5 rounded">~/.codex/config.toml</code>.
+                        Codex reads custom providers from <code className="px-1.5 py-0.5 bg-surface-2 rounded-[var(--r-chip)] border border-border-subtle text-text-main">~/.codex/config.toml</code>.
                         Click &quot;Apply&quot; to auto-configure.
                       </p>
                     </div>
@@ -554,7 +554,7 @@ default_subagent_model = "${effectiveSubagentModel}"
                           className="flex items-center justify-between gap-2 p-2.5 bg-surface/50 border border-border hover:border-border-hover rounded-lg transition-colors group"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="size-6 flex items-center justify-center shrink-0 rounded bg-black/5 dark:bg-white/5 p-0.5">
+                            <div className="size-6 flex items-center justify-center shrink-0 rounded-[var(--r-chip)] bg-surface-2 border border-border-subtle p-0.5">
                               <ProviderIcon providerId={providerId} size={18} fallbackText={p.name.slice(0, 2).toUpperCase()} />
                             </div>
                             <div className="min-w-0 flex flex-col">

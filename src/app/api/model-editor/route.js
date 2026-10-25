@@ -114,6 +114,9 @@ export async function POST(request) {
   ownedBy: body.ownedBy,
   contextWindow: body.contextWindow,
   systemPrompt: body.systemPrompt,
+  inputMultiplier: body.inputMultiplier,
+  outputMultiplier: body.outputMultiplier,
+  antiProbe: body.antiProbe,
   });
 
   return NextResponse.json({ model });
@@ -147,6 +150,9 @@ export async function PUT(request) {
   ownedBy: body.ownedBy,
   contextWindow: body.contextWindow,
   systemPrompt: body.systemPrompt,
+  inputMultiplier: body.inputMultiplier,
+  outputMultiplier: body.outputMultiplier,
+  antiProbe: body.antiProbe,
   });
 
   if (previousName !== callName) {

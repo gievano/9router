@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
 import { extractCodexAccountInfo } from "@/lib/oauth/providers";
 
+export const dynamic = "force-dynamic";
+
 /**
  * POST /api/oauth/codex/import-token
  * Import a ChatGPT access token (created from chatgpt.com settings)

@@ -5,7 +5,7 @@ import { pluginAppliesToModel, matchesModel, modelKeys } from "@/shared/utils/pl
 // the contract that keeps them agreeing about which plugin runs for which model.
 const CONFIG = {
   thinkDeeper: { enabled: true, models: ["gpt-4o"] },
-  speedMode: { enabled: true, models: ["claude-3-5-sonnet"] },
+  imageVision: { enabled: true, models: ["claude-3-5-sonnet"] },
   jsonGuard: { enabled: false, models: ["gpt-4o"] },
   antiSlop: { enabled: true, models: [] },
 };
@@ -18,7 +18,7 @@ const marksFor = (modelId) =>
 describe("TASK 9 - plugin selection rule shared by runtime and badge", () => {
   it("selects only enabled plugins whose model list matches", () => {
     expect(marksFor("openai/gpt-4o")).toEqual(["thinkDeeper"]);
-    expect(marksFor("anthropic/claude-3-5-sonnet")).toEqual(["speedMode"]);
+    expect(marksFor("anthropic/claude-3-5-sonnet")).toEqual(["imageVision"]);
     expect(marksFor("openai/nothing-enabled")).toEqual([]);
     expect(marksFor("openai/gpt-4o-mini")).toEqual([]);
   });

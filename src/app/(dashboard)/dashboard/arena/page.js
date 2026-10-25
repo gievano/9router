@@ -430,7 +430,7 @@ function ArenaContent() {
                   )}
                 </div>
 
-                <div className="flex-1 overflow-auto bg-black/5 dark:bg-white/5 rounded-lg p-3 min-w-0">
+                <div className="flex-1 overflow-auto bg-surface-2/60 rounded-lg p-3 min-w-0 border border-border-subtle">
                   {streamed ? (
                     <pre className="text-sm font-mono whitespace-pre-wrap break-words min-w-0">
                       {streamed}
@@ -460,7 +460,7 @@ function ArenaContent() {
                             {result.source && (
                               <span
                                 title={result.source}
-                                className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-text-muted font-mono max-w-full truncate"
+                                className="px-1.5 py-0.5 rounded-[var(--r-chip)] bg-surface-2 text-text-muted font-mono max-w-full truncate border border-border-subtle"
                               >
                                 {result.source}
                               </span>
@@ -471,7 +471,7 @@ function ArenaContent() {
                               <summary className="cursor-pointer text-[11px] text-text-muted hover:text-primary">
                                 Show the raw error
                               </summary>
-                              <pre className="mt-1 max-h-40 overflow-auto custom-scrollbar whitespace-pre-wrap break-words rounded bg-black/5 dark:bg-white/5 p-2 text-[10px] text-text-muted">
+                              <pre className="mt-1 max-h-40 overflow-auto custom-scrollbar whitespace-pre-wrap break-words rounded-[var(--r-chip)] bg-surface-2 p-2 text-[10px] text-text-muted border border-border-subtle">
                                 {result.detail}
                               </pre>
                             </details>
@@ -503,7 +503,7 @@ function ArenaContent() {
                               <summary className="cursor-pointer text-[11px] text-text-muted hover:text-primary">
                                 Show the reasoning behind this answer
                               </summary>
-                              <pre className="mt-1 max-h-40 overflow-auto custom-scrollbar whitespace-pre-wrap break-words rounded bg-black/5 dark:bg-white/5 p-2 text-[11px] text-text-muted">
+                              <pre className="mt-1 max-h-40 overflow-auto custom-scrollbar whitespace-pre-wrap break-words rounded-[var(--r-chip)] bg-surface-2 p-2 text-[11px] text-text-muted border border-border-subtle">
                                 {result.thinking}
                               </pre>
                             </details>
@@ -904,7 +904,7 @@ function Badge({ icon, text, accent }) {
   return (
     <span
       className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${
-        accent ? "bg-primary/15 text-primary" : "bg-black/5 dark:bg-white/10 text-text-muted"
+        accent ? "bg-primary/15 text-primary" : "bg-surface-2 text-text-muted border border-border-subtle"
       }`}
     >
       <span className="material-symbols-outlined text-[11px]">{icon}</span>

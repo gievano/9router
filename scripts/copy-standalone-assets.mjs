@@ -47,7 +47,7 @@ export function copyStandaloneAssets({ projectRoot = process.cwd(), distDir = pr
   // the same tree for the systemd unit; this makes the plain
   // `npm run build && npm start` (and `bun run build:bun && bun run start:bun`)
   // path work without running assemble.sh first.
-  for (const dir of ["src", "scripts"]) {
+  for (const dir of ["src", "scripts", "open-sse"]) {
     const dirSource = resolve(projectRoot, dir);
     const dirDestination = resolve(standaloneDir, dir);
     if (!existsSync(dirSource)) continue;

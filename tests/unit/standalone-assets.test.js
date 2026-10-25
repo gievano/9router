@@ -66,6 +66,17 @@ describe("standalone build assets", () => {
     expect(readFileSync(join(projectRoot, ".next", "standalone", "scripts", "auth-guard-hooks.mjs"), "utf8")).toBe("hooks");
   });
 
+  it("stages open-sse/ so runtime tool defs and executors can load in standalone", () => {
+    const projectRoot = createBuildFixture(".next");
+    mkdirSync(join(projectRoot, "open-sse", "utils"), { recursive: true });
+    writeFileSync(join(projectRoot, "open-sse", "utils", "opencodeV2Defs.json"), '{"read":{}}');
+
+    copyStandaloneAssets({ projectRoot, distDir: ".next" });
+
+    expect(readFileSync(join(projectRoot, ".next", "standalone", "open-sse", "utils", "opencodeV2Defs.json"), "utf8"))
+      .toBe('{"read":{}}');
+  });
+
   // Tracing never sees the guard's runtime `import "next/server"`: the guard is
   // copied in after the build, so it is not in the webpack graph. The standalone
   // tree therefore carried a partial next package and every request answered 503

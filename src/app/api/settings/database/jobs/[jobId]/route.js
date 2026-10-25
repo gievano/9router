@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyDashboardPassword } from "@/lib/auth/dashboardSession";
+
+export const dynamic = "force-dynamic";
 import { verifyPollToken, PASSWORD_HEADER } from "@/lib/db/importJobAuth.js";
 import { getImportJob } from "@/lib/db/importJobs";
 

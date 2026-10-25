@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { getDashboardAuthSession } from "@/lib/auth/dashboardSession";
 import { killAppProcesses, spawnUpdaterAndExit } from "@/lib/appUpdater";
 
+export const dynamic = "force-dynamic";
+
 export async function POST() {
   // Same rule as /api/version/shutdown: this kills the process and runs an
   // updater, so it belongs to a password session only.

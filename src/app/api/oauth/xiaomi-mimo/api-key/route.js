@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
 
+export const dynamic = "force-dynamic";
+
 /**
  * POST /api/oauth/xiaomi-mimo/api-key
  * Import a Xiaomi MiMo API key manually (or from auto-import).

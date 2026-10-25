@@ -1,9 +1,10 @@
-"use server";
 
 import { NextResponse } from "next/server";
 import { getMitmAlias, setMitmAliasAll } from "@/models";
 import { getMitmStatus } from "@/mitm/manager";
 import { writeAliasForTool } from "@/lib/mitmAliasCache";
+
+export const dynamic = "force-dynamic";
 
 // GET - Get MITM aliases for a tool
 export async function GET(request) {

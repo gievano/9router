@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { assertPublicUrl } from "@/shared/utils/ssrfGuard.js";
 import { isLocalRequest } from "@/dashboardGuard";
 
+export const dynamic = "force-dynamic";
+
 // Fetch with timeout wrapper
 const fetchWithTimeout = (url, options, timeout = 10000) => {
   return Promise.race([

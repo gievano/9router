@@ -1,6 +1,8 @@
 import { PROVIDER_MODELS } from "@/shared/constants/models";
 import { resolveModelDisplayName } from "@/shared/utils/modelDisplayName";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Handle CORS preflight
  */

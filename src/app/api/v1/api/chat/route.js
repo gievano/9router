@@ -2,6 +2,8 @@ import { handleChat } from "@/sse/handlers/chat.js";
 import { initTranslators } from "open-sse/translator/index.js";
 import { transformToOllama } from "open-sse/utils/ollamaTransform.js";
 
+export const dynamic = "force-dynamic";
+
 let initialized = false;
 
 async function ensureInitialized() {

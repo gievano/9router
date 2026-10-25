@@ -58,6 +58,7 @@ const PROTECTED_API_PATHS = [
   "/api/notifications",
   "/api/keys",
   "/api/providers",
+  "/api/models/test",
   "/api/provider-nodes",
   "/api/proxy-pools",
   "/api/combos",
@@ -72,6 +73,7 @@ const PROTECTED_API_PATHS = [
   "/api/cli-tools",
   "/api/mcp",
   "/api/translator",
+  "/api/error-logs",
   "/api/tunnel",
 ];
 
@@ -223,6 +225,15 @@ export const __test__ = {
   canAccessLocalOnlyRoute,
 };
 
+function toRedirectUrl(path, request) {
+  const target = new URL(path, request.url);
+  const proto = request.headers?.get?.("x-forwarded-proto");
+  if (proto) {
+    target.protocol = proto.endsWith(":") ? proto : `${proto}:`;
+  }
+  return target;
+}
+
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
@@ -251,6 +262,16 @@ export async function proxy(request) {
   }
 
   if (isPublicLlmApi(pathname)) {
+    // Model listing endpoints require API key or authenticated dashboard session
+    if (pathname === "/v1/models" || pathname === "/api/v1/models" || pathname.startsWith("/v1/models/") || pathname.startsWith("/api/v1/models/")) {
+      const apiKey = extractApiKey(request);
+      if (!apiKey && !(await hasValidToken(request)) && !(await hasValidCliToken(request))) {
+        return NextResponse.json(
+          { error: { message: "API key required to view model list", type: "invalid_request_error", code: "invalid_api_key" } },
+          { status: 401 }
+        );
+      }
+    }
     if (await canAccessPublicLlmApi(request)) return NextResponse.next();
     return NextResponse.json({ error: "API key required for remote API access" }, { status: 401 });
   }
@@ -279,7 +300,7 @@ export async function proxy(request) {
     // when login is turned off, and lands on the first page it is allowed to open.
     if (apiKeySession && !canOpenPage(pathname, apiKeySession.permissions)) {
       const landing = firstAllowedPage(apiKeySession.permissions);
-      return NextResponse.redirect(new URL(landing || "/login", request.url));
+      return NextResponse.redirect(toRedirectUrl(landing || "/login", request));
     }
 
     let requireLogin = true;
@@ -297,7 +318,7 @@ export async function proxy(request) {
           const tunnelHost = settings.tunnelUrl ? new URL(settings.tunnelUrl).hostname.toLowerCase() : "";
           const tailscaleHost = settings.tailscaleUrl ? new URL(settings.tailscaleUrl).hostname.toLowerCase() : "";
           if ((tunnelHost && host === tunnelHost) || (tailscaleHost && host === tailscaleHost)) {
-            return NextResponse.redirect(new URL("/login", request.url));
+            return NextResponse.redirect(toRedirectUrl("/login", request));
           }
         }
       }
@@ -314,16 +335,16 @@ export async function proxy(request) {
       if (await verifyDashboardAuthToken(token)) {
         return NextResponse.next();
       } else {
-        return NextResponse.redirect(new URL("/login", request.url));
+        return NextResponse.redirect(toRedirectUrl("/login", request));
       }
     }
 
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(toRedirectUrl("/login", request));
   }
 
   // Redirect / to /dashboard if logged in, or /dashboard if it's the root
   if (pathname === "/") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(toRedirectUrl("/dashboard", request));
   }
 
   return NextResponse.next();

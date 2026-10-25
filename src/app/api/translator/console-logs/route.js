@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { clearConsoleLogs, getConsoleLogs, initConsoleLogCapture } from "@/lib/consoleLogBuffer";
 
+export const dynamic = "force-dynamic";
+
 initConsoleLogCapture();
 
 export async function GET() {

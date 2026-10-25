@@ -1,5 +1,7 @@
 import { buildModelsList } from "../route.js";
 
+export const dynamic = "force-dynamic";
+
 // URL slug → service kind(s). `web` covers both webSearch and webFetch.
 const KIND_SLUG_MAP = {
   "image": ["image"],

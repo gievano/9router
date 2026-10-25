@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getProviderConnections } from "@/lib/localDb";
+
+export const dynamic = "force-dynamic";
 import { getProviderNodes } from "@/models";
 import { backfillCodexEmails } from "@/lib/oauth/providers";
 import {

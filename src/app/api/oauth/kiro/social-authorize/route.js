@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { generatePKCE } from "@/lib/oauth/utils/pkce";
 import { KiroService } from "@/lib/oauth/services/kiro";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/oauth/kiro/social-authorize
  * Generate Google/GitHub social login URL for manual callback flow

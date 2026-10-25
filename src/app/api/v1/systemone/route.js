@@ -1,5 +1,7 @@
 import { handleSystemone } from "@/sse/handlers/systemone.js";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Handle CORS preflight
  */

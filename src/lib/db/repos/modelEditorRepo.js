@@ -58,6 +58,9 @@ function toModel(callName, value) {
   model: target.slice(firstSlash + 1),
   contextWindow: Number(value.contextWindow) || 0,
   systemPrompt: typeof value.systemPrompt === "string" ? value.systemPrompt : "",
+  inputMultiplier: Number(value.inputMultiplier) > 0 ? Number(value.inputMultiplier) : undefined,
+  outputMultiplier: Number(value.outputMultiplier) > 0 ? Number(value.outputMultiplier) : undefined,
+  antiProbe: typeof value.antiProbe === "boolean" ? value.antiProbe : undefined,
   createdAt: value.createdAt || "",
   };
 }
@@ -76,6 +79,9 @@ function toComboTargetModel(callName, value, target) {
   isComboTarget: true,
   contextWindow: Number(value.contextWindow) || 0,
   systemPrompt: typeof value.systemPrompt === "string" ? value.systemPrompt : "",
+  inputMultiplier: Number(value.inputMultiplier) > 0 ? Number(value.inputMultiplier) : undefined,
+  outputMultiplier: Number(value.outputMultiplier) > 0 ? Number(value.outputMultiplier) : undefined,
+  antiProbe: typeof value.antiProbe === "boolean" ? value.antiProbe : undefined,
   createdAt: value.createdAt || "",
   };
 }
@@ -117,7 +123,7 @@ export async function getStudioModel(callName) {
   return value ? toModel(callName, value) : null;
 }
 
-export async function setStudioModel({ callName, displayName, ownedBy, targetModel, targetLabel, contextWindow, systemPrompt }) {
+export async function setStudioModel({ callName, displayName, ownedBy, targetModel, targetLabel, contextWindow, systemPrompt, inputMultiplier, outputMultiplier, antiProbe }) {
   const payload = {
   callName,
   displayName: (displayName || "").trim(),
@@ -126,6 +132,9 @@ export async function setStudioModel({ callName, displayName, ownedBy, targetMod
    targetLabel: (targetLabel || targetModel || "").trim(),
   contextWindow: Number(contextWindow) || 0,
   systemPrompt: systemPrompt || "",
+  ...(Number(inputMultiplier) > 0 ? { inputMultiplier: Number(inputMultiplier) } : {}),
+  ...(Number(outputMultiplier) > 0 ? { outputMultiplier: Number(outputMultiplier) } : {}),
+  ...(typeof antiProbe === "boolean" ? { antiProbe } : {}),
   createdAt: new Date().toISOString(),
   };
   await store().set(callName, payload);

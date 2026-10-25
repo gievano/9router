@@ -1,5 +1,7 @@
 import { PROVIDER_MODELS, PROVIDER_ID_TO_ALIAS, getModelKind } from "@/shared/constants/models";
 import { resolveModelDisplayName } from "@/shared/utils/modelDisplayName";
+
+export const dynamic = "force-dynamic";
 import {
   AI_PROVIDERS,
   FREE_PROVIDERS,
@@ -761,8 +763,47 @@ export async function OPTIONS() {
  */
 export async function GET(request) {
   try {
+    const isInternal = request?.headers?.get(INTERNAL_MODELS_FETCH_HEADER) === "1";
+    const apiKey = readCallerApiKey(request);
+
+    // Require an API key or dashboard auth so people cannot anonymously curl the model list
+    if (!apiKey && !isInternal) {
+      const cliToken = request?.headers?.get("x-9r-cli-token");
+      const cookie = request?.headers?.get("cookie") || "";
+      const isDashboardUser = Boolean(cliToken) || cookie.includes("auth_token=");
+      if (!isDashboardUser) {
+        return Response.json(
+          {
+            error: {
+              message: "You must provide a valid API key to access this endpoint. Pass it via Authorization: Bearer <key> or x-api-key.",
+              type: "invalid_request_error",
+              code: "invalid_api_key",
+            },
+          },
+          { status: 401, headers: { "Access-Control-Allow-Origin": "*" } }
+        );
+      }
+    }
+
+    if (apiKey) {
+      const { isValidApiKey } = await import("@/sse/services/auth.js");
+      const valid = await isValidApiKey(apiKey, null);
+      if (valid !== true && typeof valid !== "string") {
+        return Response.json(
+          {
+            error: {
+              message: "Invalid or expired API key.",
+              type: "invalid_request_error",
+              code: "invalid_api_key",
+            },
+          },
+          { status: 401, headers: { "Access-Control-Allow-Origin": "*" } }
+        );
+      }
+    }
+
     // Detect cross-instance recursive /models fetch (another 9router fetching our /models)
-    const skipDynamicFetch = request?.headers?.get(INTERNAL_MODELS_FETCH_HEADER) === "1";
+    const skipDynamicFetch = isInternal;
     const data = await buildModelsList([LLM_KIND], { skipDynamicFetch, request });
     return Response.json({ object: "list", data }, {
       headers: { "Access-Control-Allow-Origin": "*" },

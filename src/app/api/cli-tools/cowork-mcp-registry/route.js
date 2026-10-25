@@ -1,6 +1,7 @@
-"use server";
 
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 
 const REGISTRY_URL = "https://api.anthropic.com/mcp-registry/v0/servers";
 const VISIBILITY = "commercial,gsuite,gsuite-google";

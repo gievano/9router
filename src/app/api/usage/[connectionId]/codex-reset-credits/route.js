@@ -6,6 +6,8 @@ import { consumeCodexRateLimitResetCredit, getCodexRateLimitResetCredits } from 
 import { resolveConnectionProxyConfig } from "@/lib/network/connectionProxy";
 import { refreshAndUpdateCredentials } from "../route.js";
 
+export const dynamic = "force-dynamic";
+
 const AUTH_EXPIRED_PATTERNS = ["expired", "authentication", "unauthorized", "401", "re-authorize"];
 
 function isAuthExpiredResult(result) {

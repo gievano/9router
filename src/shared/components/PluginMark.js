@@ -36,13 +36,13 @@ const PLUGIN_MARKS = {
       <circle cx="12" cy="12" r="2.7" fill="currentColor" stroke="none" />
     </>
   ),
-  // Think Deeper: a brain with a bold arrow driving down into it - thinking,
-  // then going further. The arrow is what separates it from native reasoning.
-  thinkDeeper: (
+  adaptiveThinking: (
     <>
       <path d="M11.9 5.1a4.4 4.4 0 0 0-5.5 2.1 3.1 3.1 0 0 0-2 3.2 3.3 3.3 0 0 0 .6 1.9 3.2 3.2 0 0 0 .1 3.7 4 4 0 0 0 3.7 2.5h1.6v-3.4" />
       <path d="M12.1 5.1a4.4 4.4 0 0 1 5.5 2.1 3.1 3.1 0 0 1 2 3.2 3.3 3.3 0 0 1-.6 1.9 3.2 3.2 0 0 1-.1 3.7 4 4 0 0 1-3.7 2.5h-1.6v-3.4" />
-      <path d="M12 9.2v6m0 0-2.7-2.7M12 15.2l2.7-2.7" />
+      <path d="M12 8.5v7m0 0-2.5-2.5M12 15.5l2.5-2.5" />
+      <circle cx="8.3" cy="9.2" r="0.6" fill="currentColor" stroke="none" />
+      <circle cx="15.7" cy="9.2" r="0.6" fill="currentColor" stroke="none" />
     </>
   ),
   // Native reasoning: a brain with a visible crack running through it - the two

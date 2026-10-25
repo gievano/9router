@@ -52,23 +52,26 @@ export default function ProviderBarChart({ byProvider }) {
   return (
     <Card className="flex min-w-0 flex-col gap-3 p-3 sm:p-4">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-semibold text-text-muted uppercase tracking-wide">By Provider</span>
-        <div className="grid grid-cols-3 items-center gap-1 rounded-lg border border-border bg-bg-subtle p-1">
+        <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">By Provider</span>
+        <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-sidebar/60 p-0.5">
           <button
+            type="button"
             onClick={() => setViewMode("tokens")}
-            className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-colors ${viewMode === "tokens" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+            className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${viewMode === "tokens" ? "bg-primary text-white shadow-2xs font-semibold" : "text-text-muted hover:text-text-main hover:bg-sidebar"}`}
           >
             Tokens
           </button>
           <button
+            type="button"
             onClick={() => setViewMode("requests")}
-            className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-colors ${viewMode === "requests" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+            className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${viewMode === "requests" ? "bg-primary text-white shadow-2xs font-semibold" : "text-text-muted hover:text-text-main hover:bg-sidebar"}`}
           >
             Requests
           </button>
           <button
+            type="button"
             onClick={() => setViewMode("cost")}
-            className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-colors ${viewMode === "cost" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+            className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${viewMode === "cost" ? "bg-primary text-white shadow-2xs font-semibold" : "text-text-muted hover:text-text-main hover:bg-sidebar"}`}
           >
             Cost
           </button>
@@ -78,34 +81,35 @@ export default function ProviderBarChart({ byProvider }) {
       {!chartData.length ? (
         <div className="h-44 flex items-center justify-center text-text-muted text-sm">No provider usage yet</div>
       ) : (
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+        <ResponsiveContainer width="100%" height={210}>
+          <BarChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fontSize: 10, fill: "currentColor", fillOpacity: 0.6 }}
+              tick={{ fontSize: 10, fill: "currentColor", fillOpacity: 0.8 }}
               tickLine={false}
               axisLine={false}
               interval={0}
-              tickFormatter={(v) => v.length > 10 ? v.slice(0, 10) + "…" : v}
+              tickFormatter={(v) => v.length > 12 ? v.slice(0, 12) + "…" : v}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: "currentColor", fillOpacity: 0.5 }}
+              tick={{ fontSize: 10, fill: "currentColor", fillOpacity: 0.6 }}
               tickLine={false}
               axisLine={false}
               tickFormatter={fmt}
-              width={44}
+              width={48}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "var(--color-bg)",
-                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-surface, #1e1e24)",
+                border: "1px solid var(--color-border, rgba(255,255,255,0.1))",
                 borderRadius: "8px",
                 fontSize: "12px",
+                color: "var(--color-text-main, #fff)",
               }}
               formatter={(value) => [fmt(value), label]}
             />
-            <Bar dataKey={viewMode} radius={[4, 4, 0, 0]}>
+            <Bar dataKey={viewMode} radius={[4, 4, 0, 0]} maxBarSize={44}>
               {chartData.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} fillOpacity={0.85} />
               ))}

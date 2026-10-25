@@ -5,6 +5,8 @@ import {
   getProxyPools,
 } from "@/models";
 
+export const dynamic = "force-dynamic";
+
 // Mirrors the per-id route: a pool that a connection still points at must not
 // disappear, or that connection silently loses its egress path.
 function countBoundConnections(connections = [], ids = []) {

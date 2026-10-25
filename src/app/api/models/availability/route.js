@@ -4,6 +4,8 @@ import {
   updateProviderConnection,
 } from "@/lib/localDb";
 
+export const dynamic = "force-dynamic";
+
 const MODEL_LOCK_PREFIX = "modelLock_";
 
 function getActiveModelLocks(connection) {

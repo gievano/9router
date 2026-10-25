@@ -4,6 +4,8 @@ import { getSessionContext, DEFAULT_PERMISSIONS } from "@/lib/auth/dashboardPerm
 import { recordSecurityEvent } from "@/lib/db/repos/securityLogRepo";
 import { parseAllowedModels, matchesAllowedModels } from "@/lib/db/repos/apiKeysRepo";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/keys/[id] - Get single key
 export async function GET(request, { params }) {
   try {

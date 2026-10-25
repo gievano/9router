@@ -11,7 +11,14 @@ const DEAD_FREE_OPENCODE_MODELS = new Set(["deepseek-v4-flash-free"]);
 
 // Placeholder ids the upstream catalogue carries for its own smoke tests. They
 // answer nothing and turn up as a junk chip ("test") beside real models.
+// Jev ids ride the catalogue too but have no chat route (see the registry
+// note): offering them as chat chips only builds an unwinnable 400 loop.
 const PLACEHOLDER_OPENCODE_MODELS = new Set(["test"]);
+const NO_CHAT_ROUTE_OPENCODE_MODELS = new Set(["jev-1.13", "jev-1.13-free"]);
+// Upstream deprecates free ids without removing them at once: the id stays in
+// /zen/v1/models but every call answers 410 ModelDeprecated with the
+// replacement named in the message. Dead on arrival, so drop like jev/test.
+const DEPRECATED_OPENCODE_MODELS = new Set(["minimax-m3.1-flash-free"]);
 
 // tolerant id reader: falls back to `name` when upstream changes its schema
 function opencodeModelId(m) {
@@ -73,7 +80,7 @@ export const FILTERS = {
   "opencode-free": (models) =>
     (Array.isArray(models) ? models : [])
       .map((m) => ({ id: opencodeModelId(m), name: opencodeModelId(m) }))
-      .filter((m) => m.id && !PLACEHOLDER_OPENCODE_MODELS.has(m.id))
+      .filter((m) => m.id && !PLACEHOLDER_OPENCODE_MODELS.has(m.id) && !NO_CHAT_ROUTE_OPENCODE_MODELS.has(m.id) && !DEPRECATED_OPENCODE_MODELS.has(m.id))
       .map((m) => ({ ...m, isFree: isFreeOpencodeModel(m) }))
       .sort((a, b) => Number(b.isFree) - Number(a.isFree) || a.id.localeCompare(b.id)),
 

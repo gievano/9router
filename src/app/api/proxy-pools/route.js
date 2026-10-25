@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createProxyPool, getProviderConnections, getProxyPools } from "@/models";
 
+export const dynamic = "force-dynamic";
+
 function toBoolean(value) {
   if (value === "true") return true;
   if (value === "false") return false;

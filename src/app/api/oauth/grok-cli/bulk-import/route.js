@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
 import { decodeXaiIdTokenEmail, extractEmailFromAccessToken } from "@/lib/oauth/providerHelpers";
 
+export const dynamic = "force-dynamic";
+
 /**
  * POST /api/oauth/grok-cli/bulk-import
  * Bulk import multiple Grok CLI (OAuth/Device) account JSON objects in one call.

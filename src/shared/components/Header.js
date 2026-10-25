@@ -149,8 +149,15 @@ const getPageInfo = (pathname) => {
   if (pathname.includes("/profile"))
     return {
       title: "Settings",
-      description: "Manage your preferences",
+      description: "9Router configuration and preferences",
       icon: "settings",
+      breadcrumbs: [],
+    };
+  if (pathname.includes("/experiments"))
+    return {
+      title: "Experiment Features",
+      description: "Experimental and advanced security toggles",
+      icon: "science",
       breadcrumbs: [],
     };
   if (pathname.includes("/translator"))
@@ -161,11 +168,11 @@ const getPageInfo = (pathname) => {
       breadcrumbs: [],
     };
 
-  if (pathname.includes("/console-log"))
+  if (pathname.includes("/logs") || pathname.includes("/console-log") || pathname.includes("/error-log"))
     return {
-      title: "Console Log",
-      description: "Live server console output",
-      icon: "monitor",
+      title: "Error & Console Logs",
+      description: "Live system console stream and captured error records",
+      icon: "receipt_long",
       breadcrumbs: [],
     };
   if (pathname === "/dashboard")

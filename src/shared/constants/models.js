@@ -46,10 +46,8 @@ export const CAPACITY_META = {
   vision: { mark: "vision", label: "Vision", desc: "Supports image input" },
   // search: temporarily hidden (feature not wired yet)
   reasoning: { mark: "reasoning", label: "Reasoning", desc: "Supports reasoning / thinking" },
-  thinkDeeper: { mark: "thinkDeeper", label: "Think Deeper", desc: "Think Deeper Plugin: multi-step deep reasoning" },
-  speedMode: { mark: "speedMode", label: "Speed", desc: "Speed Mode: skips thinking for faster responses" },
-  jsonGuard: { mark: "jsonGuard", label: "JSON", desc: "JSON Guard: repairs unparseable JSON and tool arguments" },
-  contextSqueezer: { mark: "contextSqueezer", label: "Squeeze", desc: "Context Squeezer: trims old turns to fit the context window" },
+  adaptiveThinking: { mark: "adaptiveThinking", label: "Adaptive Thinking", desc: "Adaptive Thinking & Multi-Framework Cognitive Architecture" },
+  imageVision: { mark: "imageVision", label: "OCR Image", desc: "Auto Image-to-Text OCR Extractor" },
 };
 
 // Realtime STT transport markers accepted on custom models - single source of
@@ -105,32 +103,12 @@ export function pluginMarksFor(entry) {
 // Tooltip text and colour for each plugin mark. Kept beside CUSTOM_PLUGIN_KEYS so
 // a plugin cannot have a key with no mark to draw or no label to explain it.
 export const PLUGIN_MARK_META = {
+  adaptiveThinking: {
+    label: "Adaptive Thinking",
+    desc: "Adaptive Thinking & Cognitive Architecture: Multi-agent reasoning synthesis combining Depth Protocol, Superpowers, Adversaria, and First Principles",
+  },
   imageVision: {
-    label: "Image Vision",
-    desc: "Image Vision plugin: image input handled by the plugin",
-  },
-  thinkDeeper: {
-    label: "Think Deeper",
-    desc: "Think Deeper plugin: multi-step deep reasoning",
-  },
-  speedMode: {
-    label: "Speed",
-    desc: "Speed Mode plugin: skips thinking for faster responses",
-  },
-  jsonGuard: {
-    label: "JSON Guard",
-    desc: "JSON Guard plugin: repairs unparseable JSON and tool arguments",
-  },
-  contextSqueezer: {
-    label: "Squeeze",
-    desc: "Context Squeezer plugin: trims old turns to fit the context window",
-  },
-  openaiToolBridge: {
-    label: "Tool Bridge",
-    desc: "OpenAI Tool Bridge plugin: recovers tool calls a text-only model wrote out in prose",
-  },
-  antiSlop: {
-    label: "Anti Slop",
-    desc: "Anti Slop plugin: injects the antislop rules so the model avoids generic AI UI, copy and code",
+    label: "OCR Image",
+    desc: "OCR Auto Image-to-Text: Transcribes and extracts text from attached images, allowing text-only models to process images",
   },
 };

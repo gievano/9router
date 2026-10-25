@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createProxyPool } from "@/models";
+
+export const dynamic = "force-dynamic";
 import {
   NETLIFY_API,
   NETLIFY_FUNCTION_NAME,

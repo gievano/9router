@@ -417,7 +417,7 @@ export default function GenericCliToolCard({
                   <div className="space-y-3 text-sm">
                     <div>
                       <p className="text-text-muted mb-1">Install command:</p>
-                      <code className="block px-3 py-2 bg-black/5 dark:bg-white/5 rounded font-mono text-xs">{getInstallCommand()}</code>
+                      <code className="block px-3 py-2 bg-surface-2 rounded-[var(--r-control)] font-mono text-xs border border-border-subtle text-text-main">{getInstallCommand()}</code>
                     </div>
                     {tool.docsUrl && (
                       <p className="text-xs text-text-muted">

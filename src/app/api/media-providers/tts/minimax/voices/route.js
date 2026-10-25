@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getProviderConnections } from "@/lib/localDb";
 
+export const dynamic = "force-dynamic";
+
 const MINIMAX_VOICE_ENDPOINTS = {
   minimax: "https://api.minimax.io/v1/get_voice",
   "minimax-cn": "https://api.minimaxi.com/v1/get_voice",

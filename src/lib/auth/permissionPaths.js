@@ -73,6 +73,7 @@ const API_PERMISSION_RULES = [
   // The provider page needs the model catalog to render a connection, so reading it
   // is shared with manageProviders while every write stays on manageModels. Reading is
   // also shared with manageApiKeys because the key forms pick allowed models from it.
+  { prefix: "/api/models/test", permissions: ["manageModels", "manageProviders", "manageApiKeys"] },
   { prefix: "/api/models/alias", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
   { prefix: "/api/models/disabled", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
   { prefix: "/api/models/availability", permissions: ["manageModels", "manageProviders", "manageApiKeys"], methods: READ_METHODS },
@@ -91,6 +92,7 @@ const API_PERMISSION_RULES = [
   { prefix: "/api/cli-tools", permissions: ["manageTools"] },
   { prefix: "/api/headroom", permissions: ["manageTools"] },
   { prefix: "/api/translator", permissions: ["manageAdvanced"] },
+  { prefix: "/api/error-logs", permissions: ["manageAdvanced"] },
   { prefix: "/api/proxy-pools", permissions: ["manageAdvanced"] },
   { prefix: "/api/pxpipe", permissions: ["manageAdvanced"] },
   { prefix: "/api/plugins", permissions: ["managePlugins"] },
@@ -134,7 +136,9 @@ const PAGE_PERMISSION_RULES = [
   { prefix: "/dashboard/arena", permissions: ["manageModels"] },
   { prefix: "/dashboard/cli-tools", permissions: ["manageTools"] },
   { prefix: "/dashboard/token-saver", permissions: ["manageTools"] },
+  { prefix: "/dashboard/logs", permissions: ["manageAdvanced"] },
   { prefix: "/dashboard/console-log", permissions: ["manageAdvanced"] },
+  { prefix: "/dashboard/error-log", permissions: ["manageAdvanced"] },
   // The security trail names who signed in and from where, so it stays with the
   // administrators; a key session never opens it.
   { prefix: "/dashboard/translator", permissions: ["manageAdvanced"] },
@@ -146,6 +150,7 @@ const PAGE_PERMISSION_RULES = [
   { prefix: "/dashboard/media-providers", permissions: ["manageMediaProviders"] },
   { prefix: "/dashboard/basic-chat", permissions: [] },
   { prefix: "/dashboard/profile", permissions: [] },
+  { prefix: "/dashboard/experiments", permissions: [] },
   // The dashboard index renders the endpoint page, so it follows the same permission.
   // Exact, so a page added later stays admin-only until it is named above.
   { prefix: "/dashboard", permissions: ["manageApiKeys"], exact: true },
@@ -193,7 +198,9 @@ export function firstAllowedPage(permissions) {
     { path: "/dashboard/plugins", permissions: ["managePlugins"] },
     { path: "/dashboard/cli-tools", permissions: ["manageTools"] },
     { path: "/dashboard/token-saver", permissions: ["manageTools"] },
+    { path: "/dashboard/logs", permissions: ["manageAdvanced"] },
     { path: "/dashboard/console-log", permissions: ["manageAdvanced"] },
+    { path: "/dashboard/error-log", permissions: ["manageAdvanced"] },
     { path: "/dashboard/translator", permissions: ["manageAdvanced"] },
     { path: "/dashboard/proxy-pools", permissions: ["manageAdvanced"] },
   ];

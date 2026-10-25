@@ -41,6 +41,22 @@ export const TRANSIENT_COOLDOWN_MS = 30 * 1000;
 // Hard cap for provider-reported rate limit cooldown (e.g. codex resets_at can be 5-6h)
 export const MAX_RATE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
 
+/**
+ * Fallback-loop budgets: how long the account loop in chat.js may keep
+ * rotating before it hands the last error back. The session-rotation fix for
+ * spent free-tier quota (upstream #5107) re-enters the proxy loop per 429, so
+ * an exhausted evening walks hundreds of proxies that all answer the same
+ * 429. The probe that triggered the loop carries its own AbortSignal
+ * (120s for opencode in probeBudget.js), but the loop holds no reference to
+ * it — without its own deadline it answers into a void long after the caller
+ * gave up, reading as "The operation was aborted due to timeout" with no
+ * usable error. Keep the loop inside the caller's budget instead.
+ */
+export const OPENCODE_FALLBACK_BUDGET_MS = 100 * 1000;
+
+/** Other providers never rotate sessions, so the generic loop stays short. */
+export const GENERIC_FALLBACK_BUDGET_MS = 25 * 1000;
+
 // Cooldown durations (ms)
 const COOLDOWN = {
   long: 2 * 60 * 1000,

@@ -263,6 +263,31 @@ export function createSSEStream(options = {}) {
               responsesTerminal = isOpenAIResponsesTerminalEvent(currentOpenAIResponsesEvent, parsed);
 
               const isFinishChunk = parsed.choices?.[0]?.finish_reason;
+              if (isFinishChunk && totalContentLength === 0 && accumulatedThinking.length > 0) {
+                // Rescue zero-output tokens when thinking exhausted budget before content
+                const rescueChunk = {
+                  id: parsed.id || `chatcmpl-${Date.now()}`,
+                  object: "chat.completion.chunk",
+                  created: parsed.created || Math.floor(Date.now() / 1000),
+                  model: parsed.model || model,
+                  choices: [{ index: 0, delta: { content: accumulatedThinking }, finish_reason: null }],
+                };
+                const rescueLine = `data: ${JSON.stringify(rescueChunk)}\n\n`;
+                controller.enqueue(sharedEncoder.encode(rescueLine));
+                accumulatedContent = accumulatedThinking;
+                totalContentLength += accumulatedThinking.length;
+              }
+
+              if (isFinishChunk && parsed.usage) {
+                const reasoningTokens = parsed.usage.completion_tokens_details?.reasoning_tokens || parsed.usage.reasoning_tokens || 0;
+                if (reasoningTokens > 0 && (!parsed.usage.completion_tokens || parsed.usage.completion_tokens < reasoningTokens)) {
+                  parsed.usage.completion_tokens = reasoningTokens;
+                  if (parsed.usage.prompt_tokens !== undefined) {
+                    parsed.usage.total_tokens = parsed.usage.prompt_tokens + parsed.usage.completion_tokens;
+                  }
+                }
+              }
+
               if (isFinishChunk && !hasValidUsage(parsed.usage)) {
                 const estimated = estimateUsage(body, totalContentLength, FORMATS.OPENAI);
                 parsed.usage = filterUsageForFormat(estimated, FORMATS.OPENAI);
@@ -421,6 +446,20 @@ export function createSSEStream(options = {}) {
 
             // Inject estimated usage if finish chunk has no valid usage
             const isFinishChunk = item.type === "message_delta" || item.choices?.[0]?.finish_reason;
+            if (isFinishChunk && totalContentLength === 0 && accumulatedThinking.length > 0 && sourceFormat === FORMATS.OPENAI) {
+              const rescueChunk = {
+                id: item.id || `chatcmpl-${Date.now()}`,
+                object: "chat.completion.chunk",
+                created: item.created || Math.floor(Date.now() / 1000),
+                model: item.model || model,
+                choices: [{ index: 0, delta: { content: accumulatedThinking }, finish_reason: null }],
+              };
+              const rescueLine = formatSSE(rescueChunk, sourceFormat);
+              controller.enqueue(sharedEncoder.encode(rescueLine));
+              accumulatedContent = accumulatedThinking;
+              totalContentLength += accumulatedThinking.length;
+            }
+
             if (state.finishReason && isFinishChunk && !hasValidUsage(item.usage) && totalContentLength > 0) {
               const estimated = estimateUsage(body, totalContentLength, sourceFormat);
               item.usage = filterUsageForFormat(estimated, sourceFormat); // Filter + already has buffer

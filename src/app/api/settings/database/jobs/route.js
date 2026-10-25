@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyDashboardPassword } from "@/lib/auth/dashboardSession";
+
+export const dynamic = "force-dynamic";
 import { createImportJob } from "@/lib/db/importJobs";
 
 const CLI_TOKEN_HEADER = "x-9r-cli-token";

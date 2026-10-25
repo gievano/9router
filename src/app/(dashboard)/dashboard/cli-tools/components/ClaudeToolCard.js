@@ -351,9 +351,9 @@ export default function ClaudeToolCard({
                   <div className="space-y-3 text-sm">
                     <div>
                       <p className="text-text-muted mb-1">macOS / Linux / Windows:</p>
-                      <code className="block px-3 py-2 bg-black/5 dark:bg-white/5 rounded font-mono text-xs">npm install -g @anthropic-ai/claude-code</code>
+                      <code className="block px-3 py-2 bg-surface-2 rounded-[var(--r-control)] font-mono text-xs border border-border-subtle text-text-main">npm install -g @anthropic-ai/claude-code</code>
                     </div>
-                    <p className="text-text-muted">After installation, run <code className="px-1 bg-black/5 dark:bg-white/5 rounded">claude</code> to verify.</p>
+                    <p className="text-text-muted">After installation, run <code className="px-1.5 py-0.5 bg-surface-2 rounded-[var(--r-chip)] border border-border-subtle text-text-main">claude</code> to verify.</p>
                   </div>
                 </div>
               )}

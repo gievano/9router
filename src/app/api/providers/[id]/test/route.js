@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { testSingleConnection } from "./testUtils.js";
 
+export const dynamic = "force-dynamic";
+
 // POST /api/providers/[id]/test - Test connection
 export async function POST(request, { params }) {
   try {

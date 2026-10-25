@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getProviderConnections } from "@/lib/localDb";
 import { fetchElevenLabsVoices } from "open-sse/handlers/ttsCore.js";
 
+export const dynamic = "force-dynamic";
+
 const langNames = new Intl.DisplayNames(["en"], { type: "language" });
 
 /**

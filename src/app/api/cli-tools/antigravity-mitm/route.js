@@ -14,6 +14,8 @@ import {
 } from "@/mitm/manager";
 import { getSettings, updateSettings } from "@/lib/localDb";
 
+export const dynamic = "force-dynamic";
+
 initDbHooks(getSettings, updateSettings);
 
 const DEFAULT_MITM_ROUTER_BASE = "http://localhost:20128";

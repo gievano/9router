@@ -1,8 +1,9 @@
-"use server";
 
 import { NextResponse } from "next/server";
 import { assertPublicUrl } from "@/shared/utils/ssrfGuard.js";
 import { isLocalRequest } from "@/dashboardGuard";
+
+export const dynamic = "force-dynamic";
 
 const TIMEOUT_MS = 8000;
 

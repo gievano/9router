@@ -3,6 +3,7 @@
 import PropTypes from "prop-types";
 import Card from "@/shared/components/Card";
 import Badge from "@/shared/components/Badge";
+import { Sparkline } from "./UsageChartsBits";
 
 const fmt = (n) => new Intl.NumberFormat().format(n || 0);
 const fmtCost = (n) => `$${(n || 0).toFixed(2)}`;
@@ -17,18 +18,39 @@ const fmtCost = (n) => `$${(n || 0).toFixed(2)}`;
  * visibly jumps. Fixed slots keep all five numbers on one baseline whatever
  * the label length or period.
  */
-function TrendCard({ label, value, title, tone = "", footnote }) {
+function TrendCard({ label, value, title, icon, tone = "", footnote, trend }) {
   return (
-    <Card className="flex min-w-0 flex-col items-center gap-1 px-3 py-3 text-center sm:px-4">
-      {/* Two lines' worth of room, so a wrapping label never lowers the number. */}
-      <span className="flex min-h-[2lh] items-start justify-center text-text-muted text-xs leading-tight font-semibold uppercase sm:text-sm">
-        {label}
-      </span>
-      <span className={`w-full truncate text-lg font-bold xl:text-xl ${tone}`} title={title}>{value}</span>
-      {/* Reserved slot: a badge or the cost disclaimer, whichever applies. */}
-      <span className="flex min-h-[1.25rem] items-center justify-center">
-        {footnote}
-      </span>
+    <Card className="flex min-w-0 flex-col gap-2 p-3 sm:p-4 bg-surface border border-border-subtle hover:border-border transition-colors">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-text-muted text-[11px] font-semibold uppercase tracking-wider truncate">
+          {label}
+        </span>
+        {icon && (
+          <span className="material-symbols-outlined text-[16px] text-text-subtle select-none">
+            {icon}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-baseline justify-between gap-2">
+        <span className={`truncate text-xl sm:text-2xl font-bold tracking-tight ${tone || "text-text-main"}`} title={title}>
+          {value}
+        </span>
+      </div>
+
+      {trend && Array.isArray(trend) && trend.length >= 2 ? (
+        <div className="w-full h-6 my-0.5">
+          <Sparkline values={trend} height={24} stroke={tone ? undefined : "var(--color-primary)"} />
+        </div>
+      ) : (
+        <div className="w-full h-6 my-0.5 flex items-center">
+          <div className="w-full h-[1px] bg-border-subtle" />
+        </div>
+      )}
+
+      <div className="flex min-h-[1.25rem] items-center text-[10px] sm:text-[11px] text-text-muted mt-auto pt-1.5 border-t border-border-subtle">
+        {footnote || <span className="text-transparent select-none">-</span>}
+      </div>
     </Card>
   );
 }
@@ -37,51 +59,70 @@ TrendCard.propTypes = {
   label: PropTypes.string.isRequired,
   value: PropTypes.node.isRequired,
   title: PropTypes.string,
+  icon: PropTypes.string,
   tone: PropTypes.string,
   footnote: PropTypes.node,
+  trend: PropTypes.arrayOf(PropTypes.number),
 };
 
-TrendCard.defaultProps = { title: "", tone: "", footnote: null };
+TrendCard.defaultProps = { title: "", icon: "", tone: "", footnote: null, trend: null };
 
-export default function OverviewCards({ stats }) {
+export default function OverviewCards({ stats, trends }) {
   const cacheHitRate = stats.totalPromptTokens > 0
     ? ((stats.totalCachedTokens || 0) / stats.totalPromptTokens) * 100
     : 0;
 
+  const t = trends?.totals || {};
+
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 sm:gap-4">
+    <div className="grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 sm:gap-3">
       <TrendCard
         label="Total Requests"
         value={fmt(stats.totalRequests)}
         title={fmt(stats.totalRequests)}
+        icon="dns"
+        trend={t.requests}
+        footnote={<span>{stats.totalRequests ? "Global volume" : "Zero requests"}</span>}
       />
       <TrendCard
-        label="Total Input Tokens"
+        label="Input Tokens"
         value={fmt(stats.totalPromptTokens)}
         title={fmt(stats.totalPromptTokens)}
-        tone="text-primary"
+        icon="arrow_upward"
+        tone="text-text-main"
+        trend={t.input}
+        footnote={<span>Context payload</span>}
       />
       <TrendCard
         label="Cached Tokens"
         value={fmt(stats.totalCachedTokens)}
         title={fmt(stats.totalCachedTokens)}
+        icon="bolt"
         tone="text-info"
+        trend={t.cached}
         footnote={cacheHitRate > 0 ? (
-          <Badge variant="info" size="sm" className="mt-0.5">{cacheHitRate.toFixed(1)}% cache hit</Badge>
-        ) : null}
+          <Badge variant="info" size="sm" className="font-mono text-[10px]">{cacheHitRate.toFixed(1)}% cache hit</Badge>
+        ) : (
+          <span className="text-text-muted/70">No cache reads</span>
+        )}
       />
       <TrendCard
         label="Output Tokens"
         value={fmt(stats.totalCompletionTokens)}
         title={fmt(stats.totalCompletionTokens)}
+        icon="arrow_downward"
         tone="text-success"
+        trend={t.output}
+        footnote={<span>Generated completion</span>}
       />
       <TrendCard
         label="Est. Cost"
         value={`~${fmtCost(stats.totalCost)}`}
         title={`~${fmtCost(stats.totalCost)}`}
+        icon="payments"
         tone="text-warning"
-        footnote={<span className="text-[10px] text-text-muted">Estimated, not actual billing</span>}
+        trend={t.cost}
+        footnote={<span className="text-text-muted/70">Rate estimate, not billing</span>}
       />
     </div>
   );
@@ -89,4 +130,5 @@ export default function OverviewCards({ stats }) {
 
 OverviewCards.propTypes = {
   stats: PropTypes.object.isRequired,
+  trends: PropTypes.object,
 };

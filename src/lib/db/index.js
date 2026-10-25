@@ -75,6 +75,11 @@ export {
   saveRequestDetail, getRequestDetails, getRequestDetailById, getDistinctProviders,
 } from "./repos/requestDetailsRepo.js";
 
+// Error Logs
+export {
+  recordErrorLog, getErrorLogs, clearErrorLogs,
+} from "./repos/errorLogRepo.js";
+
 // Export/import full DB
 export async function exportDb(options = null) {
   const db = await getAdapter();

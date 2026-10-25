@@ -298,9 +298,10 @@ function toGuardRequest(req) {
   const pathname = qIndex === -1 ? url : url.slice(0, qIndex);
   const search = qIndex === -1 ? "" : url.slice(qIndex + 1);
   const rawCookies = req.headers && req.headers.cookie ? req.headers.cookie : "";
+  const proto = (req.headers && (req.headers["x-forwarded-proto"] || (req.socket && req.socket.encrypted ? "https" : "http"))) || "http";
   return {
     method: req.method || "GET",
-    url: "http://" + ((req.headers && req.headers.host) || "localhost") + url,
+    url: proto + "://" + ((req.headers && req.headers.host) || "localhost") + url,
     nextUrl: { pathname, searchParams: new URLSearchParams(search) },
     headers: {
       get(name) {
@@ -378,9 +379,15 @@ async function runAuthGuard(req, res) {
   }
   if (!response || response.headers.get("x-middleware-next") === "1") return false;
   res.statusCode = response.status || 500;
+  const proto = (req.headers && (req.headers["x-forwarded-proto"] || (req.socket && req.socket.encrypted ? "https" : "http"))) || "http";
   response.headers.forEach((value, key) => {
-    if (key === "set-cookie") res.setHeader("set-cookie", Array.isArray(value) ? value : [value]);
-    else if (key !== "content-length") res.setHeader(key, value);
+    if (key === "set-cookie") {
+      res.setHeader("set-cookie", Array.isArray(value) ? value : [value]);
+    } else if (key === "location" && proto === "https" && value.startsWith("http://")) {
+      res.setHeader("location", "https://" + value.slice(7));
+    } else if (key !== "content-length") {
+      res.setHeader(key, value);
+    }
   });
   if (response.body) {
     const buf = Buffer.from(await new Response(response.body).arrayBuffer());

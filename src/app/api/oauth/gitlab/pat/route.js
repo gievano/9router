@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createProviderConnection } from "@/models";
 
+export const dynamic = "force-dynamic";
+
 const GITLAB_DEFAULT_BASE = "https://gitlab.com";
 
 /**

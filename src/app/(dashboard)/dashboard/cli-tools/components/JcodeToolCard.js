@@ -277,7 +277,7 @@ id = "${selectedModel || "cc/claude-opus-4-7"}"`;
                       <div key={idx} className={`flex items-start gap-2 p-2 rounded text-xs ${
                         note.type === "info" ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" :
                         note.type === "warning" ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400" :
-                        "bg-gray-500/10 text-text-muted"
+                        "bg-surface-2 text-text-muted border border-border-subtle"
                       }`}>
                         <span className="material-symbols-outlined text-[14px] mt-0.5">
                           {note.type === "info" ? "info" : note.type === "warning" ? "warning" : "help"}

@@ -538,6 +538,22 @@ button:disabled,
   0% { transform: translateX(-120%) skewX(-20deg); }
   100% { transform: translateX(220%) skewX(-20deg); }
 }
+@keyframes proxyShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+@keyframes proxyTextFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.proxy-shimmer-beam {
+  animation: proxyShimmer 3s ease-in-out infinite;
+}
+.proxy-text-gradient {
+  background-size: 200% auto;
+  animation: proxyTextFlow 4s ease infinite;
+}
 @keyframes ctaGlowPulse {
   0%, 100% { box-shadow: 0 8px 24px -8px rgba(229, 106, 74, 0.45), 0 0 0 0 rgba(229, 106, 74, 0.5); }
   50% { box-shadow: 0 12px 32px -8px rgba(229, 106, 74, 0.6), 0 0 0 8px rgba(229, 106, 74, 0); }

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { KiroService } from "@/lib/oauth/services/kiro";
 import { createProviderConnection } from "@/models";
 
+export const dynamic = "force-dynamic";
+
 /**
  * POST /api/oauth/kiro/import
  * Import and validate refresh token from Kiro IDE.

@@ -5,6 +5,8 @@ import { AI_PROVIDERS, getProviderByAlias } from "@/shared/constants/providers";
 import { getSessionContext } from "@/lib/auth/dashboardPermissions";
 import { parseAllowedModels } from "@/lib/db/repos/allowedModels.js";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/usage/providers
  * Returns list of unique providers from request details

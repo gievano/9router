@@ -10,6 +10,7 @@ import { APIKEY_PROVIDERS } from "@/shared/constants/config";
 import { AI_PROVIDERS, FREE_TIER_PROVIDERS, WEB_COOKIE_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, isCustomEmbeddingProvider } from "@/shared/constants/providers";
 import { normalizeProviderId, normalizeProviderSpecificData } from "@/lib/providerNormalization";
 import { toProviderConnectionResponse } from "@/lib/providerConnectionResponse";
+import { findOpencodeBinary } from "open-sse/utils/opencodeCliRunner.js";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,14 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ connections: safeConnections });
+    const opencodeBinPath = findOpencodeBinary();
+    const opencodeInstalled = Boolean(opencodeBinPath);
+
+    return NextResponse.json({
+      connections: safeConnections,
+      opencodeInstalled,
+      opencodeBinPath: opencodeBinPath || null,
+    });
   } catch (error) {
     console.log("Error fetching providers:", error);
     return NextResponse.json({ error: "Failed to fetch providers" }, { status: 500 });
