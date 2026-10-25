@@ -6,7 +6,6 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 import { isTailscaleInstalled, isTailscaleLoggedIn, isSystemDaemonRunning, getTailscaleBin, TAILSCALE_SOCKET } from "@/lib/tunnel";
 
-export const dynamic = "force-dynamic";
 import { getCachedPassword, loadEncryptedPassword } from "@/mitm/manager";
 
 const execAsync = promisify(exec);
