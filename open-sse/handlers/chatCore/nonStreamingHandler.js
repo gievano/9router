@@ -2,11 +2,12 @@ import { FORMATS } from "../../translator/formats.js";
 import { needsTranslation } from "../../translator/index.js";
 import { openAICompletionToClaudeMessage } from "../../translator/concerns/claudeMessage.js";
 import { ollamaBodyToOpenAI } from "../../translator/response/ollama-to-openai.js";
-import { addBufferToUsage, filterUsageForFormat, applyUsageMultipliers } from "../../utils/usageTracking.js";
+import { addBufferToUsage, filterUsageForFormat, applyUsageMultipliers, estimateInputTokens, estimateResponseOutputTokens, hasValidUsage } from "../../utils/usageTracking.js";
 import { createErrorResult } from "../../utils/error.js";
 import { rescueResponse } from "../../translator/concerns/toolCallRescue.js";
 import { applyJsonGuard } from "../../translator/concerns/jsonGuard.js";
 import { applyOpenAIToolBridge } from "../../translator/concerns/toolBridge.js";
+import { parseToolCallReply } from "../../executors/webCookieToolBridge.js";
 import { upstreamResponseHeaders } from "../../utils/upstreamHeaders.js";
 import { HTTP_STATUS } from "../../config/runtimeConfig.js";
 import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
@@ -29,6 +30,55 @@ function parseToolArguments(value) {
 }
 
 
+/** Declared tool names from a request's tools/functions arrays. */
+function declaredToolNames(args) {
+  const names = [];
+  const push = (n) => {
+    if (typeof n === "string" && n.trim()) names.push(n.trim());
+  };
+  for (const t of args?.tools || []) {
+    if (t?.function) push(t.function.name);
+    else push(t?.name);
+  }
+  for (const f of args?.functions || []) push(f?.name);
+  return names;
+}
+
+let bridgeCallSeq = 0;
+
+/**
+ * The request-side bridge teaches two call formats - a ```tool_call fence and a
+ * <<TOOL_CALL>> marker. toolBridge.js reads the shapes a model invents on its
+ * own, so this second pass reads the shapes the bridge itself asked for.
+ *
+ * Returns null when the reply carries no call. A call naming a tool the client
+ * never offered is dropped instead of invented; a near miss on spelling is
+ * mapped back to the declared name so client handlers still match.
+ */
+function bridgeFromBridgeMarkers(text, args) {
+  if (typeof text !== "string" || !text) return null;
+  const { content, calls } = parseToolCallReply(text);
+  if (!calls.length) return null;
+
+  const declared = declaredToolNames(args);
+  const norm = (v) => String(v || "").toLowerCase().replace(/[-_]+/g, "_");
+  const byNorm = new Map(declared.map((n) => [norm(n), n]));
+
+  const accepted = [];
+  for (const call of calls) {
+    const name = declared.length ? byNorm.get(norm(call.name)) : call.name;
+    if (!name) continue;
+    bridgeCallSeq += 1;
+    accepted.push({
+      id: `call_bridge${Date.now().toString(36)}${bridgeCallSeq.toString(36)}`,
+      type: "function",
+      function: { name, arguments: JSON.stringify(call.arguments ?? {}) },
+    });
+  }
+  if (!accepted.length) return null;
+  return { content, tool_calls: accepted };
+}
+
 /**
  * OpenAI Tool Bridge - response side, non-streaming.
  *
@@ -44,7 +94,7 @@ function parseToolArguments(value) {
  * blocks). The tool catalogue comes from the request the client actually sent,
  * which is the only trustworthy list of what may be called.
  */
-function bridgeOpenAIChatResponse(response, body) {
+export function bridgeOpenAIChatResponse(response, body) {
   // The catalogue travels with the request in whichever shape the client used.
   const catalogue = body?._openaiToolBridge || {};
   const sourceTools = Array.isArray(body?.tools) && body.tools.length
@@ -69,6 +119,16 @@ function bridgeOpenAIChatResponse(response, body) {
       message.content = out.content;
       message.tool_calls = out.tool_calls;
       applied += out.tool_calls.length;
+    } else {
+      // Second pass: the fenced / marker shapes the request-side bridge asks for.
+      // toolBridge.js reads the marker shapes models invent on their own; these
+      // two are the ones the bridge itself taught the model to write.
+      const marked = bridgeFromBridgeMarkers(out.content ?? message.content, args);
+      if (marked) {
+        message.content = marked.content;
+        message.tool_calls = marked.tool_calls;
+        applied += marked.tool_calls.length;
+      }
     }
   }
 
@@ -78,12 +138,21 @@ function bridgeOpenAIChatResponse(response, body) {
     if (texts.length) {
       const joined = texts.map((b) => b.text).join("\n");
       const out = applyOpenAIToolBridge({ content: joined }, args);
-      if (out.openaiToolBridge?.applied) {
+      let calls = out.openaiToolBridge?.applied ? out.tool_calls : null;
+      let cleaned = out.content;
+      if (!calls) {
+        const marked = bridgeFromBridgeMarkers(joined, args);
+        if (marked) {
+          calls = marked.tool_calls;
+          cleaned = marked.content;
+        }
+      }
+      if (calls?.length) {
         // Keep the prose as a text block (it explains the call) and add tool_use
         // blocks after it, mirroring what a natively tool-capable model emits.
-        texts[0].text = out.content;
+        texts[0].text = cleaned;
         for (let i = 1; i < texts.length; i++) texts[i].text = "";
-        for (const tc of out.tool_calls) {
+        for (const tc of calls) {
           response.content.push({
             type: "tool_use",
             id: tc.id,
@@ -91,7 +160,7 @@ function bridgeOpenAIChatResponse(response, body) {
             input: parseToolArguments(tc.function.arguments),
           });
         }
-        applied += out.tool_calls.length;
+        applied += calls.length;
       }
     }
   }
@@ -318,7 +387,7 @@ export function translateNonStreamingResponse(responseBody, targetFormat, source
 /**
  * Handle non-streaming response from provider.
  */
-export async function handleNonStreamingResponse({ providerResponse, provider, model, sourceFormat, targetFormat, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, requestedModel, clientRawRequest, onRequestSuccess, reqLogger, toolNameMap, customToolNames, trackDone, appendLog, pxpipe, reqTag, log, pluginResult, modelMultipliers = null, isAntiProbe = false }) {
+export async function handleNonStreamingResponse({ providerResponse, provider, model, sourceFormat, targetFormat, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, requestedModel, clientRawRequest, onRequestSuccess, reqLogger, toolNameMap, customToolNames, trackDone, appendLog, pxpipe, reqTag, log, pluginResult, modelMultipliers = null, isAntiProbe = false, hideError = false }) {
   trackDone();
   const contentType = providerResponse.headers.get("content-type") || "";
   let responseBody;
@@ -331,7 +400,15 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
     const parsed = parseSSEToOpenAIResponse(sseText, model);
     if (!parsed) {
       appendLog({ status: `FAILED ${HTTP_STATUS.BAD_GATEWAY}` });
-      return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Invalid SSE response for non-streaming request");
+      return createErrorResult(HTTP_STATUS.BAD_GATEWAY, "Invalid SSE response for non-streaming request", undefined, null, hideError);
+    }
+    if (parsed.error) {
+      const upstreamStatus = Number(parsed.error.status);
+      const status = Number.isInteger(upstreamStatus) && upstreamStatus >= 400 && upstreamStatus <= 599
+        ? upstreamStatus
+        : HTTP_STATUS.BAD_GATEWAY;
+      appendLog({ status: `FAILED ${status}` });
+      return createErrorResult(status, parsed.error.message || "Upstream SSE stream failed");
     }
     responseBody = parsed;
     responseBodyFormat = FORMATS.OPENAI;
@@ -363,6 +440,65 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
   responseBody = decloakToolNames(responseBody, toolNameMap);
 
   let usage = extractUsageFromResponse(responseBody);
+  const outTokens = usage?.completion_tokens ?? usage?.output_tokens ?? 0;
+  const inTokens = usage?.prompt_tokens ?? usage?.input_tokens ?? 0;
+
+  if (!usage || (inTokens === 0 && outTokens === 0)) {
+    const estimatedOut = estimateResponseOutputTokens(responseBody);
+    const estimatedIn = estimateInputTokens(body);
+    if (estimatedIn > 0 || estimatedOut > 0) {
+      usage = {
+        prompt_tokens: estimatedIn,
+        completion_tokens: estimatedOut,
+        total_tokens: estimatedIn + estimatedOut,
+        estimated: true,
+      };
+      if (responseBody && typeof responseBody === "object") {
+        responseBody.usage = usage;
+      }
+    }
+  } else if (outTokens === 0) {
+    const estimatedOut = estimateResponseOutputTokens(responseBody);
+    if (estimatedOut > 0) {
+      if (usage.completion_tokens !== undefined || usage.prompt_tokens !== undefined) {
+        usage.completion_tokens = estimatedOut;
+        usage.total_tokens = (usage.prompt_tokens || 0) + estimatedOut;
+      } else if (usage.output_tokens !== undefined || usage.input_tokens !== undefined) {
+        usage.output_tokens = estimatedOut;
+        usage.total_tokens = (usage.input_tokens || 0) + estimatedOut;
+      }
+      if (responseBody?.usage) {
+        if (responseBody.usage.completion_tokens !== undefined) {
+          responseBody.usage.completion_tokens = estimatedOut;
+          responseBody.usage.total_tokens = (responseBody.usage.prompt_tokens || 0) + estimatedOut;
+        } else if (responseBody.usage.output_tokens !== undefined) {
+          responseBody.usage.output_tokens = estimatedOut;
+          responseBody.usage.total_tokens = (responseBody.usage.input_tokens || 0) + estimatedOut;
+        }
+      }
+    }
+  } else if (inTokens === 0 && body) {
+    const estimatedIn = estimateInputTokens(body);
+    if (estimatedIn > 0) {
+      if (usage.prompt_tokens !== undefined || usage.completion_tokens !== undefined) {
+        usage.prompt_tokens = estimatedIn;
+        usage.total_tokens = estimatedIn + (usage.completion_tokens || 0);
+      } else if (usage.input_tokens !== undefined || usage.output_tokens !== undefined) {
+        usage.input_tokens = estimatedIn;
+        usage.total_tokens = estimatedIn + (usage.output_tokens || 0);
+      }
+      if (responseBody?.usage) {
+        if (responseBody.usage.prompt_tokens !== undefined) {
+          responseBody.usage.prompt_tokens = estimatedIn;
+          responseBody.usage.total_tokens = estimatedIn + (responseBody.usage.completion_tokens || 0);
+        } else if (responseBody.usage.input_tokens !== undefined) {
+          responseBody.usage.input_tokens = estimatedIn;
+          responseBody.usage.total_tokens = estimatedIn + (responseBody.usage.output_tokens || 0);
+        }
+      }
+    }
+  }
+
   if (modelMultipliers && usage) {
     usage = applyUsageMultipliers(usage, modelMultipliers);
   }

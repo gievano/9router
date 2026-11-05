@@ -237,7 +237,7 @@ export default function NotificationBell() {
         )}
         {badge > 0 && (
           <span
-            className={`absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 rounded-full text-[9px] font-bold leading-[15px] text-white ${
+            className={`absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full text-[10px] font-bold leading-[16px] text-white ${
               items.some((n) => !n.read && n.severity === "error") ? "bg-red-500" : "bg-primary"
             }`}
           >

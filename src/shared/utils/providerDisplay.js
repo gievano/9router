@@ -17,23 +17,14 @@ const COMPAT_FAMILY = {
 };
 
 /**
- * Short suffix taken from the uuid in a compatible provider id, or "" when the
- * id has no uuid to take one from. Nodes are distinguished this way so two
- * custom providers never share one heading.
- */
-function extractCompatShortId(providerId) {
-  const words = providerId.split("-").filter(Boolean);
-  const compatibleAt = words.findIndex((w) => w.toLowerCase() === "compatible");
-  if (compatibleAt === -1) return "";
-  const uuidWords = words.slice(compatibleAt + 2);
-  if (uuidWords.length === 0) return "";
-  const uuid = uuidWords.join("-");
-  return uuid.length >= 8 ? uuid.slice(0, 8) : uuid;
-}
-
-/**
  * Readable label for a compatible provider id, or "" when the id is not one.
  * Callers use the empty string to fall through to their own default.
+ *
+ * The uuid is deliberately dropped: a label is what the user reads, and
+ * `openai-compatible-chat-330688af` in any casing - full id or `(330688af)`
+ * suffix - is still the database key, not a name. Distinct nodes that would
+ * collide on the same label are told apart by `dedupeLabels`, not by printing
+ * part of their id.
  */
 export function humanizeCompatId(providerId) {
   if (typeof providerId !== "string" || !providerId) return "";
@@ -44,10 +35,37 @@ export function humanizeCompatId(providerId) {
   const compatibleAt = words.findIndex((w) => w.toLowerCase() === "compatible");
   if (compatibleAt === -1) return "";
   const apiType = (words[compatibleAt + 1] || "").toLowerCase();
-  if (!COMPAT_API_TYPES.has(apiType)) return "";
   const familyLabel = COMPAT_FAMILY[(words[0] || "").toLowerCase()] || "";
-  const shortId = extractCompatShortId(providerId);
-  return shortId ? `${familyLabel} (${shortId})` : familyLabel;
+  if (!COMPAT_API_TYPES.has(apiType)) {
+    // An api type we have never seen still gets its family name: printing the
+    // id is worse than printing a slightly generic label.
+    return familyLabel || "Compatible provider";
+  }
+  return familyLabel || "Compatible provider";
+}
+
+/**
+ * Map provider id -> label with a numeric suffix for every collision.
+ *
+ * `pairs` is a list of `{ id, label }` in the order the caller wants them
+ * numbered. Only colliding labels are numbered (`OpenAI Compatible`,
+ * `OpenAI Compatible 2`), so the common single-node case stays clean.
+ */
+export function dedupeLabels(pairs) {
+  const counts = new Map();
+  for (const { label } of pairs) counts.set(label, (counts.get(label) || 0) + 1);
+  const seen = new Map();
+  const out = new Map();
+  for (const { id, label } of pairs) {
+    if (!counts.get(label) || counts.get(label) === 1) {
+      out.set(id, label);
+      continue;
+    }
+    const n = (seen.get(label) || 0) + 1;
+    seen.set(label, n);
+    out.set(id, `${label} ${n}`);
+  }
+  return out;
 }
 
 /**

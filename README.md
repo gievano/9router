@@ -22,29 +22,28 @@ One gateway, one API key, any model: an OpenAI-compatible endpoint that routes t
 
 </div>
 
-## What it routes
+## Routing & Capabilities
 
-The gateway accepts a request in OpenAI, Claude or Gemini shape, translates it to whatever the target provider speaks, and streams the answer back. Providers are grouped by how you sign in:
+9Router accepts requests in standard client formats (OpenAI Chat Completions, Anthropic Messages, or Gemini generateContent), translates them on-the-fly, and routes them to upstream providers through multiple connection tiers:
 
-| Sign-in | Providers |
-| --- | --- |
-| OAuth | Claude, OpenAI Codex, Gemini CLI, Antigravity, Kiro, Kimi (Moonshot), Grok CLI, xAI, Cursor, GitHub Copilot, GitLab, Windsurf, Trae, Zed, iFlow, Qoder, Cline, KiloCode, CodeBuddy, Xiaomi MIMO |
-| API key | OpenAI, Anthropic, DeepSeek, GLM (Z.ai / Zhipu), MiniMax, Mistral, Perplexity, Groq, Together, Fireworks, Cerebras, SambaNova, SiliconFlow, Nebius, Hugging Face, Venice, Voyage and dozens more |
-| Free tier | OpenRouter, OpenCode, Kiro, Gemini, Cloudflare AI, NVIDIA, Morph, Poolside, Kimchi, LLM7, api-airforce |
-| Web cookie | DeepSeek Web, Gemini Web, Kimi Web |
-| Local | Ollama, LM Studio style self-hosted nodes, self-hosted TTS/STT/embeddings |
+- **OAuth & Device Auth** - Connect official account sessions with automatic token refresh.
+- **Direct API Keys** - Standard API key integration for enterprise and public AI cloud providers.
+- **Free Tier Relay** - Zero-configuration routing for free developer and community AI gateways.
+- **Web Cookie Sessions** - Reverse-engineered browser session adapters for direct consumer web platforms.
+- **Local & Self-Hosted** - Connect local engines (Ollama, vLLM, LM Studio) and self-hosted instances.
 
-It is not only chat. The same gateway also serves text to image, image to text, video generation, text to speech, speech to text, embeddings, web search and web fetch, each with its own `/v1`-style endpoint.
+Beyond text chat, the router natively exposes specialized endpoints for multimodal tasks: Text-to-Image, Image-to-Text, Video Generation, Text-to-Speech (TTS), Speech-to-Text (STT), Embeddings, and Web Search/Fetch.
 
-## What this fork adds
+## Architecture & Core Design
 
-Everything lives alongside upstream's features. The short version:
+9Router functions as a unified gateway layer between AI client applications and model providers. It abstracts protocol differences, authentication mechanisms, and request lifecycle management so downstream tools only need to speak one standard interface.
 
-- **Per-key control** - every key carries its own token limit, reset interval, expiry and model allow-list, enforced on every endpoint.
-- **Custom models & plugins** - models that answer under your own name (the real target never leaks), per-model plugin badges, a model playground and comparisons.
-- **Operability** - scheduled backups to Telegram or GitHub, proxy pools, a security log of who signed in and from where, a theme that applies to the whole site, and an in-dashboard update banner.
+- **Universal Protocol Adapter**: Ingests requests in OpenAI, Anthropic Claude, or Google Gemini format, translates them on-the-fly to the target provider's native schema, and transparently streams standardized responses back.
+- **Unified Credential & Key Management**: Single interface for managing OAuth sessions, direct API keys, reverse-engineered web sessions, and custom local models.
+- **Failover & Traffic Routing**: Dynamic routing policies including intelligent fallback chains, load balancing, model aliases, and latency-optimized dispatching.
+- **Enterprise Controls**: Granular token quotas, rate limiting (RPM/TPM), budget caps, IP allowlisting, and automated state backups.
 
-The [changelog](./CHANGELOG.md) is the source of truth: it is regenerated on every release, so it always lists what is actually new. Anything not written here yet may already ship in your build - check the changelog rather than this file.
+For granular version updates, newly added providers, and ongoing improvements, refer directly to the [CHANGELOG.md](./CHANGELOG.md).
 
 ## Getting started
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, Button, Badge, SegmentedControl, PageShell } from "@/shared/components";
 import { CONSOLE_LOG_CONFIG } from "@/shared/constants/config";
+import { stripEmoji } from "@/shared/utils/plainText";
 
 function getStatusBadge(code) {
   const num = Number(code) || 500;
@@ -584,7 +585,7 @@ export default function LogsClient({ initialTab = "errors" }) {
                               {item.timestamp && <span>{item.timestamp}</span>}
                             </div>
                             <div className="mt-1 font-mono text-xs text-text-main break-words whitespace-pre-wrap leading-relaxed select-text">
-                              {item.raw}
+                              {stripEmoji(item.raw)}
                             </div>
                           </div>
                         </div>

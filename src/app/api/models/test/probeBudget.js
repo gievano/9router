@@ -15,7 +15,7 @@ import { resolveProviderId } from "@/shared/constants/providers.js";
  * session-page fetch), so the snappy REST budget below would turn every one
  * of their models into "The operation was aborted due to timeout".
  */
-export const WEB_COOKIE_PROVIDERS = new Set(["gemini-web", "kimi-web", "deepseek-web", "xiaomi-mimo"]);
+export const WEB_COOKIE_PROVIDERS = new Set(["gemini-web", "deepseek-web"]);
 
 /**
  * Free-tier providers whose probe rides the normal chat fallback chain.
@@ -26,7 +26,7 @@ export const WEB_COOKIE_PROVIDERS = new Set(["gemini-web", "kimi-web", "deepseek
  * probe mid-rotation and paint a working model red with
  * "The operation was aborted due to timeout".
  */
-export const SLOW_FALLBACK_PROVIDERS = new Set(["opencode", "opencode-v2", "opencode-go", "opencode-zen"]);
+export const SLOW_FALLBACK_PROVIDERS = new Set(["opencode", "opencode-go", "opencode-zen"]);
 
 /** Default per-probe budget for ordinary REST providers (fail fast). */
 export const PROBE_TIMEOUT_MS = 15000;

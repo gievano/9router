@@ -17,7 +17,7 @@ import { getExecutor } from "../executors/index.js";
 import { supportsGrokCliReasoningEffort } from "../config/grokCli.js";
 import { buildRequestDetail, extractRequestConfig, saveFailedUsage } from "./chatCore/requestDetail.js";
 import { handleForcedSSEToJson } from "./chatCore/sseToJsonHandler.js";
-import { handleNonStreamingResponse } from "./chatCore/nonStreamingHandler.js";
+import { handleNonStreamingResponse, bridgeOpenAIChatResponse } from "./chatCore/nonStreamingHandler.js";
 import {
   isEventStreamResponse,
   isChatCompletionBody,
@@ -235,6 +235,17 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     log?.debug?.("PLUGIN", `Context Squeezer dropped ${pluginResult.contextStats.droppedTurns} turn(s): ${pluginResult.contextStats.tokensBefore} -> ${pluginResult.contextStats.tokensAfter} tokens`);
   }
 
+  // Tool Calling Bridge: the request's tools were folded into the prompt, and a
+  // reply can only be turned back into tool_calls once it has arrived whole. So
+  // this turn is fetched non-streaming even for a streaming client, and the JSON
+  // completion is replayed as chunks further down. A provider that only speaks
+  // SSE (forceStream) is never asked for JSON it does not have.
+  const toolBridgeNeedsWholeReply = Boolean(pluginResult.isToolBridgeRewritten) && !providerRequiresStreaming;
+  const upstreamStream = toolBridgeNeedsWholeReply ? false : stream;
+  if (toolBridgeNeedsWholeReply) {
+    log?.debug?.("TOOLBRIDGE", `tools folded into the prompt · ${provider}/${model} · fetching whole reply`);
+  }
+
   // Auto-strip media blocks the model can't read (vision/audio/pdf) before translation.
   if (!passthrough) {
     const caps = getCapabilitiesForModel(provider, model);
@@ -271,10 +282,10 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     // Normalize newer Cowork/CC beta shapes (adaptive thinking, mid-conversation system) the API rejects
     if (clientTool === "claude") normalizeClaudePassthrough(translatedBody, translatedBody.model);
   } else {
-    translatedBody = translateRequest(sourceFormat, targetFormat, upstreamModel, body, stream, credentials, provider, reqLogger, stripList, connectionId, clientTool);
+    translatedBody = translateRequest(sourceFormat, targetFormat, upstreamModel, body, upstreamStream, credentials, provider, reqLogger, stripList, connectionId, clientTool);
     if (!translatedBody) {
       trackPendingRequest(trackedModel, provider, connectionId, false, true);
-      return createErrorResult(HTTP_STATUS.BAD_REQUEST, `Failed to translate request for ${sourceFormat} → ${targetFormat}`);
+      return createErrorResult(HTTP_STATUS.BAD_REQUEST, `Failed to translate request for ${sourceFormat} → ${targetFormat}`, undefined, null, Boolean(hideError));
     }
     toolNameMap = translatedBody._toolNameMap;
     delete translatedBody._toolNameMap;
@@ -445,6 +456,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     // honored on the Cursor AgentService h2 path and in proxyFetch (#4333).
     proxyPoolId: credentials?.providerSpecificData?.connectionProxyPoolId || null,
     strictProxy: credentials?.providerSpecificData?.strictProxy === true,
+    connectionProxyAlternates: credentials?.providerSpecificData?.connectionProxyAlternates || [],
   };
 
   if (proxyOptions.vercelRelayUrl) {
@@ -482,7 +494,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     const result = await executor.execute({
       model,
       body: translatedBody,
-      stream,
+      stream: upstreamStream,
       credentials,
       providerSessionId: sessionSeed,
       clientTool,
@@ -605,7 +617,7 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
         const fallbackBody = degradeToolPayload(translatedBody, level);
         if (!fallbackBody) break;
         try {
-          const attempt = await executor.execute({
+          const attempt = await executor["execute"]({
             model,
             body: fallbackBody,
             stream,
@@ -673,9 +685,34 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     }
   }
 
-  const sharedCtx = { provider, model, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, requestedModel, clientRawRequest, onRequestSuccess, pxpipe: pxpipeSummary, reqTag, log, pluginResult, modelMultipliers, isAntiProbe };
+  const sharedCtx = { provider, model, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, requestedModel, clientRawRequest, onRequestSuccess, pxpipe: pxpipeSummary, reqTag, log, pluginResult, modelMultipliers, isAntiProbe, hideError: Boolean(hideError) };
   const appendLog = (extra) => appendRequestLog({ model: trackedModel, provider, connectionId, ...extra }).catch(() => { })
   const trackDone = () => trackPendingRequest(trackedModel, provider, connectionId, false);
+
+  // Tool bridge replay: the bridge asked upstream for a whole reply, so what
+  // arrived is a finished completion rather than SSE. Recover the call the model
+  // declared in its own prose, then replay the completion as chunks so a
+  // streaming client still receives the stream it asked for.
+  //
+  // Only for a streaming client: a JSON client takes the non-streaming path
+  // below, where the same recovery runs and hands back one JSON document.
+  if (stream && toolBridgeNeedsWholeReply && !isEventStreamResponse(providerResponse)) {
+    const bridgedBody = await readJsonBody(providerResponse);
+    if (bridgedBody) {
+      if (isChatCompletionBody(bridgedBody)) {
+        const recovered = bridgeOpenAIChatResponse(bridgedBody, body);
+        providerResponse = sseResponseFromCompletion(bridgedBody, providerResponse);
+        providerResponseFormat = FORMATS.OPENAI;
+        if (recovered > 0) {
+          log?.debug?.("TOOLBRIDGE", `${recovered} call(s) recovered from the whole reply · ${provider}/${model}`);
+        }
+      } else {
+        // Not an OpenAI envelope: hand the parsed document back as JSON so the
+        // mismatch branch below can route it through the normal translators.
+        providerResponse = jsonResponseFromBody(bridgedBody, providerResponse);
+      }
+    }
+  }
 
   // Upstream shape mismatch: a provider can answer with a finished JSON document
   // even though we asked it to stream (it ignores the flag, or the client omitted

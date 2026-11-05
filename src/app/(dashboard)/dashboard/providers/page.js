@@ -8,6 +8,7 @@ import {
   Badge,
   Button,
   Toggle,
+  Modal,
 } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import PageShell from "@/shared/components/PageShell";
@@ -113,6 +114,11 @@ export default function ProvidersPage() {
   const [testResults, setTestResults] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [opencodeInstalled, setOpencodeInstalled] = useState(true);
+  // OpenCode Free is one card with two lanes; the hammer on that card flips this.
+  const [opencodeCliMode, setOpencodeCliMode] = useState(false);
+  const [selectedLaneMode, setSelectedLaneMode] = useState(false);
+  const [togglingCliMode, setTogglingCliMode] = useState(false);
+  const [laneBannerOpen, setLaneBannerOpen] = useState(false);
   const notify = useNotificationStore();
   const searchQuery = useHeaderSearchStore((s) => s.query);
   const registerSearch = useHeaderSearchStore((s) => s.register);
@@ -158,12 +164,19 @@ export default function ProvidersPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [connectionsRes, nodesRes] = await Promise.all([
+        const [connectionsRes, nodesRes, settingsRes] = await Promise.all([
           fetch("/api/providers"),
           fetch("/api/provider-nodes"),
+          fetch("/api/settings"),
         ]);
         const connectionsData = await connectionsRes.json();
         const nodesData = await nodesRes.json();
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          const isCli = settingsData?.opencodeCliMode === true;
+          setOpencodeCliMode(isCli);
+          setSelectedLaneMode(isCli);
+        }
         if (connectionsRes.ok) {
           setConnections(connectionsData.connections || []);
           if (connectionsData.opencodeInstalled !== undefined) {
@@ -179,6 +192,27 @@ export default function ProvidersPage() {
     };
     fetchData();
   }, []);
+
+  const applyOpencodeCliMode = async (targetMode) => {
+    if (togglingCliMode) return;
+    setTogglingCliMode(true);
+    setOpencodeCliMode(targetMode);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ opencodeCliMode: targetMode }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      notify.success(targetMode ? "OpenCode Free: CLI lane" : "OpenCode Free: Direct lane");
+    } catch (error) {
+      setOpencodeCliMode(!targetMode);
+      setSelectedLaneMode(!targetMode);
+      notify.error(`Could not switch lane: ${error.message}`);
+    } finally {
+      setTogglingCliMode(false);
+    }
+  };
 
   const getProviderStats = (providerId, authType) => {
     const authTypes = Array.isArray(authType) ? authType : [authType];
@@ -596,6 +630,11 @@ export default function ProvidersPage() {
                 stats={getProviderStats(key, freeAuthTypes)}
                 authType="free"
                 opencodeInstalled={opencodeInstalled}
+                cliMode={opencodeCliMode}
+                onOpenLaneModal={key === "opencode" ? () => {
+                  setSelectedLaneMode(opencodeCliMode);
+                  setLaneBannerOpen(true);
+                } : null}
                 onToggle={(active) =>
                   handleToggleProvider(key, freeAuthTypes, active)
                 }
@@ -720,6 +759,88 @@ export default function ProvidersPage() {
         }}
         />
 
+      {/* OpenCode Free Lane Switch Banner Modal */}
+      <Modal
+        isOpen={laneBannerOpen}
+        onClose={() => setLaneBannerOpen(false)}
+        title="Switch OpenCode Free Lane"
+        size="md"
+      >
+        <div className="flex flex-col gap-4 text-sm text-text-muted">
+          <div className="flex items-center gap-2 p-3 rounded-lg border border-border-subtle bg-surface-2">
+            <span className="material-symbols-outlined text-[20px] text-brand-500">handyman</span>
+            <div>
+              <p className="text-xs text-text-muted">Current Active Lane</p>
+              <p className="text-sm font-semibold text-text-main">
+                {opencodeCliMode ? "CLI Lane (Using Local CLI)" : "Direct Lane (No CLI / Fast TLS)"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedLaneMode(false)}
+              className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${!selectedLaneMode ? "border-brand-500 bg-brand-500/10 ring-1 ring-brand-500/30" : "border-border-subtle bg-surface-2/40 hover:bg-surface-2/70"}`}
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2 font-medium text-text-main">
+                  <span className="material-symbols-outlined text-[18px] text-success">bolt</span>
+                  <span>Direct Lane (Default / Recommended)</span>
+                </div>
+                {!selectedLaneMode && (
+                  <span className="material-symbols-outlined text-[18px] text-brand-500">check_circle</span>
+                )}
+              </div>
+              <p className="text-xs text-text-muted leading-relaxed">
+                Requests are sent directly to upstream via impersonated TLS (Bun-shaped ClientHello). Fast (~400ms), lightweight, and requires no local OpenCode CLI or Bun runtime installed on the host.
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedLaneMode(true)}
+              className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${selectedLaneMode ? "border-brand-500 bg-brand-500/10 ring-1 ring-brand-500/30" : "border-border-subtle bg-surface-2/40 hover:bg-surface-2/70"}`}
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2 font-medium text-text-main">
+                  <span className="material-symbols-outlined text-[18px] text-warning">terminal</span>
+                  <span>CLI Lane</span>
+                </div>
+                {selectedLaneMode && (
+                  <span className="material-symbols-outlined text-[18px] text-brand-500">check_circle</span>
+                )}
+              </div>
+              <p className="text-xs text-text-muted leading-relaxed">
+                Spawns the local <code className="text-[11px] bg-surface px-1 py-0.5 rounded">opencode</code> binary and Bun sidecar transport on the host. Requires the CLI installed locally; otherwise requests will hang and time out.
+              </p>
+            </button>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-subtle">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setLaneBannerOpen(false)}
+              disabled={togglingCliMode}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={togglingCliMode}
+              onClick={async () => {
+                await applyOpencodeCliMode(selectedLaneMode);
+                setLaneBannerOpen(false);
+              }}
+            >
+              {togglingCliMode ? "Switching..." : "Konfirmasi"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* No overlay while a batch test runs: handleBatchTest() reports it into
           the task store, so the bell owns the readout and the page stays
           usable. The results modal below is the outcome, not the progress. */}
@@ -754,7 +875,7 @@ export default function ProvidersPage() {
   );
 }
 
-function ProviderCard({ providerId, provider, stats, authType, onToggle, opencodeInstalled = true }) {
+function ProviderCard({ providerId, provider, stats, authType, onToggle, opencodeInstalled = true, cliMode = false, onOpenLaneModal = null }) {
   const { connected, error, errorCode, errorTime, allDisabled } = stats;
   const isNoAuth = !!provider.noAuth;
 
@@ -779,17 +900,12 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle, opencod
       >
         <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div
-              className="size-8 shrink-0 rounded-lg flex items-center justify-center"
-              style={{
-                backgroundColor: `${provider.color?.length > 7 ? provider.color : provider.color + "15"}`,
-              }}
-            >
+            <div className="size-8 shrink-0 flex items-center justify-center overflow-hidden">
               <ProviderIcon
                 src={`/providers/${provider.id}.png`}
                 alt={provider.name}
-                size={30}
-                className="object-contain rounded-lg max-w-[32px] max-h-[32px]"
+                size={32}
+                className="object-cover rounded-xl"
                 fallbackText={
                   provider.textIcon || provider.id.slice(0, 2).toUpperCase()
                 }
@@ -797,7 +913,9 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle, opencod
               />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate font-semibold">{provider.name}</h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="truncate font-semibold">{provider.name}</h3>
+              </div>
               <div className="flex min-w-0 items-center gap-1.5 text-xs flex-wrap">
                 {allDisabled ? (
                   <Badge variant="default" size="sm">
@@ -810,17 +928,11 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle, opencod
                   </Badge>
                 ) : isNoAuth ? (
                   <Badge
-                    variant={
-                      providerId === "opencode-v2" && !opencodeInstalled
-                        ? "warning"
-                        : provider.statusBadge?.variant || "success"
-                    }
+                    variant={provider.statusBadge?.variant || "success"}
                     size="sm"
                     dot
                   >
-                    {providerId === "opencode-v2" && !opencodeInstalled
-                      ? "Need Configuration"
-                      : provider.statusBadge?.label || "Ready"}
+                    {provider.statusBadge?.label || "Ready"}
                   </Badge>
                 ) : (
                   <>
@@ -834,6 +946,25 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle, opencod
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {providerId === "opencode" && onOpenLaneModal && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenLaneModal();
+                }}
+                title={cliMode ? "Lane: CLI — click to switch" : "Lane: Direct — click to switch"}
+                aria-label="Switch OpenCode Free lane"
+                className={`flex size-7 shrink-0 items-center justify-center rounded-lg border transition-all ${
+                  cliMode
+                    ? "border-brand-500/50 bg-brand-500/15 text-brand-500 hover:bg-brand-500/25"
+                    : "border-border/60 bg-surface text-text-muted hover:text-text-main hover:border-border"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">handyman</span>
+              </button>
+            )}
             {stats.total > 0 && (
               <div
                 className="opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
@@ -874,6 +1005,8 @@ ProviderCard.propTypes = {
   }).isRequired,
   authType: PropTypes.string,
   onToggle: PropTypes.func,
+  cliMode: PropTypes.bool,
+  onOpenLaneModal: PropTypes.func,
 };
 
 function ApiKeyProviderCard({
@@ -923,17 +1056,12 @@ function ApiKeyProviderCard({
       >
         <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div
-              className="size-8 shrink-0 rounded-lg flex items-center justify-center"
-              style={{
-                backgroundColor: `${provider.color?.length > 7 ? provider.color : provider.color + "15"}`,
-              }}
-            >
+            <div className="size-8 shrink-0 flex items-center justify-center overflow-hidden">
               <ProviderIcon
                 src={getIconPath()}
                 alt={provider.name}
-                size={30}
-                className="object-contain rounded-lg max-w-[30px] max-h-[30px]"
+                size={32}
+                className="object-cover rounded-xl"
                 fallbackText={
                   provider.textIcon || provider.id.slice(0, 2).toUpperCase()
                 }
@@ -941,7 +1069,9 @@ function ApiKeyProviderCard({
               />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate font-semibold">{provider.name}</h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="truncate font-semibold">{provider.name}</h3>
+              </div>
               <div className="flex min-w-0 items-center gap-1.5 text-xs flex-wrap">
                 {allDisabled ? (
                   <Badge variant="default" size="sm">

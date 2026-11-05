@@ -10,7 +10,7 @@ import { getSettings } from "@/lib/localDb";
 import { getClientIp } from "@/lib/auth/loginLimiter";
 import { getModelInfo } from "../services/model.js";
 import { handleSystemoneCore } from "open-sse/handlers/systemoneCore.js";
-import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
+import { errorResponse, unavailableResponse, maskHiddenError } from "open-sse/utils/error.js";
 import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
 import * as log from "../utils/logger.js";
 import { checkAndRefreshToken } from "../services/tokenRefresh.js";
@@ -22,7 +22,7 @@ import { saveRequestUsage } from "@/lib/usageDb.js";
  *
  * @param {Request} request
  */
-export async function handleSystemone(request) {
+async function _handleSystemone(request) {
   let body;
   try {
     body = await request.json();
@@ -101,14 +101,14 @@ export async function handleSystemone(request) {
         const errorMsg = lastError || credentials.lastError || "Unavailable";
         const status = lastStatus || Number(credentials.lastErrorCode) || HTTP_STATUS.SERVICE_UNAVAILABLE;
         log.warn("SYSTEMONE", `[${provider}/${model}] ${errorMsg} (${credentials.retryAfterHuman})`);
-        return unavailableResponse(status, `[${provider}/${model}] ${errorMsg}`, credentials.retryAfter, credentials.retryAfterHuman);
+        return unavailableResponse(status, `[${provider}/${model}] ${errorMsg}`, credentials.retryAfter, credentials.retryAfterHuman, null, settings.hideError);
       }
       if (excludeConnectionIds.size === 0) {
         log.error("AUTH", `No credentials for provider: ${provider}`);
-        return errorResponse(HTTP_STATUS.BAD_REQUEST, `No credentials for provider: ${provider}`);
+        return errorResponse(HTTP_STATUS.BAD_REQUEST, `No credentials for provider: ${provider}`, null, settings.hideError);
       }
       log.warn("SYSTEMONE", "No more accounts available", { provider });
-      return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable");
+      return errorResponse(lastStatus || HTTP_STATUS.SERVICE_UNAVAILABLE, lastError || "All accounts unavailable", null, settings.hideError);
     }
 
     log.info("AUTH", `\x1b[32mUsing ${provider} account: ${credentials.connectionName}\x1b[0m`);
@@ -155,4 +155,15 @@ export async function handleSystemone(request) {
 
     return result.response;
   }
+}
+
+/**
+ * Public entry: every error body leaving this handler passes through the
+ * Hide Raw Errors mask, so no branch can leak an upstream message.
+ */
+export async function handleSystemone(request) {
+  const response = await _handleSystemone(request);
+  if (!response || response.status < 400) return response;
+  const settings = await getSettings();
+  return maskHiddenError(response, Boolean(settings?.hideError));
 }

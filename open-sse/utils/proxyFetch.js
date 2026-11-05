@@ -1,104 +1,36 @@
 import { Readable } from "stream";
 import { MEMORY_CONFIG } from "../config/runtimeConfig.js";
 import { dbg } from "./debugLog.js";
+import { normalizeString, normalizeProxyUrl, resolveEffectiveProxyUrl } from "./proxyResolution.js";
+import { isSocksProxyUrl, socksFetch } from "./socksTunnel.js";
 
 const originalFetch = globalThis.fetch;
 const proxyDispatchers = new Map();
 
-// ─── TLS fingerprinting via got-scraping (browser-like JA3) ───────────────
-// Disabled: not in use. Kept commented for future re-enable.
-// Restore the original block to re-enable per-host JA3 spoofing.
-/*
-let _gotScraping = null;
-let _gotScrapingChecked = false;
-const _gotScrapingLoggedHosts = new Set();
-
-async function getGotScraping() {
-  if (_gotScrapingChecked) return _gotScraping;
-  _gotScrapingChecked = true;
-  try {
-    const mod = await import("got-scraping");
-    _gotScraping = typeof mod.gotScraping === "function" ? mod.gotScraping : null;
-    if (_gotScraping) dbg("TLS", "got-scraping loaded (browser-like JA3 enabled)");
-  } catch (e) {
-    console.warn(`[ProxyFetch] got-scraping unavailable, falling back to native fetch: ${e.message}`);
-    _gotScraping = null;
-  }
-  return _gotScraping;
-}
-
-async function gotScrapingFetch(url, options) {
-  const gs = await getGotScraping();
-  if (!gs) return null;
-
-  const method = (options.method || "GET").toUpperCase();
-  const headersInit = options.headers || {};
-  const headers = headersInit instanceof Headers
-    ? Object.fromEntries(headersInit.entries())
-    : { ...headersInit };
-
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    const stream = gs.stream({
-      url,
-      method,
-      headers,
-      body: method === "GET" || method === "HEAD" ? undefined : options.body,
-      throwHttpErrors: false,
-      retry: { limit: 0 },
-      timeout: { request: undefined },
-      followRedirect: false,
-      decompress: true,
-    });
-
-    if (options.signal) {
-      const onAbort = () => { try { stream.destroy(new Error("aborted")); } catch { } };
-      if (options.signal.aborted) onAbort();
-      else options.signal.addEventListener("abort", onAbort, { once: true });
-    }
-
-    stream.once("response", (res) => {
-      if (settled) return;
-      settled = true;
-      const resHeaders = new Headers();
-      for (const [k, v] of Object.entries(res.headers || {})) {
-        if (Array.isArray(v)) v.forEach((x) => resHeaders.append(k, String(x)));
-        else if (v != null) resHeaders.set(k, String(v));
-      }
-      const body = Readable.toWeb(stream);
-      resolve(new Response(body, { status: res.statusCode, statusText: res.statusMessage || "", headers: resHeaders }));
-    });
-
-    stream.once("error", (err) => {
-      if (settled) return;
-      settled = true;
-      reject(err);
-    });
-  });
-}
-
-async function tryGotScrapingFetch(url, options) {
-  try {
-    const res = await gotScrapingFetch(url, options);
-    if (res) {
-      try {
-        const host = new URL(typeof url === "string" ? url : url.toString()).hostname;
-        if (!_gotScrapingLoggedHosts.has(host)) {
-          _gotScrapingLoggedHosts.add(host);
-          dbg("TLS", `using got-scraping for ${host}`);
-        }
-      } catch { }
-    }
-    return res;
-  } catch (e) {
-    console.warn(`[ProxyFetch] got-scraping request failed, fallback to native fetch: ${e.message}`);
-    return null;
-  }
-}
-*/
-
-// DNS cache - use Map to avoid prototype pollution via malformed hostnames
+// DNS cache — use Map to avoid prototype pollution via malformed hostnames
 const DNS_CACHE = new Map();
+const TLS_CERT_ERRORS = new Set([
+  "SELF_SIGNED_CERT_IN_CHAIN",
+  "DEPTH_ZERO_SELF_SIGNED_CERT",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+  "UNABLE_TO_GET_ISSUER_CERT",
+  "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+  "CERT_HAS_EXPIRED",
+  "ERR_TLS_CERT_ALTNAME_INVALID",
+]);
+
+function isTlsCertError(err) {
+  const code = err?.cause?.code || err?.code;
+  return TLS_CERT_ERRORS.has(code);
+}
+
+function socksOptions(init, insecure) {
+  return {
+    servername: init?.servername,
+    rejectUnauthorized: !insecure,
+  };
+}
+
 const MITM_BYPASS_HOSTS = [
   "cloudcode-pa.googleapis.com",
   "daily-cloudcode-pa.googleapis.com",
@@ -111,11 +43,6 @@ const GOOGLE_DNS_SERVERS = ["8.8.8.8", "8.8.4.4"];
 const HTTPS_PORT = 443;
 const HTTP_SUCCESS_MIN = 200;
 const HTTP_SUCCESS_MAX = 300;
-
-function normalizeString(value) {
-  if (value === undefined || value === null) return "";
-  return String(value).trim();
-}
 
 /**
  * Resolve real IP using Google DNS (bypass system DNS)
@@ -149,87 +76,93 @@ function shouldBypassMitmDns(url) {
   } catch { return false; }
 }
 
-function shouldBypassByNoProxy(targetUrl, noProxyValue) {
-  const noProxy = normalizeString(noProxyValue);
-  if (!noProxy) return false;
-
-  let hostname;
-  try { hostname = new URL(targetUrl).hostname.toLowerCase(); } catch { return false; }
-  const patterns = noProxy.split(",").map((p) => p.trim().toLowerCase()).filter(Boolean);
-
-  return patterns.some((pattern) => {
-    if (pattern === "*") return true;
-    if (pattern.startsWith(".")) return hostname.endsWith(pattern) || hostname === pattern.slice(1);
-    return hostname === pattern || hostname.endsWith(`.${pattern}`);
-  });
-}
-
-/**
- * Get proxy URL from environment
- */
-function getEnvProxyUrl(targetUrl) {
-  const noProxy = process.env.NO_PROXY || process.env.no_proxy;
-  if (shouldBypassByNoProxy(targetUrl, noProxy)) return null;
-
-  let protocol;
-  try { protocol = new URL(targetUrl).protocol; } catch { return null; }
-
-  if (protocol === "https:") {
-    return process.env.HTTPS_PROXY || process.env.https_proxy ||
-      process.env.ALL_PROXY || process.env.all_proxy;
-  }
-
-  return process.env.HTTP_PROXY || process.env.http_proxy ||
-    process.env.ALL_PROXY || process.env.all_proxy;
-}
-
-/**
- * Normalize proxy URL (allow host:port)
- */
-function normalizeProxyUrl(proxyUrl) {
-  const normalizedInput = normalizeString(proxyUrl);
-  if (!normalizedInput) return null;
-
-  try {
-
-    new URL(normalizedInput);
-    return normalizedInput;
-  } catch {
-    // Allow "127.0.0.1:7890" style values
-    return `http://${normalizedInput}`;
-  }
-}
-
-function resolveConnectionProxyUrl(targetUrl, proxyOptions) {
-  const enabled = proxyOptions?.enabled === true || proxyOptions?.connectionProxyEnabled === true;
-  if (!enabled) return null;
-
-  const proxyUrlRaw = normalizeString(proxyOptions?.url ?? proxyOptions?.connectionProxyUrl);
-  if (!proxyUrlRaw) return null;
-
-  const noProxy = normalizeString(proxyOptions?.noProxy ?? proxyOptions?.connectionNoProxy);
-  if (noProxy && shouldBypassByNoProxy(targetUrl, noProxy)) return null;
-
-  return normalizeProxyUrl(proxyUrlRaw);
-}
-
 /**
  * Create proxy dispatcher lazily (undici-compatible)
  */
-async function getDispatcher(proxyUrl) {
+async function getDispatcher(proxyUrl, insecure = false) {
   const normalized = normalizeProxyUrl(proxyUrl);
-  if (!normalized) return null;
+  if (!normalized && !insecure) return null;
 
-  if (!proxyDispatchers.has(normalized)) {
+  const key = `${normalized || "direct"}::${insecure ? "insecure" : "secure"}`;
+  if (!proxyDispatchers.has(key)) {
     // Evict oldest entry if max size reached
     if (proxyDispatchers.size >= MEMORY_CONFIG.proxyDispatchersMaxSize) {
       proxyDispatchers.delete(proxyDispatchers.keys().next().value);
     }
-    const { ProxyAgent } = await import("undici");
-    proxyDispatchers.set(normalized, new ProxyAgent({ uri: normalized }));
+    const { Agent, ProxyAgent } = await import("undici");
+    const connect = insecure ? { rejectUnauthorized: false } : undefined;
+    const dispatcher = normalized
+      ? new ProxyAgent({ uri: normalized, ...(insecure ? { requestTls: connect } : {}) })
+      : new Agent({ connect });
+    proxyDispatchers.set(key, dispatcher);
   }
 
-  return proxyDispatchers.get(normalized);
+  return proxyDispatchers.get(key);
+}
+
+const FREE_TIER_ERROR_MARKER = "FreeTierError";
+
+function bufferedResponse(text, original) {
+  const headers = new Headers(original.headers);
+  headers.delete("content-length");
+  headers.delete("content-encoding");
+  return new Response(text, { status: original.status, statusText: original.statusText, headers });
+}
+
+function targetHost(url) {
+  try {
+    return new URL(typeof url === "string" ? url : url.toString()).host;
+  } catch {
+    return String(url);
+  }
+}
+
+async function replayFreeTierRejectionDirect(url, options, proxied, proxyUrl) {
+  if (proxied.status !== 403) return proxied;
+  let text;
+  try {
+    text = await proxied.text();
+  } catch {
+    return proxied;
+  }
+  if (!text.includes(FREE_TIER_ERROR_MARKER)) return bufferedResponse(text, proxied);
+  if (options?.body && typeof options.body.getReader === "function" && options.body.locked) {
+    return bufferedResponse(text, proxied);
+  }
+  console.warn(`[ProxyFetch] Proxy egress rejected by the OpenCode free-tier gate (403 FreeTierError); replaying direct: ${targetHost(url)}`);
+  try {
+    return await originalFetch(url, options);
+  } catch (directError) {
+    console.warn(`[ProxyFetch] Direct replay failed: ${directError.message}`);
+    return bufferedResponse(text, proxied);
+  }
+}
+
+async function fetchWithTlsFallback(url, options, proxyUrl) {
+  try {
+    // Protocol adapters may need Node's HTTP/1 transport on the direct path.
+    // Keep proxy/no-proxy resolution and strict-proxy enforcement here.
+    if (!proxyUrl && options.directFetch) return await options.directFetch(url, options);
+    if (proxyUrl && isSocksProxyUrl(proxyUrl)) {
+      return await socksFetch(url, options, proxyUrl, socksOptions(options, false));
+    }
+    const dispatcher = proxyUrl ? await getDispatcher(proxyUrl) : undefined;
+    return await originalFetch(url, dispatcher ? { ...options, dispatcher } : options);
+  } catch (err) {
+    const isStrictSsl = options.strictTls === true || process.env.STRICT_SSL === "true" || process.env.STRICT_SSL === "1";
+    if (!isStrictSsl && isTlsCertError(err)) {
+      if (options.body && typeof options.body.getReader === "function" && options.body.locked) {
+        throw err;
+      }
+      console.warn(`[ProxyFetch] TLS cert verification failed (${err.cause?.code || err.code}), retrying with insecure TLS: ${url}`);
+      if (proxyUrl && isSocksProxyUrl(proxyUrl)) {
+        return await socksFetch(url, options, proxyUrl, socksOptions(options, true));
+      }
+      const insecureDispatcher = await getDispatcher(proxyUrl, true);
+      return await originalFetch(url, { ...options, dispatcher: insecureDispatcher });
+    }
+    throw err;
+  }
 }
 
 // ─── socks proxies ────────────────────────────────────────────────────
@@ -264,7 +197,7 @@ async function toPayload(body) {
   }
 }
 
-async function socksFetch(targetUrl, options, proxyUrl) {
+async function socksFetchViaAgent(targetUrl, options, proxyUrl) {
   const SocksAgent = await getSocksAgentClass();
   if (!SocksAgent) throw new Error("socks-proxy-agent unavailable");
 
@@ -374,63 +307,6 @@ async function createBypassRequest(parsedUrl, realIP, options) {
   });
 }
 
-// OpenCode's free-tier gate answers 403 `FreeTierError` when the request
-// exits from an IP it has flagged — the transport itself succeeded, so the
-// proxy-failure fallback below never sees it and every retry keeps leaving
-// through the same flagged proxy. Live measurement (#4983): identical body and
-// headers in the same minute — flagged pool egress → 403 FreeTierError,
-// direct egress → 200.
-const FREE_TIER_ERROR_MARKERS = ["FreeTierError", "FreeUsageLimitError"];
-/** Rebuild a response whose body we buffered while inspecting it. */
-function bufferedResponse(text, original) {
-  const headers = new Headers(original.headers);
-  // The body was decoded while reading, so upstream framing no longer applies.
-  headers.delete("content-length");
-  headers.delete("content-encoding");
-  return new Response(text, { status: original.status, statusText: original.statusText, headers });
-}
-
-/**
- * After a proxied attempt, replay once on the direct egress when upstream
- * rejected the *proxy's IP* (403 FreeTierError). A body already consumed by
- * the first attempt cannot be resent, and strictProxy keeps its contract of
- * never leaving over another path — both return the rejection as-is.
- */
-async function replayFreeTierRejectionDirect(url, options, proxied, proxyUrl) {
-  if (proxied.status !== 403 && proxied.status !== 429) return proxied;
-  let text;
-  try {
-    text = await proxied.text();
-  } catch {
-    return proxied;
-  }
-  const isFreeTierRejection = FREE_TIER_ERROR_MARKERS.some((m) => text.includes(m));
-  if (!isFreeTierRejection) return bufferedResponse(text, proxied);
-  if (options?.body && typeof options.body.getReader === "function" && options.body.locked) {
-    return bufferedResponse(text, proxied);
-  }
-  if (proxyUrl) {
-    console.warn(`[ProxyFetch] Proxy egress rejected by OpenCode free-tier gate (403 FreeTierError); direct replay skipped to protect main IP: ${targetHost(url)}`);
-    return bufferedResponse(text, proxied);
-  }
-  console.warn(`[ProxyFetch] Proxy egress rejected by the OpenCode free-tier gate (403 FreeTierError); replaying direct: ${targetHost(url)}`);
-  try {
-    return await originalFetch(url, options);
-  } catch (directError) {
-    // The direct replay failed outright — surface the original rejection.
-    console.warn(`[ProxyFetch] Direct replay failed: ${directError.message}`);
-    return bufferedResponse(text, proxied);
-  }
-}
-
-function targetHost(url) {
-  try {
-    return new URL(typeof url === "string" ? url : url.toString()).host;
-  } catch {
-    return String(url);
-  }
-}
-
 export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
   const targetUrl = typeof url === "string" ? url : url.toString();
 
@@ -446,18 +322,15 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
       "x-relay-target": `${parsed.protocol}//${parsed.host}`,
       "x-relay-path": `${parsed.pathname}${parsed.search}`,
     };
-    const res = await originalFetch(vercelRelayUrl, { ...options, headers: relayHeaders });
-    if (proxyOptions?.strictProxy === true) return res;
-    return await replayFreeTierRejectionDirect(url, options, res, null);
+    return originalFetch(vercelRelayUrl, { ...options, headers: relayHeaders });
   }
-  const connectionProxyUrl = resolveConnectionProxyUrl(targetUrl, proxyOptions);
-  const envProxyUrl = connectionProxyUrl ? null : normalizeProxyUrl(getEnvProxyUrl(targetUrl));
-  const proxyUrl = connectionProxyUrl || envProxyUrl;
+
+  const { url: proxyUrl } = resolveEffectiveProxyUrl(targetUrl, proxyOptions);
 
   // socks: undici has no socks dispatcher, so it never reaches getDispatcher().
   if (proxyUrl && isSocksUrl(proxyUrl)) {
     try {
-      return await socksFetch(targetUrl, options, proxyUrl);
+      return await socksFetchViaAgent(targetUrl, options, proxyUrl);
     } catch (proxyError) {
       if (proxyOptions?.strictProxy === true) {
         throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
@@ -470,10 +343,9 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
   // MITM DNS bypass: for known MITM-intercepted hosts, resolve real IP to avoid DNS spoof
   if (shouldBypassMitmDns(targetUrl)) {
     if (proxyUrl) {
-      // Proxy resolves DNS externally (not affected by /etc/hosts) - use proxy directly
+      // Proxy resolves DNS externally (not affected by /etc/hosts) — use proxy directly
       try {
-        const dispatcher = await getDispatcher(proxyUrl);
-        return await originalFetch(url, { ...options, dispatcher });
+        return await fetchWithTlsFallback(url, options, proxyUrl);
       } catch (proxyError) {
         if (proxyOptions?.strictProxy === true) {
           throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
@@ -481,7 +353,7 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
         console.warn(`[ProxyFetch] Proxy failed, falling back to direct bypass: ${proxyError.message}`);
       }
     }
-    // No proxy - manually resolve real IP to bypass DNS spoof
+    // No proxy — manually resolve real IP to bypass DNS spoof
     try {
       const parsedUrl = new URL(targetUrl);
       const realIP = await resolveRealIP(parsedUrl.hostname);
@@ -493,24 +365,36 @@ export async function proxyAwareFetch(url, options = {}, proxyOptions = null) {
 
   if (proxyUrl) {
     try {
-      const dispatcher = await getDispatcher(proxyUrl);
-      const res = await originalFetch(url, { ...options, dispatcher });
+      const res = await fetchWithTlsFallback(url, options, proxyUrl);
       if (res.status === 407) {
         throw new Error("HTTP 407 Proxy Authentication Required (credentials invalid or plan expired)");
       }
-      // strictProxy never leaves the configured path — pass the rejection through.
       if (proxyOptions?.strictProxy === true) return res;
       return await replayFreeTierRejectionDirect(url, options, res, proxyUrl);
     } catch (proxyError) {
-      // If a proxy was configured, never fall back to direct egress which leaks
-      // the host's main IP.
-      throw new Error(`[ProxyFetch] Proxy required but failed (${proxyError.message}); direct fallback blocked to protect main IP.`);
+      // If strictProxy is enabled, fail hard instead of falling back to direct
+      if (proxyOptions?.strictProxy === true) {
+        throw new Error(`[ProxyFetch] Proxy required but failed (strictProxy=true): ${proxyError.message}`);
+      }
+      console.warn(`[ProxyFetch] Proxy failed, falling back to direct: ${proxyError.message}`);
+      return fetchWithTlsFallback(url, options, null);
     }
   }
 
-  // got-scraping disabled - use native fetch directly
-  // (Re-enable per-host by wrapping with tryGotScrapingFetch when needed)
-  return originalFetch(url, options);
+  // Strict mode means "never leave over the direct IP". Reaching here with a
+  // proxy configured but unresolved is exactly that case — an inactive or
+  // empty pool, or every proxy removed — so refuse instead of silently
+  // exposing the real address (#4333). The catch blocks above only cover a
+  // proxy that was actually tried.
+  const proxyIntended = proxyOptions?.proxyPoolId
+    || proxyOptions?.enabled === true
+    || proxyOptions?.connectionProxyEnabled === true
+    || !!normalizeString(proxyOptions?.url ?? proxyOptions?.connectionProxyUrl);
+  if (proxyOptions?.strictProxy === true && proxyIntended) {
+    throw new Error("[ProxyFetch] Proxy required but none resolved (strictProxy=true)");
+  }
+
+  return fetchWithTlsFallback(url, options, null);
 }
 
 /**
@@ -520,7 +404,7 @@ async function patchedFetch(url, options = {}) {
   return proxyAwareFetch(url, options, null);
 }
 
-// Idempotency guard - only patch once to avoid wrapping multiple times
+// Idempotency guard — only patch once to avoid wrapping multiple times
 if (globalThis.fetch !== patchedFetch) {
   globalThis.fetch = patchedFetch;
 }

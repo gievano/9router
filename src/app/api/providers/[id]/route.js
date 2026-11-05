@@ -6,6 +6,8 @@ import {
   deleteProviderConnection,
 } from "@/models";
 import { toProviderConnectionResponse, usesAwsCredentialForm } from "@/lib/providerConnectionResponse";
+import { resolveGeminiCookieUpdate } from "@/shared/utils/geminiCookieFields";
+import { normalizeGeminiCookie } from "open-sse/services/geminiWebCookie.js";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +121,12 @@ export async function PUT(request, { params }) {
     if (defaultModel !== undefined) updateData.defaultModel = defaultModel;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (apiKey && existing.authType === "apikey") updateData.apiKey = apiKey;
+    // gemini-web is the only cookie-auth provider and its stored secret is a browser cookie.
+    // An edit that carries just __Secure-1PSIDTS must refresh the timestamp, not replace the
+    // whole cookie, or the connection is saved without the part that authenticates.
+    if (existing.provider === "gemini-web" && apiKey) {
+      updateData.apiKey = resolveGeminiCookieUpdate(existing.apiKey, normalizeGeminiCookie(apiKey));
+    }
     if (testStatus !== undefined) updateData.testStatus = testStatus;
     if (lastError !== undefined) updateData.lastError = lastError;
     if (lastErrorAt !== undefined) updateData.lastErrorAt = lastErrorAt;

@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import PropTypes from "prop-types";
 import { bucketTimestampsByDowHour } from "./activityBuckets.js";
 
@@ -112,40 +113,45 @@ export function ActivityHeatmap({ grid = [], max = 0, cell = 14, gap = 3 }) {
   if (!grid.length) return null;
 
   const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  // One CSS grid for the whole block: 24 hour columns can shrink below the
+  // 14px cell (`cell` stays the cap) so the grid fits a 390px phone instead of
+  // pushing 42 cells past the card edge. Rows are square, so a narrow screen
+  // gets smaller cells rather than a horizontal scrollbar inside a card.
+  const gridTemplateColumns = `1.75rem repeat(24, minmax(0, ${cell}px))`;
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <div className="flex min-w-0 flex-col gap-[3px]" role="img" aria-label="Requests per weekday and hour">
+      <div
+        className="grid min-w-0 items-center"
+        style={{ gridTemplateColumns, columnGap: gap, rowGap: gap }}
+        role="img"
+        aria-label="Requests per weekday and hour"
+      >
         {grid.map((row, di) => (
-          <div key={dayNames[di]} className="flex items-center gap-2">
-            <span className="w-7 shrink-0 text-right text-[10px] text-text-muted leading-none">{dayNames[di]}</span>
-            <div className="flex gap-[3px]">
-              {row.map((v, hi) => (
-                <div
-                  key={hi}
-                  title={`${dayNames[di]} ${String(hi).padStart(2, "0")}:00 - ${v} request${v === 1 ? "" : "s"}`}
-                  className="rounded-[2px] border border-border"
-                  style={{ width: cell, height: cell, backgroundColor: cellColor(v, max) }}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-        {/* Hour ruler every 3 cells so ticks never collide with 14px cells. */}
-        <div className="flex items-center gap-2">
-          <span className="w-7 shrink-0" />
-          <div className="flex" style={{ width: 24 * cell + 23 * gap }}>
-            {Array.from({ length: 24 }, (_, hi) => (
-              <span
+          <Fragment key={dayNames[di]}>
+            <span className="text-right text-[10px] leading-none text-text-muted">{dayNames[di]}</span>
+            {row.map((v, hi) => (
+              <div
                 key={hi}
-                className="text-[9px] text-text-muted"
-                style={{ width: cell + gap, textAlign: hi % 6 === 0 ? "left" : "center" }}
-              >
-                {hi % 6 === 0 ? String(hi).padStart(2, "0") : ""}
-              </span>
+                title={`${dayNames[di]} ${String(hi).padStart(2, "0")}:00 - ${v} request${v === 1 ? "" : "s"}`}
+                className="aspect-square w-full rounded-[2px] border border-border"
+                style={{ backgroundColor: cellColor(v, max) }}
+              />
             ))}
-          </div>
-        </div>
+          </Fragment>
+        ))}
+        {/* Hour ruler every 6 cells: one label per quarter keeps the ticks apart
+            even when the cells shrink on a phone. */}
+        <span />
+        {Array.from({ length: 24 }, (_, hi) => (
+          <span
+            key={hi}
+            className="text-[10px] leading-none text-text-muted"
+            style={{ textAlign: hi % 6 === 0 ? "left" : "center" }}
+          >
+            {hi % 6 === 0 ? String(hi).padStart(2, "0") : ""}
+          </span>
+        ))}
       </div>
       <div className="flex items-center gap-1 text-[10px] text-text-muted">
         less

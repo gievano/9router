@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { recordErrorLog, getErrorLogs, clearErrorLogs } from "../../src/lib/db/repos/errorLogRepo.js";
-import { buildErrorBody, errorResponse } from "../../open-sse/utils/error.js";
+import { buildErrorBody, errorResponse, unavailableResponse } from "../../open-sse/utils/error.js";
+import { buildStreamErrorBytes } from "../../open-sse/utils/streamHelpers.js";
 
 describe("Error Log & Hide Error System", () => {
   beforeEach(async () => {
@@ -9,8 +10,8 @@ describe("Error Log & Hide Error System", () => {
 
   it("records error logs with timestamp and metadata", async () => {
     await recordErrorLog({
-      provider: "opencode-v2",
-      model: "oc2/beam-free",
+      provider: "opencode",
+      model: "oc/beam-free",
       endpoint: "chat",
       statusCode: 502,
       errorMessage: "Provider rate limit 429",
@@ -20,8 +21,8 @@ describe("Error Log & Hide Error System", () => {
 
     const logs = await getErrorLogs();
     expect(logs.length).toBe(1);
-    expect(logs[0].provider).toBe("opencode-v2");
-    expect(logs[0].model).toBe("oc2/beam-free");
+    expect(logs[0].provider).toBe("opencode");
+    expect(logs[0].model).toBe("oc/beam-free");
     expect(logs[0].statusCode).toBe(502);
     expect(logs[0].errorMessage).toBe("Provider rate limit 429");
     expect(logs[0].stack).toContain("test.js:1");
@@ -56,5 +57,31 @@ describe("Error Log & Hide Error System", () => {
     const resp = errorResponse(502, "Detailed secret upstream breakdown", null, true);
     const json = await resp.json();
     expect(json.error.message).toBe("There is an error but this error is hidden, try checking your error log.");
+  });
+
+  it("unavailableResponse with hideError masks message but keeps retry-after header", async () => {
+    const retryAfter = new Date(Date.now() + 120000).toISOString();
+    const retryAfterHuman = "reset after 2m";
+
+    // Default (visible): message has suffix, retry-after header present
+    const visible = unavailableResponse(503, "Secret upstream detail", retryAfter, retryAfterHuman);
+    const vJson = await visible.json();
+    expect(vJson.error.message).toBe("Secret upstream detail (reset after 2m)");
+    expect(visible.headers.get("retry-after")).toBe("120");
+
+    // Hidden: message is generic, retry-after header still present
+    const hidden = unavailableResponse(503, "Secret upstream detail", retryAfter, retryAfterHuman, null, true);
+    const hJson = await hidden.json();
+    expect(hJson.error.message).toBe("There is an error but this error is hidden, try checking your error log.");
+    expect(hidden.headers.get("retry-after")).toBe("120");
+  });
+
+  it("buildStreamErrorBytes with hideError masks message for SSE error frame", async () => {
+    const bytes = buildStreamErrorBytes(504, "Internal upstream detail", "openai", true);
+    const text = new TextDecoder().decode(bytes);
+    // SSE data line should contain the hidden message
+    expect(text).toContain("There is an error but this error is hidden");
+    // Should NOT contain the original detail
+    expect(text).not.toContain("Internal upstream detail");
   });
 });

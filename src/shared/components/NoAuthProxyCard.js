@@ -32,7 +32,14 @@ export default function NoAuthProxyCard({ providerId }) {
       if (cancelled) return;
       setProxyPools(poolData.proxyPools || []);
       const override = (settingsData.providerStrategies || {})[providerId] || {};
-      setProxyPoolId(override.proxyPoolId || NONE_PROXY_POOL_VALUE);
+      // A saved pool id can go stale if the pool was deleted after saving.
+      // Only trust the override when it still resolves to a current option,
+      // otherwise fall back to no proxy so the select never points at nothing.
+      const savedPoolId = override.proxyPoolId;
+      const poolStillExists =
+        savedPoolId === NONE_PROXY_POOL_VALUE ||
+        (poolData.proxyPools || []).some((p) => p.id === savedPoolId);
+      setProxyPoolId(poolStillExists ? savedPoolId : NONE_PROXY_POOL_VALUE);
       setRotateStrategy(override.rotateStrategy || "none");
       if (providersData?.opencodeInstalled !== undefined) {
         setOpencodeInstalled(Boolean(providersData.opencodeInstalled));
@@ -82,9 +89,7 @@ export default function NoAuthProxyCard({ providerId }) {
   const canRotate = proxyPools.length >= 2;
   const isRotation = rotateStrategy !== "none";
 
-  const isOpencodeV2 = providerId === "opencode-v2";
   const proxyPoolOptions = [
-    ...(isOpencodeV2 ? [{ value: "builtin", label: "Built-in Proxy (Residential Channel by t.me/abcseren)" }] : []),
     { value: NONE_PROXY_POOL_VALUE, label: "None (direct / unproxied)" },
     ...proxyPools.map((pool) => ({ value: pool.id, label: pool.name })),
   ];
@@ -98,9 +103,7 @@ export default function NoAuthProxyCard({ providerId }) {
         <div className="flex-1">
           <p className="text-sm font-medium">No authentication required</p>
           <p className="text-xs text-text-muted">
-            {isOpencodeV2
-              ? "Use built-in residential proxy, connect direct, or route through your custom proxy pools."
-              : "Ready to use as-is, or route it through a proxy pool to bypass IP-based limits."}
+            Ready to use as-is, or route it through a proxy pool to bypass IP-based limits.
           </p>
         </div>
         {savedFlash && <Badge variant="success" size="sm">Saved</Badge>}
@@ -116,8 +119,6 @@ export default function NoAuthProxyCard({ providerId }) {
           hint={
             isRotation
               ? "Rotation is on, so it uses every active proxy pool. The pool selector is ignored."
-              : isOpencodeV2 && (proxyPoolId === "builtin" || proxyPoolId === NONE_PROXY_POOL_VALUE)
-              ? "Built-in Proxy provides automated residential rotation to bypass upstream 403 FreeTierError."
               : undefined
           }
         />
@@ -137,25 +138,6 @@ export default function NoAuthProxyCard({ providerId }) {
           />
         )}
       </div>
-
-      {isOpencodeV2 && proxyPoolId === "builtin" && (
-        <div className="mt-4 pt-3.5 border-t border-border-subtle flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-text-muted font-medium">Active Built-in Channel:</span>
-            <a
-              href="https://t.me/abcseren"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary font-mono font-semibold hover:underline inline-flex items-center gap-0.5"
-            >
-              t.me/abcseren
-              <span className="material-symbols-outlined text-[13px]">open_in_new</span>
-            </a>
-          </div>
-          <span className="text-[11px] text-text-muted/70 font-mono">residential-broadband</span>
-        </div>
-      )}
     </Card>
   );
 }

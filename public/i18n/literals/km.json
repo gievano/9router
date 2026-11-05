@@ -927,7 +927,7 @@
   "Reading from Cursor IDE database": "កំពុងអានពីមូលដ្ឋានទិន្នន័យ Cursor IDE",
   "Ready": "រួចរាល់",
   "Ready to Simplify Your AI Infrastructure?": "ត្រៀមខ្លួនសម្រួលហេដ្ឋារចនាសម្ព័ន្ធ AI របស់អ្នកហើយឬនៅ?",
-  "Ready to route! ✓": "រួចរាល់សម្រាប់បញ្ជូនផ្លូវ! ✓",
+  "Ready to route!": "រួចរាល់សម្រាប់បញ្ជូនផ្លូវ!",
   "Ready! Requests route automatically through your configured providers.": "រួចរាល់! សំណើត្រូវបានបញ្ជូនផ្លូវដោយស្វ័យប្រវត្តិតាមអ្នកផ្តល់សេវាដែលអ្នកបានកំណត់។",
   "Reasoning": "ការគិតហេតុផល",
   "Reasoning:": "ការគិតហេតុផល៖",
@@ -1388,11 +1388,10 @@
   "→ OpenAI": "→ OpenAI",
   "→ Target": "→ គោលដៅ",
   "→ localhost": "→ localhost",
-  "⚠️ Enable DNS to edit model mappings": "⚠️ បើក DNS ដើម្បីកែសម្រួលការផ្គូផ្គងម៉ូដែល",
-  "⚠️ Local plugins run as subprocess via": "⚠️ Plugins លើម៉ាស៊ីនដំណើរការជា Subprocess តាមរយៈ",
-  "⚠️ MITM intercepts HTTPS traffic of IDE tools (Antigravity, GitHub Copilot, Kiro) via local CA to redirect requests to your providers. May violate ToS → account ban. Use at your own risk.": "⚠️ MITM ចាប់ HTTPS Traffic របស់ឧបករណ៍ IDE (Antigravity, GitHub Copilot, Kiro) តាម Local CA ដើម្បីបញ្ជូនសំណើទៅអ្នកផ្តល់សេវារបស់អ្នក។ អាចរំលោភ ToS → គណនីត្រូវបានហាមឃាត់។ ប្រើដោយទទួលខុសត្រូវលើហានិភ័យដោយខ្លួនឯង។",
-  "⚠️ Risk Notice: This provider uses a subscription/OAuth session not officially licensed for proxy/router use. Account may be restricted or banned. Use at your own risk.": "⚠️ សេចក្តីជូនដំណឹងអំពីហានិភ័យ៖ អ្នកផ្តល់សេវានេះប្រើ Subscription/OAuth Session ដែលមិនមានអាជ្ញាបណ្ណផ្លូវការសម្រាប់ប្រើជា Proxy/Router។ គណនីអាចត្រូវបានដាក់កម្រិត ឬហាមឃាត់។ ប្រើដោយទទួលខុសត្រូវលើហានិភ័យដោយខ្លួនឯង។",
-  "✓ Confirm Add": "✓ បញ្ជាក់ការបន្ថែម",
-  "📝 Configure providers in dashboard or use environment variables": "📝 កំណត់អ្នកផ្តល់សេវាក្នុងផ្ទាំងគ្រប់គ្រង ឬប្រើ Environment Variables",
-  "🔐 OAuth required. Add now and authenticate after Apply; tool list will be discovered after first connect.": "🔐 ត្រូវការ OAuth។ បន្ថែមឥឡូវ ហើយផ្ទៀងផ្ទាត់បន្ទាប់ពីចុច អនុវត្ត; បញ្ជីឧបករណ៍នឹងត្រូវបានរកឃើញបន្ទាប់ពីការតភ្ជាប់លើកដំបូង។"
+  "Local plugins run as subprocess via": "Plugins លើម៉ាស៊ីនដំណើរការជា Subprocess តាមរយៈ",
+  "MITM intercepts HTTPS traffic of IDE tools (Antigravity, GitHub Copilot, Kiro) via local CA to redirect requests to your providers. May violate ToS → account ban. Use at your own risk.": "MITM ចាប់ HTTPS Traffic របស់ឧបករណ៍ IDE (Antigravity, GitHub Copilot, Kiro) តាម Local CA ដើម្បីបញ្ជូនសំណើទៅអ្នកផ្តល់សេវារបស់អ្នក។ អាចរំលោភ ToS → គណនីត្រូវបានហាមឃាត់។ ប្រើដោយទទួលខុសត្រូវលើហានិភ័យដោយខ្លួនឯង។",
+  "Risk Notice: This provider uses a subscription/OAuth session not officially licensed for proxy/router use. Account may be restricted or banned. Use at your own risk.": "សេចក្តីជូនដំណឹងអំពីហានិភ័យ៖ អ្នកផ្តល់សេវានេះប្រើ Subscription/OAuth Session ដែលមិនមានអាជ្ញាបណ្ណផ្លូវការសម្រាប់ប្រើជា Proxy/Router។ គណនីអាចត្រូវបានដាក់កម្រិត ឬហាមឃាត់។ ប្រើដោយទទួលខុសត្រូវលើហានិភ័យដោយខ្លួនឯង។",
+  "Confirm Add": "បញ្ជាក់ការបន្ថែម",
+  "Configure providers in dashboard or use environment variables": "កំណត់អ្នកផ្តល់សេវាក្នុងផ្ទាំងគ្រប់គ្រង ឬប្រើ Environment Variables",
+  "OAuth required. Add now and authenticate after Apply; tool list will be discovered after first connect.": "ត្រូវការ OAuth។ បន្ថែមឥឡូវ ហើយផ្ទៀងផ្ទាត់បន្ទាប់ពីចុច អនុវត្ត; បញ្ជីឧបករណ៍នឹងត្រូវបានរកឃើញបន្ទាប់ពីការតភ្ជាប់លើកដំបូង។"
 }

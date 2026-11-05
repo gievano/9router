@@ -16,6 +16,7 @@ export async function POST(request, { params }) {
     return NextResponse.json({
       valid: result.valid,
       error: result.error,
+      warning: result.warning || null,
       refreshed: result.refreshed || false,
     });
   } catch (error) {

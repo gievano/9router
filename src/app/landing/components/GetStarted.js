@@ -66,7 +66,7 @@ export default function GetStarted() {
                   <span className="text-green-400">$</span>
                   <span className="text-white">npx 9router</span>
                   <span className="ml-auto text-gray-500 text-xs opacity-0 group-hover:opacity-100">
-                    {copied === "landing" ? "✓ Copied" : "Copy"}
+                    {copied === "landing" ? "Copied" : "Copy"}
                   </span>
                 </div>
                 
@@ -74,11 +74,11 @@ export default function GetStarted() {
                   <span className="text-[#f97815]">&gt;</span> Starting 9Router...<br/>
                   <span className="text-[#f97815]">&gt;</span> Server running on <span className="text-blue-400">http://localhost:20128</span><br/>
                   <span className="text-[#f97815]">&gt;</span> Dashboard: <span className="text-blue-400">http://localhost:20128/dashboard</span><br/>
-                  <span className="text-green-400">&gt;</span> Ready to route! ✓
+                  <span className="text-green-400">&gt;</span> Ready to route!
                 </div>
                 
                 <div className="text-xs text-gray-500 mb-2 border-t border-gray-700 pt-4">
-                  📝 Configure providers in dashboard or use environment variables
+                  <span className="material-symbols-outlined align-[-2px] text-[12px] leading-none">edit_note</span> Configure providers in dashboard or use environment variables
                 </div>
                 
                 <div className="text-gray-400 text-xs">

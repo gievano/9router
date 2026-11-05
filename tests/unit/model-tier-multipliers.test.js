@@ -4,18 +4,16 @@ import { applyUsageMultipliers } from "../../open-sse/utils/usageTracking.js";
 
 describe("Model Tier Resolution", () => {
   it("resolves free models correctly with FREE tag", () => {
-    expect(isOpencodeFreeModel("oc1/beam-free")).toBe(true);
-    expect(isOpencodeFreeModel("oc2/deepseek-v4.1-flash-free")).toBe(true);
+    expect(isOpencodeFreeModel("oc/beam-free")).toBe(true);
     expect(isOpencodeFreeModel("big-pickle")).toBe(true);
     expect(isOpencodeFreeModel("union-alpha")).toBe(true);
     expect(isOpencodeFreeModel("flint-40b-free")).toBe(true);
     expect(isOpencodeFreeModel({ id: "custom-free", isFree: true })).toBe(true);
-    expect(resolveModelTier("oc1/beam-free")).toBe("free");
+    expect(resolveModelTier("oc/beam-free")).toBe("free");
   });
 
   it("does not tag non-free models (no PAID, no UNKNOWN)", () => {
     expect(isOpencodeFreeModel("claude-opus-5-5", "anthropic")).toBe(false);
-    expect(isOpencodeFreeModel("claude-fable-5-1", "oc2")).toBe(false);
     expect(isOpencodeFreeModel("gpt-4o", "openai")).toBe(false);
     expect(isOpencodeFreeModel("custom-random-slug-99", "custom-node")).toBe(false);
     expect(resolveModelTier("claude-opus-5-5")).toBe("");

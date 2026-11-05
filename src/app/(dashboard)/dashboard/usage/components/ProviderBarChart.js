@@ -30,21 +30,45 @@ const fmtCost = (n) => {
   return `$${n.toFixed(4)}`;
 };
 
-export default function ProviderBarChart({ byProvider }) {
+// Recharts wraps a long category tick onto as many lines as it needs and the
+// lines then overlap the neighbouring row. One line, cut to fit the gutter.
+function AxisTick({ x, y, payload }) {
+  const text = String(payload.value);
+  const shown = text.length > 20 ? `${text.slice(0, 19)}…` : text;
+  return (
+    <text x={x} y={y} dy={3} textAnchor="end" fontSize={10} fill="currentColor" fillOpacity={0.8}>
+      {shown}
+    </text>
+  );
+}
+
+// "OpenAI Compatible (330688af)" is two compatible endpoints away from a
+// useful axis tick. The hash stays in the tooltip and the table; the axis reads
+// the base name.
+function shortLabel(name) {
+  return String(name).replace(/\s*\([0-9a-f]{6,8}\)\s*$/i, "");
+}
+
+export default function ProviderBarChart({ byProvider, labels }) {
   const [viewMode, setViewMode] = useState("tokens");
 
   const chartData = useMemo(() => {
     if (!byProvider) return [];
     return Object.entries(byProvider)
       .map(([id, data]) => ({
-        name: id,
+        // The key stays the raw provider id; only the printed name is resolved.
+        // The axis gets the short form (Recharts wraps long ticks onto three
+        // lines and they collide with neighbouring rows); the tooltip keeps the
+        // full label so two accounts of one provider stay distinguishable.
+        name: labels?.[id] || id,
+        axisName: shortLabel(labels?.[id] || id),
         tokens: (data.promptTokens || 0) + (data.completionTokens || 0),
         requests: data.requests || 0,
         cost: data.cost || 0,
       }))
       .filter((d) => d[viewMode] > 0)
       .sort((a, b) => b[viewMode] - a[viewMode]);
-  }, [byProvider, viewMode]);
+  }, [byProvider, labels, viewMode]);
 
   const fmt = viewMode === "tokens" ? fmtTokens : viewMode === "cost" ? fmtCost : String;
   const label = viewMode === "tokens" ? "Tokens" : viewMode === "cost" ? "Estimated cost" : "Requests";
@@ -81,23 +105,26 @@ export default function ProviderBarChart({ byProvider }) {
       {!chartData.length ? (
         <div className="h-44 flex items-center justify-center text-text-muted text-sm">No provider usage yet</div>
       ) : (
-        <ResponsiveContainer width="100%" height={210}>
-          <BarChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
+        // Horizontal bars: provider labels are long enough that a vertical chart
+        // either truncates them or overlaps them.
+        <ResponsiveContainer width="100%" height={Math.max(160, chartData.length * 34)}>
+          <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} horizontal={false} />
             <XAxis
-              dataKey="name"
-              tick={{ fontSize: 10, fill: "currentColor", fillOpacity: 0.8 }}
-              tickLine={false}
-              axisLine={false}
-              interval={0}
-              tickFormatter={(v) => v.length > 12 ? v.slice(0, 12) + "…" : v}
-            />
-            <YAxis
+              type="number"
               tick={{ fontSize: 10, fill: "currentColor", fillOpacity: 0.6 }}
               tickLine={false}
               axisLine={false}
               tickFormatter={fmt}
-              width={48}
+            />
+            <YAxis
+              type="category"
+              dataKey="axisName"
+              tick={AxisTick}
+              tickLine={false}
+              axisLine={false}
+              interval={0}
+              width={132}
             />
             <Tooltip
               contentStyle={{
@@ -107,9 +134,10 @@ export default function ProviderBarChart({ byProvider }) {
                 fontSize: "12px",
                 color: "var(--color-text-main, #fff)",
               }}
+              labelFormatter={(_, payload) => payload?.[0]?.payload?.name || ""}
               formatter={(value) => [fmt(value), label]}
             />
-            <Bar dataKey={viewMode} radius={[4, 4, 0, 0]} maxBarSize={44}>
+            <Bar dataKey={viewMode} radius={[0, 4, 4, 0]} maxBarSize={26}>
               {chartData.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} fillOpacity={0.85} />
               ))}
@@ -123,4 +151,5 @@ export default function ProviderBarChart({ byProvider }) {
 
 ProviderBarChart.propTypes = {
   byProvider: PropTypes.object,
+  labels: PropTypes.object,
 };

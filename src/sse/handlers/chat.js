@@ -16,7 +16,7 @@ import { handleChatCore } from "open-sse/handlers/chatCore.js";
 import { DEFAULT_HEADROOM_URL } from "@/lib/headroom/detect";
 import { getTransform as getPxpipeTransform } from "@/lib/pxpipe/loader.js";
 import { appendPxpipeEvent } from "@/lib/pxpipe/events.js";
-import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
+import { errorResponse, unavailableResponse, maskHiddenError } from "open-sse/utils/error.js";
 import { upstreamResponseHeaders } from "open-sse/utils/upstreamHeaders.js";
 import { handleComboChat, handleFusionChat, detectRequiredCapabilities } from "open-sse/services/combo.js";
 import { augmentModelsWithCapacityAdapter, withCapacityAdapterStripping, getActiveAdapterStrategy } from "open-sse/services/capacityAdapter.js";
@@ -35,7 +35,7 @@ import { stripModelContextMarker } from "open-sse/utils/modelMarkers.js";
  * Supports: OpenAI, Claude, Gemini, OpenAI Responses API formats
  * Format detection and translation handled by translator
  */
-export async function handleChat(request, clientRawRequest = null) {
+async function _handleChat(request, clientRawRequest = null) {
   let body;
   try {
     body = await request.json();
@@ -85,6 +85,10 @@ export async function handleChat(request, clientRawRequest = null) {
     }
     return errorResponse(HTTP_STATUS.UNAUTHORIZED, "Missing API key");
   }
+
+  // Hide Raw Errors (experimental): masks every provider-derived message on the
+  // way out. Loaded once here so each error path below honours the toggle.
+  const hideErr = Boolean(settings.hideError);
 
   if (apiKey) {
     const clientIp = getClientIp(request);
@@ -385,6 +389,7 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
   const calledModel = requestedModel || `${provider}/${effectiveModel}`;
 
   const chatSettings = await getSettings();
+  const hideErr = Boolean(chatSettings?.hideError);
 
   // Try with available accounts (fallback on errors)
   const excludeConnectionIds = new Set();
@@ -406,14 +411,13 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
         const errorMsg = lastError || credentials.lastError || "Unavailable";
         const status = HTTP_STATUS.SERVICE_UNAVAILABLE;
         log.warn("CHAT", `[${provider}/${model}] ${errorMsg} (${credentials.retryAfterHuman})`);
-        return unavailableResponse(status, `[${calledModel}] ${errorMsg}`, credentials.retryAfter, credentials.retryAfterHuman);
+        return unavailableResponse(status, `[${calledModel}] ${errorMsg}`, credentials.retryAfter, credentials.retryAfterHuman, null, hideErr);
       }
       if (excludeConnectionIds.size === 0) {
         log.warn("AUTH", `No active credentials for provider: ${provider}`);
-        return errorResponse(HTTP_STATUS.NOT_FOUND, `No credentials are serving ${calledModel} right now`);
+        return errorResponse(HTTP_STATUS.NOT_FOUND, `No credentials are serving ${calledModel} right now`, null, hideErr);
       }
       log.warn("CHAT", "No more accounts available", { provider });
-      const hideErr = Boolean(chatSettings?.hideError);
       try {
         const { recordErrorLog } = await import("@/lib/localDb");
         recordErrorLog({
@@ -521,16 +525,11 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
     // The session branch carries the same deadline as the generic one below:
     // past the caller's budget every further proxy answers the same
     // spent-quota 429 into a void, so hand back the last error now.
-    if ((provider === "opencode" || provider === "opencode-v2") && result.status === 429
+    if (provider === "opencode" && result.status === 429
         && /free\s*usage\s*limit/i.test(result.error || "")) {
       try {
-        if (provider === "opencode-v2") {
-          const { rotateOpencodeV2Session } = await import("open-sse/executors/opencode-v2.js");
-          rotateOpencodeV2Session(refreshedCredentials);
-        } else {
-          const { rotateOpencodeSession } = await import("open-sse/executors/opencode.js");
-          rotateOpencodeSession(refreshedCredentials);
-        }
+        const { rotateOpencodeSession } = await import("open-sse/executors/opencode.js");
+        rotateOpencodeSession(refreshedCredentials);
       } catch { /* a failed rotation must not block the fallback */ }
       log.warn("FALLBACK", `⇄ ACC:${credentials.connectionName} SESSION ROTATED (free quota spent) → NEXT ACCOUNT`);
       excludeConnectionIds.add(credentials.connectionId);
@@ -568,4 +567,15 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
 
     return result.response;
   }
+}
+
+/**
+ * Public entry: every error body leaving this handler passes through the
+ * Hide Raw Errors mask, so no branch can leak an upstream message.
+ */
+export async function handleChat(request, clientRawRequest = null) {
+  const response = await _handleChat(request, clientRawRequest);
+  if (!response || response.status < 400) return response;
+  const settings = await getSettings();
+  return maskHiddenError(response, Boolean(settings?.hideError));
 }

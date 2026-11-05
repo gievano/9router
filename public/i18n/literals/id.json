@@ -925,7 +925,7 @@
   "Reading from Cursor IDE database": "Membaca dari database Cursor IDE",
   "Ready": "Siap",
   "Ready to Simplify Your AI Infrastructure?": "Siap Menyederhanakan Infrastruktur AI Anda?",
-  "Ready to route! ✓": "Siap merutekan! ✓",
+  "Ready to route!": "Siap merutekan!",
   "Ready! Requests route automatically through your configured providers.": "Siap! Permintaan dirutekan secara otomatis melalui penyedia yang Anda konfigurasi.",
   "Reasoning": "Penalaran",
   "Reasoning:": "Penalaran:",
@@ -1383,11 +1383,10 @@
   "→ OpenAI": "→ OpenAI",
   "→ Target": "→ Target",
   "→ localhost": "→ localhost",
-  "⚠️ Enable DNS to edit model mappings": "⚠️ Aktifkan DNS untuk mengedit pemetaan model",
-  "⚠️ Local plugins run as subprocess via": "⚠️ Plugin lokal berjalan sebagai subproses melalui",
-  "⚠️ MITM intercepts HTTPS traffic of IDE tools (Antigravity, GitHub Copilot, Kiro) via local CA to redirect requests to your providers. May violate ToS → account ban. Use at your own risk.": "⚠️ MITM mencegat lalu lintas HTTPS alat IDE (Antigravity, GitHub Copilot, Kiro) melalui CA lokal untuk mengalihkan permintaan ke penyedia Anda. Mungkin melanggar ToS → risiko pemblokiran akun. Gunakan dengan risiko Anda sendiri.",
-  "⚠️ Risk Notice: This provider uses a subscription/OAuth session not officially licensed for proxy/router use. Account may be restricted or banned. Use at your own risk.": "⚠️ Pemberitahuan Risiko: Penyedia ini menggunakan sesi langganan/OAuth yang tidak dilisensikan secara resmi untuk penggunaan proxy/router. Akun mungkin dibatasi atau diblokir. Gunakan dengan risiko Anda sendiri.",
-  "✓ Confirm Add": "✓ Konfirmasi Tambah",
-  "📝 Configure providers in dashboard or use environment variables": "📝 Konfigurasi penyedia di dasbor atau gunakan variabel lingkungan",
-  "🔐 OAuth required. Add now and authenticate after Apply; tool list will be discovered after first connect.": "🔐 OAuth diperlukan. Tambah sekarang dan autentikasi setelah Terapkan; daftar alat akan ditemukan setelah koneksi pertama."
+  "Local plugins run as subprocess via": "Plugin lokal berjalan sebagai subproses melalui",
+  "MITM intercepts HTTPS traffic of IDE tools (Antigravity, GitHub Copilot, Kiro) via local CA to redirect requests to your providers. May violate ToS → account ban. Use at your own risk.": "MITM mencegat lalu lintas HTTPS alat IDE (Antigravity, GitHub Copilot, Kiro) melalui CA lokal untuk mengalihkan permintaan ke penyedia Anda. Mungkin melanggar ToS → risiko pemblokiran akun. Gunakan dengan risiko Anda sendiri.",
+  "Risk Notice: This provider uses a subscription/OAuth session not officially licensed for proxy/router use. Account may be restricted or banned. Use at your own risk.": "Pemberitahuan Risiko: Penyedia ini menggunakan sesi langganan/OAuth yang tidak dilisensikan secara resmi untuk penggunaan proxy/router. Akun mungkin dibatasi atau diblokir. Gunakan dengan risiko Anda sendiri.",
+  "Confirm Add": "Konfirmasi Tambah",
+  "Configure providers in dashboard or use environment variables": "Konfigurasi penyedia di dasbor atau gunakan variabel lingkungan",
+  "OAuth required. Add now and authenticate after Apply; tool list will be discovered after first connect.": "OAuth diperlukan. Tambah sekarang dan autentikasi setelah Terapkan; daftar alat akan ditemukan setelah koneksi pertama."
 }

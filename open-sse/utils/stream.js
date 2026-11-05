@@ -2,8 +2,9 @@ import { translateResponse, initState } from "../translator/index.js";
 import { indexDeclaredTools, rescueStreamedNames } from "../translator/concerns/toolCallRescue.js";
 import { FORMATS } from "../translator/formats.js";
 import { trackPendingRequest, appendRequestLog } from "@/lib/usageDb.js";
-import { extractUsage, mergeUsage, hasValidUsage, estimateUsage, logUsage, addBufferToUsage, filterUsageForFormat, COLORS } from "./usageTracking.js";
-import { parseSSELine, hasValuableContent, fixInvalidId, formatSSE } from "./streamHelpers.js";
+import { extractUsage, mergeUsage, hasValidUsage, estimateUsage, estimateOutputTokens, logUsage, addBufferToUsage, filterUsageForFormat, COLORS } from "./usageTracking.js";
+import { parseSSELine, hasValuableContent, fixInvalidId, formatSSE, buildStreamErrorBytes } from "./streamHelpers.js";
+import { maskErrorPayload } from "./error.js";
 import { getOpenAIResponsesEventName, isOpenAIResponsesTerminalEvent, formatIncompleteOpenAIResponsesStreamFailure } from "./responsesStreamHelpers.js";
 import { dbg, isDebugEnabled } from "./debugLog.js";
 import { applyModelAlias } from "./modelAlias.js";
@@ -85,7 +86,8 @@ export function createSSEStream(options = {}) {
     onStreamComplete = null,
     apiKey = null,
     credentials = null,
-    aliasModel = null
+    aliasModel = null,
+    hideError = false
   } = options;
 
   // The live request panel and the usage log name the model the caller spoke.
@@ -147,6 +149,22 @@ export function createSSEStream(options = {}) {
     if (!hasValidUsage(finalUsage) && totalContentLength > 0) {
       finalUsage = estimateUsage(body, totalContentLength, isPassthrough ? FORMATS.OPENAI : sourceFormat);
       if (isPassthrough) usage = finalUsage; else state.usage = finalUsage;
+    } else if (finalUsage && totalContentLength > 0) {
+      const outTokens = finalUsage.completion_tokens ?? finalUsage.output_tokens ?? 0;
+      if (outTokens === 0) {
+        const estOut = estimateOutputTokens(totalContentLength);
+        if (estOut > 0) {
+          finalUsage = { ...finalUsage };
+          if (finalUsage.completion_tokens !== undefined || finalUsage.prompt_tokens !== undefined) {
+            finalUsage.completion_tokens = estOut;
+            finalUsage.total_tokens = (finalUsage.prompt_tokens || 0) + estOut;
+          } else if (finalUsage.output_tokens !== undefined || finalUsage.input_tokens !== undefined) {
+            finalUsage.output_tokens = estOut;
+            finalUsage.total_tokens = (finalUsage.input_tokens || 0) + estOut;
+          }
+          if (isPassthrough) usage = finalUsage; else state.usage = finalUsage;
+        }
+      }
     }
 
     if (hasValidUsage(finalUsage)) {
@@ -158,10 +176,15 @@ export function createSSEStream(options = {}) {
     if (onStreamComplete) {
       onStreamComplete({
         content: accumulatedContent,
-        thinking: accumulatedThinking
+        thinking: accumulatedThinking,
+        totalContentLength
       }, finalUsage, ttftAt);
     }
   };
+
+  // With Hide Raw Errors on, an upstream error frame is rewritten before it is
+  // forwarded - passthrough clients would otherwise read the provider text.
+  const hiddenErrorChunk = (parsed) => Boolean(hideError && parsed && parsed.error);
 
   return new TransformStream({
     transform(chunk, controller) {
@@ -206,6 +229,10 @@ export function createSSEStream(options = {}) {
 
               // Ensure OpenAI-required fields are present on streaming chunks (Letta compat)
               let fieldsInjected = false;
+              if (hiddenErrorChunk(parsed)) {
+                maskErrorPayload(parsed.error);
+                fieldsInjected = true;
+              }
               if (parsed.choices !== undefined) {
                 if (!parsed.object) { parsed.object = "chat.completion.chunk"; fieldsInjected = true; }
                 if (!parsed.created) { parsed.created = Math.floor(Date.now() / 1000); fieldsInjected = true; }
@@ -254,6 +281,13 @@ export function createSSEStream(options = {}) {
                 totalContentLength += reasoning.length;
                 accumulatedThinking += reasoning;
               }
+              if (Array.isArray(delta?.tool_calls)) {
+                for (const tc of delta.tool_calls) {
+                  if (tc.function?.name) totalContentLength += tc.function.name.length;
+                  if (typeof tc.function?.arguments === "string") totalContentLength += tc.function.arguments.length;
+                  else if (tc.function?.arguments) totalContentLength += JSON.stringify(tc.function.arguments).length;
+                }
+              }
 
               const extracted = extractUsage(parsed);
               if (extracted) {
@@ -294,7 +328,21 @@ export function createSSEStream(options = {}) {
                 output = `data: ${JSON.stringify(parsed)}\n`;
                 usage = estimated;
                 injectedUsage = true;
+              } else if (isFinishChunk && parsed.usage && (parsed.usage.completion_tokens === 0 || parsed.usage.completion_tokens === undefined) && totalContentLength > 0) {
+                const estOut = estimateOutputTokens(totalContentLength);
+                parsed.usage.completion_tokens = estOut;
+                parsed.usage.total_tokens = (parsed.usage.prompt_tokens || 0) + estOut;
+                usage = { ...parsed.usage };
+                const buffered = addBufferToUsage(usage);
+                parsed.usage = filterUsageForFormat(buffered, FORMATS.OPENAI);
+                output = `data: ${JSON.stringify(parsed)}\n`;
+                injectedUsage = true;
               } else if (isFinishChunk && usage) {
+                if ((usage.completion_tokens === 0 || usage.completion_tokens === undefined) && totalContentLength > 0) {
+                  const estOut = estimateOutputTokens(totalContentLength);
+                  usage.completion_tokens = estOut;
+                  usage.total_tokens = (usage.prompt_tokens || 0) + estOut;
+                }
                 const buffered = addBufferToUsage(usage);
                 parsed.usage = filterUsageForFormat(buffered, FORMATS.OPENAI);
                 output = `data: ${JSON.stringify(parsed)}\n`;
@@ -334,6 +382,16 @@ export function createSSEStream(options = {}) {
 
         const parsed = parseFrameLine(trimmed, targetFormat);
         if (!parsed) continue;
+
+        // An upstream error frame cannot be translated into a normal chunk, so
+        // it used to vanish and the client saw an empty stream. With Hide Raw
+        // Errors on, emit a real - masked - error frame in the client format.
+        if (hiddenErrorChunk(parsed)) {
+          const masked = buildStreamErrorBytes(502, parsed.error?.message || "Upstream stream error", sourceFormat, true);
+          reqLogger?.appendConvertedChunk?.(decoder.decode(masked));
+          controller.enqueue(masked);
+          continue;
+        }
 
         // Responses API same-format passthrough: preserve event framing + track terminal state
         const isOpenAIResponsesStream = targetFormat === FORMATS.OPENAI_RESPONSES;
@@ -378,6 +436,10 @@ export function createSSEStream(options = {}) {
           totalContentLength += parsed.delta.thinking.length;
           accumulatedThinking += parsed.delta.thinking;
         }
+        // Claude format - tool calls
+        if (parsed.delta?.partial_json) {
+          totalContentLength += parsed.delta.partial_json.length;
+        }
         
         // OpenAI format - content
         if (parsed.choices?.[0]?.delta?.content) {
@@ -388,6 +450,14 @@ export function createSSEStream(options = {}) {
         if (parsed.choices?.[0]?.delta?.reasoning_content) {
           totalContentLength += parsed.choices[0].delta.reasoning_content.length;
           accumulatedThinking += parsed.choices[0].delta.reasoning_content;
+        }
+        // OpenAI format - tool calls
+        if (Array.isArray(parsed.choices?.[0]?.delta?.tool_calls)) {
+          for (const tc of parsed.choices[0].delta.tool_calls) {
+            if (tc.function?.name) totalContentLength += tc.function.name.length;
+            if (typeof tc.function?.arguments === "string") totalContentLength += tc.function.arguments.length;
+            else if (tc.function?.arguments) totalContentLength += JSON.stringify(tc.function.arguments).length;
+          }
         }
         
         // Gemini format
@@ -401,6 +471,10 @@ export function createSSEStream(options = {}) {
               } else {
                 accumulatedContent += part.text;
               }
+            }
+            if (part.functionCall) {
+              if (part.functionCall.name) totalContentLength += part.functionCall.name.length;
+              if (part.functionCall.args) totalContentLength += JSON.stringify(part.functionCall.args).length;
             }
           }
         }
@@ -464,7 +538,37 @@ export function createSSEStream(options = {}) {
               const estimated = estimateUsage(body, totalContentLength, sourceFormat);
               item.usage = filterUsageForFormat(estimated, sourceFormat); // Filter + already has buffer
               state.usage = estimated;
+            } else if (state.finishReason && isFinishChunk && item.usage && (item.usage.completion_tokens === 0 || item.usage.output_tokens === 0) && totalContentLength > 0) {
+              const estOut = estimateOutputTokens(totalContentLength);
+              if (item.usage.completion_tokens !== undefined || item.usage.prompt_tokens !== undefined) {
+                item.usage.completion_tokens = estOut;
+                item.usage.total_tokens = (item.usage.prompt_tokens || 0) + estOut;
+              } else if (item.usage.output_tokens !== undefined || item.usage.input_tokens !== undefined) {
+                item.usage.output_tokens = estOut;
+                item.usage.total_tokens = (item.usage.input_tokens || 0) + estOut;
+              }
+              if (state.usage) {
+                if (state.usage.completion_tokens !== undefined || state.usage.prompt_tokens !== undefined) {
+                  state.usage.completion_tokens = estOut;
+                  state.usage.total_tokens = (state.usage.prompt_tokens || 0) + estOut;
+                } else if (state.usage.output_tokens !== undefined || state.usage.input_tokens !== undefined) {
+                  state.usage.output_tokens = estOut;
+                  state.usage.total_tokens = (state.usage.input_tokens || 0) + estOut;
+                }
+              }
+              const buffered = addBufferToUsage(state.usage || item.usage);
+              item.usage = filterUsageForFormat(buffered, sourceFormat);
             } else if (state.finishReason && isFinishChunk && state.usage) {
+              if ((state.usage.completion_tokens === 0 || state.usage.output_tokens === 0) && totalContentLength > 0) {
+                const estOut = estimateOutputTokens(totalContentLength);
+                if (state.usage.completion_tokens !== undefined || state.usage.prompt_tokens !== undefined) {
+                  state.usage.completion_tokens = estOut;
+                  state.usage.total_tokens = (state.usage.prompt_tokens || 0) + estOut;
+                } else if (state.usage.output_tokens !== undefined || state.usage.input_tokens !== undefined) {
+                  state.usage.output_tokens = estOut;
+                  state.usage.total_tokens = (state.usage.input_tokens || 0) + estOut;
+                }
+              }
               // Add buffer and filter usage for client (but keep original in state.usage for logging)
               const buffered = addBufferToUsage(state.usage);
               item.usage = filterUsageForFormat(buffered, sourceFormat);
@@ -604,7 +708,7 @@ export function createSSEStream(options = {}) {
   });
 }
 
-export function createSSETransformStreamWithLogger(targetFormat, sourceFormat, provider = null, reqLogger = null, toolNameMap = null, model = null, connectionId = null, body = null, onStreamComplete = null, apiKey = null, customToolNames = null, credentials = null, aliasModel = null) {
+export function createSSETransformStreamWithLogger(targetFormat, sourceFormat, provider = null, reqLogger = null, toolNameMap = null, model = null, connectionId = null, body = null, onStreamComplete = null, apiKey = null, customToolNames = null, credentials = null, aliasModel = null, hideError = false) {
   return createSSEStream({
     mode: STREAM_MODE.TRANSLATE,
     targetFormat,
@@ -620,10 +724,11 @@ export function createSSETransformStreamWithLogger(targetFormat, sourceFormat, p
     apiKey,
     credentials,
     aliasModel,
+    hideError,
   });
 }
 
-export function createPassthroughStreamWithLogger(provider = null, reqLogger = null, model = null, connectionId = null, body = null, onStreamComplete = null, apiKey = null, aliasModel = null) {
+export function createPassthroughStreamWithLogger(provider = null, reqLogger = null, model = null, connectionId = null, body = null, onStreamComplete = null, apiKey = null, aliasModel = null, hideError = false) {
   return createSSEStream({
     mode: STREAM_MODE.PASSTHROUGH,
     provider,
@@ -634,5 +739,6 @@ export function createPassthroughStreamWithLogger(provider = null, reqLogger = n
     onStreamComplete,
     apiKey,
     aliasModel,
+    hideError,
   });
 }

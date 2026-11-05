@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 import { WEB_COOKIE_PROVIDERS, SLOW_FALLBACK_PROVIDERS, probeTimeoutMs, PROBE_TIMEOUT_MS, WEB_COOKIE_PROBE_TIMEOUT_MS, SLOW_FALLBACK_PROBE_TIMEOUT_MS } from "../../src/app/api/models/test/probeBudget.js";
 
 describe("model probe budget", () => {
-  it("treats every web-cookie provider as slow-probing", () => {
-    for (const provider of ["gemini-web", "kimi-web", "deepseek-web", "xiaomi-mimo"]) {
-      expect(WEB_COOKIE_PROVIDERS.has(provider)).toBe(true);
-    }
+  it("treats web-cookie providers as empty set (all removed)", () => {
+    expect(WEB_COOKIE_PROVIDERS.size).toBe(0);
   });
 
   it("keeps REST providers out of the slow set", () => {
@@ -14,11 +12,8 @@ describe("model probe budget", () => {
     }
   });
 
-  it("gives web-cookie probes 90s and REST probes 15s", () => {
-    expect(probeTimeoutMs("gemini-web/gemini-3.6-flash")).toBe(WEB_COOKIE_PROBE_TIMEOUT_MS);
-    expect(probeTimeoutMs("kimi-web/kimi-k2")).toBe(WEB_COOKIE_PROBE_TIMEOUT_MS);
+  it("gives REST probes 15s", () => {
     expect(probeTimeoutMs("openai/gpt-4o")).toBe(PROBE_TIMEOUT_MS);
-    expect(WEB_COOKIE_PROBE_TIMEOUT_MS).toBeGreaterThan(PROBE_TIMEOUT_MS);
   });
 
   it("gives slow-fallback free-tier probes 120s so rotation can finish", () => {

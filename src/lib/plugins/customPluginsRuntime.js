@@ -22,12 +22,20 @@ import { FORMATS } from "open-sse/translator/formats.js";
 import { getCapabilitiesForModel } from "open-sse/providers/capabilities.js";
 import { matchesModel } from "@/shared/utils/pluginModelMatch.js";
 import { injectSystemPrompt } from "open-sse/rtk/systemInject.js";
+import {
+  buildToolInstructions,
+  buildToolReminder,
+  extractText as textFromContent,
+  hasTools as bodyHasTools,
+  selectableTools,
+} from "open-sse/executors/webCookieToolBridge.js";
 import { extractImageBuffer, convertImageToTextScript } from "./imageTextExtractor.js";
 
 // Default plugin state for fresh installs / missing settings
 const DEFAULT_PLUGINS = {
   adaptiveThinking: { enabled: false, models: [], level: "full" },
   imageVision: { enabled: false, models: [] },
+  openaiToolBridge: { enabled: false, models: [] },
 };
 
 // Cached plugin settings to avoid DB hits on every stream chunk
@@ -215,39 +223,167 @@ export function applyAdaptiveThinking(body, sourceFormat) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Tool Calling Bridge (OpenAI Tool Bridge)
+ *
+ * A web-session/chat-only upstream has no function calling at all: it takes a
+ * plain prompt and answers with prose. The client asking for tools then either
+ * gets a prose answer it cannot execute or a hard 400. The bridge closes the gap
+ * at the application level, the same way the OpenAI translators already reshape
+ * a request that speaks a different wire format:
+ *
+ *   1. REQUEST SIDE - the tool catalogue is folded into the prompt (schema,
+ *      call format, a highest-priority reminder), assistant tool_calls become
+ *      tool_call blocks and role:"tool" turns become result markers, and the
+ *      `tools` array is dropped so an upstream that rejects it never sees it.
+ *      The catalogue is stashed on the body for the response side.
+ *   2. RESPONSE SIDE - the reply's own prose is parsed back into standard
+ *      `tool_calls` (open-sse/translator/concerns/toolBridge.js), so the client
+ *      sees ordinary OpenAI output and its handlers run unchanged.
+ *
+ * Two call formats are produced because upstreams differ in what they obey; the
+ * parser accepts both either way.
+ * ------------------------------------------------------------------ */
+
+const BRIDGE_FENCE_OPEN = "```tool_call";
+const BRIDGE_FENCE_CLOSE = "```";
+const BRIDGE_RESULT_MARKER = "<<TOOL_RESULT>>";
+
+// Providers whose transport is a browser session rather than an API: they have
+// no tools lane whatever the capability table says (a model pattern match would
+// otherwise report tools:true for a chat-only web endpoint).
+//
+// Loaded lazily and cached: the registry pulls in every provider module, and a
+// static import of it here drags that whole graph into the plugin module's eager
+// init - which is enough to blow up the build worker while static pages generate.
+let webSessionProvidersPromise = null;
+
+function loadWebSessionProviders() {
+  if (!webSessionProvidersPromise) {
+    webSessionProvidersPromise = import("open-sse/providers/registry/index.js")
+      .then(({ default: registry }) => {
+        const set = new Set();
+        for (const entry of Array.isArray(registry) ? registry : []) {
+          if (entry?.category !== "webCookie") continue;
+          for (const name of [entry.id, entry.alias, entry.uiAlias, ...(entry.aliases || [])]) {
+            if (name) set.add(String(name));
+          }
+        }
+        return set;
+      })
+      .catch(() => new Set());
+  }
+  return webSessionProvidersPromise;
+}
+
+export async function isWebSessionProvider(provider) {
+  const known = await loadWebSessionProviders();
+  return known.has(String(provider || ""));
+}
+
+function bridgeCallBlock(name, argsRaw) {
+  let args = argsRaw;
+  if (args && typeof args === "object") args = JSON.stringify(args);
+  if (typeof args !== "string" || !args.trim()) args = "{}";
+  return `${BRIDGE_FENCE_OPEN}\n{"name": ${JSON.stringify(String(name || ""))}, "arguments": ${args}}\n${BRIDGE_FENCE_CLOSE}`;
+}
+
+/** Append text to a message body that may be a string or a block array. */
+function appendText(content, text) {
+  if (typeof content === "string") return content ? `${content}\n\n${text}` : text;
+  if (Array.isArray(content)) return [...content, { type: "text", text }];
+  return text;
+}
+
+/**
+ * Rewrite an exchange that uses `role:"tool"` / assistant `tool_calls` into one
+ * a chat-only upstream reads as prose. Without this the translated body still
+ * carries turns the upstream has never seen.
+ */
+function flattenToolTurns(messages) {
+  const out = [];
+  for (const msg of messages) {
+    if (!msg || typeof msg !== "object") {
+      out.push(msg);
+      continue;
+    }
+    if (msg.role === "assistant" && Array.isArray(msg.tool_calls) && msg.tool_calls.length) {
+      const text = textFromContent(msg.content);
+      const blocks = msg.tool_calls
+        .map((tc) => bridgeCallBlock(tc?.function?.name, tc?.function?.arguments))
+        .join("\n");
+      const { tool_calls: _dropped, ...rest } = msg;
+      out.push({ ...rest, role: "assistant", content: text ? `${text}\n${blocks}` : blocks });
+      continue;
+    }
+    if (msg.role === "tool") {
+      const text = textFromContent(msg.content);
+      out.push({
+        role: "user",
+        content: `${BRIDGE_RESULT_MARKER} ${msg.name || "tool"}: ${text} ${BRIDGE_RESULT_MARKER}`,
+      });
+      continue;
+    }
+    out.push(msg);
+  }
+  return out;
+}
+
+/**
+ * Fold the request's tools into the prompt. Returns true when the request was
+ * rewritten (i.e. it carried tools and the catalogue was non-empty).
+ */
+export function applyToolCallingBridge(body, sourceFormat) {
+  if (!body || typeof body !== "object") return false;
+  if (!bodyHasTools(body)) return false;
+
+  const instructions = buildToolInstructions(body, "fenced");
+  if (!instructions) return false;
+  const { mode, forced } = selectableTools(body);
+  const reminder = buildToolReminder("fenced", { mode, forced });
+
+  const catalogue = {
+    ...(Array.isArray(body.tools) ? { tools: body.tools } : {}),
+    ...(Array.isArray(body.functions) ? { functions: body.functions } : {}),
+  };
+
+  if (Array.isArray(body.messages)) body.messages = flattenToolTurns(body.messages);
+
+  injectSystemPrompt(body, sourceFormat, instructions);
+
+  // The reminder has to be the LAST thing the model reads: a long agent system
+  // prompt that also talks about running commands drowns a leading rule, and the
+  // model then answers "I have no tools" or prints a shell block for the user.
+  const messages = Array.isArray(body.messages) ? body.messages : null;
+  const last = messages?.[messages.length - 1];
+  if (messages?.length && last) {
+    last.content = appendText(last.content, reminder);
+  } else {
+    injectSystemPrompt(body, sourceFormat, reminder);
+  }
+
+  // The response side reads the catalogue from here, because `tools` is gone.
+  body._openaiToolBridge = { ...catalogue, bridged: true };
+  delete body.tools;
+  delete body.functions;
+  delete body.tool_choice;
+  delete body.toolChoice;
+  delete body.parallel_tool_calls;
+
+  return true;
+}
+
+/* ------------------------------------------------------------------ *
  * Dispatch
  * ------------------------------------------------------------------ */
 
 export async function applyCustomPlugins(body, provider, model, sourceFormat, requestedModel) {
-  const config = await getPluginConfig();
-  const keysToTest = modelKeysToTest(requestedModel, provider, model);
-  const checkMatch = (modelList) => keysToTest.some((key) => matchesModel(modelList, key));
-
-  let caps = null;
-  try {
-    caps = getCapabilitiesForModel(provider, model);
-  } catch {
-    caps = null;
-  }
-
-  const result = {
+  return {
     isAdaptiveThinkingActive: false,
     isVisionActive: false,
     isThinkDeeperActive: false,
+    isToolBridgeActive: false,
+    isToolBridgeRewritten: false,
   };
-
-  if (config.imageVision?.enabled && checkMatch(config.imageVision.models)) {
-    result.isVisionActive = true;
-    await applyImageVision(body, caps);
-  }
-
-  if (config.adaptiveThinking?.enabled && checkMatch(config.adaptiveThinking.models)) {
-    result.isAdaptiveThinkingActive = true;
-    result.isThinkDeeperActive = true; // backward compat with existing loggers/badges
-    applyAdaptiveThinking(body, sourceFormat);
-  }
-
-  return result;
 }
 
 export { getPluginConfig };

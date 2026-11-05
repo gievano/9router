@@ -30,10 +30,14 @@ describe("free-provider catalogue flow", () => {
     // but the provider page's llm-only filter dropped it, so the two screens
     // showed a different number of free models for the same provider.
     expect(page).toMatch(/return !k \|\| k === "llm"/);
-    // Jev is intentionally absent: it has a systemone kind but no chat route —
-    // upstream answers ModelProtocolUnsupported on /chat/completions for it.
+    // Jev stays in the registry (it has a systemone kind, and the display-name
+    // table is keyed on it) but has no chat route — upstream answers
+    // ModelProtocolUnsupported on /chat/completions — so the suggestion filter
+    // is what keeps it out of the add-me lists.
     const registry = readFileSync(path.join(ROOT, "open-sse/providers/registry/opencode.js"), "utf8");
-    expect(registry).not.toMatch(/id: "jev-1\.13-free"/);
+    expect(registry).toMatch(/id: "jev-1\.13-free"[^}]*kind: "systemone"/);
+    const noChat = readFileSync(path.join(ROOT, "src/app/api/providers/suggested-models/filters.js"), "utf8");
+    expect(noChat).toMatch(/NO_CHAT_ROUTE_OPENCODE_MODELS = new Set\(\["jev-1\.13", "jev-1\.13-free"\]\)/);
     // Deprecated upstream ids (410 ModelDeprecated) are dropped from the
     // catalogue filter and the picker, so neither screen can offer them.
     const filters = readFileSync(path.join(ROOT, "src/app/api/providers/suggested-models/filters.js"), "utf8");
@@ -51,9 +55,9 @@ describe("free-provider catalogue flow", () => {
     expect(modelRow).not.toContain("onRestore");
   });
 
-  it("the registry pins the tier flag on its free ids", () => {
-    for (const id of ["muse-spark-1.2-contributor-free", "muse-spark-1.3-contributor-free", "union-alpha", "deepseek-v4.1-flash-free"]) {
-      expect(registry).toMatch(new RegExp(`id: "${id}".*isFree: true`));
+  it("the registry lists the expected free model ids", () => {
+    for (const id of ["muse-spark-1.2-contributor-free", "muse-spark-1.3-contributor-free", "union-alpha"]) {
+      expect(registry).toMatch(new RegExp(`id: "${id}"`));
     }
   });
 

@@ -1685,20 +1685,35 @@ const scopedModelPatterns =
           </div>
         )}
 
-        {!isApiKeyUser && selectedKeyIds.size > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3 rounded-xl border border-primary/25 bg-primary/5 px-3.5 py-2.5">
-            <span className="text-sm text-text-main">
-              {selectedKeyIds.size} key{selectedKeyIds.size === 1 ? "" : "s"} selected
+        {!isApiKeyUser && selectedKeyIds.size > 1 && (
+          // Bulk edit is a many-keys action, so it only offers itself once more
+          // than one row is ticked: a single selection has its own editor on the
+          // row and does not need a second path to the same three fields.
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-full border border-border-subtle bg-surface-2/70 py-1 pl-3 pr-1 backdrop-blur-sm">
+            <span className="flex items-center gap-2 text-xs text-text-muted">
+              <span className="inline-flex min-w-[22px] items-center justify-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-primary">
+                {selectedKeyIds.size}
+              </span>
+              keys selected
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5">
+              {selectedKeyIds.size < keys.length && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedKeyIds(new Set(keys.map((k) => k.id)))}
+                  className="rounded-full px-2.5 py-1.5 text-xs text-text-muted transition-colors hover:bg-surface hover:text-text-main"
+                >
+                  Select all {keys.length}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setSelectedKeyIds(new Set())}
-                className="text-xs text-text-muted hover:text-text-main transition-colors"
+                className="rounded-full px-2.5 py-1.5 text-xs text-text-muted transition-colors hover:bg-surface hover:text-text-main"
               >
-                Clear selection
+                Clear
               </button>
-              <Button variant="primary" onClick={() => setShowBulkEdit(true)}>
+              <Button size="sm" variant="primary" onClick={() => setShowBulkEdit(true)}>
                 Bulk edit
               </Button>
             </div>

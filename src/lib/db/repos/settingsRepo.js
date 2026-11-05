@@ -37,9 +37,7 @@ const DEFAULT_SETTINGS = {
   // same editor rather than each browser deciding for itself.
   antiProbeMetadata: true,
   requireApiKey: true,
-  // Site-wide theme (glass | dark). An administrator picks it once here instead
-  // of every browser choosing its own: the value is rendered into the document
-  // for all visitors, so the whole site matches what the admin selected.
+  // Site-wide theme locked strictly to glass across the entire UI.
   theme: "glass",
   tunnelDashboardAccess: true,
   authMode: "password",
@@ -82,6 +80,14 @@ const DEFAULT_SETTINGS = {
   pxpipeMinChars: 25000,
   pxpipeTimeoutMs: 15000,
   hideError: false,
+  // OpenCode Free ships one card with two lanes; this flag picks the lane the
+  // `opencode` executor uses (false = direct TLS request, true = local CLI).
+  opencodeCliMode: false,
+  // Per-provider web-cookie tool calling enablement: { [providerId]: boolean }
+  webCookieToolCalling: {
+    "gemini-web": true,
+    "deepseek-web": true,
+  },
   // Per-provider user header overrides applied at dispatch: { [providerId]: { headers: {..} } }
   providerOverrides: {},
 };
@@ -94,7 +100,7 @@ async function readRaw() {
 
 // Merge raw settings with defaults; backward-compat for missing keys
 export function mergeWithDefaults(raw) {
-  const merged = { ...DEFAULT_SETTINGS, ...(raw || {}) };
+  const merged = { ...DEFAULT_SETTINGS, ...(raw || {}), theme: "glass" };
   for (const [key, defVal] of Object.entries(DEFAULT_SETTINGS)) {
     if (merged[key] === undefined) {
       if (

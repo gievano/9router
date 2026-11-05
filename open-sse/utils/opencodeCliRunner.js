@@ -423,10 +423,8 @@ export async function executeOpencodeCli({
   await acquireCliSlot(signal);
   try {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const { resolveV2ChannelRoute } = await import("./opencodeV2Channel.js");
     const configuredProxy = proxyOptions?.connectionProxyEnabled ? proxyOptions.connectionProxyUrl : null;
-    const defaultChannelProxy = providerTag === "OPENCODE-V2" ? resolveV2ChannelRoute() : null;
-    const candidateProxy = configuredProxy || defaultChannelProxy;
+    const candidateProxy = configuredProxy;
     if (candidateProxy && deadProxyUrls.has(candidateProxy)) {
       proxyBypassed = true;
     }

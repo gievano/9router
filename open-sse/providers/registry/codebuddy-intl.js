@@ -21,9 +21,9 @@ export default {
     name: "CodeBuddy",
     icon: "smart_toy",
     color: "#006EFF",
-    website: "https://www.codebuddy.ai",
+    website: "https://www.workbuddy.ai",
     notice: {
-      signupUrl: "https://www.codebuddy.ai",
+      signupUrl: "https://www.workbuddy.ai",
     },
   },
   category: "oauth",
@@ -53,6 +53,9 @@ export default {
       combined: true,
       header: "Authorization",
       scheme: "bearer",
+      // Channel check requires the plugin's request/conversation ids — without
+      // them upstream rejects with 400 / 11128 "request illegal".
+      hooks: ["codebuddyHeaders"],
     },
     // Intl billing endpoint mirrors CN shape (data.Response.Data.Accounts[]).
     usage: {
@@ -80,10 +83,13 @@ export default {
     { id: "deepseek-v3-2-volc", name: "DeepSeek-V3.2" },
   ],
   oauth: {
-    baseUrl: "https://www.codebuddy.ai",
-    stateUrl: "https://www.codebuddy.ai/v2/plugin/auth/state",
-    tokenUrl: "https://www.codebuddy.ai/v2/plugin/auth/token",
-    refreshUrl: "https://www.codebuddy.ai/v2/plugin/auth/token/refresh",
+    // Intl OAuth/plugin endpoints live on the working .ai/.workbuddy domain.
+    // www.codebuddy.ai is blackholed (DNS → 0.0.0.1); the live endpoints answer
+    // on www.workbuddy.ai (verified: POST /v2/plugin/auth/state returns 200).
+    baseUrl: "https://www.workbuddy.ai",
+    stateUrl: "https://www.workbuddy.ai/v2/plugin/auth/state",
+    tokenUrl: "https://www.workbuddy.ai/v2/plugin/auth/token",
+    refreshUrl: "https://www.workbuddy.ai/v2/plugin/auth/token/refresh",
     userAgent: "IDE/2.63.2 CodeBuddy/2.63.2",
     platform: "ide",
     pollInterval: 5000,

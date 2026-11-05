@@ -2,20 +2,18 @@ export default {
   id: "opencode",
   priority: 40,
   hasFree: true,
-  alias: "oc1",
-  uiAlias: "oc1",
-  aliases: ["oc", "opencode-v1", "opencode-free"],
+  alias: "oc",
+  uiAlias: "oc",
   display: {
-    name: "OpenCode Free V1",
+    name: "OpenCode Free",
     icon: "terminal",
     color: "#E87040",
-    textIcon: "OC1",
+    textIcon: "OC",
   },
   category: "free",
   noAuth: true,
   transport: {
     baseUrl: "https://opencode.ai",
-    timeoutMs: 45000,
     headers: {
       "x-opencode-client": "desktop",
     },
@@ -30,25 +28,26 @@ export default {
     },
     quirks: {
       forceAutoToolChoiceModels: ["muse-spark-1.3-contributor-free"],
+      // The free lane's MiMo route (OpenRouter-backed) streams thinking as
+      // `reasoning` + `reasoning_details[]`, not reasoning_content. stream.js lifts
+      // the alias into reasoning_content for OpenAI-shaped clients; every other
+      // model on the lane already emits reasoning_content, so the lift is a no-op.
+      reasoningAliasFields: true,
     },
   },
   models: [
     // Endpoint formats differ per model, so declare non-chat models explicitly.
-    { id: "muse-spark-1.2-contributor-free", name: "Muse Spark 1.2 Contributor Free", targetFormat: "openai-responses", isFree: true },
-    { id: "muse-spark-1.3-contributor-free", name: "Muse Spark 1.3 Contributor Free", targetFormat: "openai-responses", isFree: true },
-    { id: "union-alpha", name: "Union Alpha Free", targetFormat: "claude", isFree: true },
-    { id: "deepseek-v4.1-flash-free", name: "DeepSeek V4.1 Flash Free", supportedFormats: ["openai", "claude", "openai-responses"], isFree: true },
-    // jev-1.13-free intentionally has no chat route: upstream answers
-    // ModelProtocolUnsupported on /inference/v1/chat/completions for Jev ids,
-    // and /zen/v1/systemone is a decision payload lane, not chat. Listing it
-    // as a chat model only produces an unwinnable 400 loop in the fallback.
+    { id: "muse-spark-1.2-contributor-free", name: "Muse Spark 1.2 Contributor Free", targetFormat: "openai-responses" },
+    { id: "muse-spark-1.3-contributor-free", name: "Muse Spark 1.3 Contributor Free", targetFormat: "openai-responses" },
+    { id: "union-alpha", name: "Union Alpha Free", targetFormat: "claude" },
+    { id: "jev-1.13-free", name: "Jev 1.13 Free", kind: "systemone" },
   ],
   serviceKinds: ["llm", "systemone"],
   systemoneConfig: {
     baseUrl: "https://opencode.ai/zen/v1/systemone",
     headers: {
       "x-opencode-client": "desktop",
-      "User-Agent": "opencode/1.19.4 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.4",
+      "User-Agent": "opencode/1.18.31",
     },
   },
   modelsFetcher: { url: "https://opencode.ai/zen/v1/models", type: "opencode-free" },

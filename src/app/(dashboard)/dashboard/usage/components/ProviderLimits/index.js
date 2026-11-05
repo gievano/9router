@@ -978,7 +978,7 @@ export default function ProviderLimits() {
                           className="size-6 rounded-md object-contain"
                           fallbackText={provider.slice(0, 2).toUpperCase()}
                         />
-                        <span className="font-medium min-w-0 truncate" title={provider}>
+                        <span className="font-medium min-w-0 truncate" title={providerLabel(provider)}>
                           {providerLabel(provider)}
                         </span>
                         {providerFilter === provider && (

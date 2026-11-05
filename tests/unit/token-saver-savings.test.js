@@ -134,9 +134,16 @@ describe("recordTokenSavings + getTokenSavingsReport", () => {
     const report = await getTokenSavingsReport(Promise.resolve(db), "30d");
     expect(report.totals.requests).toBe(2);
     expect(report.totals.savedTokens).toBe(2400);
-    expect(report.models.map((m) => m.model).sort()).toEqual(["p1/alpha", "p1/beta"]);
-    expect(report.daily).toHaveLength(1);
-    expect(report.daily[0].date).toBe(todayKey());
+    // The row carries the split parts plus the original bucket key: the tab
+    // prints model as the name and provider as the subtitle.
+    expect(report.models.map((m) => m.model).sort()).toEqual(["alpha", "beta"]);
+    expect(report.models.map((m) => m.provider).sort()).toEqual(["p1", "p1"]);
+    expect(report.models.map((m) => m.key).sort()).toEqual(["p1/alpha", "p1/beta"]);
+    // The series covers the whole window so the chart can draw quiet days;
+    // today's entry is the bucket that was just written.
+    expect(report.daily).toHaveLength(30);
+    expect(report.daily[report.daily.length - 1].date).toBe(todayKey());
+    expect(report.daily[report.daily.length - 1].savedTokens).toBe(2400);
     expect(report.estimated).toBe(true);
   });
 
@@ -175,5 +182,15 @@ describe("recordTokenSavings + getTokenSavingsReport", () => {
     const report = await getTokenSavingsReport(Promise.resolve(db), "30d");
     expect(report.totals.savedTokens).toBe(0);
     expect(report.daily).toEqual([]);
+  });
+
+  it("fills the daily series across the window once there is data", async () => {
+    const db = fakeDb();
+    await recordTokenSavings(Promise.resolve(db), { provider: "p1", model: "alpha", pruning: 300 });
+    const report = await getTokenSavingsReport(Promise.resolve(db), "7d");
+    expect(report.daily).toHaveLength(7);
+    expect(report.daily[report.daily.length - 1].date).toBe(todayKey());
+    expect(report.daily[report.daily.length - 1].savedTokens).toBe(300);
+    expect(report.peak.date).toBe(todayKey());
   });
 });

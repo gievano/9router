@@ -4,6 +4,7 @@ import { parseJson, stringifyJson } from "../helpers/jsonCol.js";
 import { getMeta, setMeta } from "../helpers/metaStore.js";
 
 import { matchesAllowedModels as matchesModelPatterns, parseAllowedModels } from "./apiKeysRepo.js";
+import { dedupeLabels, humanizeCompatId } from "../../../shared/utils/providerDisplay.js";
 
 function maskApiKey(key) {
   if (!key || typeof key !== "string") return null;
@@ -14,7 +15,6 @@ function maskApiKey(key) {
 
 const PENDING_TIMEOUT_MS = 60 * 1000;
 const RING_CAP = 50;
-const CONN_CACHE_TTL_MS = 30 * 1000;
 const PERIOD_MS = { "24h": 86400000, "7d": 604800000, "30d": 2592000000, "60d": 5184000000 };
 
 // In-memory state shared across Next.js modules
@@ -26,14 +26,12 @@ if (!global._statsEmitter) {
 }
 if (!global._pendingTimers) global._pendingTimers = {};
 if (!global._recentRing) global._recentRing = { items: [], initialized: false };
-if (!global._connectionMapCache) global._connectionMapCache = { map: {}, ts: 0 };
 if (!global._statsEmitTimers) global._statsEmitTimers = { pending: null, update: null };
 
 const pendingRequests = global._pendingRequests;
 const lastErrorProvider = global._lastErrorProvider;
 const pendingTimers = global._pendingTimers;
 const recentRing = global._recentRing;
-const connCache = global._connectionMapCache;
 const statsEmitTimers = global._statsEmitTimers;
 
 export const statsEmitter = global._statsEmitter;
@@ -67,10 +65,35 @@ function addToCounter(target, key, values) {
  }
 }
 
+// Providers disagree on where a cache-read count lives: OpenAI nests it under
+// prompt_tokens_details, DeepSeek calls it prompt_cache_hit_tokens, Gemini
+// cachedContentTokenCount, Claude cache_read_input_tokens. Every reader below
+// wants one number, so the lookup lives here instead of five inline `||` chains
+// that each knew only two of the spellings (and silently reported 0 for the
+// rest, which is how cache columns went blank).
+const CACHE_READ_FIELDS = ["cached_tokens", "cache_read_input_tokens", "prompt_cache_hit_tokens", "cachedContentTokenCount"];
+const CACHE_READ_NESTED_FIELDS = ["cached_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"];
+
+export function cacheReadTokens(tokens) {
+  if (!tokens || typeof tokens !== "object") return 0;
+  for (const field of CACHE_READ_FIELDS) {
+    const value = Number(tokens[field]);
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  for (const container of [tokens.prompt_tokens_details, tokens.input_tokens_details, tokens.usage]) {
+    if (!container || typeof container !== "object" || Array.isArray(container)) continue;
+    for (const field of CACHE_READ_NESTED_FIELDS) {
+      const value = Number(container[field]);
+      if (Number.isFinite(value) && value > 0) return value;
+    }
+  }
+  return 0;
+}
+
 function aggregateEntryToDay(day, entry) {
   const promptTokens = entry.tokens?.prompt_tokens || entry.tokens?.input_tokens || 0;
   const completionTokens = entry.tokens?.completion_tokens || entry.tokens?.output_tokens || 0;
-  const cachedTokens = entry.tokens?.cached_tokens || entry.tokens?.cache_read_input_tokens || 0;
+  const cachedTokens = cacheReadTokens(entry.tokens);
   const cost = entry.cost || 0;
   const vals = { promptTokens, completionTokens, cachedTokens, cost };
 
@@ -109,19 +132,6 @@ function pushToRing(entry) {
   if (recentRing.items.length > RING_CAP) {
     recentRing.items = recentRing.items.slice(-RING_CAP);
   }
-}
-
-async function getConnectionMapCached() {
-  if (Date.now() - connCache.ts < CONN_CACHE_TTL_MS) return connCache.map;
-  try {
-    const { getProviderConnections } = await import("./connectionsRepo.js");
-    const all = await getProviderConnections();
-    const map = {};
-    for (const c of all) map[c.id] = c.name || c.email || c.id;
-    connCache.map = map;
-    connCache.ts = Date.now();
-  } catch {}
-  return connCache.map;
 }
 
 async function ensureRingInitialized() {
@@ -206,7 +216,7 @@ export function trackPendingRequest(model, provider, connectionId, started, erro
 // key attribution, so a scoped caller gets an empty active list rather than a leak.
 export async function getActiveRequests(filterApiKey = null, allowedModels = "*") {
   const activeRequests = [];
-  const connectionMap = await getConnectionMapCached();
+  const { connectionMap, providerNameMap } = await getProviderLookups();
 
   if (!filterApiKey) {
     for (const [connectionId, models] of Object.entries(pendingRequests.byAccount)) {
@@ -236,10 +246,11 @@ export async function getActiveRequests(filterApiKey = null, allowedModels = "*"
     .map((e) => {
       const t = e.tokens || {};
       return {
-        timestamp: e.timestamp, model: e.model, provider: e.provider || "",
+        timestamp: e.timestamp, model: e.model, resolvedModel: e.resolvedModel, provider: e.provider || "",
+        providerName: e.providerName || labelForProvider(providerNameMap, e.provider),
         promptTokens: t.prompt_tokens || t.input_tokens || 0,
         completionTokens: t.completion_tokens || t.output_tokens || 0,
-        cachedTokens: t.cached_tokens || t.cache_read_input_tokens || 0,
+        cachedTokens: cacheReadTokens(t),
         status: e.status || "ok",
       };
     })
@@ -273,6 +284,11 @@ export async function saveRequestUsage(entry) {
     entry.resolvedModel = entry.requestedModel ? resolvedModel : undefined;
 
     const tokens = entry.tokens || {};
+    // Store the cache-read count under the canonical key too. Cost is priced
+    // from the raw object before this point, so this only repairs display: rows
+    // written by a provider that reports cache elsewhere used to read back as 0.
+    const cacheRead = cacheReadTokens(tokens);
+    if (cacheRead > 0 && !(Number(tokens.cached_tokens) > 0)) tokens.cached_tokens = cacheRead;
     const promptTokens = tokens.prompt_tokens || tokens.input_tokens || 0;
     const completionTokens = tokens.completion_tokens || tokens.output_tokens || 0;
 
@@ -400,11 +416,26 @@ function loadDaysInRange(adapter, maxDays) {
   return adapter.all(`SELECT dateKey, data FROM usageDaily WHERE dateKey >= ? ORDER BY dateKey ASC`, [cutoffKey]);
 }
 
-export async function getUsageStats(period = "all", filterApiKey = null, allowedModels = "*") {
-  const db = await getAdapter();
+// Connections, provider nodes and API keys change when the operator edits the
+// dashboard, not between two usage rows. Reading all three tables on every
+// stats build put three extra table reads on the event loop for each streaming
+// tick, so they are cached briefly and shared by every caller.
+const LOOKUP_TTL_MS = 15000;
+if (!global._providerLookupsCache) global._providerLookupsCache = { value: null, ts: 0 };
+const providerLookupsCache = global._providerLookupsCache;
 
-  const patterns = parseAllowedModels(allowedModels);
-  const modelAllowed = (model) => matchesModelPatterns(patterns, model);
+// Every surface that prints a provider goes through here. Node records are
+// optional - a provider stays in history after its node is deleted - and
+// compatible ids are generated, so a missing map entry is not a reason to show
+// `openai-compatible-chat-330688af` to a user.
+function labelForProvider(providerNameMap, provider) {
+  if (!provider) return "";
+  return providerNameMap[provider] || humanizeCompatId(provider) || provider;
+}
+
+export async function getProviderLookups({ force = false } = {}) {
+  const fresh = providerLookupsCache.value && Date.now() - providerLookupsCache.ts < LOOKUP_TTL_MS;
+  if (fresh && !force) return providerLookupsCache.value;
 
   const [{ getProviderConnections }, { getApiKeys }, { getProviderNodes }] = await Promise.all([
     import("./connectionsRepo.js"),
@@ -417,10 +448,13 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
   const connectionMap = {};
   for (const c of allConnections) connectionMap[c.id] = c.name || c.email || c.id;
 
-  const providerNodeNameMap = {};
+  const providerNameMap = {};
   try {
     const nodes = await getProviderNodes();
-    for (const n of nodes) if (n.id && n.name) providerNodeNameMap[n.id] = n.name;
+    for (const n of nodes) {
+      if (!n.id) continue;
+      providerNameMap[n.id] = n.name || humanizeCompatId(n.id) || n.id;
+    }
   } catch {}
 
   let allApiKeys = [];
@@ -428,21 +462,50 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
   const apiKeyMap = {};
   for (const k of allApiKeys) apiKeyMap[k.key] = { name: k.name, id: k.id, createdAt: k.createdAt };
 
+  // Two compatible nodes with no user-chosen name both humanize to the same
+  // family label; number them instead of printing any part of the id.
+  for (const [id, label] of dedupeLabels(Object.entries(providerNameMap).map(([pid, plabel]) => ({ id: pid, label: plabel })))) {
+    providerNameMap[id] = label;
+  }
+
+  const value = { connectionMap, providerNameMap, apiKeyMap };
+  providerLookupsCache.value = value;
+  providerLookupsCache.ts = Date.now();
+  return value;
+}
+
+/** Display label for a provider id: node name, "OpenAI Compatible (abcdef12)", else the id. */
+export async function getProviderDisplayName(providerId) {
+  if (!providerId) return "";
+  const { providerNameMap } = await getProviderLookups();
+  return labelForProvider(providerNameMap, providerId);
+}
+
+export async function getUsageStats(period = "all", filterApiKey = null, allowedModels = "*") {
+  const db = await getAdapter();
+
+  const patterns = parseAllowedModels(allowedModels);
+  const modelAllowed = (model) => matchesModelPatterns(patterns, model);
+
+  const { connectionMap, providerNameMap, apiKeyMap } = await getProviderLookups();
+
   // recentRequests from live history (last 100 entries enough for 20 deduped)
   const recentSql = filterApiKey
-    ? `SELECT timestamp, provider, model, tokens, status FROM usageHistory WHERE apiKey = ? ORDER BY id DESC LIMIT 100`
-    : `SELECT timestamp, provider, model, tokens, status FROM usageHistory ORDER BY id DESC LIMIT 100`;
+    ? `SELECT timestamp, provider, model, tokens, status, meta FROM usageHistory WHERE apiKey = ? ORDER BY id DESC LIMIT 100`
+    : `SELECT timestamp, provider, model, tokens, status, meta FROM usageHistory ORDER BY id DESC LIMIT 100`;
   const recentParams = filterApiKey ? [filterApiKey] : [];
   const recentRows = db.all(recentSql, recentParams);
   const seen = new Set();
   const recentRequests = recentRows
     .map((r) => {
       const t = parseJson(r.tokens, {}) || {};
+      const meta = parseJson(r.meta, {}) || {};
       return {
-        timestamp: r.timestamp, model: r.model, provider: r.provider || "",
+        timestamp: r.timestamp, model: r.model, resolvedModel: meta.resolvedModel, provider: r.provider || "",
+        providerName: labelForProvider(providerNameMap, r.provider),
         promptTokens: t.prompt_tokens || t.input_tokens || 0,
         completionTokens: t.completion_tokens || t.output_tokens || 0,
-        cachedTokens: t.cached_tokens || t.cache_read_input_tokens || 0,
+        cachedTokens: cacheReadTokens(t),
         status: r.status || "ok",
       };
     })
@@ -461,6 +524,7 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
     totalRequests: 0,
     totalPromptTokens: 0, totalCompletionTokens: 0, totalCachedTokens: 0, totalCost: 0,
     byProvider: {}, byModel: {}, byAccount: {}, byApiKey: {}, byEndpoint: {},
+    providerLabels: {},
     last10Minutes: [],
     pending: filterApiKey ? {} : pendingRequests,
     activeRequests: filterApiKey ? [] : [],
@@ -547,9 +611,9 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
       const tokens = parseJson(r.tokens, {}) || {};
       const promptTokens = r.promptTokens ?? tokens.prompt_tokens ?? tokens.input_tokens ?? 0;
       const completionTokens = r.completionTokens ?? tokens.completion_tokens ?? tokens.output_tokens ?? 0;
-      const cachedTokens = tokens.cached_tokens || tokens.cache_read_input_tokens || 0;
+      const cachedTokens = cacheReadTokens(tokens);
       const entryCost = r.cost || 0;
-      const providerDisplayName = providerNodeNameMap[r.provider] || r.provider;
+      const providerDisplayName = labelForProvider(providerNameMap, r.provider);
 
       stats.totalPromptTokens += promptTokens;
       stats.totalCompletionTokens += completionTokens;
@@ -610,6 +674,9 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
     }
 
     stats.totalRequests = Object.values(stats.byProvider).reduce((sum, p) => sum + (p.requests || 0), 0);
+    for (const providerId of Object.keys(stats.byProvider)) {
+      stats.providerLabels[providerId] = labelForProvider(providerNameMap, providerId);
+    }
     return stats;
   }
 
@@ -644,7 +711,7 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
         if (!modelAllowed(rawModel)) continue;
         const provider = m.provider || mk.split("|")[1] || "";
         const statsKey = provider ? `${rawModel} (${provider})` : rawModel;
-        const providerDisplayName = providerNodeNameMap[provider] || provider;
+        const providerDisplayName = labelForProvider(providerNameMap, provider);
         if (!stats.byModel[statsKey]) {
         stats.byModel[statsKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel, provider: providerDisplayName, resolvedModel: m.resolvedModel || undefined, lastUsed: dateKey };
         }
@@ -679,7 +746,7 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
         const rawModel = a.rawModel || "";
         if (!modelAllowed(rawModel)) continue;
         const provider = a.provider || "";
-        const providerDisplayName = providerNodeNameMap[provider] || provider;
+        const providerDisplayName = labelForProvider(providerNameMap, provider);
         const accountKey = `${rawModel} (${provider} - ${accountName})`;
         if (!stats.byAccount[accountKey]) {
           stats.byAccount[accountKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, rawModel, provider: providerDisplayName, connectionId: connId, accountName, lastUsed: dateKey };
@@ -696,7 +763,7 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
         const rawModel = ak.rawModel || "";
         if (!modelAllowed(rawModel)) continue;
         const provider = ak.provider || "";
-        const providerDisplayName = providerNodeNameMap[provider] || provider;
+        const providerDisplayName = labelForProvider(providerNameMap, provider);
         const apiKeyVal = ak.apiKey;
         const keyInfo = apiKeyVal ? apiKeyMap[apiKeyVal] : null;
         const keyName = keyInfo?.name || (apiKeyVal ? apiKeyVal.slice(0, 8) + "..." : "Local (No API Key)");
@@ -718,7 +785,7 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
         const rawModel = ep.rawModel || "";
         if (!modelAllowed(rawModel)) continue;
         const provider = ep.provider || "";
-        const providerDisplayName = providerNodeNameMap[provider] || provider;
+        const providerDisplayName = labelForProvider(providerNameMap, provider);
         if (!stats.byEndpoint[epKey]) {
           stats.byEndpoint[epKey] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, endpoint, rawModel, provider: providerDisplayName, lastUsed: dateKey };
         }
@@ -785,9 +852,9 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
       const tokens = parseJson(r.tokens, {}) || {};
       const promptTokens = r.promptTokens ?? tokens.prompt_tokens ?? tokens.input_tokens ?? 0;
       const completionTokens = r.completionTokens ?? tokens.completion_tokens ?? tokens.output_tokens ?? 0;
-      const cachedTokens = tokens.cached_tokens || tokens.cache_read_input_tokens || 0;
+      const cachedTokens = cacheReadTokens(tokens);
       const entryCost = r.cost || 0;
-      const providerDisplayName = providerNodeNameMap[r.provider] || r.provider;
+      const providerDisplayName = labelForProvider(providerNameMap, r.provider);
 
       stats.totalPromptTokens += promptTokens;
       stats.totalCompletionTokens += completionTokens;
@@ -860,6 +927,9 @@ export async function getUsageStats(period = "all", filterApiKey = null, allowed
   }
 
   stats.totalRequests = Object.values(stats.byProvider).reduce((sum, p) => sum + (p.requests || 0), 0);
+  for (const providerId of Object.keys(stats.byProvider)) {
+    stats.providerLabels[providerId] = labelForProvider(providerNameMap, providerId);
+  }
   return stats;
 }
 
@@ -1140,15 +1210,21 @@ export async function getRecentLogs(limit = 200) {
       for (const c of connections) connMap[c.id] = c.name || c.email || "";
     } catch {}
 
+    const { providerNameMap } = await getProviderLookups();
+
+    // Objects, not pipe-joined strings: an account or model containing " | "
+    // used to shift every later column and drop the row.
     return rows.map((r) => {
-      const ts = formatLogDate(new Date(r.timestamp));
-      const p = r.provider?.toUpperCase() || "-";
-      const m = r.model || "-";
-      const account = connMap[r.connectionId] || (r.connectionId ? r.connectionId.slice(0, 8) : "-");
       const tk = r.tokens ? parseJson(r.tokens, {}) : {};
-      const sent = r.promptTokens ?? tk.prompt_tokens ?? "-";
-      const received = r.completionTokens ?? tk.completion_tokens ?? "-";
-      return `${ts} | ${m} | ${p} | ${account} | ${sent} | ${received} | ${r.status || "-"}`;
+      return {
+        ts: formatLogDate(new Date(r.timestamp)),
+        model: r.model || "-",
+        provider: labelForProvider(providerNameMap, r.provider) || "-",
+        account: connMap[r.connectionId] || (r.connectionId ? r.connectionId.slice(0, 8) : "-"),
+        sent: r.promptTokens ?? tk.prompt_tokens ?? "-",
+        received: r.completionTokens ?? tk.completion_tokens ?? "-",
+        status: r.status || "-",
+      };
     });
   } catch (e) {
     console.error("[usageRepo] getRecentLogs failed:", e.message);

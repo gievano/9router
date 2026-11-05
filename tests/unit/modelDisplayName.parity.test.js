@@ -30,7 +30,6 @@ const IDS = [
   "oc/muse-spark-1.3-contributor-free",
   "oc/mimo-v2.6-flash-free",
   "oc/glm-5.3-flash-free",
-  "oc/deepseek-v4.1-flash-free",
   "oc/jev-1.13-free",
   "oc/big-pickle",
   "oc/beam-free",

@@ -34,14 +34,13 @@ export function ModelRow({ model, fullModel, copied, onCopy, testStatus, isCusto
             </span>
           </div>
         )}
-        <div className="relative group/btn">
-          <button onClick={() => onCopy(fullModel, `model-${model.id}`)} className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary">
-            <span className="material-symbols-outlined text-sm">{copied === `model-${model.id}` ? "check" : "content_copy"}</span>
-          </button>
-          <span className="pointer-events-none absolute mt-1 top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
-            {copied === `model-${model.id}` ? "Copied!" : "Copy"}
-          </span>
-        </div>
+        <button
+          onClick={() => onCopy(fullModel, `model-${model.id}`)}
+          title={copied === `model-${model.id}` ? "Copied" : "Copy"}
+          className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all shrink-0"
+        >
+          <span className="material-symbols-outlined text-[14px]">{copied === `model-${model.id}` ? "check" : "content_copy"}</span>
+        </button>
         {isFree && <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded">FREE</span>}
         {isCustom && (
           <button onClick={onDeleteAlias} className="p-0.5 hover:bg-red-500/10 rounded text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity ml-auto" title="Remove custom model">

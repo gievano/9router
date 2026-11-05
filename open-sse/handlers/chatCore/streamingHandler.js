@@ -6,12 +6,13 @@ import { PROVIDERS } from "../../config/providers.js";
 import { HTTP_STATUS, STREAM_STALL_TIMEOUT_MS } from "../../config/runtimeConfig.js";
 import { buildAbortedResponsesTerminalBytes } from "../../utils/responsesStreamHelpers.js";
 import { buildStreamErrorBytes } from "../../utils/streamHelpers.js";
+import { buildErrorBody } from "../../utils/error.js";
 import { buildRequestDetail, extractRequestConfig, saveUsageStats, formatDoneLine } from "./requestDetail.js";
 import { saveRequestDetail } from "@/lib/usageDb.js";
 import { SSE_HEADERS_CORS as SSE_HEADERS } from "../../utils/sseConstants.js";
 import { calledModelName } from "../../utils/modelAlias.js";
 import { upstreamResponseHeaders } from "../../utils/upstreamHeaders.js";
-import { applyUsageMultipliers } from "../../utils/usageTracking.js";
+import { applyUsageMultipliers, estimateInputTokens, estimateOutputTokens, hasValidUsage } from "../../utils/usageTracking.js";
 
 // Codex returns Responses API SSE → which client format to translate INTO, by request sourceFormat.
 // Gemini-family all map to ANTIGRAVITY decoder; unknown sources fall back to OPENAI.
@@ -26,7 +27,7 @@ const CODEX_SOURCE_TO_TARGET = {
 /**
  * Determine which SSE transform stream to use based on provider/format.
  */
-function buildTransformStream({ provider, sourceFormat, targetFormat, userAgent, reqLogger, toolNameMap, customToolNames, model, connectionId, body, onStreamComplete, apiKey, credentials, aliasModel }) {
+function buildTransformStream({ provider, sourceFormat, targetFormat, userAgent, reqLogger, toolNameMap, customToolNames, model, connectionId, body, onStreamComplete, apiKey, credentials, aliasModel, hideError = false }) {
   const isDroidCLI = userAgent?.toLowerCase().includes("droid") || userAgent?.toLowerCase().includes("codex-cli");
   // Responses-API providers (e.g. codex) emit Responses SSE → translate into client format
   const isResponsesProvider = PROVIDERS[provider]?.format === FORMATS.OPENAI_RESPONSES;
@@ -34,20 +35,20 @@ function buildTransformStream({ provider, sourceFormat, targetFormat, userAgent,
 
   if (needsCodexTranslation) {
     const codexTarget = CODEX_SOURCE_TO_TARGET[sourceFormat] || FORMATS.OPENAI;
-    return createSSETransformStreamWithLogger(FORMATS.OPENAI_RESPONSES, codexTarget, provider, reqLogger, toolNameMap, model, connectionId, body, onStreamComplete, apiKey, customToolNames, credentials, aliasModel);
+    return createSSETransformStreamWithLogger(FORMATS.OPENAI_RESPONSES, codexTarget, provider, reqLogger, toolNameMap, model, connectionId, body, onStreamComplete, apiKey, customToolNames, credentials, aliasModel, hideError);
   }
 
   if (needsTranslation(targetFormat, sourceFormat)) {
-    return createSSETransformStreamWithLogger(targetFormat, sourceFormat, provider, reqLogger, toolNameMap, model, connectionId, body, onStreamComplete, apiKey, customToolNames, credentials, aliasModel);
+    return createSSETransformStreamWithLogger(targetFormat, sourceFormat, provider, reqLogger, toolNameMap, model, connectionId, body, onStreamComplete, apiKey, customToolNames, credentials, aliasModel, hideError);
   }
 
-  return createPassthroughStreamWithLogger(provider, reqLogger, model, connectionId, body, onStreamComplete, apiKey, aliasModel);
+  return createPassthroughStreamWithLogger(provider, reqLogger, model, connectionId, body, onStreamComplete, apiKey, aliasModel, hideError);
 }
 
 /**
  * Handle streaming response - pipe provider SSE through transform stream to client.
  */
-export async function handleStreamingResponse({ providerResponse, provider, model, sourceFormat, targetFormat, userAgent, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, clientRawRequest, onRequestSuccess, reqLogger, toolNameMap, customToolNames, streamController, onStreamComplete, streamDetailId, pxpipe, reqTag, log, credentials, requestedModel }) {
+export async function handleStreamingResponse({ providerResponse, provider, model, sourceFormat, targetFormat, userAgent, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, clientRawRequest, onRequestSuccess, reqLogger, toolNameMap, customToolNames, streamController, onStreamComplete, streamDetailId, pxpipe, reqTag, log, credentials, requestedModel, hideError = false }) {
   if (onRequestSuccess) {
     Promise.resolve()
       .then(onRequestSuccess)
@@ -76,7 +77,7 @@ export async function handleStreamingResponse({ providerResponse, provider, mode
     streamController?.handleError?.(new Error(`upstream non-SSE: ${status}`));
     return {
       success: false,
-      response: new Response(JSON.stringify({ error: { message: `[${status}]: ${shortMsg}` } }), {
+      response: new Response(JSON.stringify(buildErrorBody(status, `[${status}]: ${shortMsg}`, hideError)), {
         status,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       }),
@@ -85,7 +86,7 @@ export async function handleStreamingResponse({ providerResponse, provider, mode
 
   // The name the client called is the only one it is allowed to see.
   const aliasModel = calledModelName(requestedModel, model);
-  const transformStream = buildTransformStream({ provider, sourceFormat, targetFormat, userAgent, reqLogger, toolNameMap, customToolNames, model, connectionId, body, onStreamComplete, apiKey, credentials, aliasModel });
+  const transformStream = buildTransformStream({ provider, sourceFormat, targetFormat, userAgent, reqLogger, toolNameMap, customToolNames, model, connectionId, body, onStreamComplete, apiKey, credentials, aliasModel, hideError });
 
   // Terminal bytes when the stream aborts after HTTP 200 was already sent, so the
   // client sees a real error instead of a silently truncated stream.
@@ -94,7 +95,7 @@ export async function handleStreamingResponse({ providerResponse, provider, mode
   const isResponsesPassthrough = sourceFormat === FORMATS.OPENAI_RESPONSES && targetFormat === FORMATS.OPENAI_RESPONSES;
   const onAbortTerminal = isResponsesPassthrough
     ? buildAbortedResponsesTerminalBytes
-    : (message) => buildStreamErrorBytes(HTTP_STATUS.GATEWAY_TIMEOUT, message, sourceFormat);
+    : (message) => buildStreamErrorBytes(HTTP_STATUS.GATEWAY_TIMEOUT, message, sourceFormat, hideError);
   const stallTimeoutMs = PROVIDERS[provider]?.stallTimeoutMs || STREAM_STALL_TIMEOUT_MS;
   const transformedBody = pipeWithDisconnect(providerResponse, transformStream, streamController, onAbortTerminal, stallTimeoutMs);
 
@@ -126,6 +127,59 @@ export function buildOnStreamComplete({ provider, model, connectionId, apiKey, r
 
   const onStreamComplete = (contentObj, usage, ttftAt) => {
     let finalUsage = usage;
+    const outTokens = finalUsage?.completion_tokens ?? finalUsage?.output_tokens ?? 0;
+    const contentLength = contentObj?.totalContentLength ||
+      (contentObj?.content && contentObj.content !== "[Empty streaming response]" ? contentObj.content.length : 0) +
+      (contentObj?.thinking ? contentObj.thinking.length : 0);
+
+    if (outTokens === 0 && contentLength > 0) {
+      const estimatedOut = estimateOutputTokens(contentLength);
+      if (estimatedOut > 0) {
+        if (!finalUsage || !hasValidUsage(finalUsage)) {
+          const estimatedIn = estimateInputTokens(body);
+          finalUsage = {
+            prompt_tokens: estimatedIn,
+            completion_tokens: estimatedOut,
+            total_tokens: estimatedIn + estimatedOut,
+            estimated: true,
+          };
+        } else {
+          finalUsage = { ...finalUsage };
+          if (finalUsage.completion_tokens !== undefined || finalUsage.prompt_tokens !== undefined) {
+            finalUsage.completion_tokens = estimatedOut;
+            finalUsage.total_tokens = (finalUsage.prompt_tokens || 0) + estimatedOut;
+          } else if (finalUsage.output_tokens !== undefined || finalUsage.input_tokens !== undefined) {
+            finalUsage.output_tokens = estimatedOut;
+            finalUsage.total_tokens = (finalUsage.input_tokens || 0) + estimatedOut;
+          }
+        }
+      }
+    }
+
+    const inTokens = finalUsage?.prompt_tokens ?? finalUsage?.input_tokens ?? 0;
+    if (inTokens === 0 && body) {
+      const estimatedIn = estimateInputTokens(body);
+      if (estimatedIn > 0) {
+        if (!finalUsage) {
+          finalUsage = {
+            prompt_tokens: estimatedIn,
+            completion_tokens: outTokens,
+            total_tokens: estimatedIn + outTokens,
+            estimated: true,
+          };
+        } else {
+          finalUsage = { ...finalUsage };
+          if (finalUsage.prompt_tokens !== undefined || finalUsage.completion_tokens !== undefined) {
+            finalUsage.prompt_tokens = estimatedIn;
+            finalUsage.total_tokens = estimatedIn + (finalUsage.completion_tokens || 0);
+          } else if (finalUsage.input_tokens !== undefined || finalUsage.output_tokens !== undefined) {
+            finalUsage.input_tokens = estimatedIn;
+            finalUsage.total_tokens = estimatedIn + (finalUsage.output_tokens || 0);
+          }
+        }
+      }
+    }
+
     if (modelMultipliers && finalUsage) {
       finalUsage = applyUsageMultipliers(finalUsage, modelMultipliers);
     }

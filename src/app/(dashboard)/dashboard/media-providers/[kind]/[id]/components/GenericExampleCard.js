@@ -543,7 +543,7 @@ export function GenericExampleCard({ providerId, kind }) {
         <div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-1.5">
             <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-              Response {result && <span className="font-normal normal-case">&#9889; {result.latencyMs}ms</span>}
+              Response {result && <span className="inline-flex items-center gap-1 font-normal normal-case"><span className="material-symbols-outlined text-[11px] leading-none">bolt</span>{result.latencyMs}ms</span>}
             </span>
             {result && (
               <button

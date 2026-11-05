@@ -19,8 +19,12 @@ function fmtTime(iso) {
 }
 
 function SortIcon({ field, currentSort, currentOrder }) {
-  if (currentSort !== field) return <span className="ml-1 opacity-20">↕</span>;
-  return <span className="ml-1">{currentOrder === "asc" ? "↑" : "↓"}</span>;
+  if (currentSort !== field) return <span className="material-symbols-outlined ml-1 text-[12px] leading-none opacity-20">sync_alt</span>;
+  return (
+    <span className="material-symbols-outlined ml-1 text-[12px] leading-none">
+      {currentOrder === "asc" ? "arrow_upward" : "arrow_downward"}
+    </span>
+  );
 }
 
 SortIcon.propTypes = {

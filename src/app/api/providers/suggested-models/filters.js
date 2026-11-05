@@ -60,7 +60,7 @@ export const FALLBACK_SUGGESTIONS = {
  * @param {Array<{ isFree?: boolean }>} list
  * @returns {Array<{ isFree?: boolean }>}
  */
-export const onlyFree = (list) => (Array.isArray(list) ? list.filter((m) => m?.isFree === true) : []);
+export const onlyFree = (list) => (Array.isArray(list) ? list.filter((m) => m?.isFree === true || (typeof m?.id === "string" && m.id.endsWith("-free"))) : []);
 
 export const FILTERS = {
   "openrouter-free": (models) =>

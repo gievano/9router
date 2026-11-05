@@ -270,17 +270,6 @@ export function getStatusColor(percentage) {
 }
 
 /**
- * Get status emoji based on percentage
- * @param {number} percentage - Remaining percentage (0-100)
- * @returns {string} Emoji: "🟢" | "🟡" | "🔴"
- */
-export function getStatusEmoji(percentage) {
-  if (percentage > 70) return "🟢";
-  if (percentage >= 30) return "🟡";
-  return "🔴"; // 0-29% including 0% (out of quota) - show red
-}
-
-/**
  * Calculate remaining percentage
  * @param {number} used - Used amount
  * @param {number} total - Total amount
@@ -769,7 +758,7 @@ export function parseQuotaData(provider, data) {
       case "minimax-code":
       case "minimax-code-global":
         // Service already returns dashboard-shaped rows: a credits balance
-        // (isCreditBalance → 💰 with the amount as total) plus M Plan rate
+        // (isCreditBalance → credit amount as total) plus M Plan rate
         // windows as 0-100 percent rows. Pass through, preserving extras.
         if (data.quotas) {
           Object.entries(data.quotas).forEach(([name, quota]) => {

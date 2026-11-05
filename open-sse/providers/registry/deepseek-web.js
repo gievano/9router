@@ -15,6 +15,8 @@ export default {
     website: "https://chat.deepseek.com",
     notice: {
       apiKeyUrl: "https://chat.deepseek.com",
+      signupUrl: "https://chat.deepseek.com",
+      text: "DeepSeek free web chat (DeepSeek-Chat, DeepSeek-Reasoner / R1, DeepSeek-V3, DeepSeek-V4.1). Open chat.deepseek.com, log in, then copy the 'userToken' value from DevTools → Application → Local Storage → chat.deepseek.com and paste it here.",
     },
   },
   category: "webCookie",
@@ -26,8 +28,8 @@ export default {
     authType: "cookie",
   },
   models: [
-    { id: "deepseek-chat", name: "DeepSeek V3/V4 Chat" },
-    { id: "deepseek-reasoner", name: "DeepSeek R1/V4 Reasoner (Thinking)" },
+    { id: "deepseek-chat", name: "DeepSeek V3 / V4.1 Chat" },
+    { id: "deepseek-reasoner", name: "DeepSeek R1 / V4.1 Reasoner (Thinking)" },
     { id: "deepseek-v4.1-flash", name: "DeepSeek V4.1 Flash" },
     { id: "deepseek-v4.1-pro", name: "DeepSeek V4.1 Pro" },
     { id: "deepseek-v4.1-reasoner", name: "DeepSeek V4.1 Reasoner" },

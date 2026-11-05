@@ -9,7 +9,7 @@ import {
 import { getSettings, getProviderConnectionById } from "@/lib/localDb";
 import { getModelInfo } from "../services/model.js";
 import { handleVideoProxyCore, getVideoConfig, sanitizeSecrets } from "open-sse/handlers/videoCore.js";
-import { errorResponse, unavailableResponse } from "open-sse/utils/error.js";
+import { errorResponse, unavailableResponse, maskHiddenError } from "open-sse/utils/error.js";
 import { HTTP_STATUS } from "open-sse/config/runtimeConfig.js";
 import { updateProviderCredentials, checkAndRefreshToken } from "../services/tokenRefresh.js";
 import * as log from "../utils/logger.js";
@@ -111,7 +111,7 @@ function withConnectionHeader(response, connectionId) {
 /**
  * POST /v1/videos/{generations|edits|extensions} - async job creation proxy.
  */
-export async function handleVideoCreate(request, action) {
+async function _handleVideoCreate(request, action) {
   const authError = await requireValidApiKey(request);
   if (authError) return authError;
 
@@ -199,7 +199,7 @@ export async function handleVideoCreate(request, action) {
  * Jobs are account-bound upstream, so no cross-account rotation here: the
  * caller pins the creating account via `x-connection-id` (returned on create).
  */
-export async function handleVideoGet(request, requestId) {
+async function _handleVideoGet(request, requestId) {
   const authError = await requireValidApiKey(request);
   if (authError) return authError;
 
@@ -240,4 +240,26 @@ export async function handleVideoGet(request, requestId) {
     credentials.connectionId, result.status, sanitizeSecrets(result.error, refreshedCredentials), provider, null
   );
   return result.response;
+}
+
+/**
+ * Public entry: every error body leaving this handler passes through the
+ * Hide Raw Errors mask, so no branch can leak an upstream message.
+ */
+export async function handleVideoCreate(request, action) {
+  const response = await _handleVideoCreate(request, action);
+  if (!response || response.status < 400) return response;
+  const settings = await getSettings();
+  return maskHiddenError(response, Boolean(settings?.hideError));
+}
+
+/**
+ * Public entry: every error body leaving this handler passes through the
+ * Hide Raw Errors mask, so no branch can leak an upstream message.
+ */
+export async function handleVideoGet(request, requestId) {
+  const response = await _handleVideoGet(request, requestId);
+  if (!response || response.status < 400) return response;
+  const settings = await getSettings();
+  return maskHiddenError(response, Boolean(settings?.hideError));
 }

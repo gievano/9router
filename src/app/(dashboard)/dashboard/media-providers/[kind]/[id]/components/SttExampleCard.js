@@ -344,7 +344,7 @@ export function SttExampleCard({ providerId }) {
         <div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-1.5">
             <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-              Response {result && latency && <span className="font-normal normal-case">&#9889; {latency}ms</span>}
+              Response {result && latency && <span className="inline-flex items-center gap-1 font-normal normal-case"><span className="material-symbols-outlined text-[11px] leading-none">bolt</span>{latency}ms</span>}
             </span>
             {result && (
               <button

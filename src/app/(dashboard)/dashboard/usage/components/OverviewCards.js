@@ -22,11 +22,11 @@ function TrendCard({ label, value, title, icon, tone = "", footnote, trend }) {
   return (
     <Card className="flex min-w-0 flex-col gap-2 p-3 sm:p-4 bg-surface border border-border-subtle hover:border-border transition-colors">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-text-muted text-[11px] font-semibold uppercase tracking-wider truncate">
+        <span className="text-text-muted text-xs font-semibold uppercase tracking-wider truncate">
           {label}
         </span>
         {icon && (
-          <span className="material-symbols-outlined text-[16px] text-text-subtle select-none">
+          <span className="material-symbols-outlined text-lg text-text-subtle select-none">
             {icon}
           </span>
         )}
@@ -48,7 +48,7 @@ function TrendCard({ label, value, title, icon, tone = "", footnote, trend }) {
         </div>
       )}
 
-      <div className="flex min-h-[1.25rem] items-center text-[10px] sm:text-[11px] text-text-muted mt-auto pt-1.5 border-t border-border-subtle">
+      <div className="flex min-h-[1.25rem] items-center text-xs text-text-muted mt-auto pt-1.5 border-t border-border-subtle">
         {footnote || <span className="text-transparent select-none">-</span>}
       </div>
     </Card>

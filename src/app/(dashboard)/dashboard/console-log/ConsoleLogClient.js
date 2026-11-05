@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Card, Button, PageShell } from "@/shared/components";
 import { CONSOLE_LOG_CONFIG } from "@/shared/constants/config";
+import { stripEmoji } from "@/shared/utils/plainText";
 
 function colorLine(line, index) {
   let levelColor = "text-text-main";
@@ -29,7 +30,7 @@ function colorLine(line, index) {
         {index + 1}
       </span>
       <span className={`flex-1 break-all whitespace-pre-wrap ${levelColor}`}>
-        {line}
+        {stripEmoji(line)}
       </span>
     </div>
   );

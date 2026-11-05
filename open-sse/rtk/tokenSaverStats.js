@@ -195,7 +195,8 @@ export async function getTokenSavingsReport(dbPromise, period = "30d") {
     totals.savedTokens += Number(bucket.savedTokens) || 0;
     totals.savedCost += Number(bucket.savedCost) || 0;
     for (const [name, slot] of Object.entries(bucket.byModel || {})) {
-      const agg = byModel[name] || { model: name, requests: 0, savedTokens: 0, savedCost: 0 };
+      const { provider, model } = splitModelKey(name);
+      const agg = byModel[name] || { key: name, provider, model, requests: 0, savedTokens: 0, savedCost: 0 };
       agg.requests += Number(slot.requests) || 0;
       agg.savedTokens += Number(slot.savedTokens) || 0;
       agg.savedCost += Number(slot.savedCost) || 0;
@@ -209,13 +210,52 @@ export async function getTokenSavingsReport(dbPromise, period = "30d") {
     });
   }
 
+  // No rows in the period means no savings at all: report nothing rather than a
+  // stripe of zero days.
+  const series = daily.length > 0 ? fillDailyGaps(daily, since) : [];
+
   return {
     period,
     estimated: true,
     totals,
     models: Object.values(byModel).sort((a, b) => b.savedTokens - a.savedTokens),
-    daily,
+    daily: series,
+    peak: series.reduce(
+      (best, day) => (day.savedTokens > best.savedTokens ? day : best),
+      { date: "", requests: 0, savedTokens: 0, savedCost: 0 },
+    ),
   };
+}
+
+/**
+ * A day with no savings has no kv row, so the raw series skipped it and the
+ * chart drew three bars where a month went by. Every date in range gets an
+ * entry, in order, zeros included.
+ */
+function fillDailyGaps(daily, since) {
+  const byDate = new Map(daily.map((day) => [day.date, day]));
+  const out = [];
+  const cursor = new Date(`${since}T00:00:00.000Z`);
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  while (cursor <= today) {
+    const key = cursor.toISOString().slice(0, 10);
+    out.push(byDate.get(key) || { date: key, requests: 0, savedTokens: 0, savedCost: 0 });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return out;
+}
+
+/**
+ * A byModel key is "provider/model". It used to be shown verbatim, so a
+ * compatible node's generated id appeared as the model name. Splitting it here
+ * lets the tab print the model with the provider as its subtitle.
+ */
+function splitModelKey(key) {
+  const raw = String(key || "");
+  const slash = raw.indexOf("/");
+  if (slash === -1) return { provider: raw, model: "" };
+  return { provider: raw.slice(0, slash), model: raw.slice(slash + 1) };
 }
 
 function periodStart(period) {

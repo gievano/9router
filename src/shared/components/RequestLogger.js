@@ -58,7 +58,7 @@ export default function RequestLogger() {
         </div>
       </div>
 
-      <Card className="overflow-hidden bg-black/5 dark:bg-black/20">
+      <Card className="overflow-hidden bg-surface border border-border-subtle">
         <div className="p-0 overflow-x-auto max-h-[600px] overflow-y-auto font-mono text-xs">
           {loading && logs.length === 0 ? (
             <div className="p-8 text-center text-text-muted">Loading logs...</div>
@@ -79,31 +79,44 @@ export default function RequestLogger() {
               </thead>
               <tbody className="divide-y divide-border/50">
                 {logs.map((log, i) => {
-                  const parts = log.split(" | ");
-                  if (parts.length < 7) return null;
+                  // The API returns one object per row now. A pipe string is only
+                  // still accepted so an old cached response cannot blank the
+                  // table while a tab reloads.
+                  const row =
+                    typeof log === "string"
+                      ? (() => {
+                          const parts = log.split(" | ");
+                          if (parts.length < 7) return null;
+                          return { ts: parts[0], model: parts[1], provider: parts[2], account: parts[3], sent: parts[4], received: parts[5], status: parts[6] };
+                        })()
+                      : log;
+                  if (!row) return null;
 
-                  const status = parts[6];
-                  const isPending = status.includes("PENDING");
-                  const isFailed = status.includes("FAILED");
-                  const isSuccess = status.includes("OK");
+                  const status = String(row.status || "");
+                  const statusKey = status.toLowerCase();
+                  const isPending = statusKey.includes("pending");
+                  const isFailed = statusKey.includes("fail") || statusKey.includes("error");
+                  // Stored statuses are lowercase (`ok`, `502`), so an
+                  // uppercase-only test painted every successful row as pending.
+                  const isSuccess = statusKey.includes("ok");
 
                   return (
                     <tr key={i} className={`hover:bg-primary/5 transition-colors ${isPending ? 'bg-primary/5' : ''}`}>
-                      <td className="px-3 py-1.5 border-r border-border text-text-muted">{parts[0]}</td>
-                      <td className="px-3 py-1.5 border-r border-border font-medium">{parts[1]}</td>
+                      <td className="px-3 py-1.5 border-r border-border text-text-muted">{row.ts}</td>
+                      <td className="px-3 py-1.5 border-r border-border font-medium">{row.model}</td>
                       <td className="px-3 py-1.5 border-r border-border">
-                        <span className="px-1.5 py-0.5 rounded bg-bg-subtle border border-border text-[10px] uppercase font-bold">
-                          {parts[2]}
+                        <span className="px-1.5 py-0.5 rounded bg-bg-subtle border border-border text-xs font-semibold">
+                          {row.provider}
                         </span>
                       </td>
-                      <td className="px-3 py-1.5 border-r border-border truncate max-w-[150px]" title={parts[3]}>{parts[3]}</td>
-                      <td className="px-3 py-1.5 border-r border-border text-right text-primary">{parts[4]}</td>
-                      <td className="px-3 py-1.5 border-r border-border text-right text-success">{parts[5]}</td>
+                      <td className="px-3 py-1.5 border-r border-border truncate max-w-[200px]" title={row.account}>{row.account}</td>
+                      <td className="px-3 py-1.5 border-r border-border text-right text-primary">{row.sent}</td>
+                      <td className="px-3 py-1.5 border-r border-border text-right text-success">{row.received}</td>
                       <td className={`px-3 py-1.5 font-bold ${isSuccess ? 'text-success' :
                           isFailed ? 'text-error' :
                             'text-primary animate-pulse'
                         }`}>
-                        {status}
+                        {status.toUpperCase()}
                       </td>
                     </tr>
                   );

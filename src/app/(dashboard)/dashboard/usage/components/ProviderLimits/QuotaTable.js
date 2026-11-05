@@ -47,8 +47,7 @@ function getColorClasses(remainingPercentage) {
     return {
       text: "text-success",
       bg: "bg-success",
-      bgLight: "bg-success/10",
-      emoji: "🟢",
+      bgLight: "bg-success/10"
     };
   }
 
@@ -56,16 +55,14 @@ function getColorClasses(remainingPercentage) {
     return {
       text: "text-warning",
       bg: "bg-warning",
-      bgLight: "bg-warning/10",
-      emoji: "🟡",
+      bgLight: "bg-warning/10"
     };
   }
 
   return {
     text: "text-danger",
     bg: "bg-danger",
-    bgLight: "bg-danger/10",
-    emoji: "🔴",
+    bgLight: "bg-danger/10"
   };
 }
 
@@ -153,7 +150,7 @@ export default function QuotaTable({
           const isUnlimited = quota.unlimited === true;
           const isCreditBalance = quota.isCreditBalance === true;
           const colors = isCreditBalance
-            ? { text: "text-info", bg: "bg-info", bgLight: "bg-info/10", emoji: "💰" }
+            ? { text: "text-info", bg: "bg-info", bgLight: "bg-info/10" }
             : getColorClasses(quota.remaining);
           // Qoder flags open-ended plans with `neverExpires` (its API reports a
           // year-9999 sentinel). Return "-"/"Never expires" rather than an empty
@@ -204,7 +201,7 @@ export default function QuotaTable({
                 {/* Name row */}
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="text-[11px] shrink-0">{colors.emoji}</span>
+                    <span className={`size-1.5 shrink-0 rounded-full ${colors.bg}`} aria-hidden="true" />
                     <span className={`${nameText} font-medium text-text-main truncate`}>
                       {quota.name}
                     </span>

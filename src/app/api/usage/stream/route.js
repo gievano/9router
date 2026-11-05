@@ -3,6 +3,23 @@ import { getSessionContext } from "@/lib/auth/dashboardPermissions";
 
 export const dynamic = "force-dynamic";
 
+// Every open tab runs its own stream, and each emitter tick asked the database to
+// re-aggregate the whole period per connection - so three tabs meant three
+// identical scans per burst of traffic. A short shared memo keeps the page live
+// (updates still land within a second) while a burst costs one aggregation.
+const STREAM_STATS_TTL_MS = 750;
+const streamStatsCache = (global._streamStatsCache ||= new Map());
+
+async function getStreamStats(period, apiKeyFilter, allowedModels) {
+  const key = `${period}|${apiKeyFilter || ""}|${allowedModels}`;
+  const hit = streamStatsCache.get(key);
+  if (hit && Date.now() - hit.ts < STREAM_STATS_TTL_MS) return hit.value;
+  const value = await getUsageStats(period, apiKeyFilter, allowedModels);
+  if (streamStatsCache.size > 32) streamStatsCache.clear();
+  streamStatsCache.set(key, { value, ts: Date.now() });
+  return value;
+}
+
 export async function GET(request) {
   const encoder = new TextEncoder();
   const { searchParams } = new URL(request.url);
@@ -27,7 +44,7 @@ export async function GET(request) {
           // allowedModels is not optional here: this stream is the second source the
           // Usage page merges in, and omitting it silently widens the scope to every
           // model, which is what let unrelated providers show up under an API-key login.
-          const stats = await getUsageStats(period, apiKeyFilter, allowedModels);
+          const stats = await getStreamStats(period, apiKeyFilter, allowedModels);
           state.cachedStats = stats;
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ ...stats, _type: "full" })}\n\n`));
         } catch {

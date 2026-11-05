@@ -169,8 +169,14 @@ export function fixToolUseOrdering(messages) {
   return merged;
 }
 
-// Models that reject thinking.type "adaptive" + output_config.effort (Opus 4.5+/Sonnet 4.6+ only)
-const ADAPTIVE_THINKING_UNSUPPORTED = /haiku/i;
+// Haiku 3.x/4.x reject thinking.type "adaptive" + output_config.effort; Haiku 5+ accepts
+// ONLY adaptive (#5183). Version may follow "haiku" (haiku-4-5, haiku-4.5) or precede it
+// (claude-4.5-haiku, claude-3-5-haiku). Unversioned "haiku" keeps the old, safe downgrade.
+function isAdaptiveThinkingUnsupported(model = "") {
+  if (!/haiku/i.test(model)) return false;
+  const m = String(model).match(/haiku[-._]?(\d+)|(?<![\d.])(\d+)(?:[-._]\d+)?[-._]?haiku/i);
+  return m ? Number(m[1] || m[2]) < 5 : true;
+}
 
 function handlesThinkingBlocks(provider) {
   return provider === "claude" || provider?.startsWith("anthropic-compatible") || provider === "deepseek";
@@ -216,12 +222,12 @@ export function normalizeClaudePassthrough(body, model = "") {
   if (!body || typeof body !== "object") return body;
 
   // 1. Downgrade adaptive thinking for models that don't support it
-  if (body.thinking?.type === "adaptive" && ADAPTIVE_THINKING_UNSUPPORTED.test(model)) {
+  if (body.thinking?.type === "adaptive" && isAdaptiveThinkingUnsupported(model)) {
     body.thinking = { type: "enabled", budget_tokens: 10000 };
   }
 
   // 2. Strip effort param for models that don't support it (keep other output_config fields)
-  if (ADAPTIVE_THINKING_UNSUPPORTED.test(model) && body.output_config?.effort != null) {
+  if (isAdaptiveThinkingUnsupported(model) && body.output_config?.effort != null) {
     delete body.output_config.effort;
     if (Object.keys(body.output_config).length === 0) delete body.output_config;
   }
@@ -500,6 +506,23 @@ export function prepareClaudeRequest(body, provider = null, apiKey = null, conne
   const isAnthropicServing = provider === "claude" || provider?.startsWith?.("anthropic-compatible-");
   if (!isAnthropicServing) {
     delete body.context_management;
+  }
+
+  // Console API keys answer a "You are Claude Code" system block with a
+  // misleading "credit balance is too low" 400 (subscription-only identity).
+  // The OpenAI->Claude translator injects it for every Claude-format target.
+  if (provider === "anthropic" && body.system) {
+    // Anthropic only checks the leading block; these three trip it.
+    const isIdentity = (t) => typeof t === "string"
+      && /^(You are Claude Code|You are a Claude agent, built on Anthropic's Claude Agent SDK|x-anthropic-billing-header:)/.test(t.trim());
+    if (typeof body.system === "string") {
+      // Claude Code sends the identity as the first line(s) of a string system prompt.
+      const rest = body.system.split("\n").filter((line) => !isIdentity(line)).join("\n").trim();
+      if (rest) body.system = rest; else delete body.system;
+    } else if (Array.isArray(body.system)) {
+      body.system = body.system.filter((b) => !isIdentity(b?.text));
+      if (body.system.length === 0) delete body.system;
+    }
   }
 
   // Models whose API rejects thinking "disabled" and forced tool use with a 400

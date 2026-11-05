@@ -46,6 +46,9 @@ export const CAPACITY_META = {
   vision: { mark: "vision", label: "Vision", desc: "Supports image input" },
   // search: temporarily hidden (feature not wired yet)
   reasoning: { mark: "reasoning", label: "Reasoning", desc: "Supports reasoning / thinking" },
+  // `tools` is deliberately absent: it is true for almost every model, so a badge
+  // for it would print on every row and say nothing. A model that only has tools
+  // THROUGH the bridge is marked by the plugin mark instead.
   adaptiveThinking: { mark: "adaptiveThinking", label: "Adaptive Thinking", desc: "Adaptive Thinking & Multi-Framework Cognitive Architecture" },
   imageVision: { mark: "imageVision", label: "OCR Image", desc: "Auto Image-to-Text OCR Extractor" },
 };
@@ -110,5 +113,9 @@ export const PLUGIN_MARK_META = {
   imageVision: {
     label: "OCR Image",
     desc: "OCR Auto Image-to-Text: Transcribes and extracts text from attached images, allowing text-only models to process images",
+  },
+  openaiToolBridge: {
+    label: "Tool Calling",
+    desc: "Tool Calling Bridge: Folds the request's tools into the prompt and parses the model's own call back into standard tool_calls, giving function calling to upstreams that have none",
   },
 };

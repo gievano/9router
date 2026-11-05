@@ -33,19 +33,15 @@ function CompatibleModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias,
         </div>
         <div className="flex items-center gap-1 mt-1">
           <code className="text-xs text-text-muted font-mono bg-sidebar px-1.5 py-0.5 rounded">{fullModel}</code>
-          <div className="relative group/btn">
-            <button
-              onClick={() => onCopy(fullModel, `model-${modelId}`)}
-              className="p-0.5 hover:bg-sidebar rounded text-text-muted hover:text-primary"
-            >
-              <span className="material-symbols-outlined text-sm">
-                {copied === `model-${modelId}` ? "check" : "content_copy"}
-              </span>
-            </button>
-            <span className="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 text-[10px] text-text-muted whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity">
-              {copied === `model-${modelId}` ? "Copied!" : "Copy"}
+          <button
+            onClick={() => onCopy(fullModel, `model-${modelId}`)}
+            title={copied === `model-${modelId}` ? "Copied" : "Copy"}
+            className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all shrink-0"
+          >
+            <span className="material-symbols-outlined text-[14px]">
+              {copied === `model-${modelId}` ? "check" : "content_copy"}
             </span>
-          </div>
+          </button>
           {onTest && (
             <div className="relative group/btn">
               <button
@@ -198,9 +194,11 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
           progress: Math.round(((index + 1) / models.length) * 100),
         });
       }
-      if (importedCount === 0) {
-        alert("No new models were added.");
-      }
+      useTaskStore.getState().update(taskId, {
+        message: importedCount > 0 ? `Imported ${importedCount} models` : "No new models added",
+        progress: 100,
+        state: "done",
+      });
     } catch (error) {
       console.log("Error importing models:", error);
     } finally {

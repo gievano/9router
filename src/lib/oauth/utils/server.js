@@ -44,7 +44,7 @@ export function startLocalServer(onCallback, fixedPort = null) {
 </head>
 <body>
   <div class="container">
-    <div class="success">&#10003;</div>
+    <div class="success"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
     <h1>Authentication Successful</h1>
     <p id="message">Closing in <span id="countdown">3</span> seconds...</p>
   </div>
@@ -175,7 +175,9 @@ function escapeHtml(str) {
 
 function renderCodexResultPage(success, message) {
   const color = success ? "#22c55e" : "#ef4444";
-  const icon = success ? "&#10003;" : "&#10007;";
+  const icon = success ?
+    '<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' :
+    '<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
   const title = success ? "Authentication Successful" : "Authentication Failed";
   const safeMessage = escapeHtml(message);
   return `<!DOCTYPE html>
@@ -823,7 +825,9 @@ export function clearXiaomiMimoSession(state) {
 
 function renderXiaomiMimoResultPage(success, message) {
   const color = success ? "#22c55e" : "#ef4444";
-  const icon = success ? "&#10003;" : "&#10007;";
+  const icon = success ?
+    '<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' :
+    '<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
   const title = success ? "Authentication Successful" : "Authentication Failed";
   return `<!DOCTYPE html>
 <html>

@@ -8,7 +8,7 @@ import CapacityBadges from "./CapacityBadges";
 import ModelTierBadge from "./ModelTierBadge";
 import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
-import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, AI_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, getProviderAlias } from "@/shared/constants/providers";
+import { OAUTH_PROVIDERS, APIKEY_PROVIDERS, FREE_PROVIDERS, FREE_TIER_PROVIDERS, WEB_COOKIE_PROVIDERS, AI_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, getProviderAlias } from "@/shared/constants/providers";
 import { buildStudioTargetIndex } from "@/shared/utils/studioModelVisibility";
 import { fetchSuggestedModels } from "@/shared/utils/providerModelsFetcher";
 import { resolveProviderName, findOwningGroupId, humanizeCompatId } from "@/shared/utils/providerDisplay";
@@ -221,7 +221,7 @@ export default function ModelSelectModal({
         // Jev ids are free-tier but have no chat route (upstream answers
         // ModelProtocolUnsupported on /chat/completions for them), so they are
         // dropped here the same way the panel filter drops them.
-        return [id, Array.isArray(data) ? data.filter((m) => m?.isFree === true && m?.id !== "jev-1.13" && m?.id !== "jev-1.13-free" && m?.id !== "minimax-m3.1-flash-free") : []];
+        return [id, Array.isArray(data) ? data.filter((m) => (m?.isFree === true || m?.id?.endsWith("-free")) && m?.id !== "jev-1.13" && m?.id !== "jev-1.13-free" && m?.id !== "minimax-m3.1-flash-free") : []];
       })
     ).then((lists) => {
       if (cancelled) return;
@@ -385,6 +385,16 @@ export default function ModelSelectModal({
       ...compatibleNodeIds,    // Compatible nodes with user-added models
     ].filter((id) => !deactivatedProviderIds.has(id)));
 
+    // Built-in providers keyed by every alias they answer to, so a custom
+    // model can be traced back to the provider that owns it.
+    const registryIdByAlias = new Map();
+    for (const providerId of [...Object.keys(allProviders), ...Object.keys(WEB_COOKIE_PROVIDERS)]) {
+      for (const alias of [providerId, getProviderAlias(providerId)]) {
+        if (alias) registryIdByAlias.set(String(alias).toLowerCase(), providerId);
+      }
+    }
+    const registryIdForAlias = (alias) => (alias ? registryIdByAlias.get(String(alias).toLowerCase()) || null : null);
+
     // Sort by PROVIDER_ORDER
     const sortedProviderIds = [...providerIdsToShow].sort((a, b) => {
       const indexA = PROVIDER_ORDER.indexOf(a);
@@ -394,7 +404,12 @@ export default function ModelSelectModal({
 
     sortedProviderIds.forEach((providerId) => {
       const alias = getProviderAlias(providerId);
-      const providerInfo = allProviders[providerId] || { name: providerId, color: "#666" };
+      // Web-cookie providers live in their own registry bucket; without it the
+      // heading fell back to the storage alias ("gemini-web") and their real
+      // model list never reached the picker.
+      const registryInfo = allProviders[providerId] || WEB_COOKIE_PROVIDERS[providerId];
+      // An unregistered compatible node used to head its group with the raw id.
+      const providerInfo = registryInfo || { name: resolveProviderName(providerId) || providerId, color: "#666" };
       const isCustomProvider = isOpenAICompatibleProvider(providerId) || isAnthropicCompatibleProvider(providerId);
 
       // For provider-as-model kinds (webSearch/webFetch): emit a single entry where value === providerId
@@ -426,36 +441,20 @@ export default function ModelSelectModal({
             isCustom: true,
           }));
 
-        // For typed kinds, only include hardcoded typed models (aliases are typically LLM-only and lack type info)
+        // For typed kinds, only include user-added typed models (aliases are typically LLM-only and lack type info)
         let combined = aliasModels;
         if (kindFilter && TYPED_KINDS.has(kindFilter)) {
           const registeredTyped = customRegisteredModels.filter((m) => getModelKind(m) === kindFilter);
-          combined = [
-            ...registeredTyped,
-            ...getModelsByProviderId(providerId)
-            .filter((m) => getModelKind(m) === kindFilter)
-            .map((m) => ({ id: m.id, name: m.name, value: `${alias}/${m.id}`, kind: getModelKind(m) }))
-            .filter((m) => !registeredTyped.some((registered) => registered.value === m.value)),
-          ];
-          // Fallback: provider-as-model when no hardcoded models match (tts/image/webFetch only)
+          combined = [...registeredTyped];
+          // Fallback: provider-as-model when no user-added models match (tts/image/webFetch only)
           if (combined.length === 0 && ALLOW_PROVIDER_FALLBACK_KINDS.has(kindFilter)) {
             const supports = (providerInfo.serviceKinds || ["llm"]).includes(kindFilter);
             if (supports) combined = [{ id: providerId, name: providerInfo.name, value: alias }];
           }
         } else {
-          // LLM/null kind: merge hardcoded models (e.g. mimo-free → mimo-auto) with user-added models
+          // LLM/null kind: only show user-added models (registered + aliases)
           const registeredLlms = customRegisteredModels.filter((m) => !getModelKind(m) || getModelKind(m) === "llm");
-          const seen = new Set([...aliasModels, ...registeredLlms].map((m) => m.value));
-          const hardcoded = getModelsByProviderId(providerId)
-            .filter((m) => !getModelKind(m) || getModelKind(m) === "llm")
-            .map((m) => ({ id: m.id, name: m.name, value: `${alias}/${m.id}`, kind: getModelKind(m) }))
-            .filter((m) => !seen.has(m.value));
-          const liveFreeRows = (freeCatalogModels[providerId] || [])
-            .filter((m) => m?.id && !getModelKind(m))
-            .map((m) => ({ id: m.id, name: m.name || m.id, value: `${alias}/${m.id}` }))
-            .filter((m) => !seen.has(m.value) && !hardcoded.some((h) => h.value === m.value));
-          hardcoded.push(...liveFreeRows);
-          combined = [...registeredLlms, ...aliasModels.filter((m) => !registeredLlms.some((registered) => registered.value === m.value)), ...hardcoded];
+          combined = [...registeredLlms, ...aliasModels.filter((m) => !registeredLlms.some((registered) => registered.value === m.value))];
         }
 
         if (combined.length > 0) {
@@ -521,14 +520,8 @@ export default function ModelSelectModal({
         };
       } else {
         const liveModels = providerId === "cursor" ? cursorModels : providerId === "cline" ? clineModels : providerId === "clinepass" ? clinepassModels : [];
-        const baseModels = liveModels.length > 0 ? liveModels : getModelsByProviderId(providerId);
-        const liveFreeIds = new Set(baseModels.map((m) => m.id));
-        const hardcodedModels = [
-          ...baseModels,
-          ...(freeCatalogModels[providerId] || [])
-            .filter((m) => m?.id && !liveFreeIds.has(m.id))
-            .map((m) => ({ id: m.id, name: m.name || m.id })),
-        ];
+        // Only show user-added models; cursor/cline/clinepass show account models from their live APIs
+        const hardcodedModels = liveModels.length > 0 ? liveModels.map((m) => ({ id: m.id, name: m.name || m.id })) : [];
         const hardcodedIds = new Set(hardcodedModels.map((m) => m.id));
 
         // Custom models: if no hardcoded models (e.g. openrouter), show all aliases for this provider
@@ -552,7 +545,6 @@ export default function ModelSelectModal({
           .map((m) => ({ id: m.id, name: m.name || m.id, value: `${alias}/${m.id}`, isCustom: true, isFree: m.isFree }));
 
         const merged = [
-          ...hardcodedModels.map((m) => ({ id: m.id, name: m.name, value: `${alias}/${m.id}`, kind: getModelKind(m), isFree: m.isFree })),
           ...customAliasModels,
           ...customRegisteredModels,
         ];
@@ -620,6 +612,12 @@ export default function ModelSelectModal({
         // "OpenAI Compatible (xxxx)" heading via humanizeCompatId, so the
         // model is hidden instead of opening that group.
         if (isOrphanCompatAlias(modelAlias, providerNodes)) continue;
+        // A custom model whose built-in provider is not connected would open a
+        // group for a provider the user cannot route to: the heading names a
+        // provider that is absent from the dashboard, and the rows are dead.
+        // Compatible nodes are exempt - they legitimately live without a key.
+        const ownerProviderId = registryIdForAlias(modelAlias);
+        if (ownerProviderId && !providerIdsToShow.has(ownerProviderId)) continue;
         const entry = {
           id: m.id,
           name: m.name || m.id,
@@ -640,10 +638,11 @@ export default function ModelSelectModal({
         const groupId = modelAlias || "__custom";
         if (!groups[groupId]) {
           const node = providerNodes.find((n) => n.id === modelAlias);
+          const registryEntry = ownerProviderId ? allProviders[ownerProviderId] || WEB_COOKIE_PROVIDERS[ownerProviderId] : null;
           groups[groupId] = {
-            name: resolveProviderName(modelAlias, { node }) || "Custom Models",
+            name: resolveProviderName(modelAlias, { node, registry: registryEntry }) || "Custom Models",
             alias: modelAlias || "custom",
-            color: node?.color || CUSTOM_GROUP_COLOR,
+            color: node?.color || registryEntry?.color || CUSTOM_GROUP_COLOR,
             models: [],
             isCustom: true,
           };

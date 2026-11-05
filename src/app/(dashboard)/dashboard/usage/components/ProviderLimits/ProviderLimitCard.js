@@ -6,6 +6,7 @@ import ProviderIcon from "@/shared/components/ProviderIcon";
 import Badge from "@/shared/components/Badge";
 import QuotaProgressBar from "./QuotaProgressBar";
 import { calculatePercentage } from "./utils";
+import { humanizeCompatId } from "@/shared/utils/providerDisplay";
 
 const planVariants = {
   free: "default",
@@ -76,7 +77,7 @@ export default function ProviderLimitCard({
 
           <div>
             <h3 className="font-semibold text-text-primary">
-              {name || provider}
+              {name || humanizeCompatId(provider) || provider}
             </h3>
             {plan && (
               <Badge

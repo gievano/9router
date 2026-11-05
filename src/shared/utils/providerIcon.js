@@ -3,18 +3,18 @@
 
 const ICON_ALIASES = {
   mimocode: "xiaomi-mimo",
-  "opencode-v2": "opencode",
+  "gemini-web": "gemini",
+  "deepseek-web": "deepseek",
   "opencode-zen": "opencode",
+  "opencode-v2": "opencode",
   "perplexity-agent": "perplexity",
   "gitlab-duo": "gitlab",
   "vercel-ai-gateway": "vercel",
   "ollama-search": "ollama",
-  "deepseek-web": "deepseek",
-  "gemini-web": "gemini",
-  "kimi-web": "kimi",
   // MiniMax Code rides the existing MiniMax brand mark
   "minimax-code": "minimax",
   "minimax-code-global": "minimax",
+  zcode: "glm",
 };
 
 const TYPE_PREFIX_ALIASES = {

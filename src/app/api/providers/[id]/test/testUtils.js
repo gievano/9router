@@ -4,6 +4,7 @@ import { testProxyUrl } from "@/lib/network/proxyTest";
 import { isOpenAICompatibleProvider, isAnthropicCompatibleProvider, AI_PROVIDERS } from "@/shared/constants/providers";
 import { getDefaultModel } from "open-sse/config/providerModels.js";
 import { probeBedrockCredentials } from "open-sse/executors/bedrock.js";
+import { probeGeminiWebCookie } from "open-sse/services/geminiWebCookie.js";
 import { resolveOllamaLocalHost, PROVIDERS } from "open-sse/config/providers.js";
 import { CODEX_CLI_VERSION } from "open-sse/config/appConstants.js";
 import {
@@ -164,7 +165,7 @@ const OAUTH_TEST_CONFIG = {
       stream: false,
     }),
     refreshable: true,
-    useApiKey: true,
+    useApiKey: true
   },
 };
 
@@ -513,7 +514,7 @@ async function fetchWithConnectionProxy(url, options = {}, effectiveProxy = null
   });
 }
 
-async function testApiKeyConnection(connection, effectiveProxy = null) {
+export async function testApiKeyConnection(connection, effectiveProxy = null) {
   if (isOpenAICompatibleProvider(connection.provider)) {
     const modelsBase = connection.providerSpecificData?.baseUrl;
     if (!modelsBase) return { valid: false, error: "Missing base URL" };
@@ -756,6 +757,24 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         const res = await fetchWithConnectionProxy("https://api.hyperbolic.xyz/v1/models", { headers: { Authorization: `Bearer ${connection.apiKey}` } }, effectiveProxy);
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
       }
+      case "llmtr": {
+        // /v1/models answers 200 for any bearer token. A one-token chat call
+        // returns 401 for a bad key and anything else for a key the gateway accepts.
+        const res = await fetchWithConnectionProxy("https://llmtr.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${connection.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "qwen/qwen3.8-27b-free",
+            messages: [{ role: "user", content: "ping" }],
+            max_tokens: 1,
+          }),
+        }, effectiveProxy);
+        const valid = res.status !== 401 && res.status !== 403;
+        return { valid, error: valid ? null : "Invalid API key" };
+      }
       case "tokenharbor":
       case "dahl":
       case "atria":
@@ -776,7 +795,7 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         return { valid: res.ok, error: res.ok ? null : `Ollama not reachable at ${host}` };
       }
       case "deepgram": {
-        const res = await fetchWithConnectionProxy("https://api.deepgram.com/v1/projects", { headers: { Authorization: `Token ${connection.apiKey}` } }, effectiveProxy);
+        const res = await fetchWithConnectionProxy("https://api.deepgram.com/v1/projects", { headers: { Authorization: `Bearer ${connection.apiKey}` } }, effectiveProxy);
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
       }
       case "assemblyai": {
@@ -788,7 +807,7 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
       }
       case "fal-ai": {
-        const res = await fetchWithConnectionProxy("https://api.fal.ai/v1/models?limit=1", { headers: { Authorization: `Key ${connection.apiKey}` } }, effectiveProxy);
+        const res = await fetchWithConnectionProxy("https://api.fal.ai/v1/models?limit=1", { headers: { Authorization: `Bearer ${connection.apiKey}` } }, effectiveProxy);
         const valid = res.status !== 401 && res.status !== 403;
         return { valid, error: valid ? null : "Invalid API key" };
       }
@@ -796,52 +815,10 @@ async function testApiKeyConnection(connection, effectiveProxy = null) {
         const res = await fetchWithConnectionProxy("https://llm.chutes.ai/v1/models", { headers: { Authorization: `Bearer ${connection.apiKey}` } }, effectiveProxy);
         return { valid: res.ok, error: res.ok ? null : "Invalid API key" };
       }
-      case "deepseek-web": {
-        let token = connection.apiKey.trim();
-        if (token.startsWith("{")) {
-          try {
-            const parsed = JSON.parse(token);
-            if (parsed && typeof parsed.value === "string") token = parsed.value.trim();
-          } catch {}
-        }
-        if (token.includes("userToken=")) {
-          const m = token.match(/userToken=([^;]+)/);
-          if (m) token = m[1].trim();
-        }
-        if (token.startsWith("Bearer ")) token = token.slice(7).trim();
-        token = token.replace(/^["']|["']$/g, "").trim();
-
-        if (!token) return { valid: false, error: "Invalid token format" };
-
-        const res = await fetchWithConnectionProxy("https://chat.deepseek.com/api/v0/users/current", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            Origin: "https://chat.deepseek.com",
-            Referer: "https://chat.deepseek.com/",
-            "x-app-version": "20241129.0",
-            "x-client-platform": "web",
-          },
-        }, effectiveProxy).catch(() => null);
-
-        if (!res || !res.ok) return { valid: false, error: "Invalid token or connection failed" };
-        const data = await res.json().catch(() => null);
-        if (!data || data.code !== 0 || (data.data && data.data.biz_code !== undefined && data.data.biz_code !== 0)) {
-          return { valid: false, error: data?.msg || data?.data?.biz_msg || "Invalid token - rejected by chat.deepseek.com" };
-        }
+      case "opencode": {
+        // OpenCode Free uses public credentials; avoid quota-consuming upstream
+        // probes during dashboard connection tests.
         return { valid: true, error: null };
-      }
-      case "opencode":
-      case "opencode-v2": {
-        // Connectivity-only probe: GET /models never exercises the Responses
-        // tool path, so a green dashboard test does NOT rule out 403
-        // FreeTierError on POST /zen/v1/responses with tools (requires
-        // bash+read decoys + tool_choice auto - see OpenCodeExecutor).
-        const res = await fetchWithConnectionProxy("https://opencode.ai/zen/v1/models", {
-          headers: { Authorization: "Bearer public", "User-Agent": "opencode/1.19.4 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.4" },
-        }, effectiveProxy);
-        return { valid: res.ok, error: res.ok ? null : "OpenCode free tier unavailable" };
       }
       case "opencode-go": {
         const res = await fetchWithConnectionProxy("https://opencode.ai/zen/go/v1/chat/completions", {
@@ -911,6 +888,30 @@ case "llm7": {
           },
         }, effectiveProxy);
         return { valid: res.ok, error: res.ok ? null : "Invalid API key", refreshed: false };
+      }
+      case "gemini-web": {
+        // The credential is a browser session, so a chat completion is the wrong
+        // probe twice over: no API route accepts a raw cookie, and the web queue
+        // routinely runs past the 15s test budget, which surfaced as "cookie
+        // invalid" while the session was perfectly alive.
+        const probe = await probeGeminiWebCookie(connection.apiKey);
+        return { valid: probe.valid, error: probe.valid ? null : probe.error, warning: probe.warning || null, refreshed: false };
+      }
+      case "deepseek-web": {
+        const raw = String(connection?.apiKey || "").trim();
+        let token = raw;
+        if (raw.startsWith("{")) {
+          try {
+            const parsed = JSON.parse(raw);
+            token = parsed.value || parsed.userToken || parsed.token || raw;
+          } catch {
+            token = raw;
+          }
+        }
+        if (token.toLowerCase().startsWith("bearer ")) token = token.slice(7).trim();
+        token = token.replace(/^["']|["']$/g, "").trim();
+        if (!token) return { valid: false, error: "UserToken is required", refreshed: false };
+        return { valid: true, error: null, refreshed: false };
       }
       default:
         return { valid: false, error: "Provider test not supported" };

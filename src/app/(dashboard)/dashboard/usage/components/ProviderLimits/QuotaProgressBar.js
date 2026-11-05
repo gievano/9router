@@ -9,8 +9,7 @@ const getColorClasses = (remainingPercentage) => {
     return {
       text: "text-green-500",
       bg: "bg-green-500",
-      bgLight: "bg-green-500/10",
-      emoji: "🟢"
+      bgLight: "bg-green-500/10"
     };
   }
 
@@ -18,8 +17,7 @@ const getColorClasses = (remainingPercentage) => {
     return {
       text: "text-yellow-500",
       bg: "bg-yellow-500",
-      bgLight: "bg-yellow-500/10",
-      emoji: "🟡"
+      bgLight: "bg-yellow-500/10"
     };
   }
 
@@ -27,8 +25,7 @@ const getColorClasses = (remainingPercentage) => {
   return {
     text: "text-red-500",
     bg: "bg-red-500",
-    bgLight: "bg-red-500/10",
-    emoji: "🔴"
+    bgLight: "bg-red-500/10"
   };
 };
 

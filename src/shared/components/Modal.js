@@ -88,7 +88,7 @@ export default function Modal({
                       title="Close"
                       className="chrome-focus w-4 h-4 rounded-full bg-[#FF5F56] hover:brightness-90 transition-[filter] duration-[var(--motion-fast)] flex items-center justify-center group/dot"
                     >
-                      <span className="text-[9px] font-bold text-white opacity-0 group-hover/dot:opacity-100 transition-opacity leading-none">✕</span>
+                      <span className="material-symbols-outlined text-[11px] font-bold text-white opacity-0 group-hover/dot:opacity-100 transition-opacity leading-none">close</span>
                     </button>
                   </Tooltip>
                   {/* Inert traffic-light decorations; colour comes from .chrome-inert. */}

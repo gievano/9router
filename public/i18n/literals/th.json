@@ -925,7 +925,7 @@
   "Reading from Cursor IDE database": "อ่านจาก Cursor IDE database",
   "Ready": "พร้อม",
   "Ready to Simplify Your AI Infrastructure?": "พร้อมที่จะทำให้ AI infrastructure ของคุณง่ายขึ้น?",
-  "Ready to route! ✓": "พร้อม route แล้ว! ✓",
+  "Ready to route!": "พร้อม route แล้ว!",
   "Ready! Requests route automatically through your configured providers.": "พร้อมแล้ว! Requests จะ route อัตโนมัติผ่าน providers ที่คุณกำหนดค่าไว้",
   "Reasoning": "Reasoning",
   "Reasoning:": "Reasoning:",
@@ -1383,11 +1383,10 @@
   "→ OpenAI": "→ OpenAI",
   "→ Target": "→ Target",
   "→ localhost": "→ localhost",
-  "⚠️ Enable DNS to edit model mappings": "⚠️ เปิดใช้งาน DNS เพื่อแก้ไข model mappings",
-  "⚠️ Local plugins run as subprocess via": "⚠️ Local plugins ทำงานในฐานะ subprocess ผ่าน",
-  "⚠️ MITM intercepts HTTPS traffic of IDE tools (Antigravity, GitHub Copilot, Kiro) via local CA to redirect requests to your providers. May violate ToS → account ban. Use at your own risk.": "⚠️ MITM ดักจับ HTTPS traffic ของ IDE tools (Antigravity, GitHub Copilot, Kiro) ผ่าน local CA เพื่อ redirect requests ไปยัง providers ของคุณ อาจละเมิด ToS → บัญชีถูกแบน ใช้ด้วยความเสี่ยงของคุณเอง",
-  "⚠️ Risk Notice: This provider uses a subscription/OAuth session not officially licensed for proxy/router use. Account may be restricted or banned. Use at your own risk.": "⚠️ ประกาศความเสี่ยง: Provider นี้ใช้ subscription/OAuth session ที่ไม่ได้รับอนุญาตอย่างเป็นทางการสำหรับการใช้งาน proxy/router บัญชีอาจถูกจำกัดหรือแบน ใช้ด้วยความเสี่ยงของคุณเอง",
-  "✓ Confirm Add": "✓ ยืนยันการเพิ่ม",
-  "📝 Configure providers in dashboard or use environment variables": "📝 กำหนดค่า providers ใน dashboard หรือใช้ environment variables",
-  "🔐 OAuth required. Add now and authenticate after Apply; tool list will be discovered after first connect.": "🔐 ต้องใช้ OAuth เพิ่มตอนนี้แล้ว authenticate หลัง Apply; รายการเครื่องมือจะถูกค้นพบหลังการเชื่อมต่อครั้งแรก"
+  "Local plugins run as subprocess via": "Local plugins ทำงานในฐานะ subprocess ผ่าน",
+  "MITM intercepts HTTPS traffic of IDE tools (Antigravity, GitHub Copilot, Kiro) via local CA to redirect requests to your providers. May violate ToS → account ban. Use at your own risk.": "MITM ดักจับ HTTPS traffic ของ IDE tools (Antigravity, GitHub Copilot, Kiro) ผ่าน local CA เพื่อ redirect requests ไปยัง providers ของคุณ อาจละเมิด ToS → บัญชีถูกแบน ใช้ด้วยความเสี่ยงของคุณเอง",
+  "Risk Notice: This provider uses a subscription/OAuth session not officially licensed for proxy/router use. Account may be restricted or banned. Use at your own risk.": "ประกาศความเสี่ยง: Provider นี้ใช้ subscription/OAuth session ที่ไม่ได้รับอนุญาตอย่างเป็นทางการสำหรับการใช้งาน proxy/router บัญชีอาจถูกจำกัดหรือแบน ใช้ด้วยความเสี่ยงของคุณเอง",
+  "Confirm Add": "ยืนยันการเพิ่ม",
+  "Configure providers in dashboard or use environment variables": "กำหนดค่า providers ใน dashboard หรือใช้ environment variables",
+  "OAuth required. Add now and authenticate after Apply; tool list will be discovered after first connect.": "ต้องใช้ OAuth เพิ่มตอนนี้แล้ว authenticate หลัง Apply; รายการเครื่องมือจะถูกค้นพบหลังการเชื่อมต่อครั้งแรก"
 }

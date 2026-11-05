@@ -1,6 +1,654 @@
-# v0.5.317-Custom (sync upstream v0.5.317)
+# v0.5.374-Custom (sync upstream v0.5.374)
 
-Fork gievano/9router - sync 74 commit upstream (v0.5.258 -> v0.5.317) + custom: provider freebuff, mimocode, SSE-stall fallback console-log.
+Fork gievano/9router - sync 78 commit upstream (v0.5.317 -> v0.5.374) + custom: provider freebuff, mimocode, SSE-stall fallback console-log.
+
+## CLI Tools logo tiles — transparent background, logo only
+- The logo tile in the CLI Tools summary cards and the per-tool setup header
+  carried `bg-bg-secondary`, which renders as a white-tinted glass box
+  (`rgba(255,255,255,0.11)`) behind every provider logo — that's the white
+  background the user kept seeing. Removed the tile background and border
+  entirely; each card now shows just the provider logo on the card surface.
+
+# v0.5.373 (2026-11-05) · 1 commit
+
+## Runcrate — real logo instead of the RC text tile
+- Fetched the Runcrate brand mark from runcrate.ai (favicon) and shipped it as a
+  transparent `public/providers/runcrate.png` (256px) — the provider previously
+  fell back to the `RC` text fallback in the logo tile.
+
+# v0.5.372 (2026-11-05) · 1 commit
+
+## 9router sidebar logo — replaced with the new brand mark
+- Swapped the sidebar logo asset to the updated 9router mark the user provided
+  (`public/providers/9router-logo.png`), replacing the earlier 4 MB image with a
+  295 KB square glyph. Renders transparent at 36×36 in the sidebar header.
+
+# v0.5.371 (2026-11-05) · 1 commit
+
+## Provider logos — transparent backgrounds, uniform size, 9router + LLMTR marks
+- **9router sidebar logo**: replaced the gradient `hub` icon tile with the
+  official 9router brand mark (`public/providers/9router-logo.png`) the user
+  provided — rendered transparent in the sidebar header.
+- **Stripped baked backgrounds** from 21 provider logos that shipped with opaque
+  white/coloured boxes (`droid`, `roo`, `kiro`, `forge`, `openclaw`, `oai-cc`,
+  `oai-r`, `poolside`, `mimocode`, `xiaomi-mimo`, `xiaomi-tokenplan`, and
+  others) — corners are now transparent so they sit cleanly on the glass theme.
+  Logos whose mark is same-colour as the bg (would be destroyed by stripping)
+  are left intact.
+- **Uniform logo size**: CLI Tools cards and the providers menu now render every
+  provider logo with `object-cover` filling a fixed tile (44px / 32px), so all
+  logos appear the same size regardless of source aspect ratio.
+- **LLMTR logo**: fetched the official LLMTR brand mark from llmtr.com
+  (`favicon.svg`) and rendered it as a transparent `public/providers/llmtr.png`
+  — it previously fell back to the `LT` text tile.
+
+# v0.5.370 (2026-11-04) · 1 commit
+
+## CLI Tools provider logos — uniform, larger, no background tint
+- Every CLI tool card logo now fills the whole icon tile (`object-cover`, 44px)
+  so all logos render at the same size regardless of their source aspect ratio —
+  previously they were 28px `object-contain` and varied in size.
+- Dropped the brand-color background tint on the icon tile (used the neutral
+  `bg-bg-secondary` surface) so transparent logos sit cleanly instead of on a
+  coloured box. Applies to both the summary grid cards and the per-tool setup
+  header.
+
+# v0.5.369 (2026-11-04) · 1 commit
+
+## CLI Tools dashboard — richer setup cards
+- **Tool summary cards redesigned**: each CLI tool card now shows the tool's
+  description (was hidden), wraps its icon in a brand-colored rounded tile
+  (8% background + matching border from the tool's brand colour), and gets a
+  status badge with a coloured dot plus a hover lift (`elev-2` shadow) and a
+  chevron nudge on hover.
+- **Setup detail cards**: the expandable per-tool setup header uses the same
+  brand-colored icon tile for visual consistency with the summary grid.
+
+# v0.5.368 (2026-11-04) · 1 commit
+
+## CodeBuddy Intl OAuth login fix, 4 upstream PRs ported, Kimi Code CLI setup
+- **Fix CodeBuddy Intl OAuth login**: the intl OAuth endpoints pointed at
+  `www.codebuddy.ai`, which is blackholed (DNS → 0.0.0.1) — login failed at the
+  device-code step. Repointed the OAuth state/token/refresh URLs and the
+  `X-Domain` identity header to the live `www.workbuddy.ai` endpoint set
+  (verified: POST /v2/plugin/auth/state returns 200). Applies to the registry,
+  the OAuth provider flow, the token-refresh service, and the intl executor
+  comment. CN (`copilot.tencent.com`) was already healthy and is untouched.
+- **Port upstream PR #5431 — Anthropic API-key system identity drop**: on the
+  `anthropic` provider, any leading "You are Claude Code" / Claude Agent SDK /
+  `x-anthropic-billing-header` identity block now trips a misleading "credit
+  balance is too low" 400. `prepareClaudeRequest()` strips the leading identity
+  text/block for the API-key `anthropic` provider only (OAuth `claude` and
+  `anthropic-compatible-*` nodes untouched).
+- **Port upstream PR #5432 — Anthropic live model catalog**: registered
+  `anthropic` in `LIVE_MODEL_RESOLVERS`; `/v1/models` now fetches the key's
+  live catalog from `api.anthropic.com/v1/models?limit=1000` (falls back to the
+  static list on failure or when an explicit `enabledModels` list exists).
+- **Port upstream PR #5458 — LLMTR provider**: new `llmtr` OpenAI-compatible
+  gateway provider (alias `lt`), API-key validation via one-token chat probe,
+  live model catalog resolution, and reasoning-as-boolean coercion. Resolved the
+  registry-index, paramSupport, baseline and golden-snapshot conflicts against
+  the fork's custom provider set.
+- **Port upstream PR #5423 — Headroom reliability**: resolve symlinked venvs for
+  Python 3.14 detection, reclaim listening ports on restart, strict process
+  identity verification, reject external proxy URLs, and rewrite dashboard proxy
+  assets/API endpoints (fetchJson, /stats, /health, /settings) with a styled 503
+  fallback.
+- **Kimi Code setup in CLI Tools**: added a `kimi-code` guide card to the CLI
+  Tools dashboard — install (`curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash`
+  or `npm install -g @moonshot-ai/kimi-code`), 9Router base URL + API key, model
+  picker, and a ready-to-paste `~/.kimi-code/config.toml` provider+models block
+  (OpenAI-compatible type).
+
+# v0.5.367 (2026-11-04) · 1 commit
+
+## Background loading-in-the-bell: all surfaces verified, stale tests fixed
+The bell now carries every long operation — batch testing, backup/import, bulk
+key imports, Codex/Grok accounts import, Qoder/Cline model imports and proxy
+import — while the operator clicks around and switches menus. The feature was
+already wired across all six surfaces; several tests that guard it could not
+run because they read files from `process.cwd()` (the tests dir) instead of the
+repo root, and a couple asserted removed patterns.
+- **Test paths anchored to the repo root** (`resolve(__dirname, "../..")`) in
+  `bell-all-loading`, `bell-done`, `notification-links`, `model-import`,
+  `dashboard-six`, `shutdown-gate`, `context-install` and `update-banner-anim`
+  — previously all failed at collection with `ENOENT`.
+- **`studio-banner-update`**: the proxy import now cancels via a server-side
+  dashboard job (`cancelProxyImportJob`) rather than a client `AbortController`;
+  the assertion now checks the job-cancel contract.
+- **`shutdown-gate`**: dropped the stale `canChangeTheme` sibling check (the
+  theme switcher was removed with the glass-only theme lock) and asserts no
+  removed rule is referenced.
+- **`dashboard-six`**: replaced the model-benchmark block (feature removed with
+  Custom Plugins) with a guard that the benchmark files no longer ship.
+- Suite result: 8 previously-broken suites now green; full unit run fell
+  176 → 168 failures, all remaining being pre-existing network / macOS /
+  integration-environment tests unrelated to the bell.
+
+# v0.5.366 (2026-11-04) · 1 commit
+
+## Changelog UI: composite category headings now render in colour
+The changelog modal painted every unrecognised category heading grey with a
+"help" icon instead of the usual coloured "WHAT'S …?" pill. Headings the fork
+writes like `Providers & Usage Fixes`, `Providers & UI`, `UI & Theme System`,
+`Documentation & Maintenance`, `Features & Cleanup` and the `Upstream … Port`
+release-section titles fell through to the unknown-category fallback.
+- Added the missing composite aliases to `CATEGORY_ALIAS` so they collapse to a
+  coloured category: `Providers & Usage Fixes` → Fixes, `Providers & UI` /
+  `UI & Theme System` / `UI & Visual Design` → UI, `Documentation & Maintenance`
+  → Docs, `Providers & Features` / `Features & Cleanup` / `Features & Improvements`
+  → Features, `Providers & Web Cookie` → Features, `Testing` / `Upstream … Port`
+  / `OpenCode Free lane divergence clean-up` → Internal.
+- Verified with the shipped guard: the category-style suite confirms **no
+  heading in CHANGELOG.md renders with the grey unknown fallback**.
+
+# v0.5.365 (2026-11-04) · 1 commit
+
+## OpenCode Free lane divergence clean-up (post-v0.5.112 port)
+The fork's "OpenCode Free" card is a two-lane toggle behind `OpenCodeLaneExecutor`
+(V1 CLI lane / V2 direct TLS lane). The ported tests still asserted the single-
+executor era's contract, so they failed against the current split.
+- **`_tryCliExecute` no longer crashes on a Responses-shaped body**: the CLI
+  prompt formatter call moved inside the try/catch, so a body it can't format
+  falls through to the fetch path instead of throwing a `TypeError` on
+  `dialogMsgs[0].text`. This is a real runtime bug — a request with an `input[]`
+  body used to crash when a host `opencode` binary was present.
+- **Session/UA wire tests point at the CLI executor explicitly** (`OpenCodeExecutor`),
+  since the lane shell's sync delegates default to the V2/direct lane. The
+  sidecar-spawning `execute` assertion was rewritten as a request-preparation
+  check (session + bearer auth minted, source credentials unmutated).
+- **Fingerprint tests updated to the current gate contract**: the free tier
+  requires the `<env>` marker, so `instructions`/first `messages`/`system`
+  carry it; the "placeholder note" is only suppressed when the caller already
+  brings the exact fingerprint definitions.
+- Unit result: the 5 opencode suites (92 tests) are green; full suite fell
+  178 → 176 pre-existing failures (none from this change).
+
+# v0.5.364 (2026-11-03) · 1 commit
+
+## Upstream Port Completion (decolua/9router v0.5.112)
+- **System One URL Normalization**:
+  - Added `buildSystemoneUrl()`: a saved host override is now joined with the registry `path` without doubling an existing `/v1` or `/v1/systemone` segment.
+  - Restricted the `x-opencode-session` header to the OpenCode lanes (`opencode`, `opencode-zen`) — other System One providers no longer receive a foreign client session id.
+- **Lazy Runtime (published-build fix, upstream `e70ea24d`)**:
+  - Resolves `createRequire` through a runtime `import()` with `webpackIgnore`, anchors npm to a generated manifest inside the runtime dir, and turns a partially-extracted install into an actionable error instead of a silent failure.
+- **Codex GPT-6.1 Terra pricing corrected** to the published official rate (input 1.00 / output 5.00 / cached 0.05).
+- **Test coverage restored for the port**:
+  - Added the upstream suites for GitHub Copilot Claude 5.5 thinking rules and CodeBuddy channel headers; added the GPT-6.1 Terra cases to the Codex Lite suite.
+  - CodeBuddy pairing assertion now follows the fork's desktop-client capture (X-Request-ID pairs with X-Conversation-Message-ID), and the Codex header-version assertion reads the live `CODEX_CLI_VERSION` instead of a stale literal.
+
+# v0.5.363 (2026-11-03) · 1 commit
+
+## Upstream Feature Port (decolua/9router v0.5.112)
+- **MiniMax Code (Desktop Lease Mode)**:
+  - Added lease auth mode that connects to the official desktop app sign-in via Unix domain socket / named pipe broker.
+  - Added MinimaxLeaseButton to the dashboard provider connection controls and automated usage tracking.
+- **Nace Drex Provider**:
+  - Registered `nace` provider in System One lane with models `drex`, `drex-v2.0`, and `drex-max`.
+- **Codex GPT-6.1 Terra**:
+  - Added `gpt-6.1-terra` to Codex responses-lite catalog with GPT-6-Lite thinking levels and 500k context window.
+- **CommandCode CLI 1.88.0 Sync**:
+  - Unified request headers (`User-Agent: cli`, version `1.88.0`, `x-cli-environment: production`, `x-project-slug`) and conversation-stable thread session UUID mapping.
+- **Upstream Fixes & Enhancements**:
+  - **Noble-Hashes Keccak PoW**: Replaced vendored DeepSeek PoW hash with lightweight, optimized noble-hashes keccak port.
+  - **GitHub Copilot Claude 5.5**: Applied Claude 5.5 adaptive thinking rules to Copilot's dotted model IDs (`claude-opus-5.5*`, `claude-sonnet-5.5`, `claude-haiku-5.5`).
+  - **CodeBuddy Channel Verification**: Injected official plugin `X-Request-ID` and `X-Conversation-ID` headers to prevent HTTP 400 illegal request errors.
+  - **NVIDIA NIM Reasoning**: Normalized `reasoning` parameter aliases to `reasoning_content` before forwarding.
+  - **Gemini Protobuf Schema Predicates**: Enforced type predicates on array items and properties in schema conversions.
+  - **Non-Streaming SSE Errors**: Transparently surface upstream HTTP errors (4xx/5xx) from SSE error frames instead of converting to generic 502.
+  - **Muse Multi-Pipe Key Preservation**: Keep `LLM|id|secret` key format opaque during bulk-add.
+
+# v0.5.362 (2026-11-02) · 1 commit
+
+## Features & Improvements
+- **Remove Unused Quota Check**:
+  - Removed the unused `Quota check` toggle and `/credits` quota path input from both `AddCompatibleModal` and `EditCompatibleNodeModal`.
+- **Fix Custom Provider "Import from /models"**:
+  - Automatically resolve base URL from the provider node when connection-specific base URL is empty.
+  - Added support for proxy routing (`resolveConnectionProxyConfig` + `proxyAwareFetch`) when importing models for custom OpenAI and Anthropic compatible providers.
+  - Normalized diverse response structures (`data`, `models`, or bare array) so models are correctly parsed and imported into the custom catalog.
+- **Background Task Non-Blocking Navigation**:
+  - Modals for bulk operations (`BulkImportCodexModal`, `BulkImportGrokCliModal`, `AddApiKeyModal`) now dismiss upon kickoff, allowing seamless tab navigation while tracking progress in the notification bell (`useTaskStore`).
+  - Swapped intrusive blocking browser `alert()` popups during model imports for silent task store progress and completion updates in the notification bell.
+- **Bulk Proxy Import Performance & Immediate Feedback**:
+  - Chunked proxy pool bulk insertions into batches of 50 via `createProxyPools` in a transaction.
+  - Scheduled frequent intermediate progress updates and yielded to the event loop so the notification bell reflects import progress instantly without delay or frozen sockets.
+
+# v0.5.361 (2026-11-02) · 1 commit
+
+## Documentation & Maintenance
+- **Evergreen Routing Overview in README**:
+  - Replaced hardcoded provider table lists with high-level conceptual connection tiers (OAuth & Device Auth, Direct API Keys, Free Tier Relays, Web Cookie Sessions, and Local/Self-Hosted).
+  - Completely removed volatile lists of individual provider brand names from `README.md` so the documentation stays permanently fresh without needing manual updates when providers are added or removed.
+
+# v0.5.360 (2026-11-02) · 1 commit
+
+## UI & Visual Design
+- **Redesign Z.ai / ZCode Brand Icon**:
+  - Replaced the dull, shrunken asset with an official high-contrast Z.ai royal cobalt-blue squircle badge (`glm.png`, `glm-cn.png`, `zcode.png`).
+  - Balanced glyph proportions, increased scale, and applied smooth rounded squircle geometry so the icon matches other premier provider logos.
+
+# v0.5.359 (2026-11-02) · 1 commit
+
+## Documentation & Maintenance
+- **Evergreen README Restructure**:
+  - Replaced the volatile "What this fork adds" section with timeless "Architecture & Core Design" documentation covering protocol adaptation, unified credentials, routing policies, and enterprise controls.
+  - Offloaded all version-specific changelog details exclusively to `CHANGELOG.md` so the main README never requires recurring manual edits.
+
+# v0.5.358 (2026-11-02) · 1 commit
+
+## UI & Visual Design
+- **Official Z.ai Logo for ZCode**:
+  - Replaced ZCode / GLM brand assets with the official Z.ai vector brand mark (`glm.png`, `glm-cn.png`, `zcode.png`).
+  - Rendered with transparent background and high-resolution geometry matching Z.ai's official brand guidelines.
+
+# v0.5.357 (2026-11-02) · 1 commit
+
+## Documentation & Maintenance
+- **Changelog Date Alignment**:
+  - Audited and updated release dates in `CHANGELOG.md` to match exact commit timestamps (`2026-11-02`).
+  - Aligned chronological entries for v0.5.353 through v0.5.356.
+
+# v0.5.356 (2026-11-02) · 1 commit
+
+## UI & Visual Design
+- **Rounded Corners for Provider Logos**:
+  - Added gentle rounded corners (`rounded-xl` / `rounded-2xl`) directly to `ProviderIcon` and provider header images.
+  - Eliminated sharp square edges on all logo images across provider lists, model selectors, and detail pages.
+
+# v0.5.355 (2026-11-02) · 1 commit
+
+## UI & Visual Design
+- **Transparent Background for Provider Logos**:
+  - Removed container background color tint (`style={{ backgroundColor: ... }}`) across all provider cards and detail headers.
+  - Logos now render cleanly on a fully transparent background, blending seamlessly into the glass dashboard theme.
+
+# v0.5.354 (2026-11-02) · 1 commit
+
+## UI & Visual Design
+- **Complete Refresh of Provider Logos**:
+  - Replaced over 85 provider icons with modern, high-resolution official brand marks sourced from LobeHub AI Icons and SVGL vector libraries.
+  - Standardized transparency, aspect ratios, and padding across all AI labs, cloud hyperscalers, and code editor providers (OpenAI, Anthropic, Gemini, DeepSeek, Groq, xAI, Qwen, Z.ai/Zhipu, Mistral, Perplexity, Cohere, Meta, Azure, AWS Bedrock, Cloudflare, etc.).
+  - Preserved internal and tool-specific assets intact with high-fidelity fallbacks.
+
+# v0.5.353 (2026-11-02) · 1 commit
+
+## Providers & Features
+- **ZCode Promotional Bonus Claim System**:
+  - Added `zcodeClaimService.js` to preview and claim ZCode promotional token plans (e.g. `ZCODE WEEKEND BUILD`, `Trust Build`).
+  - Added `/api/providers/glm/bonus` endpoint for detecting and claiming bonuses directly from connected ZCode accounts.
+  - Implemented desktop client request emulation with `X-Device-Mid`, `X-ZCode-App-Version`, and headless browser Aliyun verification fallback.
+  - Added dedicated Bonus Voucher card and 1-click "Claim Bonus" button in the ZCode (`glm`) provider dashboard.
+
+# v0.5.352 (2026-11-01) · 1 commit
+
+## Providers & Web Cookie
+- **Remove Z.ai Web Cookie Provider (`zai-web`)**:
+  - Removed `zai-web` provider registry, executor, browser transport, and unit tests cleanly.
+  - Purged all references in UI modals, test utils, probe budgets, and settings repos.
+- **Add DeepSeek Web Cookie Provider (`deepseek-web`)**:
+  - Registered `deepseek-web` under the Web Cookie category with full SHA3-256 / DeepSeekHashV1 PoW challenge solver and SSE parser.
+  - Added native support for full model catalogue: `deepseek-chat` (V3 / V4.1), `deepseek-reasoner` (R1 / V4.1 Thinking), `deepseek-v4.1-flash`, `deepseek-v4.1-pro`, `deepseek-v4.1-reasoner`, `deepseek-v3`, and `deepseek-r1`.
+  - Added OpenAI-compatible tool calling bridge support (`deepseekWebToolBridge.js`) and in-page toggle banner with dynamic DB settings integration.
+  - Added connection testing, validation routes, and UI session credential placeholders (`userToken`).
+- **Update ZCode Integration**:
+  - Refined `glm` provider as official `ZCode (Z.ai GLM)` with dual-auth (OAuth CLI polling flow + GLM Coding Plan API Key) supporting both OpenAI and Anthropic Claude formats.
+
+# v0.5.351 (2026-11-01) · 1 commit
+
+## Providers & Infrastructure
+- **Z.ai Web Browser Transport (Playwright Integration)**:
+  - Fixed runtime resolution of Playwright for Z.ai browser transport by lazily resolving installed browser drivers from `/root/shot/node_modules` without triggering Webpack static bundle errors.
+  - Added essential Linux container Chromium launch flags (`--no-sandbox`, `--disable-setuid-sandbox`) to allow headless browser automation in root environments.
+  - Ensured reliable fallback to Playwright bundled Chromium when system browser channels are absent.
+
+# v0.5.350 (2026-11-01) · 1 commit
+
+## Providers & UI
+- **Gemini Web Cookie Info Banner**:
+  - Added notice text to `gemini-web` provider registry with explicit instructions for extracting `__Secure-1PSID` and optional `__Secure-1PSIDTS` cookies.
+  - Aligned blue info banner appearance across both `gemini-web` and `zai-web` web cookie providers.
+  - Changed action link text from generic "Get API Key" to "Open Web" for web cookie providers.
+
+# v0.5.349 (2026-11-01) · 1 commit
+
+## UI & Theme System
+- **Enforce glass theme exclusively across the dashboard**:
+  - Removed theme switch button and `ThemeModal` completely from `HeaderMenu` and component tree.
+  - Locked site-wide theme strictly to `glass` across `themeStore`, `ThemeProvider`, RootLayout, `settingsRepo`, and `/api/theme`.
+  - Removed 'dark' theme option and ensured `<html class="dark glass">` is applied prior to first paint.
+  - Comprehensive design system audit: eliminated ad-hoc raw colors, replaced hardcoded dark-mode utility classes with official semantic tokens (`bg-surface`, `bg-surface-2`, `bg-surface-3`, `border-border`, `border-border-subtle`, `text-success`, `text-warning`, `text-info`, `text-danger`).
+  - Strengthened frosted borders and backdrop blur for cards, dialogs, and panels under the glass theme in `globals.css`.
+
+## Providers & Usage Fixes
+- **Web Cookie Token Usage Tracking (Fix Output Tokens 0)**:
+  - Added fallback character and token counting logic in `usageTracking.js`, `gemini-web.js`, `webCookieToolBridge.js`, and stream/non-stream handlers so completion tokens are accurately estimated and logged in `usageHistory` even when web providers return 0 tokens.
+- **Gemini Web Cookie Models**:
+  - Validated and audited full model catalogue (`gemini-3.8-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-pro`, `gemini-4-argon`, and all `-thinking` variants).
+  - Verified active Google RPC HEX mappings, multi-format prompt normalization, and auto-retry session refresh.
+- **Z.ai Web Cookie Provider (`zai-web`)**:
+  - Registered `zai-web` as a full webCookie provider supporting GLM-5.3, GLM-5.3 Flash, GLM-5.2, GLM-5.1, GLM-5 Turbo, and GLM-5V Turbo.
+  - Implemented token validation and connection testing against `chat.z.ai`.
+  - Configured session token input guidance and token usage estimation.
+
+# v0.5.348 (2026-10-29) · 1 commit
+
+## UI
+- **Fixed Tool Calling toggle placement.** The switch is now aligned directly to the right side of the banner across all screen widths rather than stacking below the text description.
+
+# v0.5.347 (2026-10-29) · 1 commit
+
+## Features & Cleanup
+- **Removed Custom Plugins system and menu.** The Custom Plugins sidebar navigation, route page, mark badges, and runtime interceptors have been completely removed for streamlined production stability.
+- **Web Cookie Provider Tool Calling Banner.** All web-cookie providers (e.g. Gemini Web) now feature an in-page banner card allowing users to toggle OpenAI-compatible tool calling support on or off per provider.
+
+# v0.5.346 (2026-10-29) · 1 commit
+
+## UI
+- **Evergreen welcome banner content.** Replaced hardcoded feature highlights in the post-login Welcome modal with enduring, general-purpose platform copy so frequent upstream feature additions no longer cause description drift.
+
+# v0.5.345 (2026-10-29) · 1 commit
+
+## UI
+- **OpenCode Free lane switch button & confirmation banner.**
+  - The mode toggle button (hammer icon) is positioned at the far edge of the OpenCode Free provider card, vertically centered.
+  - Displays as an icon-only button without crowding text labels.
+  - Clicking the icon opens a modal banner explaining the difference between Direct Mode (default, fast impersonated TLS, no local CLI needed) and CLI Mode (runs local `opencode` binary & Bun sidecar), with Cancel and Confirm buttons.
+  - The same confirmation modal is available from the provider detail page header.
+
+# v0.5.344 (2026-10-29) · 1 commit
+
+## UI
+- **The lane marker is a muted suffix, not a chip.** "USING CLI" read like a status flag and the green box competed with the connection badges, so it is now "With CLI" in plain muted text after the name (`OpenCode Free · With CLI`). No border, no fill; it reads as part of the title instead of a second status.
+
+# v0.5.343 (2026-10-29) · 1 commit
+
+## UI
+- **"USING CLI" is a chip, not part of the name.** The label moved out of `display.name` into `display.tag`, so the card and the provider header render it as a green bordered chip next to "OpenCode Free" instead of a parenthetical in the title. Search still matches the plain name.
+
+## Fixes
+- **The Gemini Web cookie field could not be typed into.** `AddApiKeyModal` calls `splitGeminiCookie()` and `composeGeminiCookie()` on every keystroke but never imported them, so the first character threw a `ReferenceError`, React aborted the handler, and the controlled input snapped back to empty — the field looked dead. The edit modal already imported them, which is why an existing session could be edited while a new one could not be added. Import added.
+
+# v0.5.342 (2026-10-29) · 1 commit
+
+## UI
+- **Renamed OpenCode Free providers for clarity.** The original CLI-based lane is now "OpenCode Free (USING CLI)" and the new direct-TLS lane (previously "OpenCode Free V2") is now just "OpenCode Free". IDs and aliases unchanged (`oc` / `oc2`).
+
+# v0.5.341 (2026-10-29) · 1 commit
+
+## Fixes
+- **OpenCode Free V2 shares the V1 brand mark and icon.** `opencode-v2` now aliases to `opencode` in `providerIcon.js`, so it uses the exact same `/providers/opencode.png` logo and styling as OpenCode Free V1 without needing a duplicate asset.
+
+# v0.5.340 (2026-10-29) · 1 commit
+
+## Features
+- **OpenCode Free V2 (`oc2`) — the lane that works with no proxy.** The V1 lane reaches `opencode.ai` three different ways before it sends a wire request: it spawns the host `opencode` CLI, then a Bun transport sidecar, then an egress probe that re-tests the direct IP. On a host without the CLI and without `bun` each of those fails slowly, and the request that finally goes out rides Node's OpenSSL ClientHello — which the free tier refuses or black-holes, so the call sits until the 60s connect timeout. That is the "timeout terus, tapi di decolua jalan" symptom: decolua's lane sends the wire request straight through `opencodeTlsFetch`, whose cipher list matches Bun's, and nothing else runs first.
+
+## Fixes
+- **The TLS client existed but was never wired into the request.** `BaseExecutor` only uses `directFetch` when a subclass passes it, and the V1 executor never did, so `opencodeTlsFetch` was dead code on every path. The V2 executor passes it exactly as decolua does (`directFetch: (url, options) => opencodeTlsFetch(...)`) and keeps proxy handling untouched: with a proxy configured the proxy wins, without one the impersonated client is used.
+- **`wreq-js` was missing from the install.** It is the optional dependency behind the impersonating client; without it the TLS path throws `OpencodeTlsUnavailableError` and the caller silently falls back to native fetch — back to the gate. Added to `optionalDependencies` (the lazy loader can still fetch it into `<DATA_DIR>/runtime`).
+
+## Internal
+- V2 is a separate registry entry (`opencode-v2`, alias `oc2`, "OpenCode Free V2") and a separate executor, so the V1 lane keeps its CLI/sidecar/egress behaviour untouched. Verified direct, no proxy: `big-pickle` answered `200` in 1.3s with `OK`.
+
+# v0.5.339 (2026-10-29) · 1 commit
+
+## Fixes
+- **No screen prints a provider id any more.** `humanizeCompatId` used to append the uuid (`OpenAI Compatible (330688af)`); that suffix is still a database key, just a shorter one, so the label is now the family alone (`OpenAI Compatible`). Two unnamed compatible nodes that would collide are numbered by `dedupeLabels` (`OpenAI Compatible`, `OpenAI Compatible 2`) instead of being split by id.
+- **The Logs tab printed the raw provider id in caps.** `getRecentLogs` uppercased `r.provider`, so the row read `OPENAI-COMPATIBLE-CHAT-330688AF`. It resolves through `labelForProvider` and no longer uppercases the label.
+- **The request log rows are objects, not pipe-joined strings.** An account or model containing ` | ` shifted every later column and the row disappeared from the table; the API returns fields and the client renders them, still accepting a pipe string so an in-flight cached response cannot blank the table.
+- **Provider tooltips repeated the id the label had already replaced.** `Recent Requests` and the provider filter in the quota tab carried `title={provider}` with the raw id; the tooltip now shows the same label as the text.
+- **The model picker could still head a group with an id.** A provider missing from the static registry fell back to `{ name: providerId }`, so a compatible node still opened a `openai-compatible-chat-…` heading; the fallback runs through `resolveProviderName` and the quota card's title does too.
+- **Every successful log row pulsed as if it were pending.** The status column compared against uppercase (`OK`/`FAILED`) while the stored values are lowercase, so `ok` matched nothing and fell into the pending branch; the comparison folds case and the cell prints the status uppercased.
+
+# # v0.5.338 (2026-10-29) · 1 commit
+
+## Fixes
+- **The activity heatmap fit a desktop card, not a phone.** 24 buckets of `14px + 3px gap` plus a 28px day gutter measure 441px, so on a 390px viewport 42 cells sat past the card edge with no scroll container to reach them. The block is one CSS grid now (`repeat(24, minmax(0, 14px))`), so cells shrink on a narrow screen instead of overflowing, and the hour ruler prints at 10px like the rest of the shell.
+- **The Savings tab showed numbers for a report that has no rows.** With zero savings the card still printed `Avg 0 / active day` next to a "nothing saved in this period" chart, and a model filter box sat above an empty table. The summary chips and the filter are hidden until there is data behind them.
+
+## Internal
+- Dropped the leftover `await import()` of `humanizeCompatId` inside `getProviderLookups`; the symbol is already a static import, so the dynamic one only re-resolved the same module.
+
+# v0.5.337 (2026-10-29) · 1 commit
+
+## Fixes
+- **The savings axis printed bare day numbers.** Every tick except the peak was stripped to its day-of-month (`30 4 8 12 16 20 24`), which reads like an hour axis rather than a date axis — the strip was there to stop a tick being clipped when labels sat inline in a ~25px slot, but they have been absolutely centred with room to spare since the tick-spacing fix, so `Oct 4` fits. Ticks print the full short date again.
+
+# v0.5.336 (2026-10-29) · 1 commit
+
+## Fixes
+- **The notification count was the one piece of text under 10px in the sidebar.** The unread badge rendered at 9px in a 15px circle, so a two-digit count was unreadable at a glance; it is 10px in a 16px circle now, which is the smallest size the rest of the shell uses.
+
+# v0.5.335 (2026-10-29) · 1 commit
+
+## Fixes
+- **The Savings tab names the model, not a node id.** `byModel` was keyed by the raw provider id, so a compatible node printed `openai-compatible-chat-330688af` as if it were a model name. The bucket is now split into provider and model, the API resolves the provider through `getProviderDisplayName`, and the row reads `gpt-5.1` with `OpenAI Compatible (330688af)` beneath it. The same lookup now labels `recentRequests`, `activeRequests`, the by-provider breakdown (`stats.providerLabels`) and the provider bar chart, which used to fall back to the raw id whenever `providerNodes` was empty.
+- **The Daily Savings chart has a floor and a scale.** Every bar was drawn at full strength, so a day with 950 tokens looked identical to the 128K peak and the whole strip read as "green box". Empty days are now a muted track, active days are emerald proportional to the peak, and the peak alone is drawn at full strength; tick labels are absolutely centred so a 25px slot cannot clip `Oct 23`, and neighbouring ticks step aside when the peak takes its own label.
+- **Cached tokens show up again in Recent Requests.** Five inline `||` chains only knew `cache_read_input_tokens` and `cached_tokens`, so a request that reported `prompt_tokens_details.cached_tokens`, `cachedContentTokenCount` or `prompt_cache_hit_tokens` rendered no badge at all. One `cacheReadTokens` helper now walks every spelling plus the nested details object, and the row prints the badge (verified against one seeded row per spelling: 640 / 960 / 512).
+- **A rewritten model on another provider is no longer printed twice.** `gweb/gemini-4-argon → gemini-web/gemini-4-argon` said the same thing twice; the arrow now appears only when the model name itself changed, and the resolved line drops the redundant provider prefix.
+- **The provider bar chart survives long labels.** Bars are horizontal, the axis takes the base name (`OpenAI Compatible`, not the 26-character node label), and a custom tick renderer keeps each label on one line — Recharts used to wrap it onto three lines that overlapped the neighbouring rows.
+
+## Performance
+- **Usage aggregation is memoized.** Each stats call ran three dynamic imports and then scanned every connection, node and API key to build the display names. `getProviderLookups` builds the three maps once and serves them for 15s, and the redundant `getConnectionMapCached` cache (same data, second copy, never invalidated) is gone.
+- **One shared stats snapshot per burst for the stream.** Every open tab subscribed to `/api/usage/stream` and each emitter tick asked the database to re-aggregate the whole period per connection, so three tabs meant three identical aggregations. A 750ms shared memo keeps updates live while a burst costs one aggregation.
+- **One ticker for every relative timestamp.** `TimeAgo` mounted a `setInterval` per row; twenty rows meant twenty timers waking a second apart and re-rendering twenty components. A single 1s ticker now drives all of them and stops when the last subscriber unmounts, and the stream client drops an SSE payload identical to the one already rendered instead of re-setting state.
+
+## Tests
+- `tests/unit/token-saver-savings.test.js` asserts the split model shape (`model`, `provider`, `key`), the gap-filled 30-day series and the empty-report case.
+- Two stale assertions that failed before this change were rewritten to the current behaviour: the empty state string in `UsageStats.js` and the `jev-1.13-free` decision (it belongs in the registry, the suggestion filter is what drops it).
+
+# v0.5.334 (2026-10-29) · 1 commit
+
+## Fixes
+- **PSID and PSIDTS are separate fields.** The `gemini-web` Add and Edit forms asked for one opaque `Cookie Value`, so a user who only has `__Secure-1PSID` had to leave a field looking half-filled and never found out that the timestamp part is optional. The form now asks for `__Secure-1PSID` (required) and `__Secure-1PSIDTS (optional)` separately and composes the cookie header itself; Save stays disabled until a PSID exists, because a timestamp alone cannot authenticate.
+- **Editing the timestamp no longer wipes the session.** `PUT /api/providers/:id` only ever wrote `apiKey` for `authType: "apikey"`, so a `gemini-web` connection could not be re-keyed at all. It now accepts a cookie edit and decides what to persist: a paste that carries its own `__Secure-1PSID` replaces the cookie, while a timestamp-only entry merges into the stored one instead of being written verbatim — the previous behaviour would have saved a cookie without the part that authenticates.
+- **Other Google cookies survive an edit.** `SAPISID`, `__Secure-3PSID`, `__Secure-1PSIDCC` and anything else in a pasted header are carried through the split/compose round trip. The executor signs `Authorization` from `SAPISID`, so dropping the extras while editing would have downgraded a working credential.
+- Unit tests: 16 cases for split, compose, merge and the persist decision (`tests/unit/gemini-cookie-fields.test.js`).
+
+# v0.5.333 (2026-10-29) · 1 commit
+
+## Fixes
+- **Gemini Web now honours the connection proxy.** `fetchSessionParams` and the `StreamGenerate` POST called the bare global `fetch`, so a proxy configured on the `gemini-web` connection was silently ignored — the request always left from the host's own IP. Both calls now go through `proxyAwareFetch` with the connection's proxy options, which is the only way to run a browser-session cookie from a host Google treats differently from the login IP.
+- **`fetch failed` now names the cause.** A 502 read `Gemini session fetch failed: fetch failed`, which is the same text for blocked egress, dead DNS, a reset connection and a broken TLS chain. The error now appends undici's `err.cause` code, e.g. `fetch failed (ENOTFOUND)` or `fetch failed (ECONNRESET)`, so the operator can tell a network fault from a rejected cookie in one glance.
+- **One IPv4 retry for hosts with a broken IPv6 route.** Containers that resolve AAAA records but cannot reach them (Railway among them) failed the connect phase while the same request worked from a laptop. A connect-phase failure (`ENETUNREACH`, `EHOSTUNREACH`, `EAI_AGAIN`, `ENOTFOUND`, `ECONNREFUSED`, `ETIMEDOUT`, `UND_ERR_CONNECT_TIMEOUT`) now retries once over an IPv4-pinned dispatcher before the error is reported. Proxied requests are exempt: the proxy resolves DNS on its side.
+- Verified on a live cookie: `gemini-3.5-flash-lite` returned `200` with `"OK"` in 20s through the new path.
+
+# v0.5.332 (2026-10-29) · 1 commit
+
+## Fixes
+- **A live Gemini Web cookie no longer reports "invalid".** The connection Test button ran a chat completion, but the cookie is a browser session, not a bearer token: `gemini-web` had no case in the test path and fell through to `"Provider test not supported"`, which the modal rendered as a red *Failed* badge and the card stored as `testStatus: error`. Testing now runs the same session probe the Check button uses — fetch `gemini.google.com/app` and require the `SNlM0e` bootstrap — so a valid cookie passes in about a second instead of waiting on the chat queue.
+- **Cookie pastes are normalized before they are judged.** A raw `__Secure-1PSID` value, a `Cookie: a=b; c=d` header, quoted values, and both JSON export shapes (flat map and `{ cookies: [...] }`) now reach the request identically; previously a quoted or prefixed paste was rejected as an invalid session.
+- **The rejection reason is shown, not just "Invalid".** Both the Add and Edit modals print the validator's message under the badge (signed-out page, HTTP status, missing session cookie, network timeout), and a failed *Test* shows the upstream error instead of a bare *Failed*.
+- **A missing `__Secure-1PSIDTS` is surfaced as a warning, not a failure.** The cookie still validates, but the connection is flagged because the session cannot rotate and dies once Google re-issues the timestamp.
+- Tests: `tests/unit/gemini-web-cookie.test.js` covers normalization of all five paste shapes plus accept, signed-out, non-200, network-failure and missing-session branches.
+
+# v0.5.331 (2026-10-29) · 1 commit
+
+## Fixes
+- **The model picker no longer opens a group for a provider that is not connected.** Custom-model rows outlive the connection they were created against: when a provider is removed (or a model is registered against an alias that was never set up here), the fallback that groups leftover custom models still rendered them under a heading for that absent provider — so the picker listed a provider the dashboard does not have, holding rows that cannot route anywhere. The alias is now traced back to its built-in provider, and the group is dropped when that provider has no active connection (compatible nodes stay exempt: they legitimately run without a stored key).
+- **Custom-model groups use the provider's display name.** A group built from leftover custom rows fell back to the storage alias, so a connected provider appeared as `gemini-web` instead of `Gemini Web` — a name nobody recognises from the dashboard. The registry entry now supplies the label and accent color, with the alias kept only as an internal key.
+
+# v0.5.330 (2026-10-29) · 1 commit
+
+## Fixes
+- **`tool_choice` is enforced on browser-session providers.** A client that pinned a function (`tool_choice: {"type":"function","function":{"name":"..."}}`) or demanded any tool (`"required"`) still got prose back, because the bridge wrote the rule once at the top of the prompt and the model drifted by the end of a long agent system prompt. The highest-priority reminder now closes with an explicit `FORCED` line naming the tool, placed after the example where it cannot be buried.
+- **Parallel tool calls are no longer suppressed.** The reminder said "do not output more than one tool_call", which turned "get Jakarta and Bandung weather" into a single call. It now allows several blocks when the request lists independent things, while still forcing one-at-a-time steps when calls depend on each other's results (the agent loop stays sequential).
+- `selectableTools` is exported so both prompt builders (executor and plugin bridge) derive the `tool_choice` mode from one place.
+- Tests: the bridge suite asserts the `FORCED` line lands on the final turn and that two fences in one reply become two `tool_calls`.
+
+# v0.5.329 (2026-10-29) · 1 commit
+
+## Fixes
+- **Gemini Web replies were cut off after the first frame.** `readGeminiStream` stopped as soon as the accumulated buffer parsed, but every mid-stream frame already carries the answer so far, so text stopped mid-sentence (`"1, 2, 3, 4, 5,"` for a count to 40) and tool-call JSON arrived half-written — which is why tool calling silently came back as plain text instead of `tool_calls`. The reader now keeps consuming until Google sends its terminal `["e",...]` frame (30s idle / 150s hard ceiling still apply), so replies and `finish_reason: "tool_calls"` come through whole.
+- Tests: `tests/unit/gemini-web-stream-full.test.js` feeds a fake stream with a partial frame followed by the full one and asserts the complete answer and an intact ```` ```tool_call ```` fence come out; the old reader fails both cases.
+
+# v0.5.328 (2026-10-29) · 1 commit
+
+## Fixes
+- **No built-in emoji left in the UI.** Emoji were rendered by the OS font, so the same screen looked different on Windows, macOS, Linux and Android, ignored the design tokens, and fell back to blank boxes when the system emoji font was missing. Every one is gone:
+  - Usage stats: the cached-token `⚡` in Recent requests is now the `bolt` glyph from the icon subset inside the same info chip, so it takes the chip's colour and size.
+  - Quota bars, quota table, provider cooldowns, connection cards, combo latency: `🟢/🟡/🔴/💰/⏱` replaced by token-coloured dots (`bg-success` / `bg-warning` / `bg-danger`), `schedule` and `bolt` glyphs.
+  - Language switcher, header language button and the Xiaomi region picker no longer use flag emoji (which render as bare letters on Windows). New `LocaleBadge` component draws the locale/region code as a chip: `border-border-subtle`, `bg-surface-2`, uppercase, tracked, 9-11px. Variants that shared a code stay distinct: `zh-CN`/`zh-TW` show 简/繁, `pt-BR`/`pt-PT` show BR/PT.
+  - Modals, update panel, marketplace, `GetStarted`, SAML guide, media example cards, MITM/Cowork cards: `✅ 🌐 🔑 🔐 ✓ ✕ ⚠️ 📝 🔷 🟢 🛡️ ☁️` replaced with `check` / `check_circle` / `language` / `key` / `lock` / `close` / `warning` / `edit_note` / `cloud` / `security` / `verified_user` / `shield_lock`.
+  - OAuth result popups and the MiMo login page draw their success/failure marks as inline SVG instead of `✓`.
+  - Translation catalogs (`public/i18n/literals/*.json`, all 34 locales) carried emoji in both keys and values (`⚠️ Risk Notice…`, `✓ Confirm Add`, `📝 Configure providers…`). Every key was rewritten emoji-free so the cleaned UI strings still hit their translations instead of falling back to English.
+  - Logs and console-log viewers strip emoji from upstream log lines at render time (`stripEmoji`), so provider messages and older log files can't reintroduce them; copy still returns the raw line.
+  - `getStatusEmoji()` deleted (dead export), `RISK_NOTICE` no longer starts with a warning emoji.
+- Tests: `tests/unit/no-emoji-ui.test.js` fails the build if any emoji reappears under `src/app` or `src/shared`, asserts `locales.js` ships codes instead of flags, and covers `stripEmoji`.
+
+---
+
+# v0.5.327 (2026-10-29)
+
+## Fixes
+- **Hide Raw Errors also covers upstream error frames inside a stream and non-JSON error bodies.** Two remaining ways a provider's own wording reached the client with the toggle on:
+  - A provider that answers `200` and then sends `data: {"error":{...}}` mid-stream. In passthrough mode (same client and provider format) the frame was forwarded verbatim; in translate mode it was silently dropped, so the client saw a truncated stream with no explanation. Now `createSSEStream` takes `hideError`, rewrites the frame's message and forwards it masked — a real error frame in the client's format instead of silence.
+  - An upstream HTML/text error page (Cloudflare 5xx, gateway HTML). `maskHiddenError()` only touched `application/json`, so the page went through untouched. It now rebuilds any text body as a masked JSON error, keeping the status and headers such as `retry-after`.
+- Tests: `tests/unit/stream-error-frame-hide.test.js` covers passthrough masking, the translate-mode error frame (OpenAI and Claude clients), the toggle-off passthrough, an HTML body rebuilt as masked JSON, and `retry-after` surviving a masked 429.
+
+---
+
+# v0.5.326 (2026-10-29)
+
+## Fixes
+- **Hide Raw Errors now hides every error, not most of them.** The toggle was threaded into two call sites inside `chatCore`, so any error built elsewhere — the all-accounts-rate-limited reply, combo exhaustion, the API-key gates, provider/executor responses, the non-SSE upstream body, the 404 "no credentials serving this model" — shipped the upstream text verbatim. That is why a `[model] [403]: {"error":{"message":"Model ... is not allowed for this API key"}} (reset after 2m)` still reached the client with the toggle on.
+  - `unavailableResponse()` grew a `hideError` parameter, so the "reset after Ns" reply masks its message while still sending the `retry-after` header.
+  - Every handler (`chat`, `fetch`, `images`, `embeddings`, `search`, `stt`, `tts`, `videos`, `systemone`) now masks at its public boundary via the new `maskHiddenError()` helper: any >=400 JSON body has `error.message` replaced, whichever branch produced it. Status code, `type` and `code` survive, so a client can still tell a 401 from a 503 — only the text goes.
+  - `hideError` reached the streaming path too: the abort-terminal error frame (`buildStreamErrorBytes`) and the non-SSE upstream body now honour it instead of leaking the upstream `<title>` text.
+  - Tests: `tests/unit/error-log-hide-error.test.js` covers `unavailableResponse` (masked message, `retry-after` kept) and the masked SSE frame.
+
+---
+
+# v0.5.325 (2026-10-28)
+
+## Fixes
+- **Copy button consistency**: every model-row copy control now uses the same button as the API-key list (`p-1`, `rounded`, `hover:bg-black/5 dark:hover:bg-white/5`, `hover:text-primary`, `transition-all`, 14px glyph). That covers Model Studio's name copy, the provider page's model rows, the compatible-provider section, the passthrough section and the providers card. The bespoke hover tooltips ("Copy" / "Copied!" floating label) and their hover-only reveal are gone, so the affordance is always visible and identical in both places. Model Studio's name copy also no longer swaps to a green "Copied" text label — it flips the glyph to a check, exactly like the API-key row.
+
+---
+
+# v0.5.324 (2026-10-28)
+
+## Fixes
+- **Proxy pools — bulk import dropped entries**: the import job skipped a pasted line whenever its NAME was already taken, and the client names every line after its host, so a list pointing at one host:port with rotating credentials imported only the first row. Duplicates are now decided by the proxy URL (scheme and host lowercased, port made explicit, credentials kept as part of the identity), and a repeated name merely gets a `#2`, `#3` suffix so the rows stay tellable apart. A genuine duplicate URL is still skipped, and the run now reports it as `skipped N duplicate` instead of `skipped N existing`.
+
+## Features
+- **Custom models — bulk edit**: Model Studio rows have a checkbox, and selecting more than one raises a toolbar with **Select all** / **Clear** / **Bulk edit**. The dialog writes input multiplier, output multiplier and context window to every selected model in one call (`PATCH /api/model-editor/bulk`). Only those three fields are accepted - the callable name is the model id clients send and the target decides which upstream answers, so neither is re-pointed by a bulk action. Models that disappeared between the tick and the Apply are reported back and dropped from the selection instead of failing the call.
+- **Custom models — duplicate icon**: the row's duplicate button now matches the API-key copy button (same padding, hover tint and 14px glyph) instead of its own larger style.
+
+## Testing
+- `tests/unit/proxy-bulk-import.test.js` (5 cases) drives the real job store + SQLite: repeated names all import, duplicate URLs are skipped, spelling variants collapse, and a URL stored by an earlier run is skipped.
+- `tests/unit/model-editor-bulk.test.js` (5 cases): patch applies to every selected model, untouched fields survive, `0` clears a multiplier, non-whitelisted fields are refused, missing models are reported.
+
+---
+
+# v0.5.323 (2026-10-28)
+
+## Features
+- **Plugins — Tool Calling Bridge**: a new custom plugin that gives function calling to upstreams which have none (browser-session providers, and any model the capability table reports as text-only). The request's `tools` are folded into the prompt (schema, call format, highest-priority reminder appended last), assistant `tool_calls` and `role:"tool"` turns are flattened into readable prose, and the `tools` array is dropped so an upstream that rejects it never sees it. The reply is parsed back into standard `tool_calls`.
+  - Response parsing runs two passes: the shapes models invent on their own (`open-sse/translator/concerns/toolBridge.js`) and the two formats the bridge itself instructs (` ```tool_call ` fence and `<<TOOL_CALL>>` marker). A call naming a tool the client never offered is dropped instead of invented.
+  - Because a tool call can only be recovered from a whole reply, a bridged turn is fetched non-streaming and the JSON completion is replayed as SSE, so a streaming client still receives its stream.
+  - Models with a native tool lane are left untouched — their real schema is never replaced by prompt text.
+  - Enabled per model on the Plugins page; advertises `tools:true` in `GET /api/models` and draws a "Tool Calling" plugin mark.
+- **API keys — bulk edit**: the bulk dialog now covers every field the endpoint accepts; added `Budget counted in` (tokens / USD / requests), `Daily USD limit` and `Request limit`, and a **Select all N** shortcut in the selection bar. The key material, the secret value and the permission map stay out of bulk edits on purpose.
+- **Custom models — duplicate**: every model in Model Studio has a copy button that opens the create form pre-filled with the source model's rules (target, context window, input/output multiplier, system prompt, `owned_by`) under a unique name (`<name>-copy`, `-copy-2`, …).
+
+## Fixes
+- **Build**: the plugin runtime resolves the browser-session provider list through a lazy import. Importing the provider registry eagerly pulled every provider module into the plugin module's init graph, which crashed the build worker (SIGABRT) while static pages were generated.
+
+## Testing
+- New `tests/unit/tool-calling-bridge.test.js`: 10 cases over the request rewrite, the dispatch rules (browser session vs native lane), and the response-side recovery.
+
+---
+
+# v0.5.322 (2026-10-28)
+
+## Features
+- **Gemini Web (cookie)**: restore the `gemini-web` provider (aliases `gweb`, `gemini-cookie`) with a fresh reverse-engineered implementation. The executor talks directly to `gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate`, auto-fetches the XSRF token (`SNlM0e`) from `/app`, and rotates the session on 429.
+- **Gemini Web models** (live hex IDs from `batchexecute?rpcids=otAQ7b`):
+  - `gemini-3.5-flash-lite` (hex `8c46e95b1a07cecc`, mode 6) — no cookie required
+  - `gemini-3.8-flash` (hex `56fdd199312815e2`, mode 1) — default
+  - `gemini-3.1-pro` (hex `e6fa609c3fa255c0`, mode 3)
+  - `gemini-4-argon` (hex `95a4c0abcba24364`, mode 8)
+  - `-thinking` variants for all four (inner[80]=2 + header slot 15)
+  - Legacy aliases: `gemini-3.6-flash`, `gemini-3.7-flash` resolve to `gemini-3.8-flash`
+- **Gemini Web cookie capture**: auto-capture from Chromium via CDP (domains `gemini.google.com`, cookies `__Secure-1PSID` + `__Secure-1PSIDTS`).
+- **Gemini Web validation**: `POST /api/providers/validate` now probes the cookie by fetching `/app` and checking for `SNlM0e` / `BardChatUi`.
+- **Gemini Web tool bridge**: OpenAI `tools` array is encoded into the prompt and parsed back from prose (via `webCookieToolBridge.js`) — same pattern as the old implementation.
+
+## Fixes
+- **Gemini Web hex drift**: the old hardcoded hexes (`fbb127bbb056c959`, `cf41b0e0dd7d53e5`, `9d8ca3786ebdfbea`) no longer match the live catalogue. The new implementation uses the current hexes and falls back to the old ones via `LEGACY_HEX` mapping.
+- **Gemini Web model selection**: the server ignores `inner[]` mode slots when no model header is sent — every request silently lands on Flash-Lite. The new executor always sends `x-goog-ext-525001261-jspb` with the correct hex.
+
+## Testing
+- Unit tests restored: `tests/unit/gemini-web-tools.test.js` (25/25 passing)
+- Direct executor test: all 4 models respond via the user's cookie (Flash-Lite 42s, Flash 27s, Pro 7s, Argon 36s)
+
+---
+
+# v0.5.321 (2026-10-27)
+
+## Breaking Changes
+- **Removed all webCookie providers**: deepseek-web, gemini-web, kimi-web, muse-web, chatgpt-web, uc-web, and opencode-v2 (OpenCode Free V2) have been removed from the registry, executors, and all related UI/API routes.
+- **Renamed `oc1/` prefix to `oc/`**: OpenCode Free V1 now uses `oc/` as its primary alias instead of `oc1/`. The `oc1` alias is removed; use `oc` or `opencode` going forward.
+
+## What Was Changed
+- Deleted registry files: `deepseek-web.js`, `gemini-web.js`, `kimi-web.js`, `muse-web.js`, `chatgpt-web.js`, `uc-web.js`, `opencode-v2.js`.
+- Deleted executor files: `deepseek-web.js`, `gemini-web.js`, `kimi-web.js`, `opencode-v2.js`.
+- Cleaned up all references in `registry/index.js`, `executors/index.js`, `providerModels.js`, `chat.js`, `providerIcon.js`, `probeBudget.js`, `cookieCapture.js`, `validate/route.js`, `testUtils.js`, `AddApiKeyModal.js`, and test files.
+- Updated `opencode.js` registry: `alias: "oc"`, `uiAlias: "oc"`, `textIcon: "OC"`, `display.name: "OpenCode Free"`.
+- Simplified `WEB_COOKIE_PROVIDERS` set to empty (all web cookie providers removed).
+- Removed opencode-v2 specific UI badges and conditional logic from dashboard pages.
+
+---
+
+# v0.5.320 (2026-10-27)
+
+## Features
+- **Ollama**: add `ollama-local` TTS provider serving the Phonon family (15 tags, 38 preset voices), normalizing the requested format to wav/pcm, falling back to an installed tag and the `default` voice, and wrapping raw PCM in a WAV header so the dashboard can preview it.
+- **Ollama**: add `ollama-local` embedding adapter for `/v1/embeddings`, normalizing a saved host that carries a `/v1` or `/v1/embeddings` suffix and sending a bearer token only when an API key is configured; catalog the 14 embedding model families with their dimensions.
+- **Providers**: add Runcrate (`rc`) — OpenAI-compatible upstream serving DeepSeek, GLM, Qwen and gpt-oss models, validated through `GET /api/v1/billing/balance` because the public `/v1/models` answers 200 for any key.
+- **Web Providers**: add Muse Web, ChatGPT Web, Veo AI Free Web, and UC Web cookie/API providers.
+- **CommandCode**: add Kimi K3.1 Pro to the catalog with the upstream id kept verbatim, riding the existing NDJSON `/alpha/generate` lane.
+- **OpenCode Go**: add Kimi K3.1 Pro on the chat lane with vision/video input, 1,048,576 context, 131,072 max output and dedicated K3 pricing.
+- **OpenCode (PR #17)**: per-egress 429 cooldown tracking with full `Retry-After` parsing, bounded proxy failover, deterministic session-id encoding, and complete `<env>` system-prompt fingerprinting; keeps serenhope's host CLI fallback.
+
+## Fixes
+- **CLI Tools**: stop the Pi card from resetting every `contextWindow`/`maxTokens` in `~/.pi/agent/models.json` on Apply, add per-model context-window and max-output selectors, and sanitize corrupt cap values instead of writing them back.
+- **CLI Tools**: treat `name === id` as unset on Apply so a hand-edited Pi model label is no longer overwritten.
+- **OpenCode**: normalize a caller tool that collides with the OpenCode fingerprint in place (keeping the caller's name and adopting the fingerprint schema) instead of aliasing it to `<name>_client` and restoring it on the response (#4971, #5011).
+- **OpenCode Free**: restore the free tier by sending the TLS ClientHello the upstream accepts (via optional `wreq-js`, fail-open to native fetch), minting session ids from the current time instead of a sha256 digest, and always pairing the CLI `<env>` system marker with a declared tool list.
+- **OpenCode Free**: cap the published context window of `oc/deepseek-v4.1-flash-free` at 330k so clients compact before the backend's limit (#5097).
+- **Translator**: convert `image_url` parts inside `role:"tool"` messages to Claude image blocks instead of forwarding them verbatim and failing with a 400 (#5125).
+- **DeepSeek**: send `deepseek-flash` upstream for `deepseek-v4.1-flash`, whose catalog id the API rejects (#4940).
+- **Claude**: keep adaptive thinking for Haiku 5.5 and downgrade to `enabled/10000` only below major version 5 (#5183).
+- **Thinking**: keep `reasoning_effort: max` for GPT-5.6 / GPT-6 served through OpenAI Compatible nodes instead of clamping it to `xhigh` (#5186).
+- **Codex Image**: drive the `image_generation` tool call from `gpt-6-sol` instead of the legacy `gpt-5.6-terra` host, and add `cx/gpt-6-sol-image`; drop the `gpt-5.6-{sol,terra,luna}-image` aliases they supersede.
+- **Capabilities**: match `*gpt-6*image*` before the generic `gpt-6` family pattern so `gpt-6-sol-image` resolves as an image model instead of inheriting the chat caps (vision/reasoning/1.05M window) and losing `imageOutput`.
+
+## Notes
+- Upstream `open-sse/rtk/headroom.js` Claude document/tool-history preservation was skipped because it conflicts heavily with serenhope's optimized headroom fork; review separately if needed.
+
+---
+  - Deleted `open-sse/utils/opencodeV2Channel.js` entirely (the scrambled residential endpoint + `OPENCODE_V2_ROUTE` override are gone).
+  - `auth.js` no-auth block restored to plain logic: direct public connection, user proxy pools, and rotation only — no built-in channel injection, no `isLockedProxy`/`displayProxyUrl` connection.
+  - `opencodeCliRunner.js` no longer falls back the CLI to the channel proxy; it only uses a proxy when the user explicitly configured one on the connection.
+  - `NoAuthProxyCard` (all no-auth providers incl. OpenCode V1/V2): the "builtin" option, its gold-shimmer label, hint, and Channel footer row are removed. The card keeps direct/custom-pool selection with rotation, and still self-heals stale pool ids from settings.
+  - Removed the now-unused `text-gold-shimmer` CSS and the `Select` text-transparent workaround.
+
+---
+
+# v0.5.318 (2026-10-25) · 1 commits
+
+## What Was Changed
+
+- **OpenCode Free V2 Built-in Channel Polish + Stale Pool Recovery:**
+  - Renamed the built-in proxy option and connection to **`proxy by: t.me/abcseren`** (replacing the verbose "Built-in Proxy (Residential Channel …)" label) in the dropdown, the auth connection name, and the card footer link.
+  - Added an animated **gold shimmer** treatment (`text-gold-shimmer`) on the `proxy by: t.me/abcseren` text: the select label renders transparent while a shimmering gold gradient overlay sits on top; the footer Channel link uses the same effect.
+  - **Fixed stale proxy-pool id regression:** a saved `providerStrategies[<provider>].proxyPoolId` pointing at a deleted pool made the `Proxy Source` select silently point at nothing (no options selected, no built-in channel active). The card now validates the saved id against the current pool list and falls back to the provider default; the auth service fails OpenCode V2 over to the built-in residential channel instead of degrading to unproxied direct mode when the configured pool no longer exists.
+  - **Fixed `/api/models` 500 error** (`ReferenceError: tdEnabled is not defined`) left over from the plugin rename — the studio-capabilities branch now reads the unified `adaptiveThinking` plugin config instead of the removed `thinkDeeper`/`jsonGuard` settings.
+
+---
 
 # v0.5.317 (2026-10-25) · 2 commits
 
@@ -603,11 +1251,6 @@ ode_modules\.bin\opencode`).
 - **FreeUsageLimitError now rotates the OpenCode session instead of hammering every proxy.** Upstream tracks the free quota per session id as well as per IP (upstream issue #5107): once a session window is spent, retrying the same burned session through dozens of proxies only collects the same 429 until the request times out. A 429 carrying `FreeUsageLimitError` on the opencode provider now burns the canonical session (`rotateOpencodeSession`) before the fallback moves to the next account, so the retry re-enters the proxy loop with a fresh quota window. The stable session is untouched on the happy path — a fresh session per request would burn quota faster. Covered by `tests/unit/opencode-session-rotation.test.js` (3 cases: fresh session minted, rotation scoped per identity, chat handler wiring).
 
 ---
-
-# v0.5.258-Custom (sync upstream v0.5.258)
-
-Fork gievano/9router - sync 60 commit upstream (v0.5.226 -> v0.5.258) + custom: provider freebuff, mimocode.
-
 
 # v0.5.258 (2026-10-21) · 3 commits
 

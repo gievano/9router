@@ -11,13 +11,16 @@ import { Button, Modal, Input } from "@/shared/components";
  */
 export default function BulkEditKeys({ selectedCount, onApply, onClose }) {
   const [fields, setFields] = useState({
+    isActive: { on: false, value: "true" },
+    limitKind: { on: false, value: "tokens" },
     tokenLimit: { on: false, value: "" },
+    dailyCostLimit: { on: false, value: "" },
+    requestLimit: { on: false, value: "" },
     resetInterval: { on: false, value: "never" },
     rpmLimit: { on: false, value: "" },
     tpmLimit: { on: false, value: "" },
     allowedModels: { on: false, value: "" },
     expiresAt: { on: false, value: "" },
-    isActive: { on: false, value: "true" },
   });
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState("");
@@ -33,7 +36,9 @@ export default function BulkEditKeys({ selectedCount, onApply, onClose }) {
       if (!on) continue;
       if (name === "isActive") {
         patch.isActive = value === "true";
-      } else if (name === "tokenLimit" || name === "rpmLimit" || name === "tpmLimit") {
+      } else if (name === "limitKind") {
+        patch.limitKind = value;
+      } else if (name === "tokenLimit" || name === "rpmLimit" || name === "tpmLimit" || name === "requestLimit" || name === "dailyCostLimit") {
         const n = Number(value);
         if (!Number.isFinite(n) || n < 0) {
           setError(`${labelFor(name)} must be a number of 0 or more (0 = unlimited)`);
@@ -66,7 +71,7 @@ export default function BulkEditKeys({ selectedCount, onApply, onClose }) {
     }
   };
 
-  const rows = ["tokenLimit", "resetInterval", "rpmLimit", "tpmLimit", "allowedModels", "expiresAt", "isActive"];
+  const rows = ["isActive", "limitKind", "tokenLimit", "dailyCostLimit", "requestLimit", "resetInterval", "rpmLimit", "tpmLimit", "allowedModels", "expiresAt"];
 
   return (
     <Modal isOpen onClose={onClose} title={`Bulk edit ${selectedCount} key${selectedCount === 1 ? "" : "s"}`}>
@@ -94,6 +99,17 @@ export default function BulkEditKeys({ selectedCount, onApply, onClose }) {
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
                   <option value="monthly">Monthly</option>
+                </select>
+              ) : name === "limitKind" ? (
+                <select
+                  value={fields[name].value}
+                  onChange={(e) => setValue(name, e.target.value)}
+                  disabled={!fields[name].on}
+                  className="w-full h-9 px-3 rounded-lg border border-black/10 dark:border-white/10 bg-surface text-sm text-text-main disabled:opacity-40"
+                >
+                  <option value="tokens">Tokens</option>
+                  <option value="cost">USD spend</option>
+                  <option value="requests">Requests</option>
                 </select>
               ) : name === "isActive" ? (
                 <select
@@ -137,19 +153,24 @@ export default function BulkEditKeys({ selectedCount, onApply, onClose }) {
 
 function labelFor(name) {
   return {
+    isActive: "Status",
+    limitKind: "Budget counted in",
     tokenLimit: "Token limit (0 = unlimited)",
+    dailyCostLimit: "Daily USD limit (0 = unlimited)",
+    requestLimit: "Request limit (0 = unlimited)",
     resetInterval: "Reset interval",
     rpmLimit: "Requests per minute (0 = unlimited)",
     tpmLimit: "Tokens per minute (0 = unlimited)",
     allowedModels: "Allowed models pattern",
     expiresAt: "Expiry date",
-    isActive: "Status",
   }[name] || name;
 }
 
 function placeholderFor(name) {
   return {
     tokenLimit: "e.g. 1000000",
+    dailyCostLimit: "e.g. 5",
+    requestLimit: "e.g. 1000",
     rpmLimit: "e.g. 60",
     tpmLimit: "e.g. 100000",
     allowedModels: "e.g. anthropic/*, openai/gpt-4o",

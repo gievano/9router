@@ -698,7 +698,18 @@ export class DeepSeekWebExecutor extends BaseExecutor {
 
     try {
       const accessToken = await acquireAccessToken(userToken, signal, log);
-      const toolMode = hasTools(bodyObj);
+      let disableToolCalling = false;
+      try {
+        const { getSettings } = await import("@/lib/localDb.js");
+        const settings = await getSettings();
+        if (settings?.webCookieToolCalling?.["deepseek-web"] === false) {
+          disableToolCalling = true;
+        }
+      } catch {
+        // fail-open
+      }
+
+      const toolMode = disableToolCalling ? false : hasTools(bodyObj);
       const toolPrompt = toolMode ? buildToolSystemPrompt(bodyObj.tools) : "";
 
       // Special turns (assistant tool_calls, tool results) become transcript

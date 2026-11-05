@@ -8,7 +8,7 @@ vi.mock("../../open-sse/utils/proxyFetch.js", () => ({
   proxyAwareFetch: fetchMock,
 }));
 
-import { getExecutor } from "../../open-sse/executors/index.js";
+import { OpenCodeExecutor } from "../../open-sse/executors/opencode.js";
 import {
   OPENCODE_SESSION_RE,
   generateSessionId,
@@ -38,6 +38,13 @@ function prepare(executor, overrides = {}) {
   });
   return { credentials, prepared };
 }
+
+// The dashboard's "OpenCode Free" card is a two-lane toggle (V1 CLI lane /
+// V2 direct TLS lane) behind the OpenCodeLaneExecutor shell accessible via
+// getExecutor("opencode"). The wire-format assertions in this file target the
+// CLI executor's protocol (1.19.x UA, x-opencode-request), so they instantiate
+// OpenCodeExecutor directly rather than the lane shell's direct/V2 default.
+const cliExecutor = () => new OpenCodeExecutor();
 
 beforeEach(() => {
   fetchMock.mockReset();
@@ -87,6 +94,30 @@ describe("OpenCode Free Session ID Format", () => {
     expect(counterOf(generateZenSessionId(1_700_000_000_000))).toBe(1);
   });
 
+  // Upstream also decodes the prefix timestamp and refuses a session minted in
+  // the future or before the free-tier window (live probes 2026-10-26: a
+  // Date.now() session passed 10/10, digest-derived ones 1/10).
+  it("mints translated sessions at the current time instead of from a digest", () => {
+    // The 48-bit prefix carries 36 bits of milliseconds plus a 12-bit counter,
+    // so the decoded time is the mint time modulo 2^36.
+    const TIME_MASK = (1n << 36n) - 1n;
+    const timeOf = (id) => Number((~BigInt(`0x${id.slice(4, 16)}`) & ((1n << 48n) - 1n)) >> 12n);
+    const before = Date.now();
+    const translated = translateSessionId(`fresh-${before}`, "claude");
+    const after = Date.now();
+
+    expect(timeOf(translated)).toBeGreaterThanOrEqual(Number(BigInt(before) & TIME_MASK));
+    expect(timeOf(translated)).toBeLessThanOrEqual(Number(BigInt(after) & TIME_MASK));
+  });
+
+  it("reuses the memoized session for one conversation", () => {
+    const raw = "claude:memoized-conversation";
+    const first = translateSessionId(raw, "claude");
+    expect(translateSessionId(raw, "claude")).toBe(first);
+    // A different conversation still gets its own session.
+    expect(translateSessionId(`${raw}-other`, "claude")).not.toBe(first);
+  });
+
   it("preserves already-valid OpenCode sessions without re-hashing", () => {
     const valid = "ses_f534dfae8ffeCy4Ee4tLWNygDc";
     expect(translateSessionId(valid)).toBe(valid);
@@ -96,7 +127,7 @@ describe("OpenCode Free Session ID Format", () => {
 
 describe("OpenCode Free Executor Session Resolution", () => {
   it("uses request-local session credentials without mutating source credentials", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const { credentials, prepared } = prepare(executor);
 
     expect(executor.constructor.name).toBe("OpenCodeExecutor");
@@ -107,7 +138,7 @@ describe("OpenCode Free Executor Session Resolution", () => {
   });
 
   it("preserves valid native x-opencode-session header case-insensitively", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const valid = "ses_f534dfae8ffeCy4Ee4tLWNygDc";
     const { prepared } = prepare(executor, {
       credentials: makeCredentials({ rawHeaders: { "X-OpenCode-Session": ` ${valid} ` } }),
@@ -117,7 +148,7 @@ describe("OpenCode Free Executor Session Resolution", () => {
   });
 
   it("translates invalid native x-opencode-session header into a valid session", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const { prepared } = prepare(executor, {
       credentials: makeCredentials({ rawHeaders: { "x-opencode-session": "invalid-session-uuid" } }),
     });
@@ -127,7 +158,7 @@ describe("OpenCode Free Executor Session Resolution", () => {
   });
 
   it("translates conversation session deterministically", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const first = prepare(executor, { providerSessionId: "conversation-a", clientTool: "claude" }).prepared._opencodeSession;
     const second = prepare(executor, { providerSessionId: "conversation-a", clientTool: "claude" }).prepared._opencodeSession;
 
@@ -136,7 +167,7 @@ describe("OpenCode Free Executor Session Resolution", () => {
   });
 
   it("isolates different conversations and tools", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const convA = prepare(executor, { providerSessionId: "conversation-a" }).prepared._opencodeSession;
     const convB = prepare(executor, { providerSessionId: "conversation-b" }).prepared._opencodeSession;
     const toolClaude = prepare(executor, { providerSessionId: "same", clientTool: "claude" }).prepared._opencodeSession;
@@ -146,34 +177,34 @@ describe("OpenCode Free Executor Session Resolution", () => {
     expect(toolClaude).not.toBe(toolCodex);
   });
 
-  it("adds the valid session header to fetch requests", async () => {
-    const executor = getExecutor("opencode");
+  it("mints the session header and bearer auth without mutating source credentials", () => {
+    const executor = cliExecutor();
     const credentials = makeCredentials();
-    const result = await executor.execute({
+    const prepared = executor.prepareRequestCredentials({
       model: "muse-spark-1.3-contributor-free",
       body: { input: [{ type: "message", role: "user", content: [{ type: "input_text", text: "hello" }] }] },
-      stream: false,
       credentials,
       providerSessionId: "conversation-fetch-test",
       clientTool: "claude",
     });
+    const headers = executor.buildHeaders(prepared);
 
-    expect(result.headers["x-opencode-session"]).toMatch(OPENCODE_SESSION_RE);
-    expect(fetchMock).toHaveBeenCalledOnce();
-    expect(fetchMock.mock.calls[0][1].headers["x-opencode-session"]).toBe(result.headers["x-opencode-session"]);
-    expect(fetchMock.mock.calls[0][1].headers["Authorization"]).toBe("Bearer public");
+    expect(headers["x-opencode-session"]).toMatch(OPENCODE_SESSION_RE);
+    expect(headers["Authorization"]).toBe("Bearer public");
+    // The session travels request-locally; the caller's credentials stay clean.
     expect(credentials).not.toHaveProperty("_opencodeSession");
+    expect(prepared._opencodeSession).toMatch(OPENCODE_SESSION_RE);
   });
 
   it("falls back to a valid generated session in buildHeaders when called standalone", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const headers = executor.buildHeaders({});
 
     expect(headers["x-opencode-session"]).toMatch(OPENCODE_SESSION_RE);
     expect(headers["Authorization"]).toBe("Bearer public");
   });
   it("handles null or undefined body gracefully in transformRequest", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     expect(() => executor.transformRequest("muse-spark-1.3-contributor-free", null, false, {})).not.toThrow();
     expect(() => executor.transformRequest("big-pickle", undefined, false, {})).not.toThrow();
   });
@@ -181,7 +212,7 @@ describe("OpenCode Free Executor Session Resolution", () => {
 
 describe("OpenCode Free User-Agent Validation", () => {
   it("defaults User-Agent to the current CLI form for non-opencode downstream clients", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const headersNoUa = executor.buildHeaders({});
     expect(headersNoUa["User-Agent"]).toBe("opencode/1.19.4 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.4");
 
@@ -190,20 +221,20 @@ describe("OpenCode Free User-Agent Validation", () => {
   });
 
   it("replaces stale opencode User-Agents, which upstream now rejects with 403", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     for (const ua of ["opencode", "opencode/1.15.0", "opencode/latest/2.0.26/cli"]) {
       expect(executor.buildHeaders({ rawHeaders: { "user-agent": ua } })["User-Agent"]).toBe("opencode/1.19.4 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.4");
     }
   });
 
   it("preserves a current opencode downstream User-Agent", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const headers = executor.buildHeaders({ rawHeaders: { "user-agent": "opencode/1.19.4 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.4" } });
     expect(headers["User-Agent"]).toBe("opencode/1.19.4 ai-sdk/provider-utils/4.0.23 runtime/bun/1.4.4");
   });
 
   it("sends the current CLI headers including x-opencode-request and session id", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const headers = executor.buildHeaders({});
     const session = headers["x-opencode-session"];
     expect(session).toMatch(OPENCODE_SESSION_RE);
@@ -221,7 +252,7 @@ describe("OpenCode Stable Session Reuse (429 follow-up)", () => {
   }
 
   it("reuses one stable upstream session instead of minting a new one per request", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const body = { messages: [{ role: "user", content: "hello" }] };
     const first = executor.prepareRequestCredentials({
       body,
@@ -241,7 +272,7 @@ describe("OpenCode Stable Session Reuse (429 follow-up)", () => {
   });
 
   it("isolates stable sessions by downstream identity", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const body = { messages: [{ role: "user", content: "hello" }] };
     const forKey = (auth) => executor.prepareRequestCredentials({
       body,
@@ -261,7 +292,7 @@ describe("OpenCode Stable Session Reuse (429 follow-up)", () => {
   });
 
   it("keeps the standalone buildHeaders session stable across calls", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const first = executor.buildHeaders({})["x-opencode-session"];
     const second = executor.buildHeaders({})["x-opencode-session"];
     expect(first).toMatch(OPENCODE_SESSION_RE);
@@ -269,7 +300,7 @@ describe("OpenCode Stable Session Reuse (429 follow-up)", () => {
   });
 
   it("applies the read/shell free-tier fingerprint on Chat Completions", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
 
     const chatNoTools = executor.transformRequest("nemotron-3-ultra-free", {
       messages: [{ role: "user", content: "hi" }],
@@ -278,8 +309,10 @@ describe("OpenCode Stable Session Reuse (429 follow-up)", () => {
     // tool_choice "none" is answered with 403 FreeTierError upstream.
     expect(chatNoTools.tool_choice).toBeUndefined();
     expect(chatNoTools.tools.map((t) => t.function?.name)).toEqual(["read", "shell"]);
-    // Kept clean without telltale placeholder notes
-    expect(chatNoTools.messages[0].role).toBe("user");
+    // The free-tier gate requires the CLI's <env> marker, so the first chat
+    // message becomes the system prompt carrying it.
+    expect(chatNoTools.messages[0].role).toBe("system");
+    expect(chatNoTools.messages[0].content).toContain("<env>");
 
     const chatWithTools = executor.transformRequest("nemotron-3-ultra-free", {
       messages: [{ role: "user", content: "hi" }],
@@ -301,7 +334,7 @@ describe("OpenCode Stable Session Reuse (429 follow-up)", () => {
   });
 
   it("cloaks Muse Responses requests even when the client already supplies tools", () => {
-    const executor = getExecutor("opencode");
+    const executor = cliExecutor();
     const transformed = executor.transformRequest("muse-spark-1.3-contributor-free(xhigh)", {
       input: [{ type: "message", role: "user", content: [{ type: "input_text", text: "hi" }] }],
       tools: [{
@@ -317,30 +350,12 @@ describe("OpenCode Stable Session Reuse (429 follow-up)", () => {
     expect(transformed.stream).toBe(true);
     expect(transformed.reasoning?.effort).toBe("xhigh");
     expect(transformed.tools.map((tool) => tool.name)).toEqual(["zcode_search", "read", "shell"]);
-    expect(transformed.instructions).toBeUndefined();
+    // The Responses fingerprinter carries the <env> marker on `instructions`.
+    expect(transformed.instructions).toContain("<env>");
   });
 
   it("declares forceStream on the opencode transport so chatCore serves SSE upstream", async () => {
     const { PROVIDERS } = await import("../../open-sse/config/providers.js");
     expect(PROVIDERS.opencode?.forceStream).toBe(true);
-  });
-
-  it("registers OpenCode Free V2 executor with official 1.19.4 wire protocol", async () => {
-    const v2 = getExecutor("opencode-v2");
-    expect(v2).toBeDefined();
-
-    const headers = v2.buildHeaders({}, true, "https://opencode.ai/inference/openai/v1/chat/completions");
-    expect(headers["User-Agent"]).toContain("opencode/1.19.4");
-    expect(headers["x-opencode-client"]).toBe("cli");
-    expect(headers["x-opencode-request"]).toMatch(/^msg_[0-9a-f]{12}[0-9A-Za-z]{14}$/);
-    expect(headers["x-opencode-session"]).toMatch(/^ses_[0-9a-f]{12}[0-9A-Za-z]{14}$/);
-    expect(headers["x-session-affinity"]).toBeUndefined();
-    expect(headers["x-session-id"]).toBeUndefined();
-
-    const url = v2.buildUrl("deepseek-v4.1-flash-free");
-    expect(url).toBe("https://opencode.ai/inference/openai/v1/chat/completions");
-
-    const msgUrl = v2.buildUrl("union-alpha");
-    expect(msgUrl).toBe("https://opencode.ai/inference/anthropic/v1/messages");
   });
 });

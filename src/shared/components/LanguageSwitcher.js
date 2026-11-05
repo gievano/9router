@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { LOCALES, LOCALE_COOKIE, normalizeLocale } from "@/i18n/config";
 import { reloadTranslations } from "@/i18n/runtime";
+import LocaleBadge from "@/shared/components/LocaleBadge";
 
 function getLocaleFromCookie() {
   if (typeof document === "undefined") return "en";
@@ -14,46 +15,46 @@ function getLocaleFromCookie() {
   return normalizeLocale(value);
 }
 
-// Locale display names and flags - will be translated by runtime i18n
+// Locale display names - will be translated by runtime i18n
 const getLocaleInfo = (locale) => {
   const locales = {
-    "en": { name: "English", flag: "🇺🇸" },
-    "vi": { name: "Tiếng Việt", flag: "🇻🇳" },
-    "zh-CN": { name: "简体中文", flag: "🇨🇳" },
-    "zh-TW": { name: "繁體中文", flag: "🇹🇼" },
-    "ja": { name: "日本語", flag: "🇯🇵" },
-    "pt-BR": { name: "Português (Brasil)", flag: "🇧🇷" },
-    "pt-PT": { name: "Português (Portugal)", flag: "🇵🇹" },
-    "ko": { name: "한국어", flag: "🇰🇷" },
-    "es": { name: "Español", flag: "🇪🇸" },
-    "de": { name: "Deutsch", flag: "🇩🇪" },
-    "fr": { name: "Français", flag: "🇫🇷" },
-    "he": { name: "עברית", flag: "🇮🇱" },
-    "ar": { name: "العربية", flag: "🇸🇦" },
-    "ru": { name: "Русский", flag: "🇷🇺" },
-    "pl": { name: "Polski", flag: "🇵🇱" },
-    "cs": { name: "Čeština", flag: "🇨🇿" },
-    "nl": { name: "Nederlands", flag: "🇳🇱" },
-    "tr": { name: "Türkçe", flag: "🇹🇷" },
-    "uk": { name: "Українська", flag: "🇺🇦" },
-    "tl": { name: "Tagalog", flag: "🇵🇭" },
-    "id": { name: "Indonesia", flag: "🇮🇩" },
-    "th": { name: "ไทย", flag: "🇹🇭" },
-    "km": { name: "ខ្មែរ", flag: "🇰🇭" },
-    "hi": { name: "हिन्दी", flag: "🇮🇳" },
-    "bn": { name: "বাংলা", flag: "🇧🇩" },
-    "ur": { name: "اردو", flag: "🇵🇰" },
-    "ro": { name: "Română", flag: "🇷🇴" },
-    "sv": { name: "Svenska", flag: "🇸🇪" },
-    "it": { name: "Italiano", flag: "🇮🇹" },
-    "el": { name: "Ελληνικά", flag: "🇬🇷" },
-    "hu": { name: "Magyar", flag: "🇭🇺" },
-    "fi": { name: "Suomi", flag: "🇫🇮" },
-    "da": { name: "Dansk", flag: "🇩🇰" },
-    "no": { name: "Norsk", flag: "🇳🇴" },
-    "fa": { name: "فارسی", flag: "🇮🇷" }
+    "en": { name: "English" },
+    "vi": { name: "Tiếng Việt" },
+    "zh-CN": { name: "简体中文" },
+    "zh-TW": { name: "繁體中文" },
+    "ja": { name: "日本語" },
+    "pt-BR": { name: "Português (Brasil)" },
+    "pt-PT": { name: "Português (Portugal)" },
+    "ko": { name: "한국어" },
+    "es": { name: "Español" },
+    "de": { name: "Deutsch" },
+    "fr": { name: "Français" },
+    "he": { name: "עברית" },
+    "ar": { name: "العربية" },
+    "ru": { name: "Русский" },
+    "pl": { name: "Polski" },
+    "cs": { name: "Čeština" },
+    "nl": { name: "Nederlands" },
+    "tr": { name: "Türkçe" },
+    "uk": { name: "Українська" },
+    "tl": { name: "Tagalog" },
+    "id": { name: "Indonesia" },
+    "th": { name: "ไทย" },
+    "km": { name: "ខ្មែរ" },
+    "hi": { name: "हिन्दी" },
+    "bn": { name: "বাংলা" },
+    "ur": { name: "اردو" },
+    "ro": { name: "Română" },
+    "sv": { name: "Svenska" },
+    "it": { name: "Italiano" },
+    "el": { name: "Ελληνικά" },
+    "hu": { name: "Magyar" },
+    "fi": { name: "Suomi" },
+    "da": { name: "Dansk" },
+    "no": { name: "Norsk" },
+    "fa": { name: "فارسی" }
   };
-  return locales[locale] || { name: locale, flag: "🌐" };
+  return locales[locale] || { name: locale };
 };
 
 export default function LanguageSwitcher({ className = "", isOpen: controlledOpen, onClose, hideTrigger = false }) {
@@ -123,8 +124,8 @@ export default function LanguageSwitcher({ className = "", isOpen: controlledOpe
           data-i18n-skip="true"
         >
           <span className="material-symbols-outlined text-[20px]">language</span>
+          <LocaleBadge locale={locale} />
           <span className="text-sm font-medium">{getLocaleInfo(locale).name}</span>
-          <span className="text-lg">{getLocaleInfo(locale).flag}</span>
         </button>
       )}
 
@@ -141,14 +142,14 @@ export default function LanguageSwitcher({ className = "", isOpen: controlledOpe
           {/* Modal content */}
           <div
             ref={modalRef}
-            className="relative w-full bg-surface border border-black/10 dark:border-white/10 rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-w-2xl flex flex-col max-h-[80vh]"
+            className="relative w-full bg-surface border border-border-subtle rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-w-2xl flex flex-col max-h-[80vh]"
           >
             {/* Modal header */}
-            <div className="flex items-center justify-between p-3 border-b border-black/5 dark:border-white/5">
+            <div className="flex items-center justify-between p-3 border-b border-border-subtle">
               <h2 className="text-lg font-semibold text-text-main">Select Language</h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg text-text-muted hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                className="p-1.5 rounded-lg text-text-muted hover:bg-surface-2 transition-colors"
                 aria-label="Close"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
@@ -169,11 +170,11 @@ export default function LanguageSwitcher({ className = "", isOpen: controlledOpe
                       className={`flex flex-col items-center justify-start gap-1 px-2 py-3 rounded-lg text-xs font-medium transition-colors w-full ${
                         active
                           ? "bg-primary/15 text-primary ring-2 ring-primary"
-                          : "text-text-main hover:bg-black/5 dark:hover:bg-white/5"
+                          : "text-text-main hover:bg-surface-2"
                       } ${isPending ? "opacity-70 cursor-wait" : ""}`}
                       title={info.name}
                     >
-                      <span className="text-2xl">{info.flag}</span>
+                      <LocaleBadge locale={item} className="h-7 min-w-[34px] text-[11px]" />
                       {/* Fixed 2-line height so all cards are uniform */}
                       <span className="text-center leading-tight line-clamp-2 h-8 flex items-center">{info.name}</span>
                       {active && (

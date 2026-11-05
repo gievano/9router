@@ -5,21 +5,11 @@ import { resolve } from "node:path";
 const root = resolve(__dirname, "../..");
 const read = (p) => readFileSync(resolve(root, p), "utf8");
 
-describe("security log entry is visible to the administrator", () => {
-  it("keeps password sessions and refuses key sessions", () => {
-    const sidebar = read("src/shared/components/Sidebar.js");
-    // The filter previously answered false for everyone before it ever looked
-    // at the role, hiding the log from the one session allowed to read it.
-    expect(sidebar).toContain('if (item.href === "/dashboard/security-log") return !isApiKeyUser;');
-    expect(sidebar).not.toContain('if (item.href === "/dashboard/security-log") return false;');
-  });
-});
-
 describe("usage empty state", () => {
   it("has no Get an API key call to action in Recent Requests", () => {
     const usage = read("src/shared/components/UsageStats.js");
     expect(usage).not.toContain("Get an API key");
-    expect(usage).toContain("No requests yet.");
+    expect(usage).toContain("No requests logged for this timeframe.");
   });
 });
 

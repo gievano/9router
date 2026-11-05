@@ -3,14 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, Button, Toggle, Input, Select, DownloadBackupModal } from "@/shared/components";
 import Modal, { ConfirmModal } from "@/shared/components/Modal";
-import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
 import SettingsHistory from "@/shared/components/SettingsHistory";
 import { cn } from "@/shared/utils/cn";
 import { useSessionStore } from "@/store/sessionStore";
 import { useTaskStore } from "@/store/taskStore";
 import { APP_CONFIG } from "@/shared/constants/config";
 import { LOCALE_COOKIE, normalizeLocale } from "@/i18n/config";
-import { LOCALE_FLAGS } from "@/shared/constants/locales";
 
 // Reads a backup file as text, transparently inflating gzip (.json.gz) produced
 // by the auto-backup scheduler. Plain .json backups (manual download, older
@@ -1128,11 +1126,38 @@ export default function ProfilePage() {
                   onChange={handleImportDatabase}
                 />
               </div>
-              {dbStatus.message && (
-                <p className={`text-sm ${dbStatus.type === "error" ? "text-red-500" : "text-green-600 dark:text-green-400"}`}>
-                  {dbStatus.message}
-                </p>
-              )}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    variant="secondary"
+                    icon="download"
+                    onClick={() => setShowDownloadBackupModal(true)}
+                    loading={dbLoading}
+                    className="w-full sm:w-auto"
+                  >
+                    Download Backup
+                  </Button>
+                  <Button
+                    variant="outline"
+                    icon="upload"
+                    onClick={() => importFileRef.current?.click()}
+                    disabled={dbLoading}
+                    className="w-full sm:w-auto"
+                  >
+                    Import Backup
+                  </Button>
+                  <input
+                    ref={importFileRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden"
+                    onChange={handleImportDatabase}
+                  />
+                </div>
+                {dbStatus.message && (
+                  <p className={`text-sm ${dbStatus.type === "error" ? "text-danger" : "text-success"}`}>
+                    {dbStatus.message}
+                  </p>
+                )}
             </div>
             </div>
         </Card>
@@ -1246,7 +1271,7 @@ export default function ProfilePage() {
               {/* SSO Protocol Switcher Tabs */}
               <div className="flex flex-col gap-2">
                 <label className="font-medium text-sm sm:text-base">SSO Protocol</label>
-                <div className="flex p-1 rounded-lg bg-black/5 dark:bg-white/5 border border-border">
+                <div className="flex p-1 rounded-lg bg-surface-2 border border-border-subtle">
                   <button
                     type="button"
                     onClick={() => setSsoTypeTab("saml")}
@@ -1311,7 +1336,7 @@ export default function ProfilePage() {
                           "text-left rounded-lg border p-3 transition-colors",
                           active
                             ? "border-primary bg-primary/5"
-                            : "border-border bg-bg hover:bg-black/5 dark:hover:bg-white/5"
+                            : "border-border bg-surface hover:bg-surface-2"
                         )}
                         disabled={loading || oidcLoading || samlLoading}
                       >
@@ -1355,7 +1380,7 @@ export default function ProfilePage() {
                     {showSamlGuide && (
                       <div className="p-4 border-t border-border bg-surface/30 text-xs text-text-main flex flex-col gap-3">
                         <div className="p-2.5 rounded border border-primary/20 bg-primary/5 text-primary text-xs">
-                          <p className="font-semibold mb-1">🔑 Required Service Provider (SP) Values for your IdP Setup:</p>
+                          <p className="mb-1 flex items-center gap-1.5 font-semibold"><span className="material-symbols-outlined text-[14px] leading-none">key</span>Required Service Provider (SP) Values for your IdP Setup:</p>
                           <ul className="list-disc pl-4 space-y-1 font-mono text-[11px]">
                             <li>
                               <b>Assertion Consumer Service (ACS) URL:</b>{" "}
@@ -1375,7 +1400,7 @@ export default function ProfilePage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                           <div className="p-3 rounded border border-border bg-bg/50 flex flex-col gap-1.5">
                             <p className="font-semibold text-text-main flex items-center gap-1.5">
-                              <span>☁️</span> AWS IAM Identity Center
+                              <span className="material-symbols-outlined text-[15px] leading-none text-text-muted">cloud</span> AWS IAM Identity Center
                             </p>
                             <ol className="list-decimal pl-4 text-text-muted space-y-1">
                               <li>Applications → <b>Add application</b> → Select <b>Add custom SAML 2.0 application</b>.</li>
@@ -1388,7 +1413,7 @@ export default function ProfilePage() {
 
                           <div className="p-3 rounded border border-border bg-bg/50 flex flex-col gap-1.5">
                             <p className="font-semibold text-text-main flex items-center gap-1.5">
-                              <span>🔷</span> Microsoft Entra ID (Azure AD)
+                              <span className="material-symbols-outlined text-[15px] leading-none text-text-muted">security</span> Microsoft Entra ID (Azure AD)
                             </p>
                             <ol className="list-decimal pl-4 text-text-muted space-y-1">
                               <li>Enterprise Applications → <b>New application</b> → <b>Create your own application</b>.</li>
@@ -1401,7 +1426,7 @@ export default function ProfilePage() {
 
                           <div className="p-3 rounded border border-border bg-bg/50 flex flex-col gap-1.5">
                             <p className="font-semibold text-text-main flex items-center gap-1.5">
-                              <span>🟢</span> Okta / Auth0
+                              <span className="material-symbols-outlined text-[15px] leading-none text-text-muted">verified_user</span> Okta / Auth0
                             </p>
                             <ol className="list-decimal pl-4 text-text-muted space-y-1">
                               <li>Applications → <b>Create App Integration</b> → Select <b>SAML 2.0</b>.</li>
@@ -1414,7 +1439,7 @@ export default function ProfilePage() {
 
                           <div className="p-3 rounded border border-border bg-bg/50 flex flex-col gap-1.5">
                             <p className="font-semibold text-text-main flex items-center gap-1.5">
-                              <span>🛡️</span> Keycloak / Authentik
+                              <span className="material-symbols-outlined text-[15px] leading-none text-text-muted">shield_lock</span> Keycloak / Authentik
                             </p>
                             <ol className="list-decimal pl-4 text-text-muted space-y-1">
                               <li>Clients → <b>Create client</b> → Select <b>SAML</b>.</li>
@@ -1693,13 +1718,13 @@ export default function ProfilePage() {
               )}
 
               {settings.authMode === "oidc" || settings.authMode === "saml" || settings.authMode === "sso" ? (
-                <p className="text-xs sm:text-sm text-amber-600 dark:text-amber-400">
+                <p className="text-xs sm:text-sm text-warning">
                   SSO login ({settings.ssoType === "saml" ? "SAML 2.0" : "OIDC"}) is currently active. Password login is disabled until you switch back.
                 </p>
               ) : null}
 
               {settings.authMode === "both" && (
-                <p className="text-xs sm:text-sm text-amber-600 dark:text-amber-400">
+                <p className="text-xs sm:text-sm text-warning">
                   Password and SSO login ({settings.ssoType === "saml" ? "SAML 2.0" : "OIDC"}) are both active.
                 </p>
               )}
@@ -2053,7 +2078,7 @@ export default function ProfilePage() {
         </div>
         </div>
         {tgStatus.message && (
-        <p className={`text-sm ${tgStatus.type === "error" ? "text-red-500" : "text-green-600 dark:text-green-400"}`}>
+        <p className={`text-sm ${tgStatus.type === "error" ? "text-danger" : "text-success"}`}>
         {tgStatus.message}
         </p>
         )}

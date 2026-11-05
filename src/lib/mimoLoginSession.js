@@ -704,19 +704,21 @@ export async function runTakeover(sess, upstreamUrl, origin) {
   return pendingPage();
 }
 
-function htmlPage(title, lines, autoClose = false) {
+function htmlPage(title, lines, autoClose = false, icon = "") {
   const body = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${title}</title>
 <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#111;color:#eee}
 .card{padding:2rem 2.5rem;border-radius:12px;background:#1b1b1f;text-align:center;max-width:420px}
-h1{font-size:1.1rem;margin:.2rem 0 .6rem}p{opacity:.8;font-size:.9rem;line-height:1.6}</style></head>
-<body><div class="card"><h1>${title}</h1>${lines.map((l) => `<p>${l}</p>`).join("")}</div>
+h1{font-size:1.1rem;margin:.2rem 0 .6rem}p{opacity:.8;font-size:.9rem;line-height:1.6}
+.chk{color:#22c55e;line-height:0;margin-bottom:.55rem}</style></head>
+<body><div class="card">${icon}<h1>${title}</h1>${lines.map((l) => `<p>${l}</p>`).join("")}</div>
 <script>setTimeout(function(){try{window.opener&&window.opener.postMessage({mimoSession:"ok"},location.origin)}catch(e){}},300);${autoClose ? "setTimeout(function(){try{window.close()}catch(e){}},1600);" : ""}</script>
 </body></html>`;
   return new Response(body, { status: 200, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 }
 
 function donePage() {
-  return htmlPage("登录成功 ✅", ["账号会话已捕获，可以关闭此窗口。", "回到 9router 弹窗继续。"], true);
+  const check = '<div class="chk"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>';
+  return htmlPage("登录成功", ["账号会话已捕获，可以关闭此窗口。", "回到 9router 弹窗继续。"], true, check);
 }
 
 function pendingPage() {

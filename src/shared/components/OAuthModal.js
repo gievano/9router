@@ -774,14 +774,14 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
                   onClick={() => { setAuthMode("browser"); setError(null); setStep("waiting"); startOAuthFlow(); }}
                   className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${authMode === "browser" ? "border-primary bg-primary/10 text-primary" : "border-border text-text-muted hover:text-primary"}`}
                 >
-                  🌐 Sign in with browser
+                  <span className="inline-flex items-center gap-1.5"><span className="material-symbols-outlined text-[14px] leading-none">language</span>Sign in with browser</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { setAuthMode("paste-token"); setError(null); setStep("input"); }}
                   className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${authMode === "paste-token" ? "border-primary bg-primary/10 text-primary" : "border-border text-text-muted hover:text-primary"}`}
                 >
-                  🔑 Paste token
+                  <span className="inline-flex items-center gap-1.5"><span className="material-symbols-outlined text-[14px] leading-none">key</span>Paste token</span>
                 </button>
               </div>
             )}
@@ -817,7 +817,7 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
             {authMode === "paste-token" && PASTE_TOKEN_PROVIDERS[provider] && (
               <div className="space-y-3">
                 {ideStatus && !ideStatus.installed && (
-                  <div className={`px-3 py-2 rounded-lg text-sm ${PASTE_TOKEN_PROVIDERS[provider].ideOptional ? "bg-blue-500/10 text-blue-700 dark:text-blue-300" : "bg-yellow-500/10 text-yellow-700 dark:text-yellow-300"}`}>
+                  <div className={`px-3 py-2 rounded-lg text-sm ${PASTE_TOKEN_PROVIDERS[provider].ideOptional ? "bg-blue-500/10 text-info" : "bg-yellow-500/10 text-warning"}`}>
                     {PASTE_TOKEN_PROVIDERS[provider].ideName} IDE not detected.
                     {PASTE_TOKEN_PROVIDERS[provider].ideOptional
                       ? " You can still grab the token from DevTools."
@@ -961,7 +961,7 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
         {/* Success Step */}
         {step === "success" && (
           <div className="text-center py-6">
-            <div className="size-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <div className="size-16 mx-auto mb-4 rounded-full bg-success/15 border border-success/30 flex items-center justify-center">
               <span className="material-symbols-outlined text-3xl text-green-600">check_circle</span>
             </div>
             <h3 className="text-lg font-semibold mb-2">Connected Successfully!</h3>
@@ -977,7 +977,7 @@ export default function OAuthModal({ isOpen, provider, providerInfo, onSuccess, 
         {/* Error Step */}
         {step === "error" && (
           <div className="text-center py-6">
-            <div className="size-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <div className="size-16 mx-auto mb-4 rounded-full bg-danger/15 border border-danger/30 flex items-center justify-center">
               <span className="material-symbols-outlined text-3xl text-red-600">error</span>
             </div>
             <h3 className="text-lg font-semibold mb-2">Connection Failed</h3>

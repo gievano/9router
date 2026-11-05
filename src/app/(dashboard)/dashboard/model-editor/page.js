@@ -1,12 +1,26 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import PropTypes from "prop-types";
 import { Card, Button, Modal, Input, ModelSelectModal, Toggle } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import { findStudioCycle, describeStudioCycle } from "@/shared/utils/studioComboGuard";
 
 const NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
+
+// Fields the bulk editor may write, and how each one reads to the operator.
+const MODEL_BULK_LABELS = {
+  inputMultiplier: "Input multiplier (0 = none)",
+  outputMultiplier: "Output multiplier (0 = none)",
+  contextWindow: "Context window (0 = provider default)",
+};
+
+const MODEL_BULK_PLACEHOLDERS = {
+  inputMultiplier: "e.g. 2",
+  outputMultiplier: "e.g. 5",
+  contextWindow: "e.g. 200000",
+};
 
 function formatTokens(n) {
   const value = Number(n) || 0;
@@ -145,7 +159,7 @@ export default function ModelStudioPage() {
         <p className="text-xs text-text-muted mt-0.5">
           Give any model your own name, context size and behaviour, and it becomes a callable model ID for clients, combos, and API keys.
         </p>
-        <div className="mt-2 flex items-start justify-between gap-3 rounded-xl border border-border bg-black/[0.02] dark:bg-white/[0.03] px-3 py-2">
+        <div className="mt-2 flex items-start justify-between gap-3 rounded-xl border border-border-subtle bg-surface-2 px-3 py-2">
           <div className="min-w-0">
             <span className="flex items-center gap-1.5 text-xs font-semibold text-text-main">
               <span className="material-symbols-outlined text-[16px] leading-none text-primary">
@@ -179,8 +193,14 @@ function ModelStudioContent({ antiProbe = true }) {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [duplicating, setDuplicating] = useState(null);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(null);
+  // Bulk edit: which models are ticked, and whether the dialog is open. Same
+  // shape as the API-key page - nothing is written until Apply, and only the
+  // fields the operator ticks are sent.
+  const [selectedNames, setSelectedNames] = useState(() => new Set());
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
   const { copied: copiedName, copy } = useCopyToClipboard(1800);
 
   const fetchData = useCallback(async () => {
@@ -192,6 +212,14 @@ function ModelStudioContent({ antiProbe = true }) {
         fetch("/api/models/alias").then((r) => (r.ok ? r.json() : { aliases: {} })).catch(() => ({ aliases: {} })),
       ]);
       setModels(studioRes.models || []);
+      // A model deleted (or renamed) elsewhere must not stay ticked: a later
+      // Apply would otherwise report it missing every time.
+      const alive = new Set((studioRes.models || []).map((m) => m.callName));
+      setSelectedNames((prev) => {
+        if (!prev.size) return prev;
+        const next = new Set([...prev].filter((name) => alive.has(name)));
+        return next.size === prev.size ? prev : next;
+      });
       setProviderNodes((nodesRes.nodes || []).filter((n) => n.type !== "custom-embedding"));
       setActiveProviders(providersRes.connections || []);
       setModelAliases(aliasesRes.aliases || {});
@@ -209,12 +237,35 @@ function ModelStudioContent({ antiProbe = true }) {
 
   const openCreate = () => {
     setEditing(null);
+    setDuplicating(null);
     setShowForm(true);
   };
 
   const openEdit = (model) => {
+    setDuplicating(null);
     setEditing(model);
     setShowForm(true);
+  };
+
+  // Duplicate: open the create form carrying every rule of the source model
+  // (target, context window, multipliers, system prompt) under a fresh name, so a
+  // variant never starts from an empty form. createDuplicateName keeps the name
+  // unique because the call name IS the model id clients send.
+  const openDuplicate = (model) => {
+    setEditing(null);
+    setDuplicating(model);
+    setShowForm(true);
+  };
+
+  const createDuplicateName = (sourceName) => {
+    const taken = new Set(models.map((m) => String(m.callName || "").toLowerCase()));
+    const base = `${sourceName}-copy`;
+    if (!taken.has(base.toLowerCase())) return base;
+    for (let n = 2; n < 100; n++) {
+      const candidate = `${base}-${n}`;
+      if (!taken.has(candidate.toLowerCase())) return candidate;
+    }
+    return `${base}-${Date.now().toString(36)}`;
   };
 
   const handleDelete = async (model) => {
@@ -225,6 +276,34 @@ function ModelStudioContent({ antiProbe = true }) {
     } finally {
       setRemoving(null);
     }
+  };
+
+  const toggleSelected = (name) =>
+    setSelectedNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+
+  const handleBulkApply = async (patch) => {
+    const names = Array.from(selectedNames);
+    const res = await fetch("/api/model-editor/bulk", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ names, patch }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Failed to apply bulk changes");
+    if (Array.isArray(data.missing) && data.missing.length) {
+      setSelectedNames((prev) => {
+        const next = new Set(prev);
+        for (const name of data.missing) next.delete(name);
+        return next;
+      });
+    }
+    setShowBulkEdit(false);
+    await fetchData();
   };
 
   return (
@@ -240,6 +319,40 @@ function ModelStudioContent({ antiProbe = true }) {
           Add Model
         </Button>
       </div>
+
+      {selectedNames.size > 1 && (
+        // Same shape as the API-key page: a toolbar that only offers itself for
+        // more than one row, because one model already has its own editor.
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-full border border-border-subtle bg-surface-2/70 py-1 pl-3 pr-1 backdrop-blur-sm">
+          <span className="flex items-center gap-2 text-xs text-text-muted">
+            <span className="inline-flex min-w-[22px] items-center justify-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-primary">
+              {selectedNames.size}
+            </span>
+            models selected
+          </span>
+          <div className="flex items-center gap-0.5">
+            {selectedNames.size < models.length && (
+              <button
+                type="button"
+                onClick={() => setSelectedNames(new Set(models.map((m) => m.callName)))}
+                className="rounded-full px-2.5 py-1.5 text-xs text-text-muted transition-colors hover:bg-surface hover:text-text-main"
+              >
+                Select all {models.length}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setSelectedNames(new Set())}
+              className="rounded-full px-2.5 py-1.5 text-xs text-text-muted transition-colors hover:bg-surface hover:text-text-main"
+            >
+              Clear
+            </button>
+            <Button size="sm" variant="primary" onClick={() => setShowBulkEdit(true)}>
+              Bulk edit
+            </Button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <Card padding="md">
@@ -263,32 +376,44 @@ function ModelStudioContent({ antiProbe = true }) {
           {models.map((model) => (
             <Card key={model.callName} padding="md" className="flex min-w-0 flex-col gap-3">
               <div className="flex min-w-0 items-start justify-between gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedNames.has(model.callName)}
+                  onChange={() => toggleSelected(model.callName)}
+                  className="mt-1 size-4 shrink-0 accent-brand-500"
+                  aria-label={`Select ${model.callName}`}
+                />
                 <div className="min-w-0 flex-1">
-                  <button
-                    type="button"
-                    onClick={() => copy(model.callName, model.callName)}
-                    title="Copy model name"
-                    className="flex items-center gap-2 min-w-0 max-w-full text-left group"
-                  >
+                  {/* Same copy affordance as an API-key row: a small always-visible
+                      icon button that swaps to a check, instead of a hover-only
+                      glyph plus a "Copied" label. */}
+                  <div className="flex min-w-0 items-center gap-1">
                     <code className="font-mono text-sm font-semibold text-primary truncate">
                       {model.callName}
                     </code>
-                    {copiedName === model.callName ? (
-                      <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-green-500">
-                        <span className="material-symbols-outlined text-[14px]">check</span>
-                        Copied
+                    <button
+                      type="button"
+                      onClick={() => copy(model.callName, model.callName)}
+                      title="Copy model name"
+                      className="p-1 hover:bg-surface-2 rounded text-text-muted hover:text-primary transition-all shrink-0"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        {copiedName === model.callName ? "check" : "content_copy"}
                       </span>
-                    ) : (
-                      <span className="material-symbols-outlined text-[14px] shrink-0 text-text-muted opacity-0 transition-opacity group-hover:opacity-100">
-                        content_copy
-                      </span>
-                    )}
-                  </button>
+                    </button>
+                  </div>
                   {model.displayName && model.displayName !== model.callName && (
                     <p className="text-xs text-text-muted mt-0.5 truncate">{model.displayName}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => openDuplicate(model)}
+                    title="Duplicate"
+                    className="p-1 hover:bg-surface-2 rounded text-text-muted hover:text-primary transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                  </button>
                   <button
                     onClick={() => openEdit(model)}
                     title="Edit"
@@ -310,7 +435,7 @@ function ModelStudioContent({ antiProbe = true }) {
               </div>
 
               <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                <span className="px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 text-text-muted font-mono truncate max-w-full">
+                <span className="px-2 py-0.5 rounded-full bg-surface-2 border border-border-subtle text-text-muted font-mono truncate max-w-full">
                   {model.targetLabel || model.targetModel}
                 </span>
                 {!String(model.targetModel || "").includes("/") && (
@@ -324,7 +449,7 @@ function ModelStudioContent({ antiProbe = true }) {
                   </span>
                 )}
                 {(model.inputMultiplier > 0 || model.outputMultiplier > 0) && (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-success font-medium">
                     {model.inputMultiplier ? `${model.inputMultiplier}x In` : ""}
                     {model.inputMultiplier && model.outputMultiplier ? " · " : ""}
                     {model.outputMultiplier ? `${model.outputMultiplier}x Out` : ""}
@@ -333,7 +458,7 @@ function ModelStudioContent({ antiProbe = true }) {
               </div>
 
               {model.systemPrompt && (
-                <div className="rounded-lg bg-black/5 dark:bg-white/5 px-2.5 py-2">
+                <div className="rounded-lg bg-surface-2 border border-border-subtle px-2.5 py-2">
                   <p className="text-[10px] uppercase tracking-wide text-text-muted/70 mb-0.5">
                     System prompt
                   </p>
@@ -351,8 +476,11 @@ function ModelStudioContent({ antiProbe = true }) {
 
       {showForm && (
         <StudioFormModal
+          key={editing?.callName || duplicating?.callName || "new"}
           antiProbe={antiProbe}
           editing={editing}
+          duplicating={duplicating}
+          duplicateName={duplicating ? createDuplicateName(duplicating.callName) : ""}
           activeProviders={activeProviders}
           modelAliases={modelAliases}
           saving={saving}
@@ -364,13 +492,122 @@ function ModelStudioContent({ antiProbe = true }) {
           }}
         />
       )}
+
+      {showBulkEdit && (
+        <BulkEditModels
+          count={selectedNames.size}
+          onApply={handleBulkApply}
+          onClose={() => setShowBulkEdit(false)}
+        />
+      )}
     </>
   );
 }
 
+/**
+ * Bulk edit models: write one field to every selected model in one call.
+ * Each field is opt-in (checkbox): fields left off are not touched, so the form
+ * never rewrites what the user did not mean to change. Same shape as the API-key
+ * bulk editor.
+ */
+function BulkEditModels({ count, onApply, onClose }) {
+  const [fields, setFields] = useState({
+    inputMultiplier: { on: false, value: "" },
+    outputMultiplier: { on: false, value: "" },
+    contextWindow: { on: false, value: "" },
+  });
+  const [applying, setApplying] = useState(false);
+  const [error, setError] = useState("");
+
+  const toggle = (name) =>
+    setFields((prev) => ({ ...prev, [name]: { ...prev[name], on: !prev[name].on } }));
+  const setValue = (name, value) =>
+    setFields((prev) => ({ ...prev, [name]: { ...prev[name], value } }));
+
+  const handleApply = async () => {
+    const patch = {};
+    for (const [name, { on, value }] of Object.entries(fields)) {
+      if (!on) continue;
+      const n = Number(value);
+      if (!Number.isFinite(n) || n < 0) {
+        setError(`${MODEL_BULK_LABELS[name]} must be a number of 0 or more`);
+        return;
+      }
+      patch[name] = n;
+    }
+    if (!Object.keys(patch).length) {
+      setError("Enable at least one field to change");
+      return;
+    }
+    setError("");
+    setApplying(true);
+    try {
+      await onApply(patch);
+      onClose();
+    } catch (err) {
+      setError(err?.message || "Failed to apply bulk changes");
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  return (
+    <Modal isOpen onClose={onClose} title={`Bulk edit ${count} model${count === 1 ? "" : "s"}`}>
+      <div className="flex flex-col gap-3">
+        {Object.keys(fields).map((name) => (
+          <div key={name} className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={fields[name].on}
+              onChange={() => toggle(name)}
+              className="mt-1.5 size-4 shrink-0 accent-brand-500"
+              aria-label={`Change ${MODEL_BULK_LABELS[name]}`}
+            />
+            <div className="flex-1 min-w-0">
+              <label className="text-sm font-medium text-text-main block mb-1">
+                {MODEL_BULK_LABELS[name]}
+              </label>
+              <Input
+                type="number"
+                step="0.1"
+                min="0"
+                value={fields[name].value}
+                onChange={(e) => setValue(name, e.target.value)}
+                disabled={!fields[name].on}
+                placeholder={MODEL_BULK_PLACEHOLDERS[name]}
+              />
+            </div>
+          </div>
+        ))}
+
+        {error && (
+          <p className="text-xs text-red-500" role="alert">{error}</p>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="secondary" onClick={onClose} disabled={applying}>
+            Cancel
+          </Button>
+          <Button onClick={handleApply} loading={applying}>
+            Apply to {count} model{count === 1 ? "" : "s"}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+BulkEditModels.propTypes = {
+  count: PropTypes.number.isRequired,
+  onApply: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
 function StudioFormModal({
   antiProbe = true,
   editing,
+  duplicating,
+  duplicateName = "",
   activeProviders,
   modelAliases,
   saving,
@@ -380,35 +617,38 @@ function StudioFormModal({
 }) {
   const { getCaps } = useModelCaps();
   const [showPicker, setShowPicker] = useState(false);
-  const [callName, setCallName] = useState(editing?.callName || "");
-  const [displayName, setDisplayName] = useState(editing?.displayName || "");
+  // A duplicate opens with the source model's rules already filled in, so the
+  // only thing left to decide is the new name.
+  const source = editing || duplicating || null;
+  const [callName, setCallName] = useState(editing?.callName || duplicateName || "");
+  const [displayName, setDisplayName] = useState(source?.displayName || "");
   // Label this model claims in a model listing (owned_by). Free-form; blank means
   // "present itself as the model name clients call".
-  const [ownedBy, setOwnedBy] = useState(editing?.ownedBy || "");
+  const [ownedBy, setOwnedBy] = useState(source?.ownedBy || "");
   // The record stores both: `targetModel` is the resolved router target
   // (provider id), `targetLabel` is what the user actually picked. Editing has
   // to start from the label, otherwise saving writes the resolved prefix back
   // and the picker's own spelling ("oc/...") is lost on every round trip.
   const [targetModel, setTargetModel] = useState(
-    editing?.targetLabel || editing?.targetModel || ""
+    source?.targetLabel || source?.targetModel || ""
   );
   // True while the user has typed their own number: the suggestion then stops
   // overriding, but stays visible so a stale value is obvious.
   const [contextTouched, setContextTouched] = useState(
-    editing ? !!editing.contextWindow : false
+    source ? !!source.contextWindow : false
   );
   const [combos, setCombos] = useState([]);
   const [siblings, setSiblings] = useState([]);
   const [contextWindow, setContextWindow] = useState(
-    editing?.contextWindow ? String(editing.contextWindow) : ""
+    source?.contextWindow ? String(source.contextWindow) : ""
   );
   const [inputMultiplier, setInputMultiplier] = useState(
-    editing?.inputMultiplier ? String(editing.inputMultiplier) : ""
+    source?.inputMultiplier ? String(source.inputMultiplier) : ""
   );
   const [outputMultiplier, setOutputMultiplier] = useState(
-    editing?.outputMultiplier ? String(editing.outputMultiplier) : ""
+    source?.outputMultiplier ? String(source.outputMultiplier) : ""
   );
-  const [systemPrompt, setSystemPrompt] = useState(editing?.systemPrompt || "");
+  const [systemPrompt, setSystemPrompt] = useState(source?.systemPrompt || "");
 
   useEffect(() => {
     let alive = true;
@@ -510,7 +750,7 @@ function StudioFormModal({
       <Modal
         isOpen
         onClose={onClose}
-        title={editing ? `Edit ${editing.callName}` : "Add Model"}
+        title={editing ? `Edit ${editing.callName}` : duplicating ? `Duplicate ${duplicating.callName}` : "Add Model"}
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
@@ -611,7 +851,7 @@ function StudioFormModal({
 
 
           {antiProbe ? (
-          <div className="rounded-xl border border-border bg-black/[0.02] dark:bg-white/[0.03] p-3 flex flex-col gap-2.5">
+          <div className="rounded-xl border border-border-subtle bg-surface-2 p-3 flex flex-col gap-2.5">
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-1.5 text-xs font-semibold text-text-main">
                 <span className="material-symbols-outlined text-[16px] leading-none text-primary">
@@ -841,7 +1081,7 @@ function PrefixCard({ nodes, onSaved }) {
           {compatible.map((node) => (
             <div
               key={node.id}
-              className="flex items-center justify-between gap-2 rounded-lg border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 px-2.5 py-2"
+              className="flex items-center justify-between gap-2 rounded-lg border border-border-subtle bg-surface-2 px-2.5 py-2"
             >
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-text-main truncate">{node.name}</p>
