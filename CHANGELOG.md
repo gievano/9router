@@ -1,6 +1,33 @@
-# v0.5.374-Custom (sync upstream v0.5.374)
+# v0.5.376-Custom (sync upstream v0.5.376)
 
-Fork gievano/9router - sync 78 commit upstream (v0.5.317 -> v0.5.374) + custom: provider freebuff, mimocode, SSE-stall fallback console-log.
+Fork gievano/9router - sync 3 commit upstream (v0.5.374 -> v0.5.376) + custom: provider freebuff, mimocode, SSE-stall fallback console-log.
+
+# v0.5.376 (2026-11-06) · 1 commit
+
+## Live Requests Stream — model name only
+
+- The stream no longer prints the small provider/channel chip and resolved-model
+  arrow under each model name — each row now shows just the model, matching the
+  previous compact style. Column header renamed `Model & Channel` → `Model`.
+
+# v0.5.375 (2026-11-06) · 1 commit
+
+## ZCode provider parity (zcode seren)
+
+- Ported the full ZCode provider stack: `ZCodeExecutor` (GLM-5.3-Flash /
+  GLM-5.3 / GLM-5.2 / GLM-5-Turbo, Bearer + ZCode JWT dual-lane), plan selection
+  (`zcodePlan`), prompt builder, TLS client, service bridge, usage tracking, and the
+  `zcode-bridge` API route.
+- Added `zcode` (OAuth) and `zai-web` (webCookie) registries (p159/p160), plus
+  `zcode`/`zc` executor wiring and the ZCode OAuth provider + `ZCODE_CONFIG`.
+- Brought secondary dependencies up to parity: `zai-anthropic` thinking
+  wire with `mapEffortToSupportedLevel`, ZCode capability table, GLM-5.x effort
+  levels in `PATTERN_THINKING`, and ZCode quota normalization in ProviderLimits.
+- Added `zcode` + `zai-web` provider logos and the ported unit test
+  (`tests/unit/zcode-provider.test.js`: 21 pass / 4 fail — identical to the
+  reference run, the 4 failures are stale upstream expectations).
+
+# v0.5.374 (2026-11-06) · 1 commit
 
 ## CLI Tools logo tiles — transparent background, logo only
 - The logo tile in the CLI Tools summary cards and the per-tool setup header
@@ -9,21 +36,21 @@ Fork gievano/9router - sync 78 commit upstream (v0.5.317 -> v0.5.374) + custom: 
   background the user kept seeing. Removed the tile background and border
   entirely; each card now shows just the provider logo on the card surface.
 
-# v0.5.373 (2026-11-05) · 1 commit
+# v0.5.373 (2026-11-06) · 1 commit
 
 ## Runcrate — real logo instead of the RC text tile
 - Fetched the Runcrate brand mark from runcrate.ai (favicon) and shipped it as a
   transparent `public/providers/runcrate.png` (256px) — the provider previously
   fell back to the `RC` text fallback in the logo tile.
 
-# v0.5.372 (2026-11-05) · 1 commit
+# v0.5.372 (2026-11-06) · 1 commit
 
 ## 9router sidebar logo — replaced with the new brand mark
 - Swapped the sidebar logo asset to the updated 9router mark the user provided
   (`public/providers/9router-logo.png`), replacing the earlier 4 MB image with a
   295 KB square glyph. Renders transparent at 36×36 in the sidebar header.
 
-# v0.5.371 (2026-11-05) · 1 commit
+# v0.5.371 (2026-11-06) · 1 commit
 
 ## Provider logos — transparent backgrounds, uniform size, 9router + LLMTR marks
 - **9router sidebar logo**: replaced the gradient `hub` icon tile with the
