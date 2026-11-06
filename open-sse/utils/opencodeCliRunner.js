@@ -104,7 +104,7 @@ export function getOpencodeBinaryVersion(executable) {
 
   // Slow path: probe via --version
   try {
-    const v = execSync(`"${executable}" --version`, { encoding: "utf8", timeout: 2000 }).trim();
+    const v = execSync(`"${executable}" --version`, { encoding: "utf8", timeout: 2000, windowsHide: true }).trim();
     binaryVersionCache.set(executable, v);
     return v;
   } catch {
@@ -120,13 +120,17 @@ function parseSemver(v) {
 
 export function findOpencodeBinary(forceRefresh = false) {
   const now = Date.now();
-  if (!forceRefresh && cachedResolvedBinary && now - lastBinaryCheckTime < BINARY_CACHE_TTL_MS) {
-    try {
-      if (fs.existsSync(cachedResolvedBinary)) {
-        return cachedResolvedBinary;
-      }
-    } catch {}
-    cachedResolvedBinary = null;
+  if (!forceRefresh && now - lastBinaryCheckTime < BINARY_CACHE_TTL_MS) {
+    if (cachedResolvedBinary) {
+      try {
+        if (fs.existsSync(cachedResolvedBinary)) {
+          return cachedResolvedBinary;
+        }
+      } catch {}
+      cachedResolvedBinary = null;
+    } else {
+      return null; // negative result cached: no binary found on the last probe
+    }
   }
 
   const isWin = process.platform === "win32";
@@ -214,7 +218,7 @@ export function findOpencodeBinary(forceRefresh = false) {
   // 3. System PATH probe via which / where
   try {
     const cmd = isWin ? "where opencode 2>nul" : "which opencode 2>/dev/null";
-    const lines = execSync(cmd, { encoding: "utf8", timeout: 2000 })
+    const lines = execSync(cmd, { encoding: "utf8", timeout: 2000, windowsHide: true })
       .trim()
       .split(/\r?\n/)
       .map((l) => l.trim())
@@ -252,7 +256,10 @@ export function findOpencodeBinary(forceRefresh = false) {
     } catch {}
   }
 
-  if (existing.length === 0) return null;
+  if (existing.length === 0) {
+    lastBinaryCheckTime = now; // cache the negative result so we don't re-probe on every call
+    return null;
+  }
 
   // Rank candidates: sort by semver descending so the latest available engine is always chosen
   // (e.g. @opencode/cli 2.1.x > 2.0.x > legacy opencode-ai 1.x).
