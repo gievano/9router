@@ -152,9 +152,8 @@ import p154 from "./veoaifree-web.js";
 import p156 from "./runcrate.js";
 import p157 from "./nace.js";
 import p158 from "./llmtr.js";
-import p159 from "./freebuff.js"; // local-only: gievano fork
-import p160 from "./zai-web.js";
-import p161 from "./zcode.js";
+import p160 from "./zcode.js";
+import p161 from "./deepai.js";
 export default [
   p0,
   p1,
@@ -309,7 +308,6 @@ export default [
   p156,
   p157,
   p158,
-  p159, // local-only: gievano fork (freebuff)
   p160,
   p161,
 ];

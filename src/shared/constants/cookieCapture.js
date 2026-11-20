@@ -50,11 +50,6 @@ export const COOKIE_CAPTURE = {
     domains: ["app.blackbox.ai"],
     cookies: ["next-auth.session-token"],
   },
-  "freebuff-web": {
-    label: "Capture from FreeBuff",
-    domains: ["freebuff.com"],
-    cookies: ["__Secure-next-auth.session-token"],
-  },
   "muse-spark-web": {
     label: "Capture from Meta AI",
     domains: ["meta.ai"],

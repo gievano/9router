@@ -107,6 +107,7 @@ cli-secret
 # Kiro local workspace state
 .kiro/
 9router-*
+!public/providers/9router-logo.png
 
 # Local sensitive / temp files
 .engine-token.txt

@@ -1,10 +1,283 @@
-# v0.5.376-Custom (sync upstream v0.5.376)
+# v0.5.400-Custom (sync upstream v0.5.400)
 
-Fork gievano/9router - sync 3 commit upstream (v0.5.374 -> v0.5.376) + custom: provider freebuff, mimocode, SSE-stall fallback console-log.
+Fork gievano/9router - auto-sync upstream, full-follow upstream (freebuff dihapus 20 nov 2026 atas kata owner; zai-web ikut upstream dihapus).
+
+# v0.5.420 (2026-11-11)
+
+## What Looks Different?
+
+- Full OpenAI tool calling support for DeepAI (`dai/*`):
+  - Added robust parser for shorthand inline tool call patterns emitted by DeepAI (e.g. `tool_call tool=<name>, <args>`) converting them directly into standard OpenAI `tool_calls` schemas.
+  - Adjusted stream and JSON response handling to follow official OpenAI protocol conventions (suppressing redundant content text when emitting `tool_calls` chunks).
+  - Fine-tuned system instruction reminders so conversational greetings and simple code examples do not aggressively trigger shell execution calls.
+
+# v0.5.419 (2026-11-11)
+
+## What Looks Different?
+
+- Harvested proxy pools are now formatted with the `seren-` prefix (e.g. `seren-<ip>_<port>-[<loc>]`) instead of `FreeProxy-`.
+
+# v0.5.418 (2026-11-11)
+
+## What Looks Different?
+
+- Focused the Custom Proxy Feeds modal solely on operator input (removed the internal built-in feeds list section).
+- Expanded built-in feed catalog from 12 to 24 verified active public proxy repositories (adding Litport, Databay, Komutan, TuanMinPay, Moleway, VPSLab, Stormsia, MuRongPIG, and Zevtyardt), pulling from a pool of over 70,000+ proxy candidates.
+
+# v0.5.417 (2026-11-11)
+
+## What Looks Different?
+
+- **Customizable Harvester Scan Limit & Feed Sources**: Removed the hardcoded 500-candidate cap on the Proxy Harvester:
+  - Added **Max Scan** control: operators can specify any scan budget (from 50 up to 50,000 candidate proxies, default 1,000). The harvester continuously scans through the 70,000+ available candidates until the target live proxy count is met or the max scan budget is reached.
+  - Added **Feeds** manager modal: view the 12 active built-in public proxy feeds, and add custom raw HTTP/HTTPS proxy list URLs to expand discovery sources.
+
+# v0.5.416 (2026-11-11)
+
+## What Got Fixed?
+
+- **Proxy Harvester Freeze & Deadlock**: Fixed multiple critical bugs causing the auto-harvester daemon to stall and freeze indefinitely:
+  - Replaced graceful `await dispatcher.close()` with immediate `dispatcher.destroy()` in `probeProxy`, preventing hanging on half-open or unresponsive proxy tunnels.
+  - Used explicit `undiciFetch` with bound connect timeout (`connect: { timeout: timeoutMs }`) instead of Next.js's patched fetch.
+  - Added fallback timer to `tcpPrecheck` so dropped TCP SYN packets by remote firewalls immediately resolve as dead within 800ms.
+  - Replaced chunk-based `Promise.all` with a sliding worker pool (`runWithPool`), eliminating head-of-line blocking by slow straggler proxies.
+  - Reordered proxy feeds to prioritize high-yield active feeds (`monosans`, `sunny9577`, `vakhov`), discovering live proxies in seconds.
+  - Reset `_inCycle` state on manual stop so the worker can always be restarted cleanly.
+
+# v0.5.415 (2026-11-11)
+
+## What Looks Different?
+
+- The **Key Prefix** input in the Create Key modal now starts empty by default with an `sk-` placeholder. Manual hyphens are disallowed—only alphanumeric characters (letters and numbers) can be entered, and the trailing hyphen `-` is automatically appended to the minted key prefix.
+
+# v0.5.414 (2026-11-11)
+
+## What Looks Different?
+
+- On mobile API key items, removed the text label beside the edit pencil icon so all action buttons remain compact, clean, and uniformly icon-only.
+
+# v0.5.413 (2026-11-11)
+
+## What Looks Different?
+
+- Restored pure frosted glass backdrop blur across modals (`Modal`, `Create API Key`, `ChangelogModal`, `PricingModal`, `DonateModal`). The opaque dark black tint has been replaced with the standard theme scrim and `backdrop-blur-md`, allowing the background dashboard to blur smoothly and naturally without turning solid black.
+
+# v0.5.412 (2026-11-11)
+
+## What Looks Different?
+
+- All models under the **DeepAI Free** provider (`dai/*`) now display the official green **FREE** badge/tag across the provider models list, combo model picker, and `/v1/models` API responses.
+
+# v0.5.411 (2026-11-11)
+
+## What Looks Different?
+
+- **Multi-Device Responsive Polish**: Reflowed layout, spacing, and controls across phone (Android/iPhone), tablet, laptop, and desktop viewports:
+  - Header: Collapsed redundant desktop GitHub button on mobile (< md) and made the search input flexible, giving comfortable breathing room to notification and menu controls.
+  - Layout: Scaled outer content padding to `p-3.5 sm:p-6 lg:p-10`, recovering usable screen width on mobile viewports.
+  - Endpoint & API Keys: Reflowed API Key list items for mobile. Key tokens truncate cleanly instead of breaking into awkward vertical columns, and action icons collapse into a neat bottom action bar with finger-friendly tap targets on mobile while preserving the desktop row layout on wider screens.
+  - Modals: Increased overlay background opacity to eliminate bleed-through of bright background dashboard elements, and expanded modal max-height with generous bottom padding for smooth scrolling on small screens.
+  - Providers: Unified custom provider action button styles and converted them into a clean responsive row/grid.
+
+# v0.5.410 (2026-11-11)
+
+## What Looks Different?
+
+- The **Key Prefix** setting has moved into the **Create API Key** modal. The main API Keys card remains clean and uncluttered without an inline prefix section interrupting the key list. Operators can configure or view the leading prefix directly alongside the key name and expiry when creating a key.
+
+# v0.5.409 (2026-11-11)
+
+## What Looks Different?
+
+- The **Key Prefix** setting in the Endpoint page has been restyled into a dedicated control card with a badge icon, clean descriptive layout, and an inline visual token preview chip (`Format: prefix••••••••`). The Create API Key modal now also shows the active key prefix being minted.
+
+## What Got Fixed?
+
+- **OpenCode CLI Mode Singleton Daemon**: Instead of cold-booting `opencode run` one-shot per request (which took 15–20 seconds due to Bun runtime extraction and Git directory scanning), OpenCode CLI mode now leverages a persistent singleton daemon (`opencode serve`) running in an isolated workspace with session caching. Response latency drops to ~1.5s with zero 429 rate limit blocks and strict memory safety (~310 MB fixed RSS).
+
+# v0.5.408 (2026-11-11)
+
+## What Looks Different?
+
+- All models in the **DeepAI Free** provider catalog now have "Free" in their display names (for example, `DeepSeek V4.1 Flash Free`, `Claude Haiku 5.5 Free`, `GPT-6 Luna Free`), consistent with the naming style across other free-tier providers.
+
+## What Got Fixed?
+
+- OpenCode Free with a connected account no longer fails with `HTTP 403: {"type":"error","error":{"type":"permission_error","message":"Workspace selection is required"}}`. Account credentials from device sign-in now automatically resolve and attach the user's primary workspace ID via `x-opencode-org-id`.
+
+# v0.5.407 (2026-11-11)
+
+## What Looks Different?
+
+- The API Keys card on the Endpoint page has a **Key prefix** field. Whatever you type (sk-, 9r-, my-org-key, ...) becomes the start of every key created from then on, with a live preview of how the next key will read. Keys already issued keep their own prefix and keep working: validation looks the key up by exact match, so this only changes what gets minted. Empty input falls back to the classic sk-.
+
+# v0.5.406 (2026-11-10)
+
+## What Got Fixed?
+
+- DeepAI Free no longer claims capabilities it does not have. Its endpoint is text-only: vision, web search and a native reasoning channel were advertised because the model names (claude-haiku-5-5, gpt-6-luna...) matched generic patterns, and reasoning parameters sent upstream are ignored. The catalog now reports text + tool calling only, so combos and capability routing stop sending image or search requests there.
+
+# v0.5.405 (2026-11-10)
+
+## What Got Fixed?
+
+- **DeepAI Free tool calling works.** The endpoint is text-only, so a client that sent `tools` got prose back with `finish_reason: stop` and agents looped or gave up. The executor now folds the tool catalogue into the conversation (schema first, highest-priority reminder on the latest turn), flattens assistant `tool_calls` and `tool` results into readable turns, and parses the reply's tool_call block back into standard OpenAI `tool_calls` with `finish_reason: "tool_calls"` - streaming and non-streaming. Tool results round-trip, so a multi-step agent loop actually runs.
+- A tool result now carries an explicit stop condition (answer in plain text when the result already answers the request), and the "call a tool now" reminder is not re-appended on a result turn, so a multi-step loop finishes instead of repeating the same call.
+- DeepAI usage numbers are estimated from real prompt/output size instead of `prompt_tokens: 0`, and the stream now closes with exactly one `data: [DONE]`.
+- Tool protocol uses the fenced `tool_call` format on DeepAI, the shape its models actually emit.
+- A passthrough stream that already ended with `data: [DONE]` no longer gets a second one appended at flush, for every provider that streams that way, not just DeepAI.
+
+# v0.5.404 (2026-11-10)
+
+## What Looks Different?
+
+- The prefix switch on the model form is labeled Provider prefix, with copy that says what it does instead of what it imitates.
+
+# v0.5.403 (2026-11-10)
+
+## What Looks Different?
+
+- The custom model name field takes a plain name again. The vendor prefix moved to its own "Provider prefix" switch under it: leave it off and the model is called by its plain name, turn it on and a `vendor/` input appears with the resulting model ID previewed next to it.
+
+# v0.5.402 (2026-11-10)
+
+## What Looks Different?
+
+- The custom model name field shows a prefixed example (`anthropic/claude-opus-5 or meta/llama/llama-4`) and its error text says any number of prefix segments is allowed, matching what the router now accepts.
+
+# v0.5.401 (2026-11-10)
+
+## What Looks Different?
+
+- Custom model names accept more than one prefix: `meta/llama/llama-4-qa` saves as written. Resolution now looks the full name up in the database, so multi segment names still route to their configured provider and model.
+
+# v0.5.400 (2026-11-10) · 1 commit
+
+## What Looks Different?
+
+- The GitHub link in the header keeps its label on phones: Visit GitHub on small screens, Visit on GitHub from tablet width up, instead of an icon on its own.
+
+# v0.5.399 (2026-11-10) · 1 commit
+
+## What's Added?
+
+- Custom model names may carry a prefix, so a model can be called as anthropic/claude-opus-5 instead of a bare name. The prefix is a label: an exact custom-model name wins over provider routing, and the target still resolves through the normal provider map.
+
+# v0.5.398 (2026-11-10) · 1 commit
+
+## What's Added?
+
+- Edit dialog on Model Editor can now re-point the selected custom models to one target model, picked from the same model list the form uses. Leaving the new field off keeps every target as it is, and a pick that would loop back is rejected before anything is written.
+
+# v0.5.397 (2026-11-10) · 1 commit
+
+## What Looks Different?
+
+- Selection action bars on Endpoint keys and Model Editor say Edit instead of Bulk edit, and the dialogs read Edit N keys or Edit N models.
+
+# v0.5.395 (2026-11-10) · 1 commit
+
+## What's Added?
+
+- New section Unauthenticated Providers above Free Tier Providers: MiMoCode Free, OpenCode Free, DeepAI Free.
+- Custom OpenAI Compatible cards use the OpenAI mark, Anthropic Compatible use Claude, Moonshot Compatible keep the Moonshot mark.
+- MiMo and Xiaomi providers share the official Xiaomi MiMo icon (mimo-free, mimocode, mmf, xiaomi-mimo, xiaomi-tokenplan), GitHub Copilot gets its own mark, and three logos with baked white backgrounds (atria, iflow, youcom) were cut to transparency.
+
+# v0.5.393 (2026-11-10) · 1 commit
+
+## What's Added?
+
+- New free provider deepai: talks to the public DeepAI chat endpoint with the per-request MD5 api-key signature, so no account, email, or captcha is involved.
+- Eleven models unlocked on the free lane, from deepseek-v4.1-flash to llama-3.1-8b-instant.
+- OpenAI-compatible output: the plain-text answer is wrapped as chat completion chunks (or a single JSON body for non-stream clients), and pool proxies apply through the standard proxy path.
+
+# v0.5.392 (2026-11-09) · 1 commit
+
+## What Looks Different?
+
+- Dropped the FEATURE+ label from the sidebar section and the page header.
+- Removed the Active/Idle status badge from the harvester worker card.
+
+# v0.5.391 (2026-11-09) · 1 commit
+
+## What's Added?
+
+- Reverse of the v2 CLI showed it only falls back to the shared "public" key when no account is signed in. Added a device-flow sign-in (POST /api/opencode-account: start, poll, logout; GET status) that stores the OAuth token in settings, and the executor now sends that token as the bearer when present.
+- Quota itself is daily and resets at 00:00 UTC (retry-after equals seconds to midnight UTC); every free model shares the same bucket, and datacenter proxy ranges are already exhausted, so the account lane is the only way to a fresh bucket.
+
+# v0.5.390 (2026-11-09) · 1 commit
+
+## What Was Fixed
+
+- Pool proxies frequently terminate TLS with broken or MITM certificates, so proxied requests died as 502 CERTIFICATE_VERIFY_FAILED before reaching the gate. Proxied wreq-js sessions now run with certificate verification disabled; the direct session keeps full verification.
+- Live probe: two fresh pool proxies reached the upstream (429 FreeUsageLimitError) instead of failing the handshake.
+
+# v0.5.389 (2026-11-07) · 2 commits
+
+## What Was Fixed
+
+- Proxy pools were unusable on the free lane: a configured proxy forced the Undici/OpenSSL path, the upstream answered 403 FreeTierError, and proxyFetch replayed direct, discarding the pool. The executor now resolves the effective proxy itself, disables the outer proxy path, and hands the proxy to the wreq-js impersonating client.
+- opencodeTlsClient caches one TLS session per proxy (wreq-js locks the proxy per session). Live probes from 12 different egress IPs all cleared the TLS gate.
+- Remaining blocker is upstream quota, not transport: every egress returns 429 FreeUsageLimitError with retry-after ~9.5h (shared Bearer public account), so IP rotation cannot mint fresh quota until it resets.
+
+# v0.5.387 (2026-11-07) · 1 commit
+
+## What Was Fixed
+
+- Root cause of 0/500 harvests: the route statically imported undici, which Next bundles into its compiled undici copy whose ProxyAgent fails at runtime. Probes now use the same pattern as open-sse/proxyFetch (dynamic import + global fetch), verified returning ok:true with egress IP and location.
+- End-to-end verified: start target 5, ran the real cycle, imported FreeProxy-<ip>_<port>-[LOC] entries (status working, active) into Proxy Pools.
+- Removed the temporary ?debug=1 endpoint.
+
+# v0.5.384 (2026-11-07) · 1 commit
+
+## What Was Fixed
+
+- Candidates were taken in feed order, so the first 500 all came from the first feed (jetkai), which was 100% dead on this network. The harvester always finished 0/500.
+- Candidates are now shuffled before the scan window is picked, so live proxies from healthy feeds (monosans, TheSpeedX, sunny9577) are reached in every run.
+
+# v0.5.383 (2026-11-07) · 1 commit
+
+## What Looks Different?
+
+- Pruned 3 dead/empty proxy feeds (MuRongPIG, KangProxy, stormsia), added TheSpeedX/PROXY-List (2.7k live). 12 feeds total, all verified reachable.
+- Page copy now English (was Indonesian). Removed the fake-terminal status box, icon clutter and the generic 3-step explainer card.
+
+# v0.5.382 (2026-11-07) · 1 commit
+
+## What's Added?
+
+- New dedicated page under FEATURE+ that auto-fills the proxy pool from 15 public free-proxy feeds.
+- Pipeline: parallel feed fetch (4s cap) -> sub-second TCP ping pre-check -> HTTP verification via Cloudflare trace (captures egress IP + location, drops duplicate egress so quota buckets stay distinct).
+- Configurable target (1-200 live proxies) and loop interval (once / 2m aggressive / 5m / 15m / 30m / 60m), with live status, progress bar, cycle history and per-run stats.
+- Backend worker lives at /api/harvester with its own isolated state; imported proxies land in Proxy Pools as FreeProxy-<ip>_<port>[-<loc>].
+
+# v0.5.378 (2026-11-07) · 1 commit
+
+## What Was Deleted?
+
+- Removed the `zai-web` registry (`open-sse/providers/registry/zai-web.js`),
+  its registry slot `p159`, and the provider logo `public/providers/zai-web.png`.
+- `zcode-bridge` fallback no longer resolves `zai-web` connections; it now
+  prefers GLM, then `zcode`/`zc`.
+- Deleted the leftover `zai-web` connection (and its usage history) from the
+  preview database.
+
+# v0.5.377 (2026-11-07) · 1 commit
+
+## What's Added?
+
+- The bonus banner now also shows for `zcode` / `zc` connections (previously only
+  `glm`), and the bonus endpoint scans the whole ZCode family — connected ZCode
+  accounts can now see their promotional start-plan bonuses right after connect.
+- Claiming a plan that needs Aliyun NoCaptcha (HTTP code 3007) now returns
+  `verifyRequired` with the verify URL and app deep link instead of failing
+  silently. The banner opens a verification panel with a "Buka Aplikasi ZCode"
+  deep link, a `zcode.z.ai` fallback, and a field to paste the
+  `X-Aliyun-Captcha-Verify-Param` captured in-app before retrying the claim.
 
 # v0.5.376 (2026-11-06) · 1 commit
 
-## Live Requests Stream — model name only
+## What Looks Different?
 
 - The stream no longer prints the small provider/channel chip and resolved-model
   arrow under each model name — each row now shows just the model, matching the
@@ -12,7 +285,7 @@ Fork gievano/9router - sync 3 commit upstream (v0.5.374 -> v0.5.376) + custom: p
 
 # v0.5.375 (2026-11-06) · 1 commit
 
-## ZCode provider parity (zcode seren)
+## What's Added?
 
 - Ported the full ZCode provider stack: `ZCodeExecutor` (GLM-5.3-Flash /
   GLM-5.3 / GLM-5.2 / GLM-5-Turbo, Bearer + ZCode JWT dual-lane), plan selection
@@ -129,7 +402,7 @@ Fork gievano/9router - sync 3 commit upstream (v0.5.374 -> v0.5.376) + custom: p
 
 # v0.5.367 (2026-11-04) · 1 commit
 
-## Background loading-in-the-bell: all surfaces verified, stale tests fixed
+## What Was Fixed
 The bell now carries every long operation — batch testing, backup/import, bulk
 key imports, Codex/Grok accounts import, Qoder/Cline model imports and proxy
 import — while the operator clicks around and switches menus. The feature was
@@ -154,7 +427,7 @@ repo root, and a couple asserted removed patterns.
 
 # v0.5.366 (2026-11-04) · 1 commit
 
-## Changelog UI: composite category headings now render in colour
+## What Looks Different?
 The changelog modal painted every unrecognised category heading grey with a
 "help" icon instead of the usual coloured "WHAT'S …?" pill. Headings the fork
 writes like `Providers & Usage Fixes`, `Providers & UI`, `UI & Theme System`,
@@ -428,7 +701,7 @@ executor era's contract, so they failed against the current split.
 - **The model picker could still head a group with an id.** A provider missing from the static registry fell back to `{ name: providerId }`, so a compatible node still opened a `openai-compatible-chat-…` heading; the fallback runs through `resolveProviderName` and the quota card's title does too.
 - **Every successful log row pulsed as if it were pending.** The status column compared against uppercase (`OK`/`FAILED`) while the stored values are lowercase, so `ok` matched nothing and fell into the pending branch; the comparison folds case and the cell prints the status uppercased.
 
-# # v0.5.338 (2026-10-29) · 1 commit
+# v0.5.338 (2026-10-29) · 1 commit
 
 ## Fixes
 - **The activity heatmap fit a desktop card, not a phone.** 24 buckets of `14px + 3px gap` plus a 28px day gutter measure 441px, so on a 390px viewport 42 cells sat past the card edge with no scroll container to reach them. The block is one CSS grid now (`repeat(24, minmax(0, 14px))`), so cells shrink on a narrow screen instead of overflowing, and the hour ruler prints at 10px like the rest of the shell.

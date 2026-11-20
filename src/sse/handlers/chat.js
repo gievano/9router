@@ -136,20 +136,19 @@ async function _handleChat(request, clientRawRequest = null) {
   // A studio name may itself point at a combo; resolve it first so the combo
   // strategy applies, with a hop limit so a studio/combo cycle cannot recurse.
   let comboEntryName = modelStr;
-  if (!modelStr.includes("/")) {
-    try {
-      const { getStudioModel } = await import("@/lib/db/repos/modelEditorRepo.js");
-      const seenStudios = new Set([modelStr]);
-      for (let hop = 0; hop < 3; hop += 1) {
-        const studioTarget = await getStudioModel(comboEntryName);
-        if (!studioTarget?.targetModel) break;
-        const next = String(studioTarget.targetModel).trim();
-        if (!next || next.includes("/") || seenStudios.has(next)) break;
-        comboEntryName = next;
-        seenStudios.add(next);
-      }
-    } catch { /* studio lookup is best-effort; fall through to the raw name */ }
-  }
+  try {
+    const { getStudioModel } = await import("@/lib/db/repos/modelEditorRepo.js");
+    const seenStudios = new Set([modelStr]);
+    for (let hop = 0; hop < 3; hop += 1) {
+      const studioTarget = await getStudioModel(comboEntryName);
+      if (!studioTarget?.targetModel) break;
+      const next = String(studioTarget.targetModel).trim();
+      if (!next || seenStudios.has(next)) break;
+      comboEntryName = next;
+      seenStudios.add(next);
+      if (!next.includes("/")) break;
+    }
+  } catch { /* studio lookup is best-effort; fall through to the raw name */ }
   const comboModels = await getComboModels(comboEntryName);
 
   if (comboModels) {
@@ -228,7 +227,7 @@ async function handleSingleModelChat(body, modelStr, clientRawRequest = null, re
   // A studio name may also resolve here: getModelInfo answers a studio that
   // points at a combo with the combo name in `model`, so use it as the entry.
   if (!modelInfo.provider) {
-    const comboEntryName = (!modelStr.includes("/") && modelInfo.model && modelInfo.model !== modelStr)
+    const comboEntryName = modelInfo.model && modelInfo.model !== modelStr
       ? modelInfo.model
       : modelStr;
     const comboModels = await getComboModels(comboEntryName);

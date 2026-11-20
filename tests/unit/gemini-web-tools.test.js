@@ -273,6 +273,33 @@ describe("web-cookie tool bridge", () => {
     expect(r.content).not.toContain("tool_call");
   });
 
+  it("parses a fenced tool call whose fence word broke onto its own line", () => {
+    const r = parseToolCallReply(
+      'listing it now\n```\ntool_call\n{"name": "run_command", "arguments": {"command": "ls /tmp"}}\n```'
+    );
+    expect(r.calls).toHaveLength(1);
+    expect(r.calls[0].name).toBe("run_command");
+    expect(r.calls[0].arguments.command).toBe("ls /tmp");
+    expect(r.content).not.toContain("tool_call");
+  });
+
+  it("parses DeepAI's unfenced shape: tool_call word, then bare JSON", () => {
+    const r = parseToolCallReply(
+      'tool_call\n{"name": "run_command", "arguments": {"command": "ls /tmp"}}'
+    );
+    expect(r.calls).toHaveLength(1);
+    expect(r.calls[0].name).toBe("run_command");
+    expect(r.content).not.toContain("tool_call");
+  });
+
+  it("parses shorthand inline tool_call tool=name, arg=val format", () => {
+    const r = parseToolCallReply('tool_call tool=sh, cmd="echo \'Hello World\'"');
+    expect(r.calls).toHaveLength(1);
+    expect(r.calls[0].name).toBe("sh");
+    expect(r.calls[0].arguments.cmd).toBe("echo 'Hello World'");
+    expect(r.content).not.toContain("tool_call");
+  });
+
   it("parses the marker style too", () => {
     const r = parseToolCallReply(
       'ok <<TOOL_CALL>> {"name": "read", "arguments": {"p": "a"}} <<TOOL_CALL>> done'

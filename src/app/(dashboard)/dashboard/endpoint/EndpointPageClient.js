@@ -385,7 +385,9 @@ export default function APIPageClient({ machineId }) {
   const [snippetLang, setSnippetLang] = useState("curl");
 
   const [requireApiKey, setRequireApiKey] = useState(false);
- const [tunnelDashboardAccess, setTunnelDashboardAccess] = useState(false);
+  // Prefix used for newly minted keys; defaults to "sk-", input starts empty.
+  const [apiKeyPrefix, setApiKeyPrefix] = useState("");
+  const [tunnelDashboardAccess, setTunnelDashboardAccess] = useState(false);
  const [authStatus, setAuthStatus] = useState(null);
  const [newKeyPermissions, setNewKeyPermissions] = useState({ ...EMPTY_PERMISSIONS });
  const [editPermissions, setEditPermissions] = useState({ ...EMPTY_PERMISSIONS });
@@ -441,15 +443,6 @@ const scopedModelPatterns =
   const [showTsModal, setShowTsModal] = useState(false);
   const [showDisableTsModal, setShowDisableTsModal] = useState(false);
   const tsLogRef = useRef(null);
-
-  // Custom Domain state
-  const [customDomainEnabled, setCustomDomainEnabled] = useState(false);
-  const [customDomainUrl, setCustomDomainUrl] = useState("");
-  const [customDomainInput, setCustomDomainInput] = useState("");
-  const [showCustomDomainModal, setShowCustomDomainModal] = useState(false);
-  const [showDisableCustomDomainModal, setShowDisableCustomDomainModal] = useState(false);
-  const [customDomainSaving, setCustomDomainSaving] = useState(false);
-  const [customDomainError, setCustomDomainError] = useState("");
 
   // Debounce reachable=false: server may briefly return false during background refresh.
   // Only flip UI to "reconnecting" after N consecutive misses to avoid spinner flicker.
@@ -591,9 +584,11 @@ const scopedModelPatterns =
       ]);
       if (settingsData) {
         setRequireApiKey(settingsData.requireApiKey || false);
+        const savedPrefix = settingsData.apiKeyPrefix || "";
+        setApiKeyPrefix(savedPrefix && savedPrefix !== "sk-" ? savedPrefix.replace(/[^a-zA-Z0-9]/g, "") : "");
+        setRequireLogin(settingsData.requireLogin !== false);
+        setHasPassword(settingsData.hasPassword || false);
         setTunnelDashboardAccess(settingsData.tunnelDashboardAccess || false);
-        setCustomDomainEnabled(settingsData.customDomainEnabled || false);
-        setCustomDomainUrl(settingsData.customDomainUrl || "");
       }
       if (statusRes.ok) {
         const data = await statusRes.json();
@@ -632,62 +627,6 @@ const scopedModelPatterns =
       if (updated) setRequireApiKey(value);
     } catch (error) {
       console.log("Error updating requireApiKey:", error);
-    }
-  };
-
-  const handleSaveCustomDomain = async (urlToSave) => {
-    let formatted = (urlToSave || "").trim();
-    if (!formatted) {
-      setCustomDomainError("Domain URL cannot be empty");
-      return;
-    }
-    if (!formatted.startsWith("http://") && !formatted.startsWith("https://")) {
-      formatted = "https://" + formatted;
-    }
-    formatted = formatted.replace(/\/+$/, "").replace(/\/v1$/, "");
-
-    setCustomDomainSaving(true);
-    setCustomDomainError("");
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customDomainEnabled: true,
-          customDomainUrl: formatted,
-        }),
-      });
-      if (res.ok) {
-        setCustomDomainEnabled(true);
-        setCustomDomainUrl(formatted);
-        setShowCustomDomainModal(false);
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        setCustomDomainError(errData.error || "Failed to save custom domain");
-      }
-    } catch (err) {
-      setCustomDomainError(err.message || "Failed to save custom domain");
-    } finally {
-      setCustomDomainSaving(false);
-    }
-  };
-
-  const handleDisableCustomDomain = async () => {
-    setCustomDomainSaving(true);
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customDomainEnabled: false }),
-      });
-      if (res.ok) {
-        setCustomDomainEnabled(false);
-        setShowDisableCustomDomainModal(false);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCustomDomainSaving(false);
     }
   };
 
@@ -1142,6 +1081,7 @@ const scopedModelPatterns =
   const closeAddModal = () => {
     setShowAddModal(false);
     setNewKeyName("");
+    setApiKeyPrefix("");
   };
 
   const handleCreateKey = async () => {
@@ -1169,6 +1109,7 @@ const scopedModelPatterns =
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newKeyName,
+          prefix: apiKeyPrefix.trim() ? apiKeyPrefix.trim().replace(/[^a-zA-Z0-9]/g, "") : undefined,
           limitKind: newKeyLimitKind,
           tokenLimit: newKeyLimitKind === "tokens" ? limitNum : 0,
           requestLimit: newKeyLimitKind === "requests" ? limitNum : 0,
@@ -1571,54 +1512,6 @@ const scopedModelPatterns =
               </Button>
             )}
           </div>
-          {/* Custom Domain */}
-          <div className="flex flex-wrap items-center gap-2 min-w-0">
-            <span className={`text-xs font-mono px-1.5 py-0.5 rounded shrink-0 min-w-[88px] max-w-[140px] truncate text-center ${
-              customDomainEnabled ? "bg-primary/10 text-primary" : "bg-surface-2 text-text-muted"
-            }`}>Custom Domain</span>
-            {customDomainEnabled ? (
-              <>
-                <Input value={`${customDomainUrl}/v1`} readOnly className="flex-1 min-w-0 font-mono text-sm" inputClassName="truncate" />
-                <button
-                  onClick={() => copy(`${customDomainUrl}/v1`, "custom_domain_url")}
-                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
-                  title="Copy URL"
-                >
-                  <span className="material-symbols-outlined text-[18px]">{copied === "custom_domain_url" ? "check" : "content_copy"}</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setCustomDomainInput(customDomainUrl);
-                    setCustomDomainError("");
-                    setShowCustomDomainModal(true);
-                  }}
-                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-colors shrink-0"
-                  title="Edit Custom Domain"
-                >
-                  <span className="material-symbols-outlined text-[18px]">edit</span>
-                </button>
-                <button
-                  onClick={() => setShowDisableCustomDomainModal(true)}
-                  className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
-                  title="Disable Custom Domain"
-                >
-                  <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
-                </button>
-              </>
-            ) : (
-              <Button
-                size="sm"
-                icon="language"
-                onClick={() => {
-                  setCustomDomainInput(customDomainUrl || "");
-                  setCustomDomainError("");
-                  setShowCustomDomainModal(true);
-                }}
-              >
-                Enable
-              </Button>
-            )}
-          </div>
           </>
           )}
         </div>
@@ -1714,7 +1607,7 @@ const scopedModelPatterns =
                 Clear
               </button>
               <Button size="sm" variant="primary" onClick={() => setShowBulkEdit(true)}>
-                Bulk edit
+                Edit
               </Button>
             </div>
           </div>
@@ -1736,89 +1629,104 @@ const scopedModelPatterns =
             {keys.map((key) => (
               <div
                 key={key.id}
-                className={`group flex flex-wrap items-start justify-between gap-3 py-3 border-b border-black/[0.03] dark:border-white/[0.03] last:border-b-0 ${key.isActive === false ? "opacity-60" : ""}`}
+                className={`group flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 py-3.5 border-b border-border/30 last:border-b-0 ${key.isActive === false ? "opacity-60" : ""}`}
               >
-                {!isApiKeyUser && (
-                  <input
-                    type="checkbox"
-                    checked={selectedKeyIds.has(key.id)}
-                    onChange={() => {
-                      setSelectedKeyIds((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(key.id)) next.delete(key.id);
-                        else next.add(key.id);
-                        return next;
-                      });
-                    }}
-                    className="size-4 accent-brand-500 shrink-0 mt-0.5"
-                    aria-label={`Select ${key.name}`}
-                  />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate min-w-0">{key.name}</p>
-                  {creatorLabelFor(key) && (
-                    <p className="text-xs text-text-muted truncate min-w-0">{creatorLabelFor(key)}</p>
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  {!isApiKeyUser && (
+                    <input
+                      type="checkbox"
+                      checked={selectedKeyIds.has(key.id)}
+                      onChange={() => {
+                        setSelectedKeyIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(key.id)) next.delete(key.id);
+                          else next.add(key.id);
+                          return next;
+                        });
+                      }}
+                      className="size-4 accent-brand-500 shrink-0 mt-1"
+                      aria-label={`Select ${key.name}`}
+                    />
                   )}
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1 min-w-0">
-                    <code className="text-xs text-text-muted font-mono break-all max-w-[200px] sm:max-w-xs min-w-0">
-                      {visibleKeys.has(key.id) ? key.key : maskKey(key.key)}
-                    </code>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => toggleKeyVisibility(key.id)}
-                        className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all"
-                        title={visibleKeys.has(key.id) ? "Hide key" : "Show key"}
-                      >
-                        <span className="material-symbols-outlined text-[14px]">
-                          {visibleKeys.has(key.id) ? "visibility_off" : "visibility"}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between sm:justify-start gap-2">
+                      <p className="text-sm font-medium truncate min-w-0">{key.name}</p>
+                      {/* Mobile-only toggle aligned with title */}
+                      <div className="sm:hidden flex-shrink-0" title={key.isActive === false ? "Switch this key back on" : "Switch this key off"}>
+                        <Toggle
+                          size="sm"
+                          checked={key.isActive !== false}
+                          disabled={isOwnKey(key)}
+                          onChange={(nextActive) => handleToggleKeyActive(key, nextActive)}
+                        />
+                      </div>
+                    </div>
+                    {creatorLabelFor(key) && (
+                      <p className="text-xs text-text-muted truncate min-w-0">{creatorLabelFor(key)}</p>
+                    )}
+                    <div className="flex items-center gap-1.5 mt-1 min-w-0 max-w-full">
+                      <code className="text-xs text-text-muted font-mono truncate min-w-0 max-w-[200px] sm:max-w-md">
+                        {visibleKeys.has(key.id) ? key.key : maskKey(key.key)}
+                      </code>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => toggleKeyVisibility(key.id)}
+                          className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all"
+                          title={visibleKeys.has(key.id) ? "Hide key" : "Show key"}
+                        >
+                          <span className="material-symbols-outlined text-[14px]">
+                            {visibleKeys.has(key.id) ? "visibility_off" : "visibility"}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => copy(key.key, key.id)}
+                          className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">
+                            {copied === key.id ? "check" : "content_copy"}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-text-muted mt-1">
+                      Created {new Date(key.createdAt).toLocaleDateString()}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <LimitBadge entry={key} />
+                      {limitKindOf(key) !== "cost" && limitCapOf(key) > 0 && key.resetInterval && key.resetInterval !== "never" && (
+                        <ResetCountdown resetInterval={key.resetInterval} lastResetAt={key.lastResetAt} />
+                      )}
+                      <span className="text-xs max-w-full truncate px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 font-medium">
+                        Models: {key.allowedModels && key.allowedModels !== "*" ? key.allowedModels : "All"}
+                      </span>
+                      {(key.rpmLimit > 0 || key.tpmLimit > 0) && (
+                        <span className="text-xs max-w-full truncate px-2 py-0.5 rounded bg-purple-500/10 text-purple-500 font-medium">
+                          Rate: {key.rpmLimit > 0 ? `${key.rpmLimit} RPM` : ""}{key.rpmLimit > 0 && key.tpmLimit > 0 ? " · " : ""}{key.tpmLimit > 0 ? `${formatTokensNumber(key.tpmLimit)} TPM` : ""}
                         </span>
-                      </button>
-                      <button
-                        onClick={() => copy(key.key, key.id)}
-                        className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-muted hover:text-primary transition-all"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">
-                          {copied === key.id ? "check" : "content_copy"}
-                        </span>
-                      </button>
+                      )}
+                      {key.expiresAt && (() => {
+                        const expDate = new Date(key.expiresAt);
+                        const isExpired = expDate.getTime() < Date.now();
+                        return (
+                          <span className={`inline-flex items-center gap-1 text-xs max-w-full truncate px-2 py-0.5 rounded font-medium ${
+                            isExpired
+                              ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                              : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                          }`}>
+                            <span className="material-symbols-outlined text-[13px] leading-none">
+                              {isExpired ? "event_busy" : "timer"}
+                            </span>
+                            {isExpired ? "Expired: " : "Expires: "}
+                            {expDate.toLocaleDateString()} {expDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
-                  <p className="text-xs text-text-muted mt-1">
-                    Created {new Date(key.createdAt).toLocaleDateString()}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-1.5 mt-2 overflow-hidden">
-                    <LimitBadge entry={key} />
-                    {limitKindOf(key) !== "cost" && limitCapOf(key) > 0 && key.resetInterval && key.resetInterval !== "never" && (
-                      <ResetCountdown resetInterval={key.resetInterval} lastResetAt={key.lastResetAt} />
-                    )}
-                    <span className="text-xs max-w-full truncate px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 font-medium">
-                      Models: {key.allowedModels && key.allowedModels !== "*" ? key.allowedModels : "All"}
-                    </span>
-                    {(key.rpmLimit > 0 || key.tpmLimit > 0) && (
-                      <span className="text-xs max-w-full truncate px-2 py-0.5 rounded bg-purple-500/10 text-purple-500 font-medium">
-                        Rate: {key.rpmLimit > 0 ? `${key.rpmLimit} RPM` : ""}{key.rpmLimit > 0 && key.tpmLimit > 0 ? " · " : ""}{key.tpmLimit > 0 ? `${formatTokensNumber(key.tpmLimit)} TPM` : ""}
-                      </span>
-                    )}
-                    {key.expiresAt && (() => {
-                      const expDate = new Date(key.expiresAt);
-                      const isExpired = expDate.getTime() < Date.now();
-                      return (
-                        <span className={`inline-flex items-center gap-1 text-xs max-w-full truncate px-2 py-0.5 rounded font-medium ${
-                          isExpired
-                            ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                        }`}>
-                          <span className="material-symbols-outlined text-[13px] leading-none">
-                            {isExpired ? "event_busy" : "timer"}
-                          </span>
-                          {isExpired ? "Expired: " : "Expires: "}
-                          {expDate.toLocaleDateString()} {expDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      );
-                    })()}
-                  </div>
                 </div>
-                <div className="flex-shrink-0 items-center gap-1.5">
+
+                {/* Desktop action row */}
+                <div className="hidden sm:flex flex-shrink-0 items-center gap-1.5">
                   <div
                     className="inline-flex items-center px-1"
                     title={key.isActive === false ? "Switch this key back on" : "Switch this key off"}
@@ -1887,6 +1795,68 @@ const scopedModelPatterns =
                     <span className="material-symbols-outlined text-[18px]">delete</span>
                   </button>
                 </div>
+
+                {/* Mobile action bar */}
+                <div className="flex sm:hidden items-center justify-end gap-1.5 pt-2 border-t border-border/20 text-text-muted">
+                  <button
+                    onClick={() => {
+                      setEditingKey(key);
+                      setEditName(key.name || "");
+                      const lim = limitCapOf(key) ? String(limitCapOf(key)) : "";
+                      setEditLimit(lim);
+                      setEditLimitKind(limitKindOf(key));
+                      const resVal = key.resetInterval || "never";
+                      if (["never", "5h", "7d", "14d", "30d"].includes(resVal)) {
+                        setEditReset(resVal);
+                        setEditCustomReset("");
+                      } else {
+                        setEditReset("custom");
+                        setEditCustomReset(resVal);
+                      }
+                      setEditAllowedModels(key.allowedModels || "*");
+                      setEditRpm(key.rpmLimit ? String(key.rpmLimit) : "");
+                      setEditTpm(key.tpmLimit ? String(key.tpmLimit) : "");
+                      setEditExpiresAt(key.expiresAt || "");
+                      setEditPermissions(key.permissions || EMPTY_PERMISSIONS);
+                    }}
+                    disabled={isOwnKey(key)}
+                    className={cn("p-1.5 hover:bg-surface-2 rounded text-text-muted hover:text-primary transition-all", isOwnKey(key) && "opacity-40 cursor-not-allowed")}
+                    title="Edit key"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                  </button>
+                  <button
+                    onClick={() => handleDuplicateKey(key)}
+                    disabled={isOwnKey(key)}
+                    className={cn("p-1.5 hover:bg-surface-2 rounded text-text-muted hover:text-primary transition-all", isOwnKey(key) && "opacity-40 cursor-not-allowed")}
+                    title="Duplicate key"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">library_add</span>
+                  </button>
+                  <button
+                    onClick={() => handleManualResetUsage(key)}
+                    disabled={isOwnKey(key)}
+                    className={cn("p-1.5 hover:bg-surface-2 rounded text-text-muted hover:text-primary transition-all", isOwnKey(key) && "opacity-40 cursor-not-allowed")}
+                    title="Reset used tokens"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">restart_alt</span>
+                  </button>
+                  <button
+                    onClick={() => { setShowSnippetModal(key); setSnippetLang("curl"); }}
+                    className="p-1.5 hover:bg-surface-2 rounded text-text-muted hover:text-primary transition-all"
+                    title="Code snippet"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">code</span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteKey(key.id)}
+                    disabled={isOwnKey(key)}
+                    className={cn("p-1.5 hover:bg-red-500/10 rounded text-red-500 transition-all", isOwnKey(key) && "opacity-30 cursor-not-allowed")}
+                    title="Delete key"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -1916,12 +1886,23 @@ const scopedModelPatterns =
             title="Identity"
             description="What you will see in the key list, and how long the key may live."
           >
-            <Input
-              label="Key Name"
-              value={newKeyName}
-              onChange={(e) => setNewKeyName(e.target.value)}
-              placeholder="Production Key"
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="Key Name"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                placeholder="Production Key"
+              />
+              <Input
+                label="Key Prefix"
+                value={apiKeyPrefix}
+                onChange={(e) => setApiKeyPrefix(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
+                placeholder="sk-"
+                spellCheck={false}
+                className="font-mono"
+                hint={`Minted key: ${apiKeyPrefix ? `${apiKeyPrefix}-` : "sk-"}••••••••`}
+              />
+            </div>
             <Input
               label="Expiry Date (optional)"
               type="datetime-local"
@@ -2412,67 +2393,6 @@ const scopedModelPatterns =
           </div>
         </div>
       </Modal>
-
-      {/* Custom Domain Modal */}
-      <Modal
-        isOpen={showCustomDomainModal}
-        title={customDomainEnabled ? "Edit Custom Domain" : "Enable Custom Domain"}
-        onClose={() => setShowCustomDomainModal(false)}
-      >
-        <div className="flex flex-col gap-4">
-          <div className="bg-surface-2 border border-border-subtle rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-primary">language</span>
-              <div>
-                <p className="text-sm text-text-main font-medium mb-1">
-                  Custom Domain Endpoint
-                </p>
-                <p className="text-sm text-text-muted">
-                  Use your own domain or reverse proxy URL (e.g. <code>https://api.my-domain.com</code>) to access your 9Router gateway.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-muted uppercase mb-1">
-              Custom Domain URL
-            </label>
-            <Input
-              value={customDomainInput}
-              onChange={(e) => setCustomDomainInput(e.target.value)}
-              placeholder="https://api.my-domain.com"
-              autoFocus
-            />
-            {customDomainError && (
-              <p className="text-xs text-red-500 mt-1">{customDomainError}</p>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-2 mt-2">
-            <Button variant="neutral" onClick={() => setShowCustomDomainModal(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => handleSaveCustomDomain(customDomainInput)}
-              loading={customDomainSaving}
-            >
-              Save Configuration
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Disable Custom Domain Modal */}
-      <ConfirmModal
-        isOpen={showDisableCustomDomainModal}
-        title="Disable Custom Domain"
-        message="Are you sure you want to disable the custom domain endpoint?"
-        confirmLabel="Disable"
-        confirmVariant="danger"
-        onConfirm={handleDisableCustomDomain}
-        onCancel={() => setShowDisableCustomDomainModal(false)}
-      />
 
       {/* Snippet Modal */}
 <Modal

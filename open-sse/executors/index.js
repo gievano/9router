@@ -24,7 +24,6 @@ import { XiaomiMimoExecutor } from "./xiaomi-mimo.js";
 import { MimoFreeExecutor } from "./mimo-free.js";
 import { CodeBuddyExecutor } from "./codebuddy-cn.js";
 import { CodeBuddyIntlExecutor } from "./codebuddy-intl.js";
-import { FreebuffExecutor } from "./freebuff.js";
 import TraeExecutor from "./trae.js";
 import ZedExecutor from "./zed.js";
 import WindsurfExecutor from "./windsurf.js";
@@ -33,6 +32,7 @@ import { MinimaxCodeExecutor } from "./minimax-code.js";
 import { DevinCliExecutor } from "./devin-cli.js";
 import { DeepSeekWebExecutor } from "./deepseek-web.js";
 import { ZCodeExecutor } from "./zcode.js";
+import { DeepAIExecutor } from "./deepai.js";
 
 const executors = {
   antigravity: new AntigravityExecutor(),
@@ -71,8 +71,6 @@ const executors = {
   "mimo-free": new MimoFreeExecutor(),
   "codebuddy-cn": new CodeBuddyExecutor(),
   "codebuddy-intl": new CodeBuddyIntlExecutor(),
-  freebuff: new FreebuffExecutor(),
-  fb: new FreebuffExecutor(), // Alias for freebuff
   trae: new TraeExecutor(),
   zed: new ZedExecutor(),
   windsurf: new WindsurfExecutor(),
@@ -91,6 +89,8 @@ const executors = {
   "deepseek-cookie": new DeepSeekWebExecutor(),
   zcode: new ZCodeExecutor(),
   zc: new ZCodeExecutor(),
+  deepai: new DeepAIExecutor(),
+  dai: new DeepAIExecutor(),
 };
 
 const defaultCache = new Map();
@@ -133,11 +133,10 @@ export { XiaomiMimoExecutor } from "./xiaomi-mimo.js";
 export { MimoFreeExecutor } from "./mimo-free.js";
 export { CodeBuddyExecutor } from "./codebuddy-cn.js";
 export { CodeBuddyIntlExecutor } from "./codebuddy-intl.js";
-export { FreebuffExecutor } from "./freebuff.js";
-export { resetSessionCache as resetFreebuffSessionCache, pruneSessionState as pruneFreebuffSessionState, sessionStateSize as freebuffSessionStateSize } from "./freebuff.js";
 export { default as TraeExecutor } from "./trae.js";
 export { default as ZedExecutor } from "./zed.js";
 export { default as WindsurfExecutor } from "./windsurf.js";
 export { DevinCliExecutor } from "./devin-cli.js";
 export { DeepSeekWebExecutor } from "./deepseek-web.js";
 export { ZCodeExecutor } from "./zcode.js";
+export { DeepAIExecutor } from "./deepai.js";

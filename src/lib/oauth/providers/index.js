@@ -28,7 +28,6 @@ import kimchi from "./kimchi.js";
 import trae from "./trae.js";
 import windsurf from "./windsurf.js";
 import zed from "./zed.js";
-import freebuff from "./freebuff.js";
 import glm from "./glm.js";
 import zcode from "./zcode.js";
 import minimaxCode from "./minimax-code.js";
@@ -61,7 +60,6 @@ const PROVIDERS = {
   trae,
   windsurf,
   zed,
-  freebuff,
   glm,
   zcode,
   "minimax-code": minimaxCode,

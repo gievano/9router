@@ -1,0 +1,137 @@
+name: sync upstream
+
+# auto-sync fork gievano/9router <- upstream serenhope/9router
+# jalan tiap hari 08:00 wib + bisa di-trigger manual dari tab actions.
+# merge biasa dulu. kalau konflik, cuma 4 file yang boleh di-resolve otomatis
+# (semuanya sudah teruji 20 nov 2026, merge v0.5.376 -> v0.5.400):
+#   - package.json / cli/package.json -> ambil versi upstream + "-Custom"
+#   - CHANGELOG.md -> ambil upstream, taruh header fork di atas
+#   - open-sse/providers/registry/index.js -> ambil upstream utuh (freebuff SUDAH dihapus 20 nov 2026 atas kata owner, jangan disisipin lagi)
+#   - dashboard/endpoint/EndpointPageClient.js -> ambil upstream (nambah apiKeyPrefix dkk)
+# kalau konflik di luar 4 file itu: batalin merge, buka issue, jangan push.
+# catatan: sync ini ikut upstream menghapus zai-web (webcookie) — itu keputusan upstream v0.5.378+.
+# fork ini full-follow upstream untuk kode aplikasi; yang dipertahankan cuma
+# infra fork (cli/update-fork.js, fork updater config) + workflow ini sendiri.
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # 08:00 WIB
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: fetch upstream
+        run: |
+          git config user.name "gievano-sync-bot"
+          git config user.email "sync-bot@gievano.local"
+          git remote add upstream https://github.com/serenhope/9router.git
+          git fetch upstream master
+          echo "BEHIND=$(git rev-list --count HEAD..upstream/master)" >> $GITHUB_ENV
+          echo "UPSTREAM_VER=$(git show upstream/master:package.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')" >> $GITHUB_ENV
+
+      - name: stop if up to date
+        if: env.BEHIND == '0'
+        run: echo "already in sync with upstream"
+
+      - name: try merge
+        id: merge
+        if: env.BEHIND != '0'
+        run: |
+          set +e
+          git merge --no-edit upstream/master
+          echo "MERGE_EXIT=$?" >> $GITHUB_ENV
+          set -e
+
+      - name: resolve known conflicts only
+        if: env.BEHIND != '0' && env.MERGE_EXIT != '0'
+        run: |
+          python3 - <<'PY'
+          import subprocess, json, pathlib
+          out = subprocess.check_output(["git", "diff", "--name-only", "--diff-filter=U"], text=True)
+          conflicted = set(out.split())
+          allowed = {
+            "CHANGELOG.md",
+            "package.json",
+            "cli/package.json",
+            "open-sse/providers/registry/index.js",
+            "src/app/(dashboard)/dashboard/endpoint/EndpointPageClient.js",
+          }
+          unknown = conflicted - allowed
+          if unknown:
+              print(f"unknown conflicts, aborting: {sorted(unknown)}")
+              raise SystemExit(2)
+          print(f"known conflicts only: {sorted(conflicted)}")
+          # endpoint: ambil upstream utuh
+          if "src/app/(dashboard)/dashboard/endpoint/EndpointPageClient.js" in conflicted:
+              subprocess.check_call(["git", "checkout", "--theirs", "src/app/(dashboard)/dashboard/endpoint/EndpointPageClient.js"])
+          # changelog: ambil upstream, header fork ditambah nanti pas bump
+          if "CHANGELOG.md" in conflicted:
+              subprocess.check_call(["git", "checkout", "--theirs", "CHANGELOG.md"])
+          # package.json: ambil upstream, versi dibump nanti
+          for f in ("package.json", "cli/package.json"):
+              if f in conflicted:
+                  subprocess.check_call(["git", "checkout", "--theirs", f])
+          # registry: ambil upstream utuh. freebuff sengaja TIDAK disisipin lagi
+          # (dihapus 20 nov 2026 atas kata owner); kalau masih ada, itu bug.
+          if "open-sse/providers/registry/index.js" in conflicted:
+              subprocess.check_call(["git", "checkout", "--theirs", "open-sse/providers/registry/index.js"])
+              assert "freebuff" not in pathlib.Path("open-sse/providers/registry/index.js").read_text().lower()
+          PY
+          git add -A
+          git -c user.name="gievano-sync-bot" -c user.email="sync-bot@gievano.local" commit -m "merge: sync upstream serenhope/master v${{ env.UPSTREAM_VER }} (auto)" || true
+
+      - name: fail on unknown conflicts
+        if: env.BEHIND != '0' && env.MERGE_EXIT != '0' && failure()
+        run: |
+          git merge --abort || true
+          echo "UNKNOWN_CONFLICT=1" >> $GITHUB_ENV
+
+      - name: bump -Custom version + changelog header
+        if: env.BEHIND != '0' && env.MERGE_EXIT == '0' || (env.BEHIND != '0' && env.MERGE_EXIT != '0' && env.UNKNOWN_CONFLICT != '1')
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, os
+          ver = os.environ["UPSTREAM_VER"] + "-Custom"
+          for f in ("package.json", "cli/package.json"):
+              p = pathlib.Path(f)
+              if not p.exists():
+                  continue
+              d = json.loads(p.read_text())
+              if d.get("version") != ver:
+                  d["version"] = ver
+                  p.write_text(json.dumps(d, indent=2) + "\n")
+                  print(f"{f} -> {ver}")
+          # header changelog fork di paling atas (jangan nimpa isi upstream)
+          c = pathlib.Path("CHANGELOG.md")
+          header = f"# v{ver} (sync upstream v{os.environ['UPSTREAM_VER']})\n\nFork gievano/9router - auto-sync upstream, full-follow upstream (freebuff dihapus 20 nov 2026).\n\n"
+          t = c.read_text()
+          if not t.startswith(f"# v{ver}"):
+              c.write_text(header + t)
+          PY
+          git add package.json cli/package.json CHANGELOG.md 2>/dev/null || git add package.json CHANGELOG.md
+          git diff --cached --quiet || git -c user.name="gievano-sync-bot" -c user.email="sync-bot@gievano.local" commit -m "chore: bump to ${{ env.UPSTREAM_VER }}-Custom (auto-sync)"
+
+      - name: push
+        if: env.BEHIND != '0' && env.UNKNOWN_CONFLICT != '1'
+        run: git push origin master
+
+      - name: open issue on unknown conflict
+        if: env.UNKNOWN_CONFLICT == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create --title "auto-sync upstream gagal: konflik baru" \
+            --body "workflow sync-upstream ketemu konflik di luar 4 file yang sudah dikenal. merge dibatalkan, tidak ada push. cek tab actions untuk daftar file konfliknya, lalu resolve manual." \
+            --label "sync-blocked" || gh issue create --title "auto-sync upstream gagal: konflik baru" \
+            --body "workflow sync-upstream ketemu konflik di luar 4 file yang sudah dikenal. merge dibatalkan, tidak ada push. cek tab actions untuk daftar file konfliknya, lalu resolve manual."

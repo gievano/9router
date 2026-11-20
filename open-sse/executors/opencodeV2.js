@@ -19,6 +19,7 @@ import { resolveSessionId } from "../utils/sessionManager.js";
 import { isMuseSparkModel } from "../providers/models/helpers.js";
 import { applyFingerprintTools } from "../utils/opencodeFingerprint.js";
 import { opencodeTlsFetch } from "../services/opencodeTlsClient.js";
+import { resolveEffectiveProxyUrl } from "../utils/proxyResolution.js";
 import { ANTHROPIC_API_VERSION } from "../providers/shared.js";
 import {
   normalizeResponsesInput,
@@ -35,6 +36,8 @@ const MAX_SESSION_LENGTH = 256;
 const MAX_TOOL_NAME_LEN = 128;
 const SESSION_HEADER = "x-opencode-session";
 const SESSION_FIELD = "_opencodeSession";
+const ACCOUNT_TOKEN_FIELD = "_opencodeAccountToken";
+const ACCOUNT_ORG_ID_FIELD = "_opencodeAccountOrgId";
 export const OPENCODE_SESSION_RE = /^ses_[0-9a-f]{12}[0-9A-Za-z]{14}$/;
 const BASE62_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
@@ -418,16 +421,40 @@ export class OpenCodeV2Executor extends BaseExecutor {
   // and keep proxy handling on the existing path (proxyAwareFetch delegates to
   // `directFetch` when no proxy is configured). Fail-open: without wreq-js the
   // request still goes out on native fetch instead of erroring here.
+  //
+  // Proxy pools: the pool egress must NOT ride Undici's OpenSSL fingerprint
+  // (the gate answers 403 FreeTierError and proxyFetch then replays direct,
+  // silently dropping the pool). Resolve the effective proxy here, disable the
+  // outer proxy path, and hand the proxy to the impersonating client instead:
+  // Bun-shaped ClientHello on the pool's egress.
   async execute(args) {
     const credentials = this.prepareRequestCredentials(args);
+    try {
+      const { getAccountInfo } = await import("../../src/lib/opencodeAccount.js");
+      const account = await getAccountInfo();
+      if (account?.accessToken) {
+        credentials[ACCOUNT_TOKEN_FIELD] = account.accessToken;
+        if (account.orgId) credentials[ACCOUNT_ORG_ID_FIELD] = account.orgId;
+      }
+    } catch {
+      // No account store available: stay on the public key.
+    }
+    let proxyUrl = null;
+    try {
+      const targetUrl = this.buildUrl(args.model);
+      proxyUrl = resolveEffectiveProxyUrl(targetUrl, args.proxyOptions || null).url || null;
+    } catch {
+      proxyUrl = null;
+    }
     return super.execute({
       ...args,
       credentials,
+      proxyOptions: proxyUrl ? null : args.proxyOptions,
       directFetch: (url, options) => opencodeTlsFetch(url, {
         method: options.method,
         headers: options.headers,
         body: options.body,
-      }, { signal: options.signal }),
+      }, { signal: options.signal, proxy: proxyUrl }),
     });
   }
 
@@ -452,9 +479,15 @@ export class OpenCodeV2Executor extends BaseExecutor {
 
     // Mirrors the v2 CLI. Upstream needs x-opencode-session-id next to
     // x-opencode-session, and rejects any x-opencode-request (v1 only) with 403.
+    // The v2 CLI only falls back to the shared "public" key when no account is
+    // signed in, so a stored account token keeps the free lane on its own quota
+    // bucket instead of the public one.
+    const accountToken = credentials?.[ACCOUNT_TOKEN_FIELD] || null;
+    const accountOrgId = credentials?.[ACCOUNT_ORG_ID_FIELD] || null;
+    const orgId = lower["x-opencode-org-id"] || accountOrgId || null;
     const headers = {
       "Content-Type": "application/json",
-      "Authorization": "Bearer public",
+      "Authorization": accountToken ? `Bearer ${accountToken}` : "Bearer public",
       "User-Agent": isOpencodeDownstream ? downstreamUa : OPENCODE_UA,
       "x-opencode-client": lower["x-opencode-client"] || OPENCODE_CLIENT,
       "x-opencode-session": session,
@@ -464,6 +497,7 @@ export class OpenCodeV2Executor extends BaseExecutor {
       "x-opencode-project": lower["x-opencode-project"] || "global",
       "Accept": stream ? "text/event-stream" : "*/*",
     };
+    if (orgId) headers["x-opencode-org-id"] = orgId;
     if (url.endsWith("/messages")) headers["anthropic-version"] = ANTHROPIC_API_VERSION;
     return headers;
   }
