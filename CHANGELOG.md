@@ -1,3 +1,7 @@
+# v0.5.400-Custom (sync upstream v0.5.400)
+
+Fork gievano/9router - auto-sync upstream, full-follow upstream (freebuff dihapus 20 nov 2026).
+
 # 22-11-2026 - v0.5.400
 ## WHAT'S UPDATED?
 - Added the currently listed Chutes models, MiniMax Code Global's MiniMax-M3.1-Flash, documented Recraft V4 image models, Runway Gen-4.5, Stable Diffusion 3.5 Flash, and Voyage embedding IDs that remain API-accessible.
