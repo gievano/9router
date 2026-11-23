@@ -142,6 +142,10 @@ import p139 from "./nace.js";
 import p140 from "./llmtr.js";
 import p141 from "./zcode.js";
 import p142 from "./deepai.js";
+import p143 from "./claude-web.js";
+import p144 from "./grok-web.js";
+import p145 from "./kimi-web.js";
+import p146 from "./perplexity-web.js";
 export default [
   p0,
   p1,
@@ -286,4 +290,8 @@ export default [
   p140,
   p141,
   p142,
+  p143,
+  p144,
+  p145,
+  p146,
 ];

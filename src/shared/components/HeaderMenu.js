@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import ChangelogModal from "./ChangelogModal";
 import { ConfirmModal } from "./Modal";
 import { useSessionStore } from "@/store/sessionStore";
+import useThemeStore from "@/store/themeStore";
 
 function MenuItem({ icon, label, onClick, trailing, danger }) {
   return (
@@ -35,6 +36,8 @@ MenuItem.propTypes = {
 
 export default function HeaderMenu({ onLogout }) {
   const role = useSessionStore((state) => state.role);
+  const theme = useThemeStore((state) => state.theme);
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
   // Same rule: a key session is a guest, not an operator, so
   // it never sees shutdown (the route refuses it anyway).
   const canShutdown = role !== "apikey";
@@ -86,6 +89,11 @@ export default function HeaderMenu({ onLogout }) {
               icon="history_toggle_off"
               label="Change Log"
               onClick={() => { close(); setChangelogOpen(true); }}
+            />
+            <MenuItem
+              icon={theme === "dark" ? "light_mode" : "dark_mode"}
+              label={theme === "dark" ? "Light Theme" : "Dark Theme"}
+              onClick={() => { toggleTheme(); close(); }}
             />
             <MenuItem
               icon="move_item"

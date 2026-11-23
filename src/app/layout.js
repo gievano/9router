@@ -31,10 +31,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Lock the neobrutalist theme before first paint */}
+        {/* Apply the saved theme before first paint (default neobrutalism) */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `var r=document.documentElement;r.classList.remove('dark','glass','brutalist');r.classList.add('neobrutalism');`,
+            __html: `try{var t=localStorage.getItem('9router-theme');var r=document.documentElement;r.classList.remove('dark','glass','brutalist','neobrutalism');r.classList.add(t==='dark'?'dark':'neobrutalism')}catch(e){document.documentElement.classList.add('neobrutalism')}`,
           }}
         />
         <script

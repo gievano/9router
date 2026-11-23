@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
-import useThemeStore, { applyTheme } from "@/store/themeStore";
+import useThemeStore from "@/store/themeStore";
 
 export function ThemeProvider({ children }) {
-  const setServerTheme = useThemeStore((state) => state.setServerTheme);
+  const hydrateTheme = useThemeStore((state) => state.hydrateTheme);
 
   useEffect(() => {
-    // Reassert the single site-wide neobrutalist system after hydration.
-    applyTheme("neobrutalism");
-    setServerTheme("neobrutalism", false);
-  }, [setServerTheme]);
+    // Apply the saved theme (default neobrutalism) after hydration.
+    // The first-paint script in layout.js already set the matching class,
+    // so this only syncs the store — no flash, no forced theme.
+    hydrateTheme();
+  }, [hydrateTheme]);
 
   return <>{children}</>;
 }

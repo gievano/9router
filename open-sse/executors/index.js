@@ -33,6 +33,10 @@ import { DevinCliExecutor } from "./devin-cli.js";
 import { DeepSeekWebExecutor } from "./deepseek-web.js";
 import { ZCodeExecutor } from "./zcode.js";
 import { DeepAIExecutor } from "./deepai.js";
+import { PerplexityWebExecutor } from "./perplexity-web.js";
+import { GrokWebExecutor } from "./grok-web.js";
+import { KimiWebExecutor } from "./kimi-web.js";
+import { ClaudeWebExecutor } from "./claude-web.js";
 
 const executors = {
   antigravity: new AntigravityExecutor(),
@@ -91,6 +95,17 @@ const executors = {
   zc: new ZCodeExecutor(),
   deepai: new DeepAIExecutor(),
   dai: new DeepAIExecutor(),
+  "perplexity-web": new PerplexityWebExecutor(),
+  pw: new PerplexityWebExecutor(),
+  "grok-web": new GrokWebExecutor(),
+  gw: new GrokWebExecutor(),
+  "kimi-web": new KimiWebExecutor(),
+  kweb: new KimiWebExecutor(),
+  "kimi-cookie": new KimiWebExecutor(),
+  "claude-web": new ClaudeWebExecutor(),
+  clw: new ClaudeWebExecutor(),
+  "claude-cookie": new ClaudeWebExecutor(),
+  claudeai: new ClaudeWebExecutor(),
 };
 
 const defaultCache = new Map();
@@ -140,3 +155,7 @@ export { DevinCliExecutor } from "./devin-cli.js";
 export { DeepSeekWebExecutor } from "./deepseek-web.js";
 export { ZCodeExecutor } from "./zcode.js";
 export { DeepAIExecutor } from "./deepai.js";
+export { PerplexityWebExecutor } from "./perplexity-web.js";
+export { GrokWebExecutor } from "./grok-web.js";
+export { KimiWebExecutor } from "./kimi-web.js";
+export { ClaudeWebExecutor } from "./claude-web.js";
