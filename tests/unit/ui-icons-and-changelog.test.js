@@ -282,14 +282,15 @@ describe("dashboard workspace positioning", () => {
     expect(providerForm).toContain("md:grid-cols-2");
   });
 
-  it("locks the UI to the neobrutalism design system across shared surfaces", () => {
+  it("keeps neobrutalism as the default design system while dark stays available", () => {
     expect(themeStore).toContain('const THEME_ID = "neobrutalism"');
-    expect(themeStore).toContain('root.classList.add(THEME_ID)');
-    expect(themeStore).toContain('root.classList.remove("dark", "glass", "brutalist")');
+    expect(themeStore).toContain('const DARK_THEME_ID = "dark"');
+    expect(themeStore).toContain('root.classList.remove("dark", "glass", "brutalist", "neobrutalism")');
+    expect(themeStore).toContain('root.classList.add(next)');
     expect(themeRoute).toContain('{ theme: "neobrutalism" }');
     expect(themeRoute).not.toContain('{ theme: "glass" }');
-    expect(layout).toContain("classList.add('neobrutalism')");
-    expect(layout).toContain("classList.remove('dark','glass','brutalist')");
+    expect(layout).toContain("localStorage.getItem('9router-theme')");
+    expect(layout).toContain("t==='dark'?'dark':'neobrutalism'");
     expect(globals).toContain("neobrutalism.css");
     expect(neobrutalism).toContain("backdrop-filter: none !important");
     expect(neobrutalism).toContain("border-radius: 3px !important");

@@ -1,7 +1,7 @@
 /**
- * The entire UI is locked to the neobrutalism design system.
- * The light paper palette and neobrutalist geometry marker are applied before
- * paint and remain active after hydration; prior dark/glass markers are removed.
+ * The UI supports two themes: neobrutalism (default) and dark.
+ * The saved theme is applied before paint and remains active after hydration;
+ * unknown theme IDs fall back to neobrutalism.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -42,8 +42,8 @@ describe("theme mode contract", () => {
     vi.unstubAllGlobals();
   });
 
-  it("only knows Neobrutalism as the active theme ID", () => {
-    expect(globalThis.__THEME_IDS__).toEqual(["neobrutalism"]);
+  it("knows neobrutalism and dark as the available theme IDs", () => {
+    expect(globalThis.__THEME_IDS__).toEqual(["neobrutalism", "dark"]);
   });
 
   it("applies neobrutalism and removes the former dark/glass markers", () => {
@@ -55,39 +55,63 @@ describe("theme mode contract", () => {
     expect(classes.has("glass")).toBe(false);
   });
 
-  it("locks theme strictly to neobrutalism on setTheme", async () => {
+  it("applies the requested theme on setTheme and falls back for unknown IDs", async () => {
     const setTheme = store.getState().setTheme;
 
     await setTheme("dark");
-    expect(store.getState().theme).toBe("neobrutalism");
-    expect(classes.has("neobrutalism")).toBe(true);
+    expect(store.getState().theme).toBe("dark");
+    expect(classes.has("dark")).toBe(true);
+    expect(classes.has("neobrutalism")).toBe(false);
     expect(classes.has("glass")).toBe(false);
 
     await setTheme("light");
     expect(store.getState().theme).toBe("neobrutalism");
     expect(classes.has("neobrutalism")).toBe(true);
-    expect(classes.has("glass")).toBe(false);
+    expect(classes.has("dark")).toBe(false);
+
+    await setTheme("glass");
+    expect(store.getState().theme).toBe("neobrutalism");
+    expect(classes.has("neobrutalism")).toBe(true);
   });
 
-  it("toggleTheme always returns the locked neobrutalism theme", () => {
+  it("toggleTheme switches between neobrutalism and dark", () => {
     const { toggleTheme } = store.getState();
 
     expect(store.getState().theme).toBe("neobrutalism");
 
-    const result = toggleTheme();
-    expect(result).toBe("neobrutalism");
-    expect(store.getState().theme).toBe("neobrutalism");
-    expect(classes.has("neobrutalism")).toBe(true);
+    expect(toggleTheme()).toBe("dark");
+    expect(store.getState().theme).toBe("dark");
+    expect(classes.has("dark")).toBe(true);
+    expect(classes.has("neobrutalism")).toBe(false);
     expect(classes.has("glass")).toBe(false);
-  });
 
-  it("setServerTheme ensures neobrutalism is active", () => {
-    classes.clear();
-    store.getState().setServerTheme("dark");
-
+    expect(toggleTheme()).toBe("neobrutalism");
     expect(store.getState().theme).toBe("neobrutalism");
     expect(classes.has("neobrutalism")).toBe(true);
     expect(classes.has("dark")).toBe(false);
+  });
+
+  it("setServerTheme applies the given theme", () => {
+    classes.clear();
+    store.getState().setServerTheme("dark");
+
+    expect(store.getState().theme).toBe("dark");
+    expect(classes.has("dark")).toBe(true);
+    expect(classes.has("neobrutalism")).toBe(false);
     expect(classes.has("glass")).toBe(false);
+  });
+
+  it("hydrateTheme restores the saved theme, defaulting to neobrutalism", () => {
+    const { hydrateTheme } = store.getState();
+
+    expect(hydrateTheme()).toBe("neobrutalism");
+    expect(store.getState().theme).toBe("neobrutalism");
+    expect(classes.has("neobrutalism")).toBe(true);
+
+    globalThis.localStorage.setItem("9router-theme", "dark");
+    expect(hydrateTheme()).toBe("dark");
+    expect(store.getState().theme).toBe("dark");
+    expect(classes.has("dark")).toBe(true);
+    expect(classes.has("neobrutalism")).toBe(false);
   });
 });
