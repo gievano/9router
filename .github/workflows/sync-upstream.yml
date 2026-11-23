@@ -5,7 +5,7 @@ name: sync upstream
 # merge biasa dulu. kalau konflik, cuma 4 file yang boleh di-resolve otomatis
 # (semuanya sudah teruji 20 nov 2026, merge v0.5.376 -> v0.5.400):
 #   - package.json / cli/package.json -> ambil versi upstream + "-Custom"
-#   - CHANGELOG.md -> ambil upstream, taruh header fork di atas
+#   - CHANGELOG.md -> ambil upstream utuh (TANPA header fork: header vX.Y.Z bikin test changelog upstream gagal, 23 nov 2026)
 #   - open-sse/providers/registry/index.js -> ambil upstream utuh (freebuff SUDAH dihapus 20 nov 2026 atas kata owner, jangan disisipin lagi)
 #   - dashboard/endpoint/EndpointPageClient.js -> ambil upstream (nambah apiKeyPrefix dkk)
 # kalau konflik di luar 4 file itu: batalin merge, buka issue, jangan push.
@@ -66,6 +66,8 @@ jobs:
             "cli/package.json",
             "open-sse/providers/registry/index.js",
             "src/app/(dashboard)/dashboard/endpoint/EndpointPageClient.js",
+            "src/shared/components/ChangelogModal.js",
+            "tests/unit/ui-icons-and-changelog.test.js",
           }
           unknown = conflicted - allowed
           if unknown:
@@ -75,7 +77,7 @@ jobs:
           # endpoint: ambil upstream utuh
           if "src/app/(dashboard)/dashboard/endpoint/EndpointPageClient.js" in conflicted:
               subprocess.check_call(["git", "checkout", "--theirs", "src/app/(dashboard)/dashboard/endpoint/EndpointPageClient.js"])
-          # changelog: ambil upstream, header fork ditambah nanti pas bump
+          # changelog: ambil upstream utuh (tanpa header fork)
           if "CHANGELOG.md" in conflicted:
               subprocess.check_call(["git", "checkout", "--theirs", "CHANGELOG.md"])
           # package.json: ambil upstream, versi dibump nanti
@@ -87,6 +89,15 @@ jobs:
           if "open-sse/providers/registry/index.js" in conflicted:
               subprocess.check_call(["git", "checkout", "--theirs", "open-sse/providers/registry/index.js"])
               assert "freebuff" not in pathlib.Path("open-sse/providers/registry/index.js").read_text().lower()
+          # changelog modal + testnya: ambil upstream, lalu rename SERENHOPE -> GIEVANO
+          # (custom fork: sumber changelog = repo gievano, bukan serenhope)
+          for f in ("src/shared/components/ChangelogModal.js", "tests/unit/ui-icons-and-changelog.test.js"):
+              if f in conflicted:
+                  subprocess.check_call(["git", "checkout", "--theirs", f])
+                  fp = pathlib.Path(f)
+                  txt = fp.read_text().replace("SERENHOPE", "GIEVANO").replace("serenhope", "gievano")
+                  fp.write_text(txt)
+                  assert "serenhope" not in fp.read_text().lower()
           PY
           git add -A
           git -c user.name="gievano-sync-bot" -c user.email="sync-bot@gievano.local" commit -m "merge: sync upstream serenhope/master v${{ env.UPSTREAM_VER }} (auto)" || true
@@ -97,7 +108,7 @@ jobs:
           git merge --abort || true
           echo "UNKNOWN_CONFLICT=1" >> $GITHUB_ENV
 
-      - name: bump -Custom version + changelog header
+      - name: bump -Custom version
         if: env.BEHIND != '0' && env.MERGE_EXIT == '0' || (env.BEHIND != '0' && env.MERGE_EXIT != '0' && env.UNKNOWN_CONFLICT != '1')
         run: |
           python3 - <<'PY'
@@ -112,14 +123,8 @@ jobs:
                   d["version"] = ver
                   p.write_text(json.dumps(d, indent=2) + "\n")
                   print(f"{f} -> {ver}")
-          # header changelog fork di paling atas (jangan nimpa isi upstream)
-          c = pathlib.Path("CHANGELOG.md")
-          header = f"# v{ver} (sync upstream v{os.environ['UPSTREAM_VER']})\n\nFork gievano/9router - auto-sync upstream, full-follow upstream (freebuff dihapus 20 nov 2026).\n\n"
-          t = c.read_text()
-          if not t.startswith(f"# v{ver}"):
-              c.write_text(header + t)
           PY
-          git add package.json cli/package.json CHANGELOG.md 2>/dev/null || git add package.json CHANGELOG.md
+          git add package.json cli/package.json 2>/dev/null || git add package.json
           git diff --cached --quiet || git -c user.name="gievano-sync-bot" -c user.email="sync-bot@gievano.local" commit -m "chore: bump to ${{ env.UPSTREAM_VER }}-Custom (auto-sync)"
 
       - name: push
@@ -127,7 +132,7 @@ jobs:
         run: git push origin master
 
       - name: open issue on unknown conflict
-        if: env.UNKNOWN_CONFLICT == '1'
+        if: failure() && env.UNKNOWN_CONFLICT == '1'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
