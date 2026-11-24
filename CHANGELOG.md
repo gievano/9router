@@ -1,3 +1,18 @@
+# 24-11-2026
+## WHAT'S UPDATED?
+- Rebuilt the login and limited-access screens as a high-contrast access checkpoint, with a responsive layout, clearer credential choices, and keyboard-visible controls while preserving password, API key, SSO, password-change, rate-limit, error, and sign-out flows.
+- Made the heading reflect a required password change and exposed the password/API-key selector as an accessible control group.
+- Reworked the API-key model picker into readable, selectable model rows and widened the dialog so long model IDs and selected states remain visible.
+
+## WHAT'S FIXED?
+- Allowed API-key sessions to read only the provider list, provider-node list, and per-connection model catalogs needed by the key editor; provider settings and all write routes remain restricted to provider managers.
+- Added clearer refresh, loading, empty, and search-no-match states to the model picker, with a retry action when the provider list cannot refresh.
+
+# 23-11-2026
+## WHAT'S FIXED?
+- Fixed DeepSeek Web model routing so Flash uses Default mode, Pro and Reasoner use Expert, and Reasoner and R1 aliases enable thinking.
+- Matched the landing-page header and footer logos to the existing donut image used in the dashboard sidebar.
+
 # 22-11-2026
 ## WHAT'S UPDATED?
 - Added the currently listed Chutes models, MiniMax Code Global models, documented Recraft image models, Runway video generation, Stable Diffusion Flash, and Voyage embedding IDs that remain API-accessible.
@@ -7,6 +22,12 @@
 - Kept account-scoped or dynamically fetched catalogs unconfirmed where no exact authenticated endpoint result was available; did not infer retirements from catalog absence.
 - Rebuilt the post-login welcome message around provider setup, model routing, and traffic review.
 - Changelog headings and release cards now show dates only.
+- Replaced circular loading indicators with a repeating 2×2 square sequence that advances one box at a time and settles into a static grid for reduced-motion settings.
+- Kept inactive loading squares filled in neutral gray, with the active step in brand orange.
+- Set inactive gray loading squares to 55% opacity and removed their box shadow, keeping the active orange step and existing sequence.
+- Lowered inactive loading squares to 35% opacity while preserving the orange active step, shadowless styling, and reduced-motion fallback.
+- Lowered inactive gray loading squares to 10% opacity, preserving the orange 2×2 sequence, no-shadow styling, and reduced-motion fallback.
+- Updated the loading component self-check to verify four square cells and its accessible status label.
 
 # 21-11-2026
 ## WHAT'S UPDATED?
